@@ -1,6 +1,7 @@
 // app/(auth)/layout.tsx
 
-import AuthHeader from "../../_components/auth-header";
+import AuthHeader from "./_components/auth-header";
+
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
