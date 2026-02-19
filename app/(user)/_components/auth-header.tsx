@@ -9,7 +9,8 @@ export default function AuthHeader() {
         <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-1 shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
           {/* LEFT LOGO */}
           <Link href="/" className="flex items-center gap-1">
-            <div className="relative h-10 w-10 shrink-0 top-2">
+            <div className="relative h-10 w-10 shrink-0">
+
               <Image
                 src="/icons/plus_button.png"
                 alt="Add"
