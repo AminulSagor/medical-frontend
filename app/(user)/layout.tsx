@@ -15,7 +15,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     pathname.startsWith("/orders") ||
     pathname.startsWith("/settings") ||
     pathname.startsWith("/order-details") ||
-    pathname.startsWith("/coures") ||
+    pathname.startsWith("/course") ||
     pathname.startsWith("/order-history");
 
   const active: NavKey =
