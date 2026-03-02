@@ -1,4 +1,4 @@
-import { CourseDetails } from "@/app/(user)/(not-register)/public/types/course-details.types";
+import { CourseDetails } from "@/app/(user)/(not-register)/public/types/course.details.types";
 import { IMAGE } from "@/constant/image-config";
 
 export const COURSE_DETAILS_DATA: CourseDetails = {
@@ -101,7 +101,7 @@ export const COURSE_DETAILS_DATA: CourseDetails = {
         trackLabel: "HANDS-ON MASTERY",
         title: "Fiberoptic & Video Laryngoscopy",
         description:
-          'High-fidelity remote simulation focusing on the "Can\'t Intubate, Can\'t Oxygenate" (CICO) protocols.',
+          "High-fidelity remote simulation focusing on the \"Can't Intubate, Can't Oxygenate\" (CICO) protocols.",
         expanded: false,
       },
       {
