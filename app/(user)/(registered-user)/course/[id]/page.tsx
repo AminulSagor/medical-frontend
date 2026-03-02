@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import InPersonView from "./_views/in-person-view";
-import OnlineView from "./_views/online-view";
+import InPersonView from "./views/in-person-view";
+import OnlineView from "./views/online-view";
 import { getCourseDetailsController } from "./course-details-controller";
-import CompletedView from "./_views/completed-view";
+import CompletedView from "./views/completed-view";
 
 export default async function Page({
   params,
