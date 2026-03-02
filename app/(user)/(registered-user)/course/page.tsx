@@ -3,9 +3,14 @@
 "use client";
 
 import CourseStatsCards from "./_components/course-stats-cards";
-import CourseCardsSection from "./_components/CourseCardsSection";
-import CoursesToolbarWithTabs from "./_components/CoursesToolbarWithTabs";
+import CourseCardsSection from "./_components/course-cards-section";
+import CoursesToolbarWithTabs from "./_components/courses-toolbar-with-tabs";
+
+
+import BrowseCoursesSection from "./_components/browse-courses-section";
+
 import { useCourseController } from "./course-controller";
+import CompletedCoursesSection from "./_components/completed-courses-section";
 
 export default function Page() {
   const {
@@ -16,9 +21,13 @@ export default function Page() {
     setSortBy,
     stats,
     activeCourses,
+
+    // ✅ new from controller
+    completedCourses,
+    browseCourses,
   } = useCourseController();
 
-  const hasAny = Boolean(activeCourses.inPerson || activeCourses.online);
+  const hasAnyActive = Boolean(activeCourses.inPerson || activeCourses.online);
 
   return (
     <main className="w-full">
@@ -54,7 +63,7 @@ export default function Page() {
 
       <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-6">
         {toolbarState.activeTab === "active" && (
-          hasAny ? (
+          hasAnyActive ? (
             <CourseCardsSection
               inPerson={activeCourses.inPerson}
               online={activeCourses.online}
@@ -66,8 +75,13 @@ export default function Page() {
           )
         )}
 
-        {toolbarState.activeTab === "completed" && <div>Completed content</div>}
-        {toolbarState.activeTab === "browse" && <div>Browse Courses content</div>}
+        {toolbarState.activeTab === "completed" && (
+          <CompletedCoursesSection items={completedCourses} />
+        )}
+
+        {toolbarState.activeTab === "browse" && (
+          <BrowseCoursesSection model={browseCourses} />
+        )}
       </div>
     </main>
   );

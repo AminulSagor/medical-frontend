@@ -1,10 +1,13 @@
-// app/(user)/(registered-user)/course/course-controller.ts
-
 "use client";
 
 import { useMemo, useState } from "react";
 import type { CourseTabKey, CourseToolbarState } from "@/types/course/course-type";
-import { getActiveCoursesSeed, getCourseStatsSeed } from "@/utils/course/course-data-util";
+import {
+  getActiveCoursesSeed,
+  getCourseStatsSeed,
+  getCompletedCoursesSeed,
+  getBrowseCoursesSeed,
+} from "@/utils/course/course-data-util";
 import { filterActiveCourses } from "@/utils/course/course-search-util";
 
 export function useCourseController() {
@@ -15,13 +18,19 @@ export function useCourseController() {
 
   const stats = useMemo(() => getCourseStatsSeed(), []);
 
-  // raw seed (later replace with API)
-  const rawCourses = useMemo(() => getActiveCoursesSeed(), []);
+  // active seed (later API)
+  const rawActiveCourses = useMemo(() => getActiveCoursesSeed(), []);
 
-  // ✅ filtered view-model
+  // ✅ filtered
   const activeCourses = useMemo(() => {
-    return filterActiveCourses(rawCourses, search);
-  }, [rawCourses, search]);
+    return filterActiveCourses(rawActiveCourses, search);
+  }, [rawActiveCourses, search]);
+
+  // completed seed (later API)
+  const completedCourses = useMemo(() => getCompletedCoursesSeed(), []);
+
+  // browse seed (later API)
+  const browseCourses = useMemo(() => getBrowseCoursesSeed(), []);
 
   const toolbarState: CourseToolbarState = {
     activeTab,
@@ -32,11 +41,17 @@ export function useCourseController() {
 
   return {
     toolbarState,
+
     setActiveTab,
     setSearch,
     setCourseType,
     setSortBy,
+
     stats,
     activeCourses,
+
+    // ✅ new
+    completedCourses,
+    browseCourses,
   };
 }
