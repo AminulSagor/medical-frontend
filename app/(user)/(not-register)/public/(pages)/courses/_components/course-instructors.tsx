@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { CourseDetails } from "@/app/(user)/(not-register)/public/types/course-details.types";
+import { CourseDetails } from "@/app/(user)/(not-register)/public/types/course.details.types";
 import Card from "@/components/cards/card";
 
 export default function CourseInstructors({ data }: { data: CourseDetails }) {

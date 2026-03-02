@@ -1,7 +1,7 @@
 "use client";
 
 import { MapPin, CalendarDays, Clock } from "lucide-react";
-import { CourseDetails } from "@/app/(user)/(not-register)/public/types/course-details.types";
+import { CourseDetails } from "@/app/(user)/(not-register)/public/types/course.details.types";
 import Card from "@/components/cards/card";
 
 function iconOf(key: "location" | "dates" | "time") {
@@ -14,9 +14,7 @@ export default function CourseAboutAndInfo({ data }: { data: CourseDetails }) {
   return (
     <div className="space-y-6">
       <Card shape="soft" className="border border-light-slate/15 shadow-sm">
-        <h2 className="text-2xl font-bold text-black">
-          {data.about.title}
-        </h2>
+        <h2 className="text-2xl font-bold text-black">{data.about.title}</h2>
         <p className="mt-4 text-base text-light-slate">
           {data.about.description}
         </p>
@@ -36,9 +34,7 @@ export default function CourseAboutAndInfo({ data }: { data: CourseDetails }) {
                   <Icon size={18} className="text-primary" />
                 </div>
 
-                <p className="mt-4 text-sm font-bold text-black">
-                  {it.title}
-                </p>
+                <p className="mt-4 text-sm font-bold text-black">{it.title}</p>
 
                 <div className="mt-3 space-y-1 text-sm font-medium text-light-slate">
                   {it.lines.map((l) => (

@@ -3,7 +3,7 @@
 import React from "react";
 import { Check, Users, Info } from "lucide-react";
 import Button from "@/components/buttons/button";
-import { CourseDetails } from "@/app/(user)/(not-register)/public/types/course-details.types";
+import { CourseDetails } from "@/app/(user)/(not-register)/public/types/course.details.types";
 import Card from "@/components/cards/card";
 
 function money(n: number) {

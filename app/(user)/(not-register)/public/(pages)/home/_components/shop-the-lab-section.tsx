@@ -3,8 +3,8 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import ProductCard from "./product-card";
-import { SHOP_THE_LAB_PRODUCTS } from "@/app/(user)/(not-register)/public/data/products.data";
+import ProductCard from "./equipment-card";
+import { SHOP_THE_LAB_PRODUCTS } from "@/app/(user)/(not-register)/public/data/equipment.data";
 
 export default function ShopTheLabSection() {
   const products = useMemo(() => SHOP_THE_LAB_PRODUCTS, []);

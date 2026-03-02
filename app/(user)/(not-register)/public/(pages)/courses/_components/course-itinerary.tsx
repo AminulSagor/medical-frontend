@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { CourseDetails } from "@/app/(user)/(not-register)/public/types/course-details.types";
+import { CourseDetails } from "@/app/(user)/(not-register)/public/types/course.details.types";
 import Card from "@/components/cards/card";
 
 export default function CourseItinerary({ data }: { data: CourseDetails }) {
@@ -12,9 +12,7 @@ export default function CourseItinerary({ data }: { data: CourseDetails }) {
 
   return (
     <section className="mt-10">
-      <h2 className="text-xl font-bold text-black">
-        {data.itinerary.title}
-      </h2>
+      <h2 className="text-xl font-bold text-black">{data.itinerary.title}</h2>
 
       <div className="mt-6 relative">
         <div className="absolute `left-4.5 top-2 bottom-2 w-0.5 bg-primary/40" />

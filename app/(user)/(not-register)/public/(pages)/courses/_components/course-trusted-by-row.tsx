@@ -1,6 +1,6 @@
 "use client";
 
-import { CourseDetails } from "@/app/(user)/(not-register)/public/types/course-details.types";
+import { CourseDetails } from "@/app/(user)/(not-register)/public/types/course.details.types";
 
 export default function CourseTrustedByRow({ data }: { data: CourseDetails }) {
   return (

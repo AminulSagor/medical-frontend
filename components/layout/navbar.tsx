@@ -10,6 +10,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { LogIn, UserPlus } from "lucide-react";
 import { IMAGE } from "@/constant/image-config";
+import CartSidebar from "@/components/cart-sidebar";
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/public/home") return pathname === "/public/home";
@@ -19,6 +20,7 @@ function isActivePath(pathname: string, href: string) {
 export default function Navbar() {
   const pathname = usePathname();
   const [q, setQ] = useState("");
+  const [cartSidebar, setCartSidebar] = useState<boolean>(false);
 
   const links = useMemo(() => NAV_LINKS, []);
 
@@ -27,10 +29,10 @@ export default function Navbar() {
       <div className="mx-auto w-full">
         <div
           className={[
-            "flex items-center gap-6",
+            "flex items-center gap-2 md:gap-6",
             "rounded-full bg-white",
             "shadow-sm",
-            "px-5 py-3",
+            "px-2 md:px-5 py-2 md:py-3",
           ].join(" ")}
         >
           {/* logo */}
@@ -84,6 +86,7 @@ export default function Navbar() {
                 "hidden md:block",
               ].join(" ")}
               aria-label="Cart"
+              onClick={() => setCartSidebar(true)}
             >
               <ShoppingCart size={18} className="text-black" />
               <span
@@ -96,9 +99,13 @@ export default function Navbar() {
                 2
               </span>
             </button>
-
             {/* avatar */}
             <AccountAccessDropdown />
+            {/* cart sidebar */}
+            <CartSidebar
+              open={cartSidebar}
+              onClose={() => setCartSidebar(false)}
+            />
           </div>
         </div>
       </div>
