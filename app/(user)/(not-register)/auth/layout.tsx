@@ -4,7 +4,9 @@ import React from "react";
 const layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="border">
-      <Navbar />
+      <div className="padding pt-4">
+        <Navbar />
+      </div>
       {children}
     </div>
   );
