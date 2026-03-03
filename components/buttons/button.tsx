@@ -6,6 +6,7 @@ interface ButtonProps {
   variant?: ButtonVariant;
   shape?: ButtonShape;
   className?: string;
+  onClick?: () => void;
 }
 
 type ButtonSize = "sm" | "base" | "md" | "lg";
@@ -37,9 +38,11 @@ const Button = ({
   shape = "pill",
   children,
   className = "",
+  onClick,
 }: ButtonProps) => {
   return (
     <button
+      onClick={onClick}
       className={`
         ${sizeClasses[size]}
         ${variantClasses[variant]}
