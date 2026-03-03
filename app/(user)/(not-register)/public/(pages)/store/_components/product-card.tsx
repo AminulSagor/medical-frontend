@@ -3,6 +3,7 @@
 import { Product } from "@/app/(user)/(not-register)/public/types/store.product";
 import Button from "@/components/buttons/button";
 import Image from "next/image";
+import Link from "next/link";
 
 interface Props {
   product: Product;
@@ -26,7 +27,10 @@ export default function ProductCard({ product, onAdd, onNotify }: Props) {
   const isOut = product.stock === "out_of_stock";
 
   return (
-    <div className="rounded-2xl border border-light-slate/10 shadow-sm overflow-hidden">
+    <Link
+      href={"/public/store/product-details/1234"}
+      className="rounded-2xl border border-light-slate/10 shadow-sm overflow-hidden"
+    >
       <div className="relative">
         <div className="relative h-52 w-full bg-light-slate/10 overflow-hidden">
           <Image
@@ -87,6 +91,6 @@ export default function ProductCard({ product, onAdd, onNotify }: Props) {
           )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
