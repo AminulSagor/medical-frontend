@@ -13,7 +13,7 @@ import { IMAGE } from "@/constant/image-config";
 
 export default function HeroSection() {
   return (
-    <section className="relative overflow-hidden padding pt-15">
+    <section className="relative overflow-hidden padding pt-24">
       {/* soft bottom fade */}
       <div className="absolute inset-x-0 bottom-0 h-40" />
 
@@ -51,7 +51,7 @@ export default function HeroSection() {
           {/* RIGHT SIDE */}
           <div className="relative flex justify-end">
             {/* Doctor Image */}
-            <div className="relative h-170 w-140">
+            <div className="relative h-170 w-100 md:w-140">
               <Image
                 src={IMAGE.doctor}
                 alt="Doctor"
