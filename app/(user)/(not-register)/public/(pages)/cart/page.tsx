@@ -71,7 +71,6 @@ export default function CartPage() {
     return items.reduce((sum, it) => sum + it.price * it.qty, 0);
   }, [items]);
 
-  // design-only numbers based on screenshot feel
   const estimatedTax = 15.64;
   const orderTotal = subtotal + estimatedTax;
 
