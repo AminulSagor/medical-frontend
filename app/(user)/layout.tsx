@@ -19,9 +19,11 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     pathname.startsWith("/order-history");
 
   const active: NavKey =
-    pathname.startsWith("/courses")
+    pathname.startsWith("/courses") || pathname.startsWith("/course")
       ? "courses"
-      : pathname.startsWith("/orders")
+      : pathname.startsWith("/orders") ||
+          pathname.startsWith("/order-history") ||
+          pathname.startsWith("/order-details")
         ? "orders"
         : pathname.startsWith("/settings")
           ? "settings"
@@ -39,20 +41,25 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
-  // ✅ Figma style: sidebar touches top, header only on right
   return (
     <div className="grid h-screen grid-cols-[240px_1fr] grid-rows-[auto_1fr] bg-slate-50">
-      {/* LEFT: sidebar spans header + content rows */}
       <aside className="row-span-2 h-screen border-r border-slate-200 bg-white">
-        <AccountSidebarCard active={active} className="h-full" />
+        <AccountSidebarCard
+          active={active}
+          className="h-full"
+          hrefs={{
+            dashboard: "/dashboard",
+            courses: "/course", // ✅ your actual route
+            orders: "/order-history", // ✅ your actual route
+            settings: "/settings",
+          }}
+        />
       </aside>
 
-      {/* RIGHT TOP: header */}
       <div className="sticky top-0 z-50 bg-slate-50/70 backdrop-blur">
         <AuthHeader />
       </div>
 
-      {/* RIGHT: page content scrolls */}
       <main className="min-h-0 overflow-y-auto">
         <div className="mx-auto w-full max-w-[1100px] px-6 py-6">{children}</div>
       </main>
