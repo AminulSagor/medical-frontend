@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { AuthErrors, AuthSignupPayload } from "../types/auth.types";
+import type { AuthErrors, AuthSignupPayload } from "../../auth/types/auth.types";
 import { signupSchema } from "@/schema/auth/signup.schema";
 import { zodErrorToFieldErrors } from "@/schema/zodErrorToFieldErrors";
 

@@ -5,6 +5,9 @@
   --foreground: #0f172a; /* slate-900 */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /*custom colors*/
+  --primary: #32c4f3;
+  --light-slate: #334155;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,4 +26,33 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+@theme inline {
+  /*custom color*/
+  --color-primary: var(--primary);
+  --color-light-slate: var(--light-slate);
+}
+
+/* custom class */
+.padding {
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 0.7rem;
+  padding-right: 0.7rem;
+}
+
+@media (min-width: 768px) {
+  .padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .padding {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
 }
