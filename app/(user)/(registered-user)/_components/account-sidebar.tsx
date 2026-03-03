@@ -57,12 +57,6 @@ function initials(name: string) {
   return (a + b).toUpperCase() || "U";
 }
 
-/**
- * Responsive behavior:
- * - Desktop (md+): normal sidebar (w-[240px]) in-flow, same as before.
- * - Mobile (<md): no blank sidebar space. Show a floating FAB to open a left drawer.
- *   Drawer overlays the page; closing returns to full-width content.
- */
 export default function AccountSidebarCard({
   active = "dashboard",
   onChange,
@@ -77,10 +71,8 @@ export default function AccountSidebarCard({
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
 
-  // Close drawer on route nav item click (mobile)
   const closeDrawer = () => setOpen(false);
 
-  // Prevent body scroll when drawer is open (mobile)
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -191,7 +183,7 @@ export default function AccountSidebarCard({
         <div className="mt-4 h-px bg-slate-200/70" />
       </div>
 
-      {/* Middle: nav (fills) */}
+      {/* Middle: nav */}
       <nav className="flex-1 overflow-auto px-3 py-4">
         <div className="space-y-1">{NAV.map((n) => renderNavItem(n, { mobile }))}</div>
       </nav>
@@ -224,12 +216,18 @@ export default function AccountSidebarCard({
 
   return (
     <>
-      {/* ✅ Desktop sidebar (md+) */}
-      <aside className={cx("hidden h-full w-[240px] shrink-0 box-border md:block", className)}>
+      {/* ✅ Desktop sidebar (md+) — STICKY FIX ONLY */}
+      <aside
+        className={cx(
+          "hidden w-[240px] shrink-0 box-border md:block",
+          "md:sticky md:top-0 md:h-screen",
+          className
+        )}
+      >
         <SidebarInner />
       </aside>
 
-      {/* ✅ Mobile: floating open button (no blank left space) */}
+      {/* ✅ Mobile: floating open button */}
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -252,7 +250,6 @@ export default function AccountSidebarCard({
         )}
         aria-hidden={!open}
       >
-        {/* overlay */}
         <button
           type="button"
           className={cx(
@@ -263,7 +260,6 @@ export default function AccountSidebarCard({
           aria-label="Close menu overlay"
         />
 
-        {/* panel */}
         <div
           className={cx(
             "absolute left-0 top-0 h-full w-[280px] bg-white shadow-xl transition-transform",
@@ -272,7 +268,6 @@ export default function AccountSidebarCard({
           role="dialog"
           aria-modal="true"
         >
-          {/* header row with close */}
           <div className="flex items-center justify-between px-4 pt-4">
             <div className="text-[13px] font-semibold text-slate-900">Menu</div>
             <button
