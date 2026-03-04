@@ -4,17 +4,30 @@ import { useMemo, useState } from "react";
 import type {
   AddSubscriberInput,
   AddSubscriberSelectData,
-} from "../types/add-subscribers-type"
+} from "../types/add-subscribers-type";
 
 import PersonalContactSection from "./sections/personal-contact-section";
 import ClinicalProfileSection from "./sections/clinical-profile-section";
 import SubscriptionSettingsSection from "./sections/subscription-settings-section";
 import { addSubscriberSchema } from "../schema/add-subscribers-schema";
 
-type Props = { selectData: AddSubscriberSelectData };
-
 type Errors = Partial<Record<keyof AddSubscriberInput, string>> & {
   audienceTags?: string;
+};
+
+export type AddSubscriberSuccessPayload = {
+  id?: string;
+  name: string;
+  role: string;
+  statusLabel?: string;
+  initialSource?: string;
+  data: AddSubscriberInput;
+};
+
+type Props = {
+  selectData: AddSubscriberSelectData;
+  onSuccess?: (payload: AddSubscriberSuccessPayload) => void;
+  onError?: (message: string) => void;
 };
 
 const DEFAULT: AddSubscriberInput = {
@@ -32,19 +45,23 @@ const DEFAULT: AddSubscriberInput = {
   initialStatus: "subscribed",
 };
 
-export default function AddSubscriberForm({ selectData }: Props) {
+export default function AddSubscriberForm({
+  selectData,
+  onSuccess,
+  onError,
+}: Props) {
   const [values, setValues] = useState<AddSubscriberInput>(DEFAULT);
   const [errors, setErrors] = useState<Errors>({});
   const [tagDraft, setTagDraft] = useState("");
 
   const recommendedLine = useMemo(
     () => selectData.recommendedTags.join(", "),
-    [selectData.recommendedTags]
+    [selectData.recommendedTags],
   );
 
   const setField = <K extends keyof AddSubscriberInput>(
     key: K,
-    v: AddSubscriberInput[K]
+    v: AddSubscriberInput[K],
   ) => {
     setValues((p) => ({ ...p, [key]: v }));
     setErrors((e) => ({ ...e, [key]: undefined }));
@@ -68,7 +85,7 @@ export default function AddSubscriberForm({ selectData }: Props) {
   const removeTag = (t: string) => {
     setField(
       "audienceTags",
-      values.audienceTags.filter((x) => x !== t)
+      values.audienceTags.filter((x) => x !== t),
     );
   };
 
@@ -89,18 +106,42 @@ export default function AddSubscriberForm({ selectData }: Props) {
     return { ok: false as const };
   };
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const v = validate();
     if (!v.ok) return;
 
-    // ✅ dummy submit
-    console.log("ADD SUBSCRIBER", v.data);
+    try {
+      // ✅ dummy submit (replace with real API later)
+      console.log("ADD SUBSCRIBER", v.data);
+
+      // ✅ open dialog via controller
+      const fullName = `${v.data.firstName} ${v.data.lastName}`.trim();
+
+      onSuccess?.({
+        name: fullName || "—",
+        role: v.data.clinicalRole || "—",
+        statusLabel:
+          v.data.initialStatus === "subscribed"
+            ? "Active Subscriber"
+            : "Unsubscribed",
+        initialSource: v.data.source || "Manual Entry",
+        data: v.data,
+      });
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to add subscriber";
+      onError?.(msg);
+    }
   };
 
   return (
     <form id="add-subscriber-form" onSubmit={onSubmit} className="space-y-5">
-      <PersonalContactSection values={values} errors={errors} setField={setField} />
+      <PersonalContactSection
+        values={values}
+        errors={errors}
+        setField={setField}
+      />
 
       <ClinicalProfileSection
         values={values}

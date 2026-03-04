@@ -1,6 +1,6 @@
 "use client";
 
-import type { CourseScheduleItem } from "@/types/";
+import type { CourseScheduleItem } from "@/types/course/course-details-type";
 import { Check } from "lucide-react";
 
 import {

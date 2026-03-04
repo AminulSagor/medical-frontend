@@ -1,7 +1,5 @@
-import AddSubscriberForm from "./_components/add-subscriber-form";
-import AddSubscriberHeader from "./_components/add-subscriber-header";
+import AddSubscriberController from "@/app/(admin)/newsletters/add-subscribers/_components/add-subscriber-controller";
 import { AddSubscriberSelectData } from "./types/add-subscribers-type";
-
 
 export const metadata = { title: "Add Subscriber" };
 
@@ -19,10 +17,5 @@ export default async function Page() {
     recommendedTags: ["Trauma-Informed", "Airway Management", "ER-Staff"],
   };
 
-  return (
-    <div className="space-y-6">
-      <AddSubscriberHeader />
-      <AddSubscriberForm selectData={selectData} />
-    </div>
-  );
+  return <AddSubscriberController selectData={selectData} />;
 }

@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { ArrowLeft, UserPlus } from "lucide-react";
 
-export default function AddSubscriberHeader() {
+export default function AddSubscriberHeader({
+  onAddClick,
+  onDiscard,
+}: {
+  onAddClick?: () => void;
+  onDiscard?: () => void;
+}) {
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="flex items-start gap-3">
@@ -26,6 +32,7 @@ export default function AddSubscriberHeader() {
       <div className="flex items-center gap-3">
         <button
           type="button"
+          onClick={onDiscard}
           className="h-9 rounded-xl bg-white px-4 text-sm font-semibold text-slate-700 ring-1 ring-slate-200/60 hover:bg-slate-50"
         >
           Discard
@@ -34,6 +41,7 @@ export default function AddSubscriberHeader() {
         <button
           type="submit"
           form="add-subscriber-form"
+          onClick={() => onAddClick?.()}
           className="inline-flex h-9 items-center gap-2 rounded-xl bg-teal-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-teal-700"
         >
           <UserPlus size={16} />

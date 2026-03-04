@@ -1,6 +1,7 @@
 "use client";
 
 import { Download, Filter, Search, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 function cn(...p: Array<string | false | undefined>) {
   return p.filter(Boolean).join(" ");
@@ -15,6 +16,7 @@ export default function SubscribersToolbar({
   onChange: (v: string) => void;
   totalLabel: string;
 }) {
+  const router = useRouter();
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
       {/* big search */}
@@ -50,6 +52,7 @@ export default function SubscribersToolbar({
         <button
           type="button"
           className="inline-flex h-12 items-center gap-2 rounded-2xl bg-teal-500 px-5 text-sm font-bold text-white shadow-sm hover:bg-teal-600"
+          onClick={() => router.push("/newsletters/add-subscribers")}
         >
           <UserPlus size={16} />
           Add Subscriber
