@@ -42,21 +42,23 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* ✅ Desktop grid only on md+ */}
-      <div className="grid min-h-screen grid-rows-[auto_1fr] md:grid-cols-[240px_1fr]">
-        {/* Sidebar: only exists on md+ (prevents blank column on mobile) */}
-        <aside className="hidden md:block md:row-span-2 md:h-screen md:border-r md:border-slate-200 md:bg-white">
-          <AccountSidebarCard
-            active={active}
-            className="h-full"
-            hrefs={{
-              dashboard: "/dashboard",
-              courses: "/course",
-              orders: "/order-history",
-              settings: "/settings",
-            }}
-          />
+    // ✅ important: keep everything in a fixed-height viewport, and only main scrolls
+    <div className="h-screen overflow-hidden bg-slate-50">
+      <div className="grid h-full grid-rows-[auto_1fr] md:grid-cols-[240px_1fr]">
+        {/* ✅ Sidebar column: sticky + full height */}
+        <aside className="hidden md:block md:row-span-2 md:h-full md:border-r md:border-slate-200 md:bg-white">
+          <div className="sticky top-0 h-screen">
+            <AccountSidebarCard
+              active={active}
+              className="h-screen"
+              hrefs={{
+                dashboard: "/dashboard",
+                courses: "/course",
+                orders: "/order-history",
+                settings: "/settings",
+              }}
+            />
+          </div>
         </aside>
 
         {/* Top navbar */}
@@ -64,13 +66,13 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           <Navbar />
         </div>
 
-        {/* Main */}
+        {/* ✅ Only main scrolls */}
         <main className="min-h-0 overflow-y-auto">
           <div className="mx-auto w-full max-w-[1100px] px-6 py-6">
-            {/* ✅ Mobile drawer button + drawer lives inside AccountSidebarCard already */}
+            {/* ✅ Mobile drawer trigger */}
             <AccountSidebarCard
               active={active}
-              className="md:hidden" // ✅ render only the mobile trigger/drawer (no desktop aside)
+              className="md:hidden"
               hrefs={{
                 dashboard: "/dashboard",
                 courses: "/course",

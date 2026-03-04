@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import type { BrowseCourseCardItem } from "@/types/course/course-type";
+import { useRouter } from "next/navigation";
 
 export default function BrowseCourseCard({
   badge,
@@ -13,6 +14,7 @@ export default function BrowseCourseCard({
   ctaLabel,
   onCta,
 }: BrowseCourseCardItem) {
+  const router = useRouter();
   return (
     <div
       className={[
@@ -49,7 +51,9 @@ export default function BrowseCourseCard({
 
         <button
           type="button"
-          onClick={onCta}
+          onClick={() =>
+                    router.push(`/course/online`)
+                  }
           className={[
             "mt-3 h-9 w-full rounded-md bg-sky-600",
             "text-[11px] font-semibold text-white",

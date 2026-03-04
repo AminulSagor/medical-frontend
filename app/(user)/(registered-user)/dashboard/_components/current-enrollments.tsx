@@ -35,7 +35,7 @@ export default function CurrentEnrollments(props: { items?: Enrollment[] }) {
                 dateTime: "March 15, 2024 • 09:00 AM",
                 location: "Sim Lab B, Main Campus",
                 ctaLabel: "View Syllabus",
-                ctaHref: "#",
+                ctaHref: "course/inperson",
                 ctaIcon: "syllabus",
             },
             {
@@ -47,7 +47,7 @@ export default function CurrentEnrollments(props: { items?: Enrollment[] }) {
                 room: "Virtual Training Room 4",
                 access: "Self-paced Access",
                 ctaLabel: "Enter Workshop",
-                ctaHref: "#",
+                ctaHref: "course/online",
                 ctaIcon: "enter",
             },
         ];

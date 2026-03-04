@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Check, Eye } from "lucide-react";
 import type { CompletedCourseCard as CompletedCourseCardType } from "@/types/course/course-type";
+import { useRouter } from "next/navigation";
 
 export default function CompletedCourseCard({
   cmeCreditsLabel,
@@ -11,6 +12,7 @@ export default function CompletedCourseCard({
   imageSrc,
   onViewDetails,
 }: CompletedCourseCardType) {
+  const router = useRouter();
   return (
     <div
       className={[
@@ -45,7 +47,9 @@ export default function CompletedCourseCard({
 
         <button
           type="button"
-          onClick={onViewDetails}
+          onClick={() =>
+                    router.push(`/course/completed`)
+                  }
           className={[
             "mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-xl",
             "border border-sky-500 bg-white",

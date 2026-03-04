@@ -10,4 +10,5 @@ export const IMAGE = {
   course_details_cover: "/photos/course_details_cover.png",
   instructor_1: "/photos/instructor_1.png",
   hand_gloves: "/photos/store_product.png",
+  child: "/photos/child.png",
 } as const;
