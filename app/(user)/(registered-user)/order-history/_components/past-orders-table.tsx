@@ -195,7 +195,7 @@ export default function PastOrdersTable(props: { items?: PastOrder[] }) {
                 <div className="text-[11px] text-slate-500">Showing 1 to 4 of 25 orders</div>
 
                 <div className="flex items-center gap-2">
-                    <button className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-slate-500 hover:bg-slate-50">
+                    <button className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-slate-500 hover:bg-slate-100">
                         <ChevronLeft className="h-4 w-4" /> Previous
                     </button>
 
@@ -205,7 +205,7 @@ export default function PastOrdersTable(props: { items?: PastOrder[] }) {
                     <span className="px-1 text-slate-400">…</span>
                     <PagePill>7</PagePill>
 
-                    <button className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-slate-500 hover:bg-slate-50">
+                    <button className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-slate-500 hover:bg-slate-100">
                         Next <ChevronRight className="h-4 w-4" />
                     </button>
                 </div>
@@ -234,7 +234,7 @@ function DropdownButton({
     return (
         <button
             type="button"
-            className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-100"
         >
             {leftIcon ? <span className="text-slate-400">{leftIcon}</span> : null}
             <span>{label}</span>
@@ -275,7 +275,7 @@ function ActionIconButton({
         <button
             type="button"
             aria-label={label}
-            className="grid h-9 w-9 place-items-center rounded-lg hover:bg-slate-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100"
+            className="grid h-9 w-9 place-items-center rounded-lg hover:bg-slate-100 focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100"
         >
             {children}
         </button>
@@ -296,7 +296,7 @@ function PagePill({
                 "grid h-8 w-8 place-items-center rounded-lg text-[11px] font-semibold",
                 active
                     ? "bg-sky-500 text-white shadow-[0_10px_20px_rgba(2,132,199,0.20)]"
-                    : "text-slate-600 hover:bg-slate-50",
+                    : "text-slate-600 hover:bg-slate-100",
             ].join(" ")}
         >
             {children}

@@ -70,7 +70,7 @@ export default function AuthHeader() {
             <button
               type="button"
               aria-label="Cart"
-              className="relative grid h-9 w-9 place-items-center rounded-full bg-white hover:bg-slate-50"
+              className="relative grid h-9 w-9 place-items-center rounded-full bg-white hover:bg-slate-100"
             >
               <Image
                 src="/icons/cart_button.png"

@@ -63,7 +63,7 @@ export default function AccountSidebarCard({
         const base = cx(
             "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition",
             "focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100",
-            isActive ? "bg-sky-50 text-sky-700" : "text-slate-700 hover:bg-slate-50"
+            isActive ? "bg-sky-50 text-sky-700" : "text-slate-700 hover:bg-slate-100"
         );
 
         const leftBar = cx(
@@ -174,7 +174,7 @@ export default function AccountSidebarCard({
                             className={cx(
                                 "flex w-full items-center justify-center gap-3 rounded-xl px-3 py-2.5 transition",
                                 "border border-slate-200 bg-white",
-                                "hover:bg-slate-50 hover:border-slate-300",
+                                "hover:bg-slate-100 hover:border-slate-300",
                                 "focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100"
                             )}
                         >

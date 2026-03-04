@@ -78,7 +78,7 @@ export default function ShipmentItemsCard({
                                     "h-9 rounded-xl px-3 text-xs font-semibold ring-1 transition",
                                     page === 1
                                         ? "cursor-not-allowed bg-slate-50 text-slate-300 ring-slate-200"
-                                        : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50",
+                                        : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-100",
                                 ].join(" ")}
                             >
                                 Prev
@@ -96,7 +96,7 @@ export default function ShipmentItemsCard({
                                             "grid h-9 w-9 place-items-center rounded-xl text-xs font-semibold transition ring-1",
                                             active
                                                 ? "bg-sky-50 text-sky-700 ring-sky-100"
-                                                : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50",
+                                                : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-100",
                                         ].join(" ")}
                                     >
                                         {p}
@@ -112,7 +112,7 @@ export default function ShipmentItemsCard({
                                     "h-9 rounded-xl px-3 text-xs font-semibold ring-1 transition",
                                     page === totalPages
                                         ? "cursor-not-allowed bg-slate-50 text-slate-300 ring-slate-200"
-                                        : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50",
+                                        : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-100",
                                 ].join(" ")}
                             >
                                 Next

@@ -152,7 +152,7 @@ export default function CourseCardsSection({ inPerson, online }: Props) {
                                 className={[
                                     "h-11 flex-1 rounded-xl border border-slate-200 bg-white px-4",
                                     "text-sm font-medium text-slate-700",
-                                    "hover:bg-slate-50",
+                                    "hover:bg-slate-100",
                                 ].join(" ")}
                             >
                                 Add to Calendar
