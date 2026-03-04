@@ -3,8 +3,8 @@ import React from "react";
 
 const layout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="border">
-      <div className="padding pt-4">
+    <div className="">
+      <div className="max-w-6xl mx-auto mt-6">
         <Navbar />
       </div>
       {children}

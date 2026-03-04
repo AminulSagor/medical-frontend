@@ -6,7 +6,11 @@ import Navbar from "@/components/layout/navbar";
 
 type NavKey = "dashboard" | "courses" | "orders" | "settings";
 
-export default function UserLayout({ children }: { children: React.ReactNode }) {
+export default function UserLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
 
   const useSidebar =
@@ -22,8 +26,8 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     pathname.startsWith("/courses") || pathname.startsWith("/course")
       ? "courses"
       : pathname.startsWith("/orders") ||
-        pathname.startsWith("/order-history") ||
-        pathname.startsWith("/order-details")
+          pathname.startsWith("/order-history") ||
+          pathname.startsWith("/order-details")
         ? "orders"
         : pathname.startsWith("/settings")
           ? "settings"
@@ -63,7 +67,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
         {/* Top navbar */}
         <div className="sticky top-0 z-50 bg-slate-50/70 backdrop-blur w-full">
-          <div className="mx-auto max-w-[1200px]">
+          <div className="mx-auto max-w-[1200px] mt-4">
             <Navbar />
           </div>
         </div>
