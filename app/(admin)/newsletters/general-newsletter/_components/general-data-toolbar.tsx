@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useRef, useState } from "react";
 import { Calendar, ChevronDown, Funnel, Search } from "lucide-react";
+import FilterOptionsPopover from "./FilterOptionsPopover"; // ✅ same folder (adjust if needed)
 
 type Props = {
   title: string;
@@ -20,13 +21,28 @@ export default function GeneralDataToolbar({
   actionLabel,
   dateRangeLabel,
 }: Props) {
+  const [openFilter, setOpenFilter] = useState(false);
+  const closeTimer = useRef<number | null>(null);
+
+  const openNow = () => {
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    setOpenFilter(true);
+  };
+
+  const closeSoon = () => {
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => setOpenFilter(false), 120);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <h3 className="text-[16px] font-semibold text-slate-800">
           {title}
           {countLabel ? (
-            <span className="ml-1 font-medium text-slate-400">{countLabel}</span>
+            <span className="ml-1 font-medium text-slate-400">
+              {countLabel}
+            </span>
           ) : null}
         </h3>
 
@@ -68,14 +84,28 @@ export default function GeneralDataToolbar({
           />
         </div>
 
-        <div className="md:ml-auto">
-          <button
-            type="button"
-            className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-600 shadow-sm"
+        <div className="relative md:ml-auto">
+          <div
+            className="relative"
+            onMouseEnter={openNow}
+            onMouseLeave={closeSoon}
           >
-            <Funnel size={16} className="text-slate-500" />
-            {actionLabel}
-          </button>
+            <button
+              type="button"
+              className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-600 shadow-sm"
+            >
+              <Funnel size={16} className="text-slate-500" />
+              {actionLabel}
+            </button>
+
+            {openFilter ? (
+              <div className="absolute right-0 top-[calc(100%+12px)] z-50">
+                <FilterOptionsPopover
+                  onRequestClose={() => setOpenFilter(false)}
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
