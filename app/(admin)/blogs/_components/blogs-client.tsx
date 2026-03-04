@@ -17,6 +17,8 @@ import {
     CalendarDays,
     BarChart3,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+
 
 type TabKey = "all" | "published" | "drafts" | "scheduled";
 
@@ -123,14 +125,17 @@ function PrimaryButton({
     children,
     leftIcon,
     className,
+    onClick,
 }: {
     children: React.ReactNode;
     leftIcon?: React.ReactNode;
     className?: string;
+    onClick?: () => void;
 }) {
     return (
         <button
             type="button"
+            onClick={onClick}
             className={cx(
                 "inline-flex items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-4 py-2 text-xs font-semibold text-white",
                 "hover:bg-[var(--primary-hover)] transition",
@@ -197,7 +202,7 @@ export default function BlogsClient() {
     const [tab, setTab] = useState<TabKey>("all");
     const [q, setQ] = useState("");
     const [page, setPage] = useState(1);
-
+    const router = useRouter();
     const pageSize = 3;
 
     const filtered = useMemo(() => {
@@ -232,16 +237,18 @@ export default function BlogsClient() {
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <h1 className="text-lg font-extrabold text-slate-900">
-                        Blog Management
-                    </h1>
+                    <h1 className="text-lg font-extrabold text-slate-900">Blog Management</h1>
                     <p className="mt-1 text-xs text-slate-500">
                         Create and manage clinical articles and updates for the institute.
                     </p>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <PrimaryButton leftIcon={<Plus size={16} />}>
+                    <PrimaryButton
+                        leftIcon={<Plus size={16} />}
+                        className="cursor-pointer"
+                        onClick={() => router.push("/blogs/create")}
+                    >
                         Create New Post
                     </PrimaryButton>
                     <GhostButton leftIcon={<Download size={16} />}>Export</GhostButton>
@@ -251,12 +258,7 @@ export default function BlogsClient() {
             {/* Analytics overview */}
             <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                    <BarChart3
-                        size={18}
-                        className="text-[var(--primary)]"
-                        strokeWidth={2.2}
-                    />
-
+                    <BarChart3 size={18} className="text-[var(--primary)]" strokeWidth={2.2} />
                     <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                         Analytics Overview
                     </span>
@@ -308,25 +310,20 @@ export default function BlogsClient() {
                     <TabButton active={tab === "all"} onClick={() => setTab("all")}>
                         All Posts
                     </TabButton>
-                    <TabButton
-                        active={tab === "published"}
-                        onClick={() => setTab("published")}
-                    >
+                    <TabButton active={tab === "published"} onClick={() => setTab("published")}>
                         Published
                     </TabButton>
                     <TabButton active={tab === "drafts"} onClick={() => setTab("drafts")}>
                         Drafts
                     </TabButton>
-                    <TabButton
-                        active={tab === "scheduled"}
-                        onClick={() => setTab("scheduled")}
-                    >
+                    <TabButton active={tab === "scheduled"} onClick={() => setTab("scheduled")}>
                         Scheduled
                     </TabButton>
 
                     <div className="ml-auto">
                         <button
                             type="button"
+                            onClick={() => router.push("/blogs/publication-calendar")}
                             className="inline-flex items-center gap-2 rounded-md border border-cyan-100 bg-[var(--primary-50)] px-3 py-2 text-xs font-semibold text-[var(--primary-hover)] hover:bg-white transition"
                         >
                             <CalendarDays size={16} />
@@ -376,21 +373,12 @@ export default function BlogsClient() {
                                     <td className="pl-5 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="relative h-10 w-14 overflow-hidden rounded-lg bg-slate-100 ring-1 ring-slate-200">
-                                                <Image
-                                                    src={r.thumbSrc}
-                                                    alt={r.title}
-                                                    fill
-                                                    className="object-cover"
-                                                />
+                                                <Image src={r.thumbSrc} alt={r.title} fill className="object-cover" />
                                             </div>
 
                                             <div className="min-w-0">
-                                                <p className="truncate text-sm font-semibold text-slate-900">
-                                                    {r.title}
-                                                </p>
-                                                <p className="truncate text-xs text-slate-500">
-                                                    {r.author}
-                                                </p>
+                                                <p className="truncate text-sm font-semibold text-slate-900">{r.title}</p>
+                                                <p className="truncate text-xs text-slate-500">{r.author}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -436,19 +424,13 @@ export default function BlogsClient() {
                     <p className="text-xs text-slate-500">
                         Showing{" "}
                         <span className="font-semibold text-slate-700">
-                            {filtered.length === 0
-                                ? 0
-                                : (safePage - 1) * pageSize + 1}
+                            {filtered.length === 0 ? 0 : (safePage - 1) * pageSize + 1}
                         </span>{" "}
                         to{" "}
                         <span className="font-semibold text-slate-700">
                             {Math.min(safePage * pageSize, filtered.length)}
                         </span>{" "}
-                        of{" "}
-                        <span className="font-semibold text-slate-700">
-                            {filtered.length}
-                        </span>{" "}
-                        articles
+                        of <span className="font-semibold text-slate-700">{filtered.length}</span> articles
                     </p>
 
                     <div className="flex items-center justify-end gap-1">
@@ -457,19 +439,12 @@ export default function BlogsClient() {
                         </PageBtn>
 
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                            <PageBtn
-                                key={n}
-                                active={n === safePage}
-                                onClick={() => setPage(n)}
-                            >
+                            <PageBtn key={n} active={n === safePage} onClick={() => setPage(n)}>
                                 {n}
                             </PageBtn>
                         ))}
 
-                        <PageBtn
-                            disabled={safePage >= totalPages}
-                            onClick={() => setPage(safePage + 1)}
-                        >
+                        <PageBtn disabled={safePage >= totalPages} onClick={() => setPage(safePage + 1)}>
                             ›
                         </PageBtn>
                     </div>
