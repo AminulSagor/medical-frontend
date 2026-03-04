@@ -66,7 +66,7 @@ export default function OrderDetailsHeader({
                     <button
                         type="button"
                         onClick={onDownloadInvoice}
-                        className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-800 shadow-sm hover:bg-slate-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-800 shadow-sm hover:bg-slate-100 focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100"
                     >
                         <Download className="h-4 w-4 text-slate-500" />
                         Download Invoice
