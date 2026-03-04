@@ -8,11 +8,9 @@
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-<<<<<<< HEAD
   /*custom colors*/
   --primary: #32c4f3;
   --light-slate: #334155;
-=======
 
   /* ✅ THEME (put here, not in dark block) */
   --primary: #22c3ee;
@@ -21,7 +19,6 @@
   /* hover */
   --primary-50: #e6f8ff;
   /* light bg */
->>>>>>> 7c2284fc2e0b685b635b7d16cefe796c97e2c0cc
 }
 
 @media (prefers-color-scheme: dark) {
@@ -51,7 +48,6 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-<<<<<<< HEAD
 @theme inline {
   /*custom color*/
   --color-primary: var(--primary);
@@ -80,7 +76,6 @@ body {
     padding-right: 1.25rem;
   }
 }
-=======
 button,
 a,
 [role="button"] {
@@ -103,4 +98,3 @@ h2 {
 h3 {
   font-weight: 700;
 }
->>>>>>> 7c2284fc2e0b685b635b7d16cefe796c97e2c0cc
