@@ -9,7 +9,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const pathname = usePathname();
     const search = useSearchParams();
 
-    const modalOpen = search.get("notes") === "1";
+    const notesOpen = search.get("notes") === "1";
+    const calendarOpen = search.get("calendar") === "1";
 
     const hideSidebar = useMemo(() => {
         const rules: Array<(p: string) => boolean> = [
@@ -19,10 +20,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             (p) => p.startsWith("/analytics/most-popular-courses"),
             (p) => p.startsWith("/courses/create"),
             (p) => p.startsWith("/products/add"),
+            (p) => p.startsWith("/blogs/create"),
+            (p) => p.startsWith("/products/edit"),
+            (p) => /^\/products\/edit\/[^/]+$/.test(p),
+            (p) => p.startsWith("/blogs/publication-calendar"),
+            (p) => /^\/products\/[^/]+$/.test(p),
+            (p) => p.startsWith("/products/edit"),
         ];
 
-        return modalOpen || rules.some((fn) => fn(pathname));
-    }, [pathname, modalOpen]);
+        return notesOpen || calendarOpen || rules.some((fn) => fn(pathname));
+    }, [pathname, notesOpen, calendarOpen]);
 
     return (
         <div className="h-screen overflow-hidden bg-[var(--background)]">

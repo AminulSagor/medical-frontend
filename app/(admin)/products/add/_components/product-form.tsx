@@ -11,6 +11,12 @@ import {
     ExternalLink,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import ProductPublishedModal from "./product-published-modal";
+import ProductUpdatedModal from "./product-updated-modal";
+
+
+type BulkTier = { id: string; qty: number | ""; price: number | "" };
+
 
 function cx(...parts: Array<string | false | null | undefined>) {
     return parts.filter(Boolean).join(" ");
@@ -28,11 +34,12 @@ function LeftPanel({
     return (
         <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    {title}
-                </p>
+                {/* change ONLY this line */}
+                <h2 className="text-base font-bold text-slate-900">{title}</h2>
+
                 {right}
             </div>
+
             <div className="px-5 py-5">{children}</div>
         </section>
     );
@@ -67,12 +74,14 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 
 function Input({
+    id,
     value,
     onChange,
     placeholder,
     className,
     type = "text",
 }: {
+    id?: string;
     value: string;
     onChange: (v: string) => void;
     placeholder?: string;
@@ -81,6 +90,7 @@ function Input({
 }) {
     return (
         <input
+            id={id}
             type={type}
             value={value}
             onChange={(e) => onChange(e.target.value)}
@@ -221,25 +231,51 @@ function uid(prefix = "id") {
     return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
-export default function AddProductForm() {
+interface ProductFormProps {
+    mode: "add" | "edit";
+    initialData?: any;
+}
+
+
+
+export default function ProductForm({
+    mode,
+    initialData,
+}: ProductFormProps) {
     const router = useRouter();
-
+    const [publishedOpen, setPublishedOpen] = useState(false);
     // General info
-    const [productName, setProductName] = useState("");
-    const [clinicalDescription, setClinicalDescription] = useState("");
+    const [productName, setProductName] = useState(
+        initialData?.productName ?? ""
+    );
+    const [clinicalDescription, setClinicalDescription] = useState(
+        initialData?.clinicalDescription ?? ""
+    );
 
+    const [actualPrice, setActualPrice] = useState(
+        initialData?.actualPrice ?? ""
+    );
+
+    const [offerPrice, setOfferPrice] = useState(
+        initialData?.offerPrice ?? ""
+    );
+
+    const [sku, setSku] = useState(
+        initialData?.sku ?? ""
+    );
+
+    const [stockQty, setStockQty] = useState<number>(
+        Number(initialData?.stockQty ?? 0)
+    );
     // Media placeholders only (no assumptions)
     const thumbs = useMemo(() => Array.from({ length: 4 }), []);
-
     // Organization
     const [statusLive, setStatusLive] = useState(true);
     const [badgeProfessional, setBadgeProfessional] = useState(true);
     const [badgeWorkshop, setBadgeWorkshop] = useState(true);
     const [badgeNewArrival, setBadgeNewArrival] = useState(false);
-
     const [category, setCategory] = useState("Airway Management");
     const [categoryDraft, setCategoryDraft] = useState("");
-
     const [tags, setTags] = useState("");
     const tagPills = useMemo(
         () =>
@@ -253,9 +289,7 @@ export default function AddProductForm() {
 
     // Relationships
     const [fbSearch, setFbSearch] = useState("");
-    const [bundleSearch, setBundleSearch] = useState("");
     const [fbItems, setFbItems] = useState<string[]>(["Luer Lock Syringe 20ml"]);
-    const [bundleItems, setBundleItems] = useState<string[]>(["Airway Master Kit v2"]);
 
     // Benefits
     const [benefits, setBenefits] = useState<Benefit[]>([
@@ -263,23 +297,33 @@ export default function AddProductForm() {
     ]);
 
     // Specs
-    const [specs, setSpecs] = useState<Spec[]>([
-        { id: uid("spec"), name: "Max Intracuff Pressure", value: "60 cm H2O" },
-        { id: uid("spec"), name: "Patient Weight Range", value: "30kg - 50kg (Size 3)" },
-    ]);
+    const [specs, setSpecs] = useState<Spec[]>([]);
     const [specNameDraft, setSpecNameDraft] = useState("");
     const [specValueDraft, setSpecValueDraft] = useState("");
 
     // Pricing & inventory
-    const [actualPrice, setActualPrice] = useState("");
-    const [offerPrice, setOfferPrice] = useState("");
     const [bulkQty, setBulkQty] = useState("");
     const [bulkPrice, setBulkPrice] = useState("");
-    const [sku, setSku] = useState("");
     const [barcode, setBarcode] = useState("");
-    const [stockQty, setStockQty] = useState(0);
     const [lowStockAlert, setLowStockAlert] = useState("");
     const [backorder, setBackorder] = useState(false);
+
+
+    const [bulkTiers, setBulkTiers] = useState<BulkTier[]>([
+        { id: uid("tier"), qty: "", price: "" },
+    ]);
+
+    function addTier() {
+        setBulkTiers((p) => [...p, { id: uid("tier"), qty: "", price: "" }]);
+    }
+
+    function removeTier(id: string) {
+        setBulkTiers((p) => (p.length <= 1 ? p : p.filter((x) => x.id !== id)));
+    }
+
+    function updateTier(id: string, patch: Partial<BulkTier>) {
+        setBulkTiers((p) => p.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+    }
 
     function addBenefit() {
         setBenefits((p) => [
@@ -312,18 +356,22 @@ export default function AddProductForm() {
                     </button>
 
                     <div>
-                        <h1 className="text-lg font-bold text-slate-900">Add New Product</h1>
-                        <p className="text-xs text-slate-500">
-                            Texas Airway Institute · Clinical Catalog Manager
-                        </p>
+                        <div>
+                            <h1 className="text-lg font-bold text-slate-900">
+                                {mode === "edit" ? "Edit Product" : "Add New Product"}
+                            </h1>
+                            <p className="text-xs text-slate-500">
+                                Texas Airway Institute · Clinical Catalog Manager
+                            </p>
+                        </div>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                     <GhostButton onClick={() => router.back()}>Discard</GhostButton>
-                    <PrimaryButton>
+                    <PrimaryButton onClick={() => setPublishedOpen(true)}>
                         <span className="inline-flex items-center gap-2">
-                            Publish Product
+                            {mode === "edit" ? "Save Changes" : "Publish Product"}
                             <ExternalLink size={16} />
                         </span>
                     </PrimaryButton>
@@ -499,42 +547,6 @@ export default function AddProductForm() {
                                     ))}
                                 </div>
                             </div>
-
-                            <div>
-                                <Label>Bundle Upsells (Complete Setup)</Label>
-                                <div className="relative w-full">
-                                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                                        🔍
-                                    </span>
-                                    <Input
-                                        value={bundleSearch}
-                                        onChange={setBundleSearch}
-                                        placeholder="Search bundles..."
-                                        className="pl-9"
-                                    />
-                                </div>
-
-                                <div className="mt-3 space-y-2">
-                                    {bundleItems.map((x, i) => (
-                                        <div
-                                            key={`${x}_${i}`}
-                                            className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2"
-                                        >
-                                            <p className="text-sm text-slate-800">{x}</p>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setBundleItems((p) => p.filter((_, idx) => idx !== i))
-                                                }
-                                                className="grid h-8 w-8 place-items-center rounded-md text-slate-500 hover:bg-slate-100 transition"
-                                                aria-label="Remove"
-                                            >
-                                                <X size={16} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
                         </div>
                     </LeftPanel>
                 </div>
@@ -664,7 +676,12 @@ export default function AddProductForm() {
                         right={
                             <button
                                 type="button"
-                                onClick={addSpec}
+                                onClick={() => {
+                                    // ✅ do NOT add immediately
+                                    // just focus the first draft input to match the screenshot flow
+                                    const el = document.getElementById("spec-name-draft");
+                                    if (el instanceof HTMLInputElement) el.focus();
+                                }}
                                 className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--primary)] hover:opacity-80 transition"
                             >
                                 <Plus size={16} />
@@ -672,25 +689,28 @@ export default function AddProductForm() {
                             </button>
                         }
                     >
-                        <div className="overflow-hidden rounded-lg border border-slate-200">
-                            <div className="grid grid-cols-[1fr,1fr,44px] bg-slate-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                            {/* table header */}
+                            <div className="grid grid-cols-[1fr_1fr_44px] bg-slate-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                                 <div>Spec Name</div>
                                 <div>Value / Unit</div>
                                 <div />
                             </div>
 
                             <div className="divide-y divide-slate-200">
+                                {/* existing rows */}
                                 {specs.map((s) => (
                                     <div
                                         key={s.id}
-                                        className="grid grid-cols-[1fr,1fr,44px] items-center px-4 py-3"
+                                        className="grid grid-cols-[1fr_1fr_44px] items-center px-4 py-4"
                                     >
-                                        <p className="text-sm text-slate-900">{s.name}</p>
-                                        <p className="text-sm text-slate-500">{s.value}</p>
+                                        <p className="text-sm font-medium text-slate-900">{s.name}</p>
+                                        <p className="text-sm text-slate-600">{s.value}</p>
+
                                         <button
                                             type="button"
                                             onClick={() => setSpecs((p) => p.filter((x) => x.id !== s.id))}
-                                            className="grid h-9 w-9 place-items-center rounded-md text-slate-400 hover:bg-slate-100 transition"
+                                            className="grid h-9 w-9 place-items-center rounded-md text-slate-300 hover:bg-slate-50 hover:text-slate-600 transition"
                                             aria-label="Delete spec"
                                         >
                                             <Trash2 size={16} />
@@ -698,8 +718,10 @@ export default function AddProductForm() {
                                     </div>
                                 ))}
 
-                                <div className="grid grid-cols-[1fr,1fr,44px] items-center gap-3 px-4 py-4">
+                                {/* add row (matches your 2nd screenshot: inputs + ✅ + ✖) */}
+                                <div className="grid grid-cols-[1fr_1fr_88px] items-center gap-3 px-4 py-4">
                                     <Input
+                                        id="spec-name-draft"
                                         value={specNameDraft}
                                         onChange={setSpecNameDraft}
                                         placeholder="e.g., Material"
@@ -709,13 +731,35 @@ export default function AddProductForm() {
                                         onChange={setSpecValueDraft}
                                         placeholder="e.g., medical-grade silicone"
                                     />
-                                    <IconBtn
-                                        label="Add spec"
-                                        onClick={addSpec}
-                                        className="border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary-50)]"
-                                    >
-                                        <Plus size={18} />
-                                    </IconBtn>
+
+                                    <div className="flex items-center justify-end gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={addSpec}
+                                            aria-label="Add spec"
+                                            disabled={!specNameDraft.trim() || !specValueDraft.trim()}
+                                            className={cx(
+                                                "grid h-9 w-9 place-items-center rounded-md border transition",
+                                                !specNameDraft.trim() || !specValueDraft.trim()
+                                                    ? "border-slate-200 text-slate-300 cursor-not-allowed"
+                                                    : "border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary-50)]"
+                                            )}
+                                        >
+                                            <Check size={18} />
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSpecNameDraft("");
+                                                setSpecValueDraft("");
+                                            }}
+                                            aria-label="Clear draft"
+                                            className="grid h-9 w-9 place-items-center rounded-md border border-slate-200 text-slate-400 hover:bg-slate-50 transition"
+                                        >
+                                            <X size={18} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -765,63 +809,72 @@ export default function AddProductForm() {
 
                             <div>
                                 <Label>Bulk Pricing Tiers</Label>
-                                <div className="grid gap-3 md:grid-cols-[220px,1fr,44px]">
-                                    <div className="relative">
-                                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-slate-400">
-                                            QTY:
-                                        </span>
-                                        <Input
-                                            value={bulkQty}
-                                            onChange={setBulkQty}
-                                            placeholder="50+ units"
-                                            className="pl-12"
-                                        />
-                                    </div>
 
-                                    <div className="relative">
-                                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-slate-400">
-                                            PRICE:
-                                        </span>
-                                        <Input
-                                            value={bulkPrice}
-                                            onChange={setBulkPrice}
-                                            placeholder="$42.00"
-                                            className="pl-14"
-                                        />
-                                    </div>
+                                <div className="space-y-3">
+                                    {bulkTiers.map((t, idx) => (
+                                        <div
+                                            key={t.id}
+                                            className="grid gap-3 md:grid-cols-[260px_1fr_64px]"
+                                        >
+                                            {/* QTY (number) */}
+                                            <div className="relative">
+                                                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-slate-400">
+                                                    QTY:
+                                                </span>
+                                                <Input
+                                                    value={t.qty === "" ? "" : String(t.qty)}
+                                                    onChange={(v) =>
+                                                        updateTier(t.id, { qty: v === "" ? "" : Number(v) })
+                                                    }
+                                                    placeholder="50"
+                                                    type="number"
+                                                    className="h-9 pl-12"
+                                                />
+                                            </div>
 
-                                    <button
-                                        type="button"
-                                        className="grid h-10 w-10 place-items-center rounded-md border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 transition"
-                                        aria-label="Remove tier"
-                                    >
-                                        <X size={18} />
-                                    </button>
+                                            {/* PRICE (number) */}
+                                            <div className="relative">
+                                                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-slate-400">
+                                                    PRICE:
+                                                </span>
+                                                <Input
+                                                    value={t.price === "" ? "" : String(t.price)}
+                                                    onChange={(v) =>
+                                                        updateTier(t.id, { price: v === "" ? "" : Number(v) })
+                                                    }
+                                                    placeholder="42"
+                                                    type="number"
+                                                    className="h-9 pl-14"
+                                                />
+                                            </div>
+
+                                            {/* remove */}
+                                            <button
+                                                type="button"
+                                                onClick={() => removeTier(t.id)}
+                                                aria-label={`Remove tier ${idx + 1}`}
+                                                className="h-9 rounded-md border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 transition disabled:cursor-not-allowed disabled:opacity-50"
+                                                disabled={bulkTiers.length <= 1}
+                                            >
+                                                –
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
 
+                                {/* Add Tier (works) */}
                                 <button
                                     type="button"
-                                    className="mt-3 text-xs font-semibold text-slate-400 hover:text-[var(--primary)] transition"
+                                    onClick={addTier}
+                                    className="mt-3 flex h-10 w-full items-center justify-center rounded-md border border-dashed border-slate-200 bg-[var(--primary-50)] text-xs font-semibold text-slate-500 hover:text-[var(--primary)] transition"
                                 >
                                     + ADD TIER
                                 </button>
                             </div>
 
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div>
-                                    <Label>SKU</Label>
-                                    <Input value={sku} onChange={setSku} placeholder="e.g. TAI-LMA-01" />
-                                </div>
-
-                                <div>
-                                    <Label>Barcode</Label>
-                                    <div className="relative">
-                                        <Input value={barcode} onChange={setBarcode} placeholder="EAN / UPC" />
-                                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-300">
-                                            ⎘
-                                        </span>
-                                    </div>
-                                </div>
+                            <div>
+                                <Label>SKU</Label>
+                                <Input value={sku} onChange={setSku} placeholder="e.g. TAI-LMA-01" />
                             </div>
 
                             <div className="grid gap-4 md:grid-cols-2">
@@ -830,17 +883,19 @@ export default function AddProductForm() {
                                     <div className="flex h-10 items-center overflow-hidden rounded-md border border-slate-200 bg-white">
                                         <button
                                             type="button"
-                                            onClick={() => setStockQty((v) => Math.max(0, v - 1))}
+                                            onClick={() => setStockQty((prev) => Math.max(0, prev - 1))}
                                             className="grid h-full w-12 place-items-center text-slate-600 hover:bg-slate-50 transition"
                                         >
                                             –
                                         </button>
+
                                         <div className="flex-1 text-center text-sm font-semibold text-slate-900">
                                             {stockQty}
                                         </div>
+
                                         <button
                                             type="button"
-                                            onClick={() => setStockQty((v) => v + 1)}
+                                            onClick={() => setStockQty((prev) => prev + 1)}
                                             className="grid h-full w-12 place-items-center text-slate-600 hover:bg-slate-50 transition"
                                         >
                                             +
@@ -874,6 +929,26 @@ export default function AddProductForm() {
                     </RightPanel>
                 </div>
             </div>
+
+            {mode === "edit" ? (
+                <ProductUpdatedModal
+                    open={publishedOpen}
+                    onClose={() => setPublishedOpen(false)}
+                    productName={productName}
+                    sku={sku}
+                    statusLabel={statusLive ? "Active" : "Inactive"}
+                    stockLabel={`${stockQty} Units`}
+                />
+            ) : (
+                <ProductPublishedModal
+                    open={publishedOpen}
+                    onClose={() => setPublishedOpen(false)}
+                    productName={productName}
+                    sku={sku}
+                    statusLabel={statusLive ? "Active" : "Inactive"}
+                    stockLabel={`${stockQty} Units`}
+                />
+            )}
         </div>
     );
 }

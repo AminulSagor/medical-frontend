@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { Zap, Pencil, Trash2 } from "lucide-react";
 import QuickUpdatePopover from "./quick-update-popover";
+import { useRouter } from "next/navigation";
 
 export type ProductStatus = "active" | "draft";
 export type StockTone = "good" | "warn" | "bad" | "draft";
@@ -78,6 +79,7 @@ export default function ProductsTable({
     totalPages: number;
     onPageChange: (p: number) => void;
 }) {
+    const router = useRouter();
     const [openQuickId, setOpenQuickId] = useState<string | null>(null);
     const [quickAnchor, setQuickAnchor] = useState<HTMLElement | null>(null);
 
@@ -210,6 +212,7 @@ export default function ProductsTable({
 
                                         <button
                                             type="button"
+                                            onClick={() => router.push(`/products/edit/${r.id}`)}
                                             className="grid h-8 w-8 place-items-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                                             aria-label="Edit"
                                         >
