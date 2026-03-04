@@ -22,7 +22,7 @@ export default function NavbarLogo({
         </span>
       </span>
 
-      <span className="leading-tight hidden md:block">
+      <span className="leading-tight">
         <span className="block text-sm lg:text-base font-semibold text-black">
           {title}
         </span>

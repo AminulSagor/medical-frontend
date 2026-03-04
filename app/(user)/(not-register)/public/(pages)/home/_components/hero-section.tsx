@@ -13,7 +13,7 @@ import { IMAGE } from "@/constant/image-config";
 
 export default function HeroSection() {
   return (
-    <section className="relative overflow-hidden padding pt-15">
+    <section className="relative overflow-hidden padding pt-24">
       {/* soft bottom fade */}
       <div className="absolute inset-x-0 bottom-0 h-40" />
 
@@ -28,7 +28,7 @@ export default function HeroSection() {
             </div>
 
             {/* Heading */}
-            <h1 className="text-5xl font- leading-[1.05] text-black md:text-7xl">
+            <h1 className="text-5xl leading-[1.05] text-black md:text-7xl">
               Redefining <br />
               <span className="text-primary italic">Precision</span> & <br />
               <span className="text-primary italic">Compassion</span> <br />
@@ -50,8 +50,11 @@ export default function HeroSection() {
 
           {/* RIGHT SIDE */}
           <div className="relative flex justify-end">
+            {/* glow background */}
+            <div className="absolute right-10 top-10 h-[500px] w-[400px] rounded-full bg-gradient-to-br from-primary/30 via-primary/20 to-transparent blur-3xl" />
+
             {/* Doctor Image */}
-            <div className="relative h-170 w-140">
+            <div className="relative h-170 w-100 md:w-140">
               <Image
                 src={IMAGE.doctor}
                 alt="Doctor"
@@ -61,39 +64,78 @@ export default function HeroSection() {
               />
             </div>
 
-            {/* Floating Feature Pills */}
+            {/* 🔵 Advanced Airway */}
+            <div className="absolute right-0 top-20">
+              <div className="flex items-center gap-3 rounded-full
+                bg-white/40 backdrop-blur-xl
+                border border-white/30
+                shadow-[0_8px_30px_rgba(0,0,0,0.08)]
+                px-6 py-3">
 
-            {/* Advanced Airway */}
-            <div className="absolute right-0 top-20 rounded-full bg-white/80 backdrop-blur-md px-6 py-3 shadow-lg border border-light-slate/30 flex items-center gap-3">
-              <Activity className="text-primary" size={20} />
-              <span className="text-sm font-semibold text-black">
-                Advanced Airway
-              </span>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100/80">
+                  <Activity className="text-blue-600" size={18} />
+                </div>
+
+                <span className="text-sm font-semibold text-black">
+                  Advanced Airway
+                </span>
+              </div>
             </div>
 
-            {/* ER Training */}
-            <div className="absolute left-10 top-56 rounded-full bg-white/80 backdrop-blur-md px-6 py-3 shadow-lg border border-light-slate/30 flex items-center gap-3">
-              <HeartPulse className="text-primary" size={20} />
-              <span className="text-sm font-semibold text-black">
-                ER Training
-              </span>
+            {/* 🔴 ER Training */}
+            <div className="absolute left-10 top-56">
+              <div className="flex items-center gap-3 rounded-full
+                bg-white/40 backdrop-blur-xl
+                border border-white/30
+                shadow-[0_8px_30px_rgba(0,0,0,0.08)]
+                px-6 py-3">
+
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red-100/80">
+                  <HeartPulse className="text-red-600" size={18} />
+                </div>
+
+                <span className="text-sm font-semibold text-black">
+                  ER Training
+                </span>
+              </div>
             </div>
 
-            {/* Clinical Excellence */}
-            <div className="absolute left-0 bottom-28 rounded-full bg-white/80 backdrop-blur-md px-6 py-3 shadow-lg border border-light-slate/30 flex items-center gap-3">
-              <Stethoscope className="text-primary" size={20} />
-              <span className="text-sm font-semibold text-black">
-                Clinical Excellence
-              </span>
+            {/* 🟢 Clinical Excellence */}
+            <div className="absolute left-0 bottom-28">
+              <div className="flex items-center gap-3 rounded-full
+                bg-white/40 backdrop-blur-xl
+                border border-white/30
+                shadow-[0_8px_30px_rgba(0,0,0,0.08)]
+                px-6 py-3">
+
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-100/80">
+                  <Stethoscope className="text-green-600" size={18} />
+                </div>
+
+                <span className="text-sm font-semibold text-black">
+                  Clinical Excellence
+                </span>
+              </div>
             </div>
 
-            {/* Simulation Lab */}
-            <div className="absolute right-0 bottom-16 rounded-full bg-white/80 backdrop-blur-md px-6 py-3 shadow-lg border border-light-slate/30 flex items-center gap-3">
-              <FlaskConical className="text-primary" size={20} />
-              <span className="text-sm font-semibold text-black">
-                Simulation Lab
-              </span>
+            {/* 🟣 Simulation Lab */}
+            <div className="absolute right-0 bottom-16">
+              <div className="flex items-center gap-3 rounded-full
+                bg-white/40 backdrop-blur-xl
+                border border-white/30
+                shadow-[0_8px_30px_rgba(0,0,0,0.08)]
+                px-6 py-3">
+
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100/80">
+                  <FlaskConical className="text-violet-600" size={18} />
+                </div>
+
+                <span className="text-sm font-semibold text-black">
+                  Simulation Lab
+                </span>
+              </div>
             </div>
+
           </div>
         </div>
       </div>

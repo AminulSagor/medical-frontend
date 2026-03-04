@@ -15,6 +15,7 @@ import {
 import Card from "@/components/cards/card";
 import Button from "@/components/buttons/button";
 import { IMAGE } from "@/constant/image-config";
+import Link from "next/link";
 
 /* =========================
    Types +
@@ -89,7 +90,7 @@ export default function CartPage() {
   };
 
   return (
-    <div className="min-h-screen bg-light-slate/10">
+    <div className="min-h-screen mt-24">
       <div className="mx-auto max-w-6xl px-4 py-8">
         {/* Back */}
         <button
@@ -110,7 +111,7 @@ export default function CartPage() {
         {/* Layout */}
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Left: Items table */}
-          <Card className="lg:col-span-8 p-0 overflow-hidden">
+          <div className="lg:col-span-8 overflow-hidden rounded-3xl shadow-sm border border-light-slate/10 bg-white pt-2">
             {/* Header row */}
             <div className="grid grid-cols-12 gap-4 border-b border-slate-100 px-6 py-4 text-[11px] font-bold tracking-widest text-light-slate">
               <div className="col-span-7">PRODUCT DETAILS</div>
@@ -212,7 +213,7 @@ export default function CartPage() {
                 </div>
               ))}
             </div>
-          </Card>
+          </div>
 
           {/* Right: Summary */}
           <Card className="lg:col-span-4">
@@ -266,10 +267,12 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <Button className="mt-5 h-14 w-full bg-primary text-white shadow-sm">
-                Proceed to Checkout
-                <ArrowRight className="h-5 w-5" />
-              </Button>
+              <Link href={"/public/checkout"}>
+                <Button className="mt-5 h-14 w-full bg-primary text-white shadow-sm">
+                  Proceed to Checkout
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+              </Link>
 
               <div className="mt-4 flex items-center justify-center gap-2 text-xs text-light-slate">
                 <Lock className="h-4 w-4" />
