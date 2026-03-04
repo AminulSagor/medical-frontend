@@ -22,8 +22,8 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     pathname.startsWith("/courses") || pathname.startsWith("/course")
       ? "courses"
       : pathname.startsWith("/orders") ||
-          pathname.startsWith("/order-history") ||
-          pathname.startsWith("/order-details")
+        pathname.startsWith("/order-history") ||
+        pathname.startsWith("/order-details")
         ? "orders"
         : pathname.startsWith("/settings")
           ? "settings"
@@ -62,8 +62,10 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
         </aside>
 
         {/* Top navbar */}
-        <div className="sticky top-0 z-50 bg-slate-50/70 backdrop-blur">
-          <Navbar />
+        <div className="sticky top-0 z-50 bg-slate-50/70 backdrop-blur w-full">
+          <div className="mx-auto max-w-[1200px]">
+            <Navbar />
+          </div>
         </div>
 
         {/* ✅ Only main scrolls */}

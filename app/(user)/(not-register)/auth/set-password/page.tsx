@@ -81,7 +81,7 @@ export default function SetNewPasswordPage() {
                 type="button"
                 onClick={() => setShowPass((s) => !s)}
                 aria-label={showPass ? "Hide password" : "Show password"}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl p-2 text-slate-500 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-sky-100"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl p-2 text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-sky-100"
               >
                 {showPass ? (
                   <EyeOff className="h-5 w-5" />
@@ -117,7 +117,7 @@ export default function SetNewPasswordPage() {
                 type="button"
                 onClick={() => setShowConfirm((s) => !s)}
                 aria-label={showConfirm ? "Hide password" : "Show password"}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl p-2 text-slate-500 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-sky-100"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl p-2 text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-sky-100"
               >
                 {showConfirm ? (
                   <EyeOff className="h-5 w-5" />
