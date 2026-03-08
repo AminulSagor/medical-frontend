@@ -3,8 +3,9 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import ProductCard from "./equipment-card";
+import { motion } from "motion/react";
 import { SHOP_THE_LAB_PRODUCTS } from "@/app/(user)/(not-register)/public/data/equipment.data";
+import EquipmentCard from "./equipment-card";
 
 export default function ShopTheLabSection() {
   const products = useMemo(() => SHOP_THE_LAB_PRODUCTS, []);
@@ -21,33 +22,69 @@ export default function ShopTheLabSection() {
   return (
     <section className="w-full bg-white">
       <div className="mx-auto px-6 py-14 padding">
-        {/* header */}
         <div className="flex items-start justify-between gap-6">
-          <div>
-            <p className="text-sm  font-bold text-primary">SHOP THE LAB</p>
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.6 }}
+            transition={{
+              duration: 0.65,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+          >
+            <p className="text-sm font-bold text-primary">SHOP THE LAB</p>
+
             <h2 className="mt-2 text-3xl font-semibold text-black">
               Medical Simulation Equipment
             </h2>
-          </div>
+          </motion.div>
 
-          <Link
-            href="/store"
-            className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:opacity-80"
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.6 }}
+            transition={{
+              duration: 0.65,
+              delay: 0.08,
+              ease: [0.22, 1, 0.36, 1],
+            }}
           >
-            View All Products <ArrowRight size={16} />
-          </Link>
+            <Link
+              href="/store"
+              className="group mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:opacity-80"
+            >
+              View All Products
+              <motion.span
+                whileHover={{ x: 4 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="inline-flex"
+              >
+                <ArrowRight size={16} />
+              </motion.span>
+            </Link>
+          </motion.div>
         </div>
 
-        {/* cards */}
-        <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-4 items-stretch">
-          {products.map((p) => (
-            <ProductCard
+        <div className="mt-10 grid items-stretch gap-8 md:grid-cols-2 lg:grid-cols-4">
+          {products.map((p, index) => (
+            <motion.div
               key={p.id}
-              product={p}
-              wished={!!wishedIds[p.id]}
-              onToggleWish={toggleWish}
-              onAddToCart={addToCart}
-            />
+              initial={{ opacity: 0, y: 24, scale: 0.98 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{
+                duration: 0.5,
+                delay: index * 0.08,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            >
+              <EquipmentCard
+                product={p}
+                wished={!!wishedIds[p.id]}
+                onToggleWish={toggleWish}
+                onAddToCart={addToCart}
+              />
+            </motion.div>
           ))}
         </div>
       </div>
