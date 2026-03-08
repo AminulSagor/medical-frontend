@@ -35,7 +35,7 @@ function HeroPill({
       className={className}
       initial={{ opacity: 0, y: 24, scale: 0.96 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      viewport={{ once: true, amount: 0.6 }}
+      viewport={{ once: false, amount: 0.6 }}
       transition={{
         duration: 0.55,
         delay,
@@ -76,7 +76,7 @@ export default function HeroSection() {
             <motion.div
               initial={{ opacity: 0, y: 18 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.6 }}
+              viewport={{ once: false, amount: 0.6 }}
               transition={{
                 duration: 0.5,
                 delay: 0.05,
@@ -91,7 +91,7 @@ export default function HeroSection() {
             <motion.h1
               initial={{ opacity: 0, y: 28 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.6 }}
+              viewport={{ once: false, amount: 0.6 }}
               transition={{
                 duration: 0.7,
                 delay: 0.12,
@@ -114,7 +114,7 @@ export default function HeroSection() {
             <motion.p
               initial={{ opacity: 0, y: 22 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.6 }}
+              viewport={{ once: false, amount: 0.6 }}
               transition={{
                 duration: 0.6,
                 delay: 0.22,
@@ -130,7 +130,7 @@ export default function HeroSection() {
             <motion.div
               initial={{ opacity: 0, y: 24, scale: 0.96 }}
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true, amount: 0.6 }}
+              viewport={{ once: false, amount: 0.6 }}
               transition={{
                 duration: 0.6,
                 delay: 0.32,
@@ -158,7 +158,7 @@ export default function HeroSection() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true, amount: 0.4 }}
+              viewport={{ once: false, amount: 0.4 }}
               transition={{
                 duration: 0.8,
                 delay: 0.15,
@@ -173,7 +173,7 @@ export default function HeroSection() {
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
-              viewport={{ once: true, amount: 0.4 }}
+              viewport={{ once: false, amount: 0.4 }}
               transition={{ duration: 0.8, delay: 0.25 }}
               className="absolute inset-x-0 bottom-0 z-30 mx-auto h-16 w-2/3 bg-linear-to-t from-primary/70 via-primary/30 blur-3xl
               sm:h-20
@@ -183,7 +183,7 @@ export default function HeroSection() {
             <motion.div
               initial={{ opacity: 0, x: 40, scale: 0.96 }}
               whileInView={{ opacity: 1, x: 0, scale: 1 }}
-              viewport={{ once: true, amount: 0.4 }}
+              viewport={{ once: false, amount: 0.4 }}
               transition={{
                 duration: 0.8,
                 delay: 0.12,
