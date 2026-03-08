@@ -82,7 +82,7 @@ export default function Navbar() {
                   key={l.href}
                   href={l.href}
                   className={[
-                    "relative flex items-center gap-2 text-sm font-semibold",
+                    "group relative flex items-center gap-2 text-sm font-semibold",
                     active ? "text-primary" : "text-light-slate",
                     "hover:text-black transition-colors",
                   ].join(" ")}
@@ -91,10 +91,20 @@ export default function Navbar() {
 
                   {l.showDot && (
                     <span
-                      className="h-2 w-2 rounded-full bg-primary"
+                      className="h-2 w-2 rounded-full bg-primary absolute top-0 -right-3"
                       aria-hidden="true"
                     />
                   )}
+
+                  <span
+                    className={[
+                      "absolute left-0 -bottom-1 h-[2px] w-full origin-left rounded-full bg-primary transition-transform duration-300 ease-out",
+                      active
+                        ? "scale-x-100"
+                        : "scale-x-0 group-hover:scale-x-100",
+                    ].join(" ")}
+                    aria-hidden="true"
+                  />
                 </Link>
               );
             })}
