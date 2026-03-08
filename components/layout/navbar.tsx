@@ -14,6 +14,7 @@ import NavbarSearch from "@/app/(user)/(not-register)/public/(pages)/home/_compo
 import { IMAGE } from "@/constant/image-config";
 import CartSidebar from "@/components/cart-sidebar";
 import PublicSidebar from "@/components/public-sidebar";
+import { LogOut, Settings } from "lucide-react";
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/public/home") return pathname === "/public/home";
@@ -195,6 +196,15 @@ export default function Navbar() {
 }
 
 function AccountAccessDropdown() {
+  const path = usePathname();
+
+  const isDashboard =
+    path === "/dashboard" ||
+    path === "/course" ||
+    path === "/order-history" ||
+    path === "/settings" ||
+    path.startsWith("/dashboard/");
+
   return (
     <div className="relative hidden md:block">
       <div className="group relative">
@@ -243,22 +253,32 @@ function AccountAccessDropdown() {
 
             <div className="p-4">
               <Link
-                href="#"
+                href={isDashboard ? "#" : "#"}
                 className="flex items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
               >
-                <LogIn size={20} className="text-light-slate" />
+                {isDashboard ? (
+                  <LogOut size={20} className="text-light-slate" />
+                ) : (
+                  <LogIn size={20} className="text-light-slate" />
+                )}
+
                 <span className="text-base font-semibold text-black">
-                  Sign In
+                  {isDashboard ? "Sign Out" : "Sign In"}
                 </span>
               </Link>
 
               <Link
-                href="#"
+                href={isDashboard ? "#" : "#"}
                 className="flex items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
               >
-                <UserPlus size={20} className="text-primary" />
+                {isDashboard ? (
+                  <Settings size={20} className="text-primary" />
+                ) : (
+                  <UserPlus size={20} className="text-primary" />
+                )}
+
                 <span className="text-base font-semibold text-primary">
-                  Create Account
+                  {isDashboard ? "Settings" : "Create Account"}
                 </span>
               </Link>
             </div>
