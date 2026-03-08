@@ -1,21 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import {
-  ArrowRight,
-  Activity,
-  FlaskConical,
-  HeartPulse,
-  Stethoscope,
-  type LucideIcon,
-} from "lucide-react";
+import React from "react";
+import { ArrowRight, Microscope, Stethoscope } from "lucide-react";
+import { RiLungsLine } from "react-icons/ri";
+import { MdCoronavirus } from "react-icons/md";
+
 import { motion } from "motion/react";
 import Button from "@/components/buttons/button";
 import { IMAGE } from "@/constant/image-config";
 
 type HeroPillProps = {
   label: string;
-  icon: LucideIcon;
+  icon: React.ElementType;
   iconClassName: string;
   iconWrapperClassName: string;
   className?: string;
@@ -69,7 +66,7 @@ function HeroPill({
 export default function HeroSection() {
   return (
     <section className="relative overflow-hidden padding pt-24">
-      <div className="relative mx-auto">
+      <div className="relative mx-auto lg:px-8">
         <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-6">
           {/* left */}
           <div className="space-y-6 text-center sm:space-y-7 lg:mt-6 lg:space-y-8 lg:text-left">
@@ -203,7 +200,7 @@ export default function HeroSection() {
             <HeroPill
               className="absolute right-2 top-20 sm:right-4 sm:top-28 md:right-6 md:top-36 lg:right-0 lg:top-80"
               label="Advanced Airway"
-              icon={Activity}
+              icon={RiLungsLine}
               iconWrapperClassName="bg-blue-100/80"
               iconClassName="text-blue-600"
               delay={0.2}
@@ -212,7 +209,7 @@ export default function HeroSection() {
             <HeroPill
               className="absolute left-2 top-44 sm:left-4 sm:top-60 md:left-2 md:top-80 lg:left-0 lg:top-110"
               label="ER Training"
-              icon={HeartPulse}
+              icon={MdCoronavirus}
               iconWrapperClassName="bg-red-100/80"
               iconClassName="text-red-600"
               delay={0.3}
@@ -230,7 +227,7 @@ export default function HeroSection() {
             <HeroPill
               className="absolute right-2 bottom-14 sm:right-4 sm:bottom-20 md:right-6 md:bottom-24 lg:right-0 lg:bottom-28"
               label="Simulation Lab"
-              icon={FlaskConical}
+              icon={Microscope}
               iconWrapperClassName="bg-violet-100/80"
               iconClassName="text-violet-600"
               delay={0.5}
