@@ -67,7 +67,7 @@ export default function UserLayout({
 
         {/* Top navbar */}
         <div className="sticky top-0 z-50 bg-slate-50/70 backdrop-blur w-full">
-          <div className="mx-auto max-w-[1200px] mt-4">
+          <div className="mx-auto max-w-[1100px] mt-4">
             <Navbar />
           </div>
         </div>
