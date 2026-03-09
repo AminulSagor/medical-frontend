@@ -23,9 +23,9 @@ export default function NavbarSearch({
         className={[
           "h-11 w-full rounded-full",
           "bg-light-slate/5",
-          "border border-light-slate/30",
-          "pl-11 pr-4 text-sm",
-          "text-black placeholder:text-light-slate",
+          "border border-light-slate/5",
+          "pl-11 pr-4 text-base",
+          "text-black placeholder:text-light-slate/70",
           "outline-none focus:ring-2 focus:ring-(--primary)/10",
         ].join(" ")}
       />
