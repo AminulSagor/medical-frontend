@@ -1,22 +1,26 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { AuthErrors, AuthSignupPayload } from "../../auth/types/auth.types";
 import { signupSchema } from "@/schema/auth/signup.schema";
 import { zodErrorToFieldErrors } from "@/schema/zodErrorToFieldErrors";
+import { registerUser, sendOtp } from "@/service/auth/auth.service";
+import type { RegisterRequest } from "@/types/auth/auth.types";
 
-type SubmitFn = (data: AuthSignupPayload) => Promise<void> | void;
+export function useSignUpController() {
+  const router = useRouter();
 
-export function useSignUpController(options?: { onSuccess?: SubmitFn }) {
   const [form, setForm] = useState<AuthSignupPayload>({
-    fullName: "",
-    email: "",
-    role: "",
+    fullLegalName: "",
+    medicalEmail: "",
+    professionalRole: "",
     password: "",
     acceptedTerms: false,
   });
 
   const [errors, setErrors] = useState<AuthErrors>({});
+  const [apiError, setApiError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -37,6 +41,7 @@ export function useSignUpController(options?: { onSuccess?: SubmitFn }) {
   ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
+    setApiError(null);
   };
 
   const toggleShowPassword = () => setShowPassword((s) => !s);
@@ -53,15 +58,30 @@ export function useSignUpController(options?: { onSuccess?: SubmitFn }) {
     }
 
     setErrors({});
+    setApiError(null);
     setSubmitting(true);
 
     try {
-      if (options?.onSuccess) {
-        await options.onSuccess(result.data);
-      } else {
-        console.log("signup payload (validated)", result.data);
-        alert("Account created (demo). Now connect your API.");
-      }
+      const payload: RegisterRequest = {
+        fullLegalName: result.data.fullLegalName,
+        medicalEmail: result.data.medicalEmail,
+        professionalRole: result.data.professionalRole,
+        password: result.data.password,
+        forgetPassword: false,
+      };
+
+      await registerUser(payload);
+      
+      // Send OTP to the registered email
+      await sendOtp({ email: result.data.medicalEmail });
+      
+      // Redirect to OTP verification with email as query param
+      router.push(`/auth/otp-verification?email=${encodeURIComponent(result.data.medicalEmail)}`);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setApiError(
+        axiosErr?.response?.data?.message || "Registration failed. Please try again."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -70,6 +90,7 @@ export function useSignUpController(options?: { onSuccess?: SubmitFn }) {
   return {
     form,
     errors,
+    apiError,
     strength,
     showPassword,
     submitting,

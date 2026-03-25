@@ -7,7 +7,7 @@ import { useSignUpController } from "./sign-up-controller";
 
 function StrengthRow({ ok, label }: { ok: boolean; label: string }) {
   return (
-    <div className="flex items-center gap-2 text-[11px] leading-4">
+    <div className="flex mt-15 items-center gap-2 text-[11px] leading-4">
       <span
         className={[
           "grid h-4 w-4 place-items-center rounded-full border",
@@ -27,7 +27,7 @@ export default function SignUpPage() {
   const c = useSignUpController();
 
   return (
-    <div className="w-full bg-slate-50 px-4">
+    <div className="w-full mt-15 bg-slate-50 px-4">
       <div className="mx-auto w-full max-w-[420px]">
         {/* compact "FB-like" header */}
         <div className="mb-4 pt-12 flex flex-col items-center">
@@ -53,18 +53,18 @@ export default function SignUpPage() {
                 Full Legal Name
               </label>
               <input
-                value={c.form.fullName}
-                onChange={(e) => c.setField("fullName", e.target.value)}
+                value={c.form.fullLegalName}
+                onChange={(e) => c.setField("fullLegalName", e.target.value)}
                 placeholder="Dr. Julian V. Sterling"
                 className={[
                   "mt-1 h-10 w-full rounded-lg border bg-white px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400",
                   "focus:border-sky-300 focus:ring-4 focus:ring-sky-100",
-                  c.errors.fullName ? "border-rose-300" : "border-slate-200",
+                  c.errors.fullLegalName ? "border-rose-300" : "border-slate-200",
                 ].join(" ")}
               />
-              {c.errors.fullName && (
+              {c.errors.fullLegalName && (
                 <p className="mt-1 text-[11px] text-rose-600">
-                  {c.errors.fullName}
+                  {c.errors.fullLegalName}
                 </p>
               )}
             </div>
@@ -75,19 +75,19 @@ export default function SignUpPage() {
                 Medical Email Address
               </label>
               <input
-                value={c.form.email}
-                onChange={(e) => c.setField("email", e.target.value)}
+                value={c.form.medicalEmail}
+                onChange={(e) => c.setField("medicalEmail", e.target.value)}
                 placeholder="j.sterling@hospital.org"
                 type="email"
                 className={[
                   "mt-1 h-10 w-full rounded-lg border bg-white px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400",
                   "focus:border-sky-300 focus:ring-4 focus:ring-sky-100",
-                  c.errors.email ? "border-rose-300" : "border-slate-200",
+                  c.errors.medicalEmail ? "border-rose-300" : "border-slate-200",
                 ].join(" ")}
               />
-              {c.errors.email && (
+              {c.errors.medicalEmail && (
                 <p className="mt-1 text-[11px] text-rose-600">
-                  {c.errors.email}
+                  {c.errors.medicalEmail}
                 </p>
               )}
             </div>
@@ -98,18 +98,18 @@ export default function SignUpPage() {
                 Professional Role
               </label>
               <input
-                value={c.form.role}
-                onChange={(e) => c.setField("role", e.target.value)}
+                value={c.form.professionalRole}
+                onChange={(e) => c.setField("professionalRole", e.target.value)}
                 placeholder="e.g. Senior Anesthesiologist"
                 className={[
                   "mt-1 h-10 w-full rounded-lg border bg-white px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400",
                   "focus:border-sky-300 focus:ring-4 focus:ring-sky-100",
-                  c.errors.role ? "border-rose-300" : "border-slate-200",
+                  c.errors.professionalRole ? "border-rose-300" : "border-slate-200",
                 ].join(" ")}
               />
-              {c.errors.role && (
+              {c.errors.professionalRole && (
                 <p className="mt-1 text-[11px] text-rose-600">
-                  {c.errors.role}
+                  {c.errors.professionalRole}
                 </p>
               )}
             </div>
@@ -195,6 +195,13 @@ export default function SignUpPage() {
               )}
             </div>
 
+            {/* API Error */}
+            {c.apiError && (
+              <p className="text-[12px] text-rose-600 text-center">
+                {c.apiError}
+              </p>
+            )}
+
             {/* CTA */}
             <button
               type="submit"
@@ -207,7 +214,7 @@ export default function SignUpPage() {
 
             <div className="pt-1 text-center text-xs text-slate-600">
               Already have an account?{" "}
-              <Link className="text-sky-600 hover:underline" href="/sign-in">
+              <Link className="text-sky-600 hover:underline" href="/auth/sign-in">
                 Sign in
               </Link>
             </div>

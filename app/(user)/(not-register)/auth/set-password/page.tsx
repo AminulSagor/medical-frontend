@@ -2,15 +2,22 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, Eye, EyeOff, Lock, ShieldCheck } from "lucide-react";
+import { resetPassword } from "@/service/auth/auth.service";
 
-export default function SetNewPasswordPage() {
+function SetNewPasswordContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email") || "";
+
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const rules = useMemo(() => {
     const lenOk = password.length >= 8;
@@ -23,15 +30,37 @@ export default function SetNewPasswordPage() {
     confirm.length > 0 &&
     password === confirm &&
     rules.lenOk &&
-    rules.numberOrSpecial;
+    rules.numberOrSpecial &&
+    !submitting;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
 
-    // TODO: call your API
-    // await updatePassword({ password })
-    alert("Password updated!");
+    if (!email) {
+      setApiError("Email not found. Please restart the password reset process.");
+      return;
+    }
+
+    setSubmitting(true);
+    setApiError(null);
+
+    try {
+      await resetPassword({
+        email,
+        password,
+        forgetPassword: true,
+      });
+      // Redirect to sign-in with success message
+      router.push("/auth/sign-in?reset=success");
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setApiError(
+        axiosErr?.response?.data?.message || "Failed to reset password. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -39,11 +68,11 @@ export default function SetNewPasswordPage() {
       <div className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_16px_50px_rgba(15,23,42,0.10)]">
         {/* Back */}
         <Link
-          href="/verify-otp"
+          href="/auth/reset-password"
           className="inline-flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-700"
         >
           <ChevronLeft className="h-4 w-4" />
-          Back to code verification
+          Back to reset password
         </Link>
 
         <h1 className="mt-6 text-3xl font-bold tracking-tight text-slate-900">
@@ -147,6 +176,11 @@ export default function SetNewPasswordPage() {
             </div>
           </div>
 
+          {/* API Error */}
+          {apiError && (
+            <p className="text-sm text-rose-600 text-center">{apiError}</p>
+          )}
+
           {/* CTA */}
           <button
             type="submit"
@@ -159,11 +193,23 @@ export default function SetNewPasswordPage() {
               !canSubmit && "cursor-not-allowed opacity-60",
             ].join(" ")}
           >
-            Update Password <ShieldCheck className="h-5 w-5" />
+            {submitting ? "Updating..." : "Update Password"} <ShieldCheck className="h-5 w-5" />
           </button>
         </form>
       </div>
     </div>
+  );
+}
+
+export default function SetNewPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
+        <div className="text-slate-500">Loading...</div>
+      </div>
+    }>
+      <SetNewPasswordContent />
+    </Suspense>
   );
 }
 

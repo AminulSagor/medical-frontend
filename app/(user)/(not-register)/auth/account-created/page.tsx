@@ -80,17 +80,17 @@ export default function AccountCreatedPage() {
 
         {/* CTA */}
         <Link
-          href="/student/dashboard"
+          href="/auth/sign-in"
           className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-sky-500 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(2,132,199,0.25)] hover:bg-sky-600 focus:outline-none focus:ring-4 focus:ring-sky-200"
         >
-          Go to Student Dashboard <span aria-hidden>→</span>
+          Sign In to Your Account <span aria-hidden>→</span>
         </Link>
 
         {/* Support */}
         <div className="mt-4 text-center text-xs text-slate-500">
           Need help getting started?{" "}
           <Link
-            href="/support"
+            href="/public/contact-us"
             className="font-semibold text-sky-600 hover:underline"
           >
             Contact Support

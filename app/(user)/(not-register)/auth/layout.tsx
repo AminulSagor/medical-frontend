@@ -1,15 +1,24 @@
+import Footer from "@/components/layout/footer";
 import Navbar from "@/components/layout/navbar";
 import React from "react";
+import AuthGuard from "./AuthGuard";
 
-const layout = ({ children }: { children: React.ReactNode }) => {
+const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="">
-      <div className="max-w-6xl mx-auto mt-6">
-        <Navbar />
+    <AuthGuard>
+      <div className="min-h-screen text-black">
+        {/* Navbar overlay */}
+        <div className="pointer-events-none fixed left-0 top-0 z-50 w-full">
+          <div className="pointer-events-auto mx-auto padding pt-4">
+            <Navbar />
+          </div>
+        </div>
+        {/* Page content */}
+        <main className="min-h-screen">{children}</main>
+        <Footer />
       </div>
-      {children}
-    </div>
+    </AuthGuard>
   );
 };
 
-export default layout;
+export default AuthLayout;
