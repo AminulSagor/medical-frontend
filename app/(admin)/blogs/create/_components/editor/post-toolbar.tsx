@@ -16,7 +16,11 @@ function ToolBtn({ icon, onClick }: { icon: React.ReactNode; onClick: () => void
   return (
     <button
       type="button"
-      onClick={onClick}
+      onMouseDown={(e) => {
+        // Preserve selection inside contentEditable.
+        e.preventDefault();
+        onClick();
+      }}
       className="grid h-9 w-9 place-items-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition"
       aria-label="Editor action"
     >

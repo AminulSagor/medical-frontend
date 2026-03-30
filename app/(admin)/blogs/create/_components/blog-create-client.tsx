@@ -46,7 +46,7 @@ export default function BlogCreateClient() {
     defaultValues: {
       title: "New Approaches in Pediatric Airway",
       content:
-        "<h1>New Approaches in Pediatric Airway</h1><p>Effective airway management in pediatric patients remains one of the most critical skills for emergency physicians and anesthesiologists.</p><h2>Anatomical Considerations</h2><p>The pediatric airway is situated higher in the neck, typically at the level of C3–C4 in infants, compared to C4–C5 in adults.</p><figure style=\"margin:16px 0; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; background:#fff;\"><img src=\"/photos/diagnostic-pen.png\" alt=\"Advanced pediatric airway equipment\" style=\"display:block; width:100%; height:auto;\" /><figcaption style=\"font-size:11px; color:#64748b; padding:8px 16px; text-align:center; border-top:1px solid #e2e8f0;\">Figure: Advanced pediatric airway equipment</figcaption></figure><h2>Recent Clinical Guidelines</h2><p>The latest guidelines emphasize the importance of early recognition of difficult airway conditions and updated surgical and medical protocols.</p>",
+        "<h1>New Approaches in Pediatric Airway</h1><p>Effective airway management in pediatric patients remains one of the most critical skills for emergency physicians and anesthesiologists.</p><h2>Anatomical Considerations</h2><p>The pediatric airway is situated higher in the neck, typically at the level of C3–C4 in infants, compared to C4–C5 in adults.</p><figure><img src=\"/photos/diagnostic-pen.png\" alt=\"Advanced pediatric airway equipment\" /><figcaption>Figure: Advanced pediatric airway equipment</figcaption></figure><h2>Recent Clinical Guidelines</h2><p>The latest guidelines emphasize the importance of early recognition of difficult airway conditions and updated surgical and medical protocols.</p>",
 
       coverImageUrl: "",
       publishingStatus: "draft",
@@ -77,13 +77,23 @@ export default function BlogCreateClient() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [newsletterAddedOpen, setNewsletterAddedOpen] = useState(false);
 
-  const scheduleDate = useMemo(() => "Oct 24, 2023", []);
-  const scheduleTime = useMemo(() => "10:00 AM (EST)", []);
-
   const articleTitle = watch("title");
   const authorIds = watch("authorIds");
   const categoryIds = watch("categoryIds");
   const seoMetaTitle = watch("seoMetaTitle");
+  const scheduledPublishDate = watch("scheduledPublishDate");
+
+  const scheduleDate = useMemo(() => {
+    if (!scheduledPublishDate) return "—";
+    const d = new Date(scheduledPublishDate);
+    return isNaN(d.getTime()) ? "—" : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+  }, [scheduledPublishDate]);
+
+  const scheduleTime = useMemo(() => {
+    if (!scheduledPublishDate) return "—";
+    const d = new Date(scheduledPublishDate);
+    return isNaN(d.getTime()) ? "—" : d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  }, [scheduledPublishDate]);
 
   const anyModalOpen =
     draftOpen || publishOpen || discardOpen || liveOpen || shareOpen || previewOpen || newsletterAddedOpen;
@@ -117,10 +127,8 @@ export default function BlogCreateClient() {
 
   const handlePublish = async () => {
     form.setValue("publishingStatus", "scheduled", { shouldValidate: true });
-    // If user didn't touch scheduling controls, keep the default iso we set in defaults.
-    form.setValue("scheduledPublishDate", form.getValues("scheduledPublishDate")!, {
-      shouldValidate: true,
-    });
+    // Publish now => current date & time.
+    form.setValue("scheduledPublishDate", new Date().toISOString(), { shouldDirty: true, shouldValidate: true });
     const ok = await form.trigger();
     if (!ok) return;
     const payload = buildBlogCreatePayload(form.getValues());
