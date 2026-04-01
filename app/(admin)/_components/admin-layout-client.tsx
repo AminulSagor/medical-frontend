@@ -18,13 +18,33 @@ export default function AdminLayoutClient({
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
+  const notesOpen = searchParams.get("notes") === "1";
+  const calendarOpen = searchParams.get("calendar") === "1";
+
+  const hideSidebar = useMemo(() => {
+    const rules: Array<(p: string) => boolean> = [
+      (p) => p.startsWith("/users/faculty/register-faculty"),
+      (p) => /^\/users\/[^/]+$/.test(p),
+      (p) => /^\/users\/[^/]+\/edit$/.test(p),
+      (p) => p.startsWith("/analytics/most-popular-courses"),
+      (p) => p.startsWith("/courses/create"),
+      (p) => p.startsWith("/products/add"),
+      (p) => p.startsWith("/blogs/create"),
+      (p) => p.startsWith("/products/edit"),
+      (p) => /^\/products\/edit\/[^/]+$/.test(p),
+      (p) => p.startsWith("/blogs/publication-calendar"),
+      (p) => /^\/products\/[^/]+$/.test(p),
+    ];
+
+    return notesOpen || calendarOpen || rules.some((fn) => fn(pathname));
+  }, [pathname, notesOpen, calendarOpen]);
+
   // Check if user is admin
   useEffect(() => {
     const checkAdminAccess = () => {
       const token = getToken();
       
       if (!token) {
-        // No token, redirect to login
         router.replace("/auth/sign-in");
         return;
       }
@@ -32,12 +52,10 @@ export default function AdminLayoutClient({
       const payload = decodeJwtPayload(token);
       
       if (!payload || payload.role !== "admin") {
-        // Not an admin, redirect to home
         router.replace("/public/home");
         return;
       }
 
-      // User is admin
       setIsAuthorized(true);
     };
 
@@ -60,27 +78,6 @@ export default function AdminLayoutClient({
   if (!isAuthorized) {
     return null;
   }
-
-  const notesOpen = searchParams.get("notes") === "1";
-  const calendarOpen = searchParams.get("calendar") === "1";
-
-  const hideSidebar = useMemo(() => {
-    const rules: Array<(p: string) => boolean> = [
-      (p) => p.startsWith("/users/faculty/register-faculty"),
-      (p) => /^\/users\/[^/]+$/.test(p),
-      (p) => /^\/users\/[^/]+\/edit$/.test(p),
-      (p) => p.startsWith("/analytics/most-popular-courses"),
-      (p) => p.startsWith("/courses/create"),
-      (p) => p.startsWith("/products/add"),
-      (p) => p.startsWith("/blogs/create"),
-      (p) => p.startsWith("/products/edit"),
-      (p) => /^\/products\/edit\/[^/]+$/.test(p),
-      (p) => p.startsWith("/blogs/publication-calendar"),
-      (p) => /^\/products\/[^/]+$/.test(p),
-    ];
-
-    return notesOpen || calendarOpen || rules.some((fn) => fn(pathname));
-  }, [pathname, notesOpen, calendarOpen]);
 
   return (
     <div className="h-screen overflow-hidden bg-[var(--background)]">

@@ -2,7 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["ibass-collection.s3.ap-south-1.amazonaws.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "ibass-collection.s3.ap-south-1.amazonaws.com",
+        pathname: "/**",
+      },
+    ],
   },
 };
 

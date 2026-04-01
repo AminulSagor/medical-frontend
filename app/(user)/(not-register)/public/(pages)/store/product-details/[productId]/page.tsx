@@ -61,7 +61,7 @@ function transformApiToProductDetails(
         : "OUT OF STOCK",
     },
     media: {
-      heroImageUrl: apiData.images[0] || "/placeholder-product.png",
+      heroImageUrl: apiData.images[0] || "/photos/store_product.png",
       heroHasPlayButton: false,
       thumbnails: apiData.images.map((img, idx) => ({
         id: `thumb-${idx}`,
