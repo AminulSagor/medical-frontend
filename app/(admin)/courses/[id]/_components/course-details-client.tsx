@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Calendar, Clock, Eye } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Eye, Loader2 } from "lucide-react";
+import { getWorkshopById } from "@/service/admin/workshop.service";
+import type { Workshop } from "@/types/admin/workshop.types";
 
 type DeliveryMode = "in_person" | "online";
 
@@ -17,6 +20,17 @@ type Model = {
     capacityTotal: number;
     refundRequests: number;
     deliveryMode: string; // validate below
+    shortBlurb: string;
+    learningObjectives: string;
+    offersCmeCredits: boolean;
+    standardBaseRate: string;
+    groupDiscounts: any;
+    webinarPlatform: string;
+    meetingLink: string;
+    meetingPassword: string;
+    autoRecordSession: boolean;
+    days: any;
+    faculty: any;
 };
 
 function cx(...p: Array<string | false | null | undefined>) {
@@ -63,7 +77,100 @@ function StatCard({
     );
 }
 
-export default function CourseDetailsClient({ model }: { model: Model }) {
+function workshopToModel(w: Workshop): Model {
+    const firstDay = w.days?.[0];
+    const firstSeg = firstDay?.segments?.[0];
+    const lastSeg = firstDay?.segments?.[(firstDay?.segments?.length ?? 1) - 1];
+
+    const dateLabel = firstDay?.date
+        ? new Date(firstDay.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+        : "—";
+
+    const timeLabel =
+        firstSeg?.startTime && lastSeg?.endTime
+            ? `${firstSeg.startTime} - ${lastSeg.endTime}`
+            : "—";
+
+    const lead = w.faculty?.[0];
+
+    return {
+        id: w.id,
+        title: w.title,
+        dateLabel,
+        timeLabel,
+        instructorName: lead ? `${lead.firstName} ${lead.lastName}` : "—",
+        instructorAvatarUrl: lead?.imageUrl || "",
+        capacityUsed: 0,
+        capacityTotal: w.capacity,
+        refundRequests: 0,
+        deliveryMode: w.deliveryMode,
+        shortBlurb: w.shortBlurb || "",
+        learningObjectives: w.learningObjectives || "",
+        offersCmeCredits: w.offersCmeCredits,
+        standardBaseRate: w.standardBaseRate,
+        groupDiscounts: w.groupDiscounts,
+        webinarPlatform: w.webinarPlatform || "",
+        meetingLink: w.meetingLink || "",
+        meetingPassword: w.meetingPassword || "",
+        autoRecordSession: w.autoRecordSession,
+        days: w.days,
+        faculty: w.faculty,
+    };
+}
+
+export default function CourseDetailsClient({ workshopId, model: fallbackModel }: { workshopId: string; model?: Model }) {
+    console.log("CourseDetailsClient rendered with workshopId:", workshopId);
+    const [model, setModel] = useState<Model | null>(fallbackModel || null);
+    const [loading, setLoading] = useState(!fallbackModel);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!workshopId) {
+            console.error("No workshopId provided");
+            setError("No workshop ID provided");
+            setLoading(false);
+            return;
+        }
+        
+        console.log("Starting fetch for workshop ID:", workshopId);
+        setLoading(true);
+        setError(null);
+        
+        getWorkshopById(workshopId)
+            .then((w) => {
+                console.log("Workshop data received:", w);
+                if (!w) {
+                    throw new Error("Workshop not found");
+                }
+                setModel(workshopToModel(w));
+            })
+            .catch((err) => {
+                console.error("Failed to load workshop:", err);
+                setError(err instanceof Error ? err.message : "Failed to load workshop");
+                setModel(null);
+            })
+            .finally(() => {
+                console.log("Fetch completed, setting loading to false");
+                setLoading(false);
+            });
+    }, [workshopId]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <Loader2 size={24} className="animate-spin text-slate-400" />
+            </div>
+        );
+    }
+
+    if (!model) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <p className="text-sm text-slate-500">Workshop not found.</p>
+            </div>
+        );
+    }
+
     const mode = (model.deliveryMode as DeliveryMode) || null;
 
     const pct =
@@ -157,15 +264,40 @@ function InPersonDetails({ model }: { model: Model }) {
             <div className="space-y-5">
                 <SectionCard title="Essentials">
                     <RowLine label="Delivery Mode" value="In-Person Lab (Multi-Day)" />
-                    <RowLine label="Brief Description" value="—" />
+                    <RowLine label="Brief Description" value={model.shortBlurb || "—"} />
                 </SectionCard>
 
-                <SectionCard title="Syllabus & Details" right={<TinyPill>CME CREDITS: —</TinyPill>}>
-                    <p className="text-sm text-slate-600">—</p>
+                <SectionCard title="Syllabus & Details" right={<TinyPill>CME CREDITS: {model.offersCmeCredits ? "Yes" : "No"}</TinyPill>}>
+                    <p className="text-sm text-slate-600">{model.learningObjectives || "—"}</p>
                 </SectionCard>
 
                 <SectionCard title="Course Agenda">
-                    <p className="text-sm text-slate-600">—</p>
+                    {model.days && model.days.length > 0 ? (
+                        <div className="space-y-3">
+                            {model.days.map((day: any, idx: number) => (
+                                <div key={day.id || idx} className="border-l-2 border-slate-200 pl-4">
+                                    <p className="text-sm font-semibold text-slate-900">
+                                        Day {day.dayNumber || idx + 1}: {day.date ? new Date(day.date).toLocaleDateString() : "—"}
+                                    </p>
+                                    {day.segments && day.segments.length > 0 && (
+                                        <div className="mt-2 space-y-2">
+                                            {day.segments.map((segment: any, sIdx: number) => (
+                                                <div key={segment.id || sIdx} className="text-xs text-slate-600">
+                                                    <span className="font-medium">{segment.topic}</span>
+                                                    {segment.details && <p className="mt-1">{segment.details}</p>}
+                                                    <p className="text-slate-400">
+                                                        {segment.startTime} - {segment.endTime}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-slate-600">No agenda available</p>
+                    )}
                 </SectionCard>
 
                 <SectionCard title="Faculty">
@@ -225,8 +357,18 @@ function InPersonDetails({ model }: { model: Model }) {
                 </SideCard>
 
                 <SideCard title="Pricing">
-                    <RowLine label="Base Rate" value="$—" />
-                    <RowLine label="Group Rate" value="$—" />
+                    <RowLine label="Base Rate" value={model.standardBaseRate ? `$${model.standardBaseRate}` : "$—"} />
+                    {model.groupDiscounts && model.groupDiscounts.length > 0 ? (
+                        model.groupDiscounts.map((discount: any, idx: number) => (
+                            <RowLine 
+                                key={idx} 
+                                label={`Group ${discount.minimumAttendees}+`} 
+                                value={`$${discount.groupRatePerPerson}/person`} 
+                            />
+                        ))
+                    ) : (
+                        <RowLine label="Group Rate" value="$—" />
+                    )}
                 </SideCard>
             </div>
         </div>
@@ -239,22 +381,47 @@ function OnlineWebinarDetails({ model }: { model: Model }) {
             <div className="space-y-5">
                 <SectionCard title="Essentials">
                     <RowLine label="Delivery Mode" value="Online Webinar" />
-                    <RowLine label="Brief Description" value="—" />
+                    <RowLine label="Brief Description" value={model.shortBlurb || "—"} />
                 </SectionCard>
 
-                <SectionCard title="Syllabus & Details" right={<TinyPill>CME CREDITS: —</TinyPill>}>
-                    <p className="text-sm text-slate-600">—</p>
+                <SectionCard title="Syllabus & Details" right={<TinyPill>CME CREDITS: {model.offersCmeCredits ? "Yes" : "No"}</TinyPill>}>
+                    <p className="text-sm text-slate-600">{model.learningObjectives || "—"}</p>
                 </SectionCard>
 
                 <SectionCard title="Webinar Configuration" right={<TinyPill>ACTION CONFIGURATION</TinyPill>}>
-                    <RowLine label="Webinar Platform" value="—" />
-                    <RowLine label="Meeting Link" value="—" />
-                    <RowLine label="Meeting Password" value="••••••" />
-                    <RowLine label="Automatic Recording" value="—" />
+                    <RowLine label="Webinar Platform" value={model.webinarPlatform || "—"} />
+                    <RowLine label="Meeting Link" value={model.meetingLink || "—"} />
+                    <RowLine label="Meeting Password" value={model.meetingPassword || "••••••"} />
+                    <RowLine label="Automatic Recording" value={model.autoRecordSession ? "Yes" : "No"} />
                 </SectionCard>
 
                 <SectionCard title="Course Agenda">
-                    <p className="text-sm text-slate-600">—</p>
+                    {model.days && model.days.length > 0 ? (
+                        <div className="space-y-3">
+                            {model.days.map((day: any, idx: number) => (
+                                <div key={day.id || idx} className="border-l-2 border-slate-200 pl-4">
+                                    <p className="text-sm font-semibold text-slate-900">
+                                        Day {day.dayNumber || idx + 1}: {day.date ? new Date(day.date).toLocaleDateString() : "—"}
+                                    </p>
+                                    {day.segments && day.segments.length > 0 && (
+                                        <div className="mt-2 space-y-2">
+                                            {day.segments.map((segment: any, sIdx: number) => (
+                                                <div key={segment.id || sIdx} className="text-xs text-slate-600">
+                                                    <span className="font-medium">{segment.topic}</span>
+                                                    {segment.details && <p className="mt-1">{segment.details}</p>}
+                                                    <p className="text-slate-400">
+                                                        {segment.startTime} - {segment.endTime}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-slate-600">No agenda available</p>
+                    )}
                 </SectionCard>
 
                 <SectionCard title="Faculty">
@@ -313,8 +480,18 @@ function OnlineWebinarDetails({ model }: { model: Model }) {
                 </SideCard>
 
                 <SideCard title="Pricing">
-                    <RowLine label="Base Rate" value="$—" />
-                    <RowLine label="Group Rate" value="$—" />
+                    <RowLine label="Base Rate" value={model.standardBaseRate ? `$${model.standardBaseRate}` : "$—"} />
+                    {model.groupDiscounts && model.groupDiscounts.length > 0 ? (
+                        model.groupDiscounts.map((discount: any, idx: number) => (
+                            <RowLine 
+                                key={idx} 
+                                label={`Group ${discount.minimumAttendees}+`} 
+                                value={`$${discount.groupRatePerPerson}/person`} 
+                            />
+                        ))
+                    ) : (
+                        <RowLine label="Group Rate" value="$—" />
+                    )}
                 </SideCard>
             </div>
         </div>

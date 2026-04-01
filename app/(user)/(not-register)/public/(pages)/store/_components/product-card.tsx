@@ -1,18 +1,19 @@
 "use client";
 
-import { Product } from "@/app/(user)/(not-register)/public/types/store.product";
+import { PublicProduct } from "@/types/product/public-product.types";
 import Button from "@/components/buttons/button";
 import Image from "next/image";
 import Link from "next/link";
 
 interface Props {
-  product: Product;
-  onAdd?: (p: Product) => void;
-  onNotify?: (p: Product) => void;
+  product: PublicProduct;
+  onAdd?: (p: PublicProduct) => void;
+  onNotify?: (p: PublicProduct) => void;
 }
 
-function money(v: number) {
-  return `$${v.toFixed(2)}`;
+function money(v: string) {
+  const num = parseFloat(v);
+  return `$${num.toFixed(2)}`;
 }
 
 function Badge({ text }: { text: string }) {
@@ -24,18 +25,18 @@ function Badge({ text }: { text: string }) {
 }
 
 export default function ProductCard({ product, onAdd, onNotify }: Props) {
-  const isOut = product.stock === "out_of_stock";
+  const isOut = !product.inStock;
 
   return (
     <Link
-      href={"/public/store/product-details/1234"}
+      href={`/public/store/product-details/${product.id}`}
       className="rounded-2xl border border-light-slate/10 shadow-sm overflow-hidden"
     >
       <div className="relative">
         <div className="relative h-52 w-full bg-light-slate/10 overflow-hidden">
           <Image
-            src={product.imageUrl}
-            alt={product.name}
+            src={product.photo || "/photos/store_product.png"}
+            alt={product.title}
             fill
             sizes="(max-width: 768px) 100vw, 33vw"
             className="object-cover"
@@ -62,24 +63,29 @@ export default function ProductCard({ product, onAdd, onNotify }: Props) {
         </div>
 
         <div className="mt-2 text-lg font-semibold text-black">
-          {product.name}
+          {product.title}
         </div>
 
-        <p className="mt-2 text-sm leading-relaxed text-light-slate">
+        <p className="mt-2 text-sm leading-relaxed text-light-slate line-clamp-2">
           {product.description}
         </p>
 
         <div className="mt-6 flex items-center justify-between gap-4">
           <div className="flex items-end gap-2">
-            <div className="text-lg font-extrabold text-black">
-              {money(product.price)}
-            </div>
-
-            {product.oldPrice && isOut ? (
-              <div className="text-sm font-semibold text-light-slate line-through">
-                {money(product.oldPrice)}
+            {product.discountedPrice ? (
+              <>
+                <div className="text-lg font-extrabold text-black">
+                  {money(product.discountedPrice)}
+                </div>
+                <div className="text-sm font-semibold text-light-slate line-through">
+                  {money(product.price)}
+                </div>
+              </>
+            ) : (
+              <div className="text-lg font-extrabold text-black">
+                {money(product.price)}
               </div>
-            ) : null}
+            )}
           </div>
 
           {isOut ? (

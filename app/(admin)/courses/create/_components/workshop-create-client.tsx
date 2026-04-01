@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { z } from "zod";
 import {
     ArrowLeft,
     Calendar,
@@ -19,9 +18,20 @@ import {
     List,
     ListOrdered,
     Link2,
+    Search,
+    Loader2,
 } from "lucide-react";
 import ThemeDropdown, { ThemeDropdownOption } from "@/app/(admin)/users/faculty/register-faculty/_components/theme-dropdown";
 import ManageClinicalLocationsModal from "../../_components/manage-clinical-locations-modal";
+import { searchFaculty } from "@/service/admin/faculty.service";
+import type { Faculty } from "@/types/admin/faculty.types";
+import type { Facility } from "@/types/admin/facility.types";
+import { listFacilities } from "@/service/admin/facility.service";
+import { useDebounce } from "@/hooks/useDebounce";
+import { createWorkshop } from "@/service/admin/workshop.service";
+import { createWorkshopSchema } from "@/schema/admin/workshop.schema";
+import type { CreateWorkshopRequest, WorkshopStatus } from "@/types/admin/workshop.types";
+import { useRouter } from "next/navigation";
 
 type DeliveryMode = "in_person" | "online";
 
@@ -61,13 +71,7 @@ const WEBINAR_PLATFORM_OPTIONS: Array<ThemeDropdownOption<WebinarPlatform>> = [
     { value: "goto_webinar", label: "GoTo Webinar" },
 ];
 
-
 type FacilityLocation = string;
-type LocationItem = {
-    id: string;
-    name: string;
-    address: string;
-};
 
 function uid(prefix = "id") {
     return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now()}`;
@@ -76,49 +80,6 @@ function uid(prefix = "id") {
 function cx(...parts: Array<string | false | null | undefined>) {
     return parts.filter(Boolean).join(" ");
 }
-
-/** ✅ Zod inline (no extra files) */
-const SegmentSchema = z.object({
-    id: z.string().min(1),
-    topic: z.string().optional(),
-    details: z.string().optional(),
-    date: z.string().optional(),
-    startTime: z.string().optional(),
-    endTime: z.string().optional(),
-});
-
-const DayAgendaSchema = z.object({
-    id: z.string().min(1),
-    label: z.string().min(1),
-    segments: z.array(SegmentSchema).min(1),
-});
-
-const FacultyChipSchema = z.object({
-    id: z.string().min(1),
-    name: z.string().min(1),
-    role: z.string().min(1),
-});
-
-const WorkshopCreateSchema = z.object({
-    deliveryMode: z.enum(["in_person", "online"]),
-    title: z.string().optional(),
-    blurb: z.string().optional(),
-
-    facility: z.string().optional(),
-
-    capacity: z.number().nonnegative(),
-    alert: z.number().nonnegative(),
-
-    standardRate: z.number().nonnegative(),
-    minAttendees: z.number().nonnegative(),
-    groupRate: z.number().nonnegative(),
-
-    cme: z.boolean(),
-    learningObjectives: z.string().optional(),
-
-    days: z.array(DayAgendaSchema).min(1),
-    selectedFaculty: z.array(FacultyChipSchema),
-});
 
 function Card({
     title,
@@ -484,6 +445,8 @@ function RichTextEditor({
 }
 
 export default function WorkshopCreateClient() {
+    const router = useRouter();
+    const [submitting, setSubmitting] = useState(false);
     const [mode, setMode] = useState<DeliveryMode>("in_person");
     const isOnline = mode === "online";
     const [webinarPlatform, setWebinarPlatform] = useState<WebinarPlatform | null>("zoom");
@@ -496,18 +459,28 @@ export default function WorkshopCreateClient() {
     const [learningObjectives, setLearningObjectives] = useState("");
     const [cme, setCme] = useState(false);
 
-    const [locations, setLocations] = useState<LocationItem[]>([
-        { id: "main_sim_lab_a", name: "Main Campus – Sim Lab A", address: "123 Medical Dr, Houston, TX 77030" },
-        { id: "austin_satellite", name: "Austin Satellite Center", address: "456 Research Blvd, Austin, TX 78758" },
-    ]);
-
-    const [facility, setFacility] = useState<FacilityLocation | null>("main_sim_lab_a");
+    const [facilities, setFacilities] = useState<Facility[]>([]);
+    const [facility, setFacility] = useState<FacilityLocation | null>(null);
     const [openLocations, setOpenLocations] = useState(false);
 
     const FACILITY_OPTIONS: Array<ThemeDropdownOption<FacilityLocation>> = useMemo(
-        () => locations.map((l) => ({ value: l.id, label: l.name })),
-        [locations]
+        () => facilities.map((f) => ({
+            value: f.id,
+            label: f.roomNumber ? `${f.name} (${f.roomNumber})` : f.name,
+        })),
+        [facilities]
     );
+
+    // Load facilities on mount
+    useEffect(() => {
+        listFacilities()
+            .then((res) => {
+                setFacilities(res.items);
+                if (res.items.length > 0) setFacility(res.items[0].id);
+            })
+            .catch((err) => console.error("Failed to load facilities:", err));
+    }, []);
+
     const [days, setDays] = useState<DayAgenda[]>([
         {
             id: uid("day"),
@@ -551,6 +524,76 @@ export default function WorkshopCreateClient() {
         { id: uid("fac"), name: "Dr. Sarah Chen", role: "LEAD" },
         { id: uid("fac"), name: "James Wilson, RN", role: "ASSISTANT" },
     ]);
+
+    // Faculty search state
+    const [facultyQuery, setFacultyQuery] = useState("");
+    const [facultyResults, setFacultyResults] = useState<Faculty[]>([]);
+    const [facultySearching, setFacultySearching] = useState(false);
+    const [facultyDropdownOpen, setFacultyDropdownOpen] = useState(false);
+    const facultySearchRef = useRef<HTMLDivElement | null>(null);
+    const abortRef = useRef<AbortController | null>(null);
+    const debouncedFacultyQuery = useDebounce(facultyQuery, 300);
+
+    // Run search when debounced query changes (min 3 chars)
+    useEffect(() => {
+        if (debouncedFacultyQuery.length < 3) {
+            setFacultyResults([]);
+            setFacultyDropdownOpen(false);
+            return;
+        }
+
+        // Cancel previous in-flight request
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
+
+        setFacultySearching(true);
+        searchFaculty(debouncedFacultyQuery, 1, 10, controller.signal)
+            .then((res) => {
+                setFacultyResults(res.data);
+                setFacultyDropdownOpen(true);
+            })
+            .catch((err) => {
+                if (err?.name !== "AbortError" && err?.code !== "ERR_CANCELED") {
+                    console.error("Faculty search failed:", err);
+                }
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) {
+                    setFacultySearching(false);
+                }
+            });
+
+        return () => controller.abort();
+    }, [debouncedFacultyQuery]);
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (facultySearchRef.current && !facultySearchRef.current.contains(e.target as Node)) {
+                setFacultyDropdownOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    function selectFacultyFromSearch(faculty: Faculty) {
+        const alreadySelected = selectedFaculty.some((f) => f.id === faculty.id);
+        if (!alreadySelected) {
+            setSelectedFaculty((prev) => [
+                ...prev,
+                {
+                    id: faculty.id,
+                    name: `${faculty.firstName} ${faculty.lastName}`,
+                    role: faculty.medicalDesignation,
+                },
+            ]);
+        }
+        setFacultyQuery("");
+        setFacultyDropdownOpen(false);
+        setFacultyResults([]);
+    }
 
     const [capacity, setCapacity] = useState(24);
     const [alert, setAlert] = useState(5);
@@ -629,32 +672,64 @@ export default function WorkshopCreateClient() {
         setSelectedFaculty((prev) => prev.filter((f) => f.id !== id));
     }
 
-    function validateDraft() {
-        const payload = {
+    function buildPayload(status: WorkshopStatus): CreateWorkshopRequest {
+        return {
             deliveryMode: mode,
+            status,
             title,
-            blurb,
-            facility,
+            shortBlurb: blurb || undefined,
+            coverImageUrl: coverFileName || undefined,
+            learningObjectives: learningObjectives || undefined,
+            offersCmeCredits: cme,
+            facilityIds: facility ? [facility] : [],
+            webinarPlatform: isOnline ? (webinarPlatform ?? undefined) : null,
+            meetingLink: isOnline ? (meetingLink || undefined) : null,
+            meetingPassword: isOnline ? (meetingPassword || undefined) : null,
+            autoRecordSession: isOnline ? recordAutomatically : false,
             capacity,
-            alert,
-            standardRate,
-            minAttendees,
-            groupRate,
-            cme,
-            learningObjectives,
-            days,
-            selectedFaculty,
+            alertAt: alert,
+            standardBaseRate: String(standardRate),
+            groupDiscountEnabled: minAttendees > 0 && groupRate > 0,
+            groupDiscounts:
+                minAttendees > 0 && groupRate > 0
+                    ? [{ minimumAttendees: minAttendees, groupRatePerPerson: String(groupRate) }]
+                    : [],
+            facultyIds: selectedFaculty.map((f) => f.id),
+            days: days.map((d, dIdx) => ({
+                date: d.segments[0]?.date || "",
+                dayNumber: dIdx + 1,
+                segments: d.segments.map((s, sIdx) => ({
+                    segmentNumber: sIdx + 1,
+                    courseTopic: s.topic || "",
+                    topicDetails: s.details || undefined,
+                    startTime: s.startTime || "",
+                    endTime: s.endTime || "",
+                })),
+            })),
         };
+    }
 
-        const parsed = WorkshopCreateSchema.safeParse(payload);
+    async function handleSubmit(status: WorkshopStatus) {
+        const payload = buildPayload(status);
+
+        const parsed = createWorkshopSchema.safeParse(payload);
         if (!parsed.success) {
             setDraftStatus("Draft");
             window.alert(parsed.error.issues[0]?.message ?? "Validation error");
             return;
         }
 
-        setDraftStatus("Ready");
-        window.alert("Draft looks good (UI validation).");
+        setSubmitting(true);
+        try {
+            await createWorkshop(payload);
+            setDraftStatus("Ready");
+            router.push("/courses");
+        } catch (err: any) {
+            console.error("Failed to create workshop:", err);
+            window.alert(err?.response?.data?.message || "Failed to create workshop. Please try again.");
+        } finally {
+            setSubmitting(false);
+        }
     }
 
     return (
@@ -695,10 +770,10 @@ export default function WorkshopCreateClient() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <SecondaryButton type="button" onClick={() => window.alert("Discard (UI only).")}>
+                    <SecondaryButton type="button" onClick={() => router.push("/courses")}>
                         Discard
                     </SecondaryButton>
-                    <PrimaryButton type="button" onClick={() => window.alert("Publish (UI only).")}>
+                    <PrimaryButton type="button" disabled={submitting} onClick={() => handleSubmit("published")}>
                         Publish
                     </PrimaryButton>
                 </div>
@@ -711,7 +786,7 @@ export default function WorkshopCreateClient() {
                     <Card
                         title="Delivery Mode"
                         subtitle="Select how this clinical training will be conducted."
-                        icon={<span className="text-[var(--primary)] text-sm">⎈</span>}
+                        icon={<span className="text-[var(--primary)]">⎈</span>}
                     >
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <button
@@ -780,7 +855,6 @@ export default function WorkshopCreateClient() {
                         </div>
                     </Card>
 
-
                     {isOnline ? (
                         <Card
                             title="Webinar Configuration"
@@ -847,7 +921,6 @@ export default function WorkshopCreateClient() {
                         </Card>
                     ) : null}
 
-
                     <Card
                         title="Essentials"
                         subtitle="Define the core attributes of the workshop."
@@ -870,55 +943,6 @@ export default function WorkshopCreateClient() {
                                     onChange={(e) => setBlurb(e.target.value)}
                                     placeholder="Brief description for the course catalog..."
                                 />
-                            </div>
-                        </div>
-                    </Card>
-
-                    <Card
-                        title={isOnline ? "Webinar Cover Image" : "Workshop Cover Image"}
-                        subtitle="Upload visual media to represent the course in the catalog."
-                        icon={<ImageIcon size={16} className="text-[var(--primary)]" />}
-                    >
-                        <div className="space-y-3">
-                            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
-                                <div className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-white ring-1 ring-slate-200">
-                                    <Upload size={18} className="text-slate-600" />
-                                </div>
-
-                                <p className="mt-3 text-sm font-medium text-slate-700">
-                                    Drag and drop high-resolution workshop media
-                                </p>
-                                <p className="mt-1 text-xs text-slate-500">JPG, PNG or WEBP (max 5MB)</p>
-
-                                <div className="mt-4 flex items-center justify-center gap-2">
-                                    <input
-                                        id="coverUpload"
-                                        type="file"
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={(e) => {
-                                            const f = e.target.files?.[0];
-                                            setCoverFileName(f ? f.name : null);
-                                        }}
-                                    />
-                                    <SecondaryButton
-                                        type="button"
-                                        onClick={() => document.getElementById("coverUpload")?.click()}
-                                    >
-                                        Choose File
-                                    </SecondaryButton>
-
-                                    {coverFileName ? (
-                                        <span className="text-xs text-slate-500">{coverFileName}</span>
-                                    ) : null}
-                                </div>
-                            </div>
-
-                            <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white">
-                                <div className="absolute left-3 top-3 rounded-md bg-slate-700/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
-                                    Current Preview
-                                </div>
-                                <div className="h-[180px]" />
                             </div>
                         </div>
                     </Card>
@@ -1111,11 +1135,85 @@ export default function WorkshopCreateClient() {
                             <div>
                                 <Label>Assign Existing Faculty</Label>
                                 <div className="rounded-xl border border-slate-200 bg-white p-3">
-                                    <div className="flex items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-slate-500">
-                                        <input
-                                            className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
-                                            placeholder="Search by name, designation, or workplace..."
-                                        />
+                                    <div ref={facultySearchRef} className="relative">
+                                        <div className="flex items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-slate-500">
+                                            {facultySearching ? (
+                                                <Loader2 size={16} className="animate-spin text-slate-400" />
+                                            ) : (
+                                                <Search size={16} className="text-slate-400" />
+                                            )}
+                                            <input
+                                                className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+                                                placeholder="Search by name, designation, or workplace..."
+                                                value={facultyQuery}
+                                                onChange={(e) => setFacultyQuery(e.target.value)}
+                                                onFocus={() => {
+                                                    if (facultyResults.length > 0) setFacultyDropdownOpen(true);
+                                                }}
+                                            />
+                                            {facultyQuery.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFacultyQuery("");
+                                                        setFacultyResults([]);
+                                                        setFacultyDropdownOpen(false);
+                                                    }}
+                                                    className="text-slate-400 hover:text-slate-600"
+                                                >
+                                                    ×
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {facultyDropdownOpen && (
+                                            <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-[240px] overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                                                {facultyResults.length === 0 ? (
+                                                    <div className="px-4 py-3 text-center text-sm text-slate-400">
+                                                        No faculty found
+                                                    </div>
+                                                ) : (
+                                                    facultyResults
+                                                        .filter((r) => !selectedFaculty.some((s) => s.id === r.id))
+                                                        .map((faculty) => (
+                                                            <button
+                                                                key={faculty.id}
+                                                                type="button"
+                                                                onClick={() => selectFacultyFromSearch(faculty)}
+                                                                className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
+                                                            >
+                                                                <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200">
+                                                                    {faculty.imageUrl ? (
+                                                                        <img
+                                                                            src={faculty.imageUrl}
+                                                                            alt={`${faculty.firstName} ${faculty.lastName}`}
+                                                                            className="h-full w-full object-cover"
+                                                                        />
+                                                                    ) : (
+                                                                        <span className="grid h-full w-full place-items-center text-xs font-bold text-slate-500">
+                                                                            {faculty.firstName[0]}{faculty.lastName[0]}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="min-w-0 leading-tight">
+                                                                    <p className="truncate text-sm font-semibold text-slate-800">
+                                                                        {faculty.firstName} {faculty.lastName}
+                                                                    </p>
+                                                                    <p className="truncate text-xs text-slate-500">
+                                                                        {faculty.medicalDesignation} · {faculty.institutionOrHospital}
+                                                                    </p>
+                                                                </div>
+                                                            </button>
+                                                        ))
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {facultyQuery.length > 0 && facultyQuery.length < 3 && !facultySearching && (
+                                            <p className="mt-1 text-xs text-slate-400">
+                                                Type at least 3 characters to search
+                                            </p>
+                                        )}
                                     </div>
 
                                     <div className="mt-3 flex flex-wrap gap-2">
@@ -1143,46 +1241,21 @@ export default function WorkshopCreateClient() {
                                 </div>
                             </div>
 
-                            <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                                    <Plus size={16} className="text-[var(--primary)]" />
-                                    Add New Faculty
-                                </div>
-
-                                <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                                    <div>
-                                        <Label>Full Name</Label>
-                                        <TextInput placeholder="e.g., Dr. Robert Vance" />
+                            <Link
+                                href="/users/faculty/register-faculty"
+                                className="flex items-center justify-between rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 p-4 transition hover:border-[var(--primary)]/40 hover:bg-[var(--primary-50)]/30 group"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="grid h-10 w-10 place-items-center rounded-xl bg-white ring-1 ring-slate-200 group-hover:ring-[var(--primary)]/20 transition">
+                                        <Plus size={18} className="text-[var(--primary)]" />
                                     </div>
                                     <div>
-                                        <Label>Designation</Label>
-                                        <TextInput placeholder="e.g., Chief of Anesthesia" />
-                                    </div>
-                                    <div className="md:col-span-2">
-                                        <Label>Workplace / Institution</Label>
-                                        <TextInput placeholder="e.g., Texas Medical Center" />
-                                    </div>
-                                    <div>
-                                        <Label>LinkedIn Profile</Label>
-                                        <TextInput placeholder="https://linkedin.com/in/..." />
-                                    </div>
-                                    <div>
-                                        <Label>Academic Portfolio</Label>
-                                        <TextInput placeholder="https://..." />
+                                        <p className="text-sm font-semibold text-slate-900">Register New Faculty</p>
+                                        <p className="text-xs text-slate-500">Add a new instructor or expert to the system</p>
                                     </div>
                                 </div>
-
-                                <div className="mt-4">
-                                    <button
-                                        type="button"
-                                        className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:opacity-90 active:scale-[0.99] transition"
-                                        onClick={() => window.alert("Create & assign (UI only).")}
-                                    >
-                                        <Plus size={16} />
-                                        Create and Assign Faculty
-                                    </button>
-                                </div>
-                            </div>
+                                <ArrowLeft size={16} className="rotate-180 text-slate-400 group-hover:text-[var(--primary)] transition" />
+                            </Link>
                         </div>
                     </Card>
                 </div>
@@ -1334,8 +1407,8 @@ export default function WorkshopCreateClient() {
 
                     <Card title="Status & Tracking" icon={<span className="text-[var(--primary)]">⏱</span>}>
                         <div className="space-y-3">
-                            <SecondaryButton type="button" className="w-full" onClick={validateDraft}>
-                                Save Draft
+                            <SecondaryButton type="button" className="w-full" disabled={submitting} onClick={() => handleSubmit("draft")}>
+                                {submitting ? "Saving..." : "Save Draft"}
                             </SecondaryButton>
 
                             <p className="text-center text-[11px] text-slate-400">
@@ -1349,19 +1422,12 @@ export default function WorkshopCreateClient() {
             <ManageClinicalLocationsModal
                 open={openLocations}
                 onClose={() => setOpenLocations(false)}
-                locations={locations}
                 selectedId={facility}
-                onSelect={(id) => setFacility(id)}
-                onCreate={(loc) => {
-                    const id = `loc_${Math.random().toString(16).slice(2)}_${Date.now()}`;
-                    const label = loc.suite ? `${loc.name} (${loc.suite})` : loc.name;
-
-                    setLocations((prev) => [
-                        ...prev,
-                        { id, name: label, address: loc.address },
-                    ]);
-
-                    setFacility(id);
+                onSelect={(fac) => {
+                    setFacility(fac.id);
+                }}
+                onFacilitiesChange={(updated) => {
+                    setFacilities(updated);
                 }}
             />
         </div>

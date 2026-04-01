@@ -266,11 +266,11 @@ export default function AdjustProfilePhotoModal({
                         "w-full rounded-3xl bg-white ring-1 ring-slate-200",
                         "shadow-[0_30px_90px_rgba(15,23,42,0.25)]",
 
-                        // ✅ smaller than before (was 980)
+                        // smaller than before (was 980)
                         "max-w-[860px]",
 
-                        // ✅ prevents huge modal on big screens
-                        "max-h-[calc(100vh-140px)] overflow-hidden",
+                        // prevents huge modal on big screens
+                        "max-h-[calc(100vh-140px)] overflow-y-auto",
                     ].join(" ")}
                 >
                     {/* header */}

@@ -3,8 +3,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ShoppingCart, Menu, LogIn, UserPlus, Search, X } from "lucide-react";
-import { getToken } from "@/utils/token/cookie_utils";
-import { usePathname } from "next/navigation";
+import { getToken, removeToken } from "@/utils/token/cookie_utils";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "motion/react";
@@ -237,6 +237,7 @@ export default function Navbar() {
 
 function AccountAccessDropdown() {
   const path = usePathname();
+  const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -316,20 +317,28 @@ function AccountAccessDropdown() {
             <div className="h-px w-full bg-light-slate/15" />
 
             <div className="p-4">
-              <Link
-                href={isDashboard ? "/auth/sign-in" : "/auth/sign-in"}
-                className="flex items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
-              >
-                {isDashboard ? (
+              {isDashboard ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    removeToken();
+                    setIsAuthenticated(false);
+                    router.push("/auth/sign-in");
+                  }}
+                  className="flex w-full items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
+                >
                   <LogOut size={20} className="text-light-slate" />
-                ) : (
+                  <span className="text-base font-semibold text-black">Sign Out</span>
+                </button>
+              ) : (
+                <Link
+                  href="/auth/sign-in"
+                  className="flex items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
+                >
                   <LogIn size={20} className="text-light-slate" />
-                )}
-
-                <span className="text-base font-semibold text-black">
-                  {isDashboard ? "Sign Out" : "Sign In"}
-                </span>
-              </Link>
+                  <span className="text-base font-semibold text-black">Sign In</span>
+                </Link>
+              )}
 
               <Link
                 href={isDashboard ? "/settings" : "/auth/sign-up"}

@@ -13,7 +13,9 @@ import {
     Users,
     BarChart3,
     Settings,
+    LogOut,
 } from "lucide-react";
+import { removeToken } from "@/utils/token/cookie_utils";
 import { ADMIN_NAV } from "../_data/admin-nav";
 
 type Item = {
@@ -94,21 +96,35 @@ export default function AdminSidebar() {
 
             {/* Footer user */}
             <div className="mt-auto border-t px-5 py-4">
-                <div className="flex items-center gap-3">
-                    <div className="relative h-9 w-9 overflow-hidden rounded-full ring-1 ring-slate-200">
-                        <Image
-                            src="/photos/image.png"
-                            alt="Admin"
-                            fill
-                            className="object-cover"
-                        />
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="relative h-9 w-9 overflow-hidden rounded-full ring-1 ring-slate-200">
+                            <Image
+                                src="/photos/image.png"
+                                alt="Admin"
+                                fill
+                                className="object-cover"
+                            />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-900">
+                                Dr. Farah
+                            </p>
+                            <p className="truncate text-xs text-slate-500">Administrator</p>
+                        </div>
                     </div>
-                    <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-900">
-                            Dr. Farah
-                        </p>
-                        <p className="truncate text-xs text-slate-500">Administrator</p>
-                    </div>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            removeToken();
+                            router.push("/auth/sign-in");
+                        }}
+                        className="grid h-9 w-9 place-items-center rounded-md text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition"
+                        aria-label="Sign out"
+                        title="Sign out"
+                    >
+                        <LogOut size={16} />
+                    </button>
                 </div>
             </div>
         </div>

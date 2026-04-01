@@ -4,20 +4,34 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CalendarDays } from "lucide-react";
 import { motion } from "motion/react";
-import { Course } from "@/app/(user)/(not-register)/public/types/course.types";
+import { PublicWorkshop } from "@/types/workshop/public-workshop.types";
 
-function money(n: number) {
-  return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+function money(price: string) {
+  const num = parseFloat(price);
+  return num.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-function modeBadgeClass(mode: Course["mode"]) {
-  if (mode === "Online") {
+function modeBadgeClass(mode: PublicWorkshop["deliveryMode"]) {
+  if (mode === "online") {
     return "bg-primary/15 text-primary border border-primary/20";
   }
   return "bg-black/60 text-white border border-white/10";
 }
 
-export default function CourseCard({ course }: { course: Course }) {
+function formatDeliveryMode(mode: PublicWorkshop["deliveryMode"]) {
+  return mode === "online" ? "Online" : "In-Person";
+}
+
+function formatDate(dateStr: string) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+export default function CourseCard({ workshop }: { workshop: PublicWorkshop }) {
   return (
     <motion.div
       whileHover="hover"
@@ -33,8 +47,8 @@ export default function CourseCard({ course }: { course: Course }) {
           className="h-full w-full"
         >
           <Image
-            src={course.imageSrc}
-            alt={course.imageAlt}
+            src={workshop.workshopPhoto || "/photos/course_details_cover.png"}
+            alt={workshop.title}
             fill
             className="object-cover"
           />
@@ -50,11 +64,11 @@ export default function CourseCard({ course }: { course: Course }) {
           <span
             className={[
               "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
-              modeBadgeClass(course.mode),
+              modeBadgeClass(workshop.deliveryMode),
               "backdrop-blur",
             ].join(" ")}
           >
-            {course.mode}
+            {formatDeliveryMode(workshop.deliveryMode)}
           </span>
         </motion.div>
 
@@ -66,7 +80,7 @@ export default function CourseCard({ course }: { course: Course }) {
           className="absolute right-4 top-4"
         >
           <span className="inline-flex items-center rounded-full bg-black/45 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-            {course.durationLabel}
+            {workshop.totalHours}
           </span>
         </motion.div>
 
@@ -77,9 +91,11 @@ export default function CourseCard({ course }: { course: Course }) {
           transition={{ duration: 0.25, ease: "easeOut" }}
           className="absolute bottom-4 right-4"
         >
-          <span className="inline-flex items-center rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-            {course.creditsLabel}
-          </span>
+          {workshop.cmeFredits && (
+            <span className="inline-flex items-center rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+              CME Credits
+            </span>
+          )}
         </motion.div>
       </div>
 
@@ -93,15 +109,15 @@ export default function CourseCard({ course }: { course: Course }) {
         <div>
           <div className="flex items-center gap-2 text-sm font-semibold text-primary">
             <CalendarDays size={16} />
-            <span>{course.dateLabel}</span>
+            <span>{formatDate(workshop.date)}</span>
           </div>
 
           <h3 className="mt-3 text-lg font-bold leading-snug text-black transition-colors duration-200 group-hover:text-primary">
-            {course.title}
+            {workshop.title}
           </h3>
 
-          <p className="mt-2 text-sm leading-relaxed text-light-slate">
-            {course.description}
+          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-light-slate">
+            {workshop.description}
           </p>
         </div>
 
@@ -109,12 +125,25 @@ export default function CourseCard({ course }: { course: Course }) {
           <div className="mt-6 h-px w-full bg-light-slate/15" />
 
           <div className="mt-5 flex items-center justify-between">
-            <div className="text-xl font-abold text-black">
-              {money(course.price)}
+            <div className="flex items-center gap-2">
+              {workshop.offerPrice ? (
+                <>
+                  <span className="text-xl font-bold text-black">
+                    {money(workshop.offerPrice)}
+                  </span>
+                  <span className="text-sm text-light-slate line-through">
+                    {money(workshop.price)}
+                  </span>
+                </>
+              ) : (
+                <span className="text-xl font-bold text-black">
+                  {money(workshop.price)}
+                </span>
+              )}
             </div>
 
             <Link
-              href={course.detailsHref}
+              href={`/public/courses/details/${workshop.id}`}
               className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:opacity-80"
             >
               View Details

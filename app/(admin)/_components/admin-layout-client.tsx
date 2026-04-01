@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import React, { useMemo, useEffect, useState } from "react";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import AdminSidebar from "@/app/(admin)/_components/admin-sidebar";
 import AdminTopbar from "@/app/(admin)/_components/admin-topbar";
+import { getToken } from "@/utils/token/cookie_utils";
+import { decodeJwtPayload } from "@/utils/token/decodeJwtPayload";
+import { Loader2 } from "lucide-react";
 
 export default function AdminLayoutClient({
   children,
@@ -12,6 +15,51 @@ export default function AdminLayoutClient({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdminAccess = () => {
+      const token = getToken();
+      
+      if (!token) {
+        // No token, redirect to login
+        router.replace("/auth/sign-in");
+        return;
+      }
+
+      const payload = decodeJwtPayload(token);
+      
+      if (!payload || payload.role !== "admin") {
+        // Not an admin, redirect to home
+        router.replace("/public/home");
+        return;
+      }
+
+      // User is admin
+      setIsAuthorized(true);
+    };
+
+    checkAdminAccess();
+  }, [router]);
+
+  // Show loading while checking authorization
+  if (isAuthorized === null) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[var(--background)]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 size={32} className="animate-spin text-primary" />
+          <p className="text-sm text-slate-500">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authorized, don't render anything (redirect will happen)
+  if (!isAuthorized) {
+    return null;
+  }
 
   const notesOpen = searchParams.get("notes") === "1";
   const calendarOpen = searchParams.get("calendar") === "1";

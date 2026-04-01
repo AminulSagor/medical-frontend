@@ -1,19 +1,35 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { UPCOMING_COURSES } from "@/app/(user)/(not-register)/public/data/course.data";
 import CourseCard from "@/app/(user)/(not-register)/public/(pages)/home/_components/course-card";
+import { getPublicWorkshops } from "@/service/public/workshop.service";
+import { PublicWorkshop } from "@/types/workshop/public-workshop.types";
 
 export default function UpcomingCoursesSection() {
-  const courses = useMemo(() => UPCOMING_COURSES, []);
+  const [workshops, setWorkshops] = useState<PublicWorkshop[]>([]);
+  const [loading, setLoading] = useState(true);
   const [index, setIndex] = useState(0);
 
-  const canPrev = index > 0;
-  const canNext = index < Math.max(0, courses.length - 3);
+  useEffect(() => {
+    const fetchWorkshops = async () => {
+      try {
+        const response = await getPublicWorkshops();
+        setWorkshops(response.data);
+      } catch (error) {
+        console.error("Failed to fetch workshops:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchWorkshops();
+  }, []);
 
-  const visible = courses.slice(index, index + 3);
+  const canPrev = index > 0;
+  const canNext = index < Math.max(0, workshops.length - 3);
+
+  const visible = workshops.slice(index, index + 3);
 
   return (
     <section className="w-full padding">
@@ -81,7 +97,7 @@ export default function UpcomingCoursesSection() {
             <motion.button
               type="button"
               onClick={() =>
-                canNext && setIndex((v) => Math.min(v + 1, courses.length - 3))
+                canNext && setIndex((v) => Math.min(v + 1, workshops.length - 3))
               }
               whileHover={canNext ? { y: -2, scale: 1.04 } : undefined}
               whileTap={canNext ? { scale: 0.96 } : undefined}
@@ -111,21 +127,31 @@ export default function UpcomingCoursesSection() {
             }}
             className="mt-10 grid gap-8 lg:grid-cols-3"
           >
-            {visible.map((c, i) => (
-              <motion.div
-                key={c.id}
-                initial={{ opacity: 0, y: 24, scale: 0.98 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true, amount: 0.25 }}
-                transition={{
-                  duration: 0.5,
-                  delay: i * 0.08,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-              >
-                <CourseCard course={c} />
-              </motion.div>
-            ))}
+            {loading ? (
+              <div className="col-span-3 flex items-center justify-center py-12">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              </div>
+            ) : visible.length === 0 ? (
+              <div className="col-span-3 text-center text-light-slate py-12">
+                No upcoming workshops available.
+              </div>
+            ) : (
+              visible.map((workshop, i) => (
+                <motion.div
+                  key={workshop.id}
+                  initial={{ opacity: 0, y: 24, scale: 0.98 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ once: true, amount: 0.25 }}
+                  transition={{
+                    duration: 0.5,
+                    delay: i * 0.08,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                >
+                  <CourseCard workshop={workshop} />
+                </motion.div>
+              ))
+            )}
           </motion.div>
         </AnimatePresence>
       </div>

@@ -1,55 +1,109 @@
 "use client";
 
+import { useEffect, useState, useCallback } from "react";
 import FiltersSidebar from "@/app/(user)/(not-register)/public/(pages)/store/_components/filters-sidebar";
 import Pagination from "@/app/(user)/(not-register)/public/(pages)/store/_components/pagination";
 import ProductCard from "@/app/(user)/(not-register)/public/(pages)/store/_components/product-card";
-import { PRODUCTS } from "@/app/(user)/(not-register)/public/data/store.products";
-import { Filters } from "@/app/(user)/(not-register)/public/types/store.product";
-import { useMemo, useState } from "react";
+import { getPublicProducts } from "@/service/public/product.service";
+import type {
+  ProductFilters,
+  PublicProduct,
+  PublicProductMeta,
+} from "@/types/product/public-product.types";
 
 const PAGE_SIZE = 6;
 
-export default function ProductSection() {
-  const [filters, setFilters] = useState<Filters>({
+interface ProductSectionProps {
+  searchQuery?: string;
+  sortBy?: string;
+}
+
+export default function ProductSection({
+  searchQuery = "",
+  sortBy = "newest",
+}: ProductSectionProps) {
+  const [filters, setFilters] = useState<ProductFilters>({
     category: "All",
     brands: [],
-    minPrice: 10,
-    maxPrice: 500,
+    minPrice: 0,
+    maxPrice: 0,
   });
 
   const [page, setPage] = useState(1);
+  const [products, setProducts] = useState<PublicProduct[]>([]);
+  const [meta, setMeta] = useState<PublicProductMeta | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = useMemo(() => {
-    return PRODUCTS.filter((p) => {
-      if (filters.category !== "All" && p.category !== filters.category) {
-        return false;
+  const fetchProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params: Record<string, string | number> = {
+        page,
+        limit: PAGE_SIZE,
+      };
+
+      // Add search query
+      if (searchQuery.trim()) {
+        params.search = searchQuery.trim();
       }
 
-      if (filters.brands.length && !filters.brands.includes(p.brand)) {
-        return false;
+      if (filters.category && filters.category !== "All") {
+        params.categoryNames = filters.category;
+      }
+      if (filters.brands && filters.brands.length > 0) {
+        params.brands = filters.brands.join(",");
+      }
+      // Send price as strings (backend expects NumberString)
+      if (filters.minPrice && filters.minPrice > 0) {
+        params.minPrice = String(filters.minPrice);
+      }
+      if (filters.maxPrice && filters.maxPrice > 0) {
+        params.maxPrice = String(filters.maxPrice);
+      }
+      // Use sortBy from props
+      if (sortBy) {
+        params.sortBy = sortBy;
       }
 
-      if (p.price < filters.minPrice || p.price > filters.maxPrice) {
-        return false;
-      }
+      const response = await getPublicProducts(params);
+      setProducts(response.items);
+      setMeta(response.meta);
+    } catch (error) {
+      console.error("Failed to fetch products:", error);
+      setProducts([]);
+      setMeta(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, page, searchQuery, sortBy]);
 
-      return true;
-    });
-  }, [filters]);
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  // Reset to page 1 when filters or search change
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, sortBy]);
 
-  const pageItems = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    return filtered.slice(start, start + PAGE_SIZE);
-  }, [filtered, page]);
+  // Reset to page 1 when filters change
+  const handleFiltersChange = (newFilters: ProductFilters) => {
+    setFilters(newFilters);
+    setPage(1);
+  };
+
+  const totalPages = meta?.totalPages || 1;
+  const totalResults = meta?.total || 0;
 
   return (
     <main>
       <div className="py-10">
         <div className="grid gap-8 lg:grid-cols-12">
           <aside className="lg:col-span-3">
-            <FiltersSidebar />
+            <FiltersSidebar
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+            />
           </aside>
 
           <section className="lg:col-span-9">
@@ -57,17 +111,27 @@ export default function ProductSection() {
               <div className="text-sm font-semibold text-light-slate">
                 Showing{" "}
                 <span className="font-extrabold text-black">
-                  {filtered.length}
+                  {totalResults}
                 </span>{" "}
                 results
               </div>
             </div>
 
-            <div className="mt-5 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {pageItems.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
+            {loading ? (
+              <div className="mt-10 flex items-center justify-center py-20">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              </div>
+            ) : products.length === 0 ? (
+              <div className="mt-10 text-center text-light-slate py-20">
+                No products found matching your filters.
+              </div>
+            ) : (
+              <div className="mt-5 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {products.map((p) => (
+                  <ProductCard key={p.id} product={p} />
+                ))}
+              </div>
+            )}
 
             <div className="mt-10">
               <Pagination
