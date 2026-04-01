@@ -7,7 +7,13 @@ import PostTitleEditor from "./post-title-editor";
 import PostBodyEditor from "./post-body-editor";
 import { cx } from "../ui/shared";
 
-export default function PostEditor({ onBack }: { onBack: () => void }) {
+export default function PostEditor({
+  onBack,
+  disabled,
+}: {
+  onBack: () => void;
+  disabled?: boolean;
+}) {
   return (
     <div className="min-w-0 flex-1">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -27,14 +33,14 @@ export default function PostEditor({ onBack }: { onBack: () => void }) {
       </div>
 
       <div className={cx("rounded-xl border border-slate-200 bg-white p-6 shadow-sm")}>
-        <PostCoverImage />
+        <PostCoverImage disabled={disabled} />
         <PostTitleEditor />
         <p className="mt-3 max-w-[720px] text-sm leading-6 text-slate-600">
           Write clinical insights with headings, quotes, links, and images. On the right, configure
           your publishing settings and SEO metadata.
         </p>
 
-        <PostBodyEditor />
+        <PostBodyEditor disabled={disabled} />
       </div>
     </div>
   );

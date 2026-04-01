@@ -4,37 +4,93 @@ const Htmlish = z
   .string()
   .trim()
   .min(1, "Content is required.")
-  .refine((v) => /<\s*[a-z][\s\S]*>/i.test(v), "Content must be valid HTML (at least one tag).");
+  .refine((v) => /<\s*[a-z][\s\S]*>/i.test(v), "Content must include valid formatted text.");
+
+const OptionalUrl = z
+  .string()
+  .trim()
+  .refine((v) => v.length === 0 || /^https?:\/\/\S+$/i.test(v), {
+    message: "Cover image must be a valid URL.",
+  })
+  .optional();
 
 export const BlogCreateSchema = z
   .object({
-  title: z.string().trim().min(5, "Title must be at least 5 characters.").max(120, "Title is too long."),
-  content: Htmlish,
+    title: z
+      .string()
+      .trim()
+      .min(1, "Title is required.")
+      .min(5, "Title must be at least 5 characters.")
+      .max(120, "Title must be 120 characters or less."),
+    content: Htmlish,
 
-  // Backend expects a URL (e.g. `https://storage...`). For now, we store data URLs from the file picker,
-  // so the shape matches even before the real upload integration is added.
-  coverImageUrl: z.string().trim().max(2_000_000).optional(),
+    coverImageUrl: OptionalUrl,
 
-  publishingStatus: z.enum(["draft", "scheduled", "published"]),
-  scheduledPublishDate: z.string().datetime().optional(),
-  isFeatured: z.boolean(),
+    publishingStatus: z.enum(["draft", "scheduled", "published"], {
+      errorMap: () => ({ message: "Please select a valid publishing status." }),
+    }),
+    scheduledPublishDate: z
+      .string()
+      .datetime("Please select a valid schedule date and time.")
+      .optional(),
+    isFeatured: z.boolean(),
 
-  excerpt: z.string().trim().min(20, "Excerpt must be at least 20 characters.").max(150, "Excerpt must be at most 150 characters."),
+    excerpt: z
+      .string()
+      .trim()
+      .min(1, "Excerpt is required.")
+      .min(20, "Excerpt must be at least 20 characters.")
+      .max(150, "Excerpt must be at most 150 characters."),
 
-  // Backend expects ids arrays; in this UI we treat “names” as ids until the backend mapping is implemented.
-  authorIds: z.array(z.string().trim().min(1)).min(1).max(5),
-  categoryIds: z.array(z.string().trim().min(1)).min(1).max(10),
-  tagIds: z.array(z.string().trim().min(1)).max(12),
+    // Backend expects an array, but UI selects exactly one author.
+    authorIds: z
+      .array(z.string().trim().min(1))
+      .min(1, "Author is required.")
+      .max(1, "Select exactly one author."),
+    categoryIds: z
+      .array(z.string().trim().min(1))
+      .min(1, "Select at least one category.")
+      .max(10, "You can select up to 10 categories."),
+    tagIds: z.array(z.string().trim().min(1)).max(12, "You can select up to 12 tags."),
 
-  seoMetaTitle: z.string().trim().min(5).max(70),
-  seoMetaDescription: z.string().trim().min(20).max(160),
+    seoMetaTitle: z
+      .string()
+      .trim()
+      .min(1, "Meta title is required.")
+      .min(5, "Meta title must be at least 5 characters.")
+      .max(70, "Meta title must be 70 characters or less."),
+    seoMetaDescription: z
+      .string()
+      .trim()
+      .min(1, "Meta description is required.")
+      .min(20, "Meta description must be at least 20 characters.")
+      .max(160, "Meta description must be 160 characters or less."),
   })
   .superRefine((val, ctx) => {
     if (val.publishingStatus === "scheduled") {
       if (!val.scheduledPublishDate) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Scheduled publish date is required when publishingStatus is scheduled.",
+          message: "Schedule date and time are required when scheduling a post.",
+          path: ["scheduledPublishDate"],
+        });
+        return;
+      }
+
+      const when = new Date(val.scheduledPublishDate);
+      if (isNaN(when.getTime())) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Schedule date and time are invalid.",
+          path: ["scheduledPublishDate"],
+        });
+        return;
+      }
+
+      if (when.getTime() < Date.now()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Schedule date and time must be in the future.",
           path: ["scheduledPublishDate"],
         });
       }

@@ -1,21 +1,27 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import type { BlogCreateInput } from "../../_lib/blog-create-schema";
 import { cx } from "../ui/shared";
 import PostToolbar, { type PostToolbarActions } from "./post-toolbar";
+import { uploadFileViaSignedUrl } from "@/service/upload/upload.service";
+import { axiosErrorMessage } from "@/utils/errors/axiosErrorMessage";
 
 export default function PostBodyEditor({
   className,
+  disabled,
 }: {
   className?: string;
+  disabled?: boolean;
 }) {
   const { watch, setValue, formState } = useFormContext<BlogCreateInput>();
   const content = watch("content");
   const editorRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const initializedRef = useRef(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState<string | null>(null);
 
   const contentError = formState.errors.content?.message;
 
@@ -80,10 +86,12 @@ export default function PostBodyEditor({
         requestAnimationFrame(syncContentFromDom);
       },
       onImage: () => {
+        if (disabled || uploading) return;
+        setUploadErr(null);
         fileInputRef.current?.click();
       },
     }),
-    []
+    [disabled, uploading]
   );
 
   useEffect(() => {
@@ -168,44 +176,47 @@ export default function PostBodyEditor({
           const file = e.target.files?.[0];
           if (!file) return;
 
-          const dataUrl = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onerror = () => reject(new Error("Failed to read image file."));
-            reader.onload = () => resolve(String(reader.result));
-            reader.readAsDataURL(file);
-          });
+          if (fileInputRef.current) fileInputRef.current.value = "";
 
           const alt = file.name.replace(/\.[^/.]+$/, "") || "image";
-          // Figure markup to look like your screenshot.
-          const figureHtml = `
-            <figure>
-              <img src="${dataUrl}" alt="${alt}" />
-              <figcaption>Figure: ${alt}</figcaption>
-            </figure>
-          `;
+          setUploading(true);
+          setUploadErr(null);
+          try {
+            const { readUrl } = await uploadFileViaSignedUrl(file, "blogs");
 
-          const editor = editorRef.current;
-          if (!editor) return;
-          focusEditor();
-          document.execCommand("insertHTML", false, figureHtml);
+            // Figure markup to look like your screenshot.
+            const figureHtml = `
+              <figure>
+                <img src="${readUrl}" alt="${alt}" />
+                <figcaption>Figure: ${alt}</figcaption>
+              </figure>
+            `;
 
-          // Place caret after the inserted figure so the user can continue typing.
-          requestAnimationFrame(() => {
-            const lastFigure = editor.querySelectorAll("figure");
-            const inserted = lastFigure[lastFigure.length - 1];
-            if (inserted) placeCaretAfterNode(inserted);
-            syncContentFromDom();
-          });
+            const editor = editorRef.current;
+            if (!editor) return;
+            focusEditor();
+            document.execCommand("insertHTML", false, figureHtml);
 
-          // Reset input so picking same file again still triggers change.
-          if (fileInputRef.current) fileInputRef.current.value = "";
+            // Place caret after the inserted figure so the user can continue typing.
+            requestAnimationFrame(() => {
+              const lastFigure = editor.querySelectorAll("figure");
+              const inserted = lastFigure[lastFigure.length - 1];
+              if (inserted) placeCaretAfterNode(inserted);
+              syncContentFromDom();
+            });
+          } catch (err: unknown) {
+            setUploadErr(axiosErrorMessage(err, "Could not upload image."));
+          } finally {
+            setUploading(false);
+          }
         }}
       />
 
       <div
         ref={editorRef}
-        contentEditable
         suppressContentEditableWarning
+        aria-disabled={disabled ? "true" : "false"}
+        contentEditable={!disabled}
         onInput={() => syncContentFromDom()}
         className={cx(
           "blog-editor min-h-[520px] w-full overflow-auto rounded-xl border border-slate-200 bg-white px-6 py-6 text-[14px] leading-7 text-slate-800 outline-none",
@@ -214,6 +225,11 @@ export default function PostBodyEditor({
         )}
       />
 
+      {uploading ? (
+        <p className="mt-2 text-xs font-medium text-slate-600">Uploading image…</p>
+      ) : uploadErr ? (
+        <p className="mt-2 text-xs font-medium text-rose-600">{uploadErr}</p>
+      ) : null}
       {contentError ? <p className="mt-2 text-xs font-medium text-rose-600">{contentError}</p> : null}
     </section>
   );
