@@ -1,6 +1,6 @@
 import React from "react";
 
-interface ButtonProps {
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   size?: ButtonSize;
   variant?: ButtonVariant;
@@ -39,10 +39,12 @@ const Button = ({
   children,
   className = "",
   onClick,
+  ...props
 }: ButtonProps) => {
   return (
     <button
       onClick={onClick}
+      {...props}
       className={`
         ${sizeClasses[size]}
         ${variantClasses[variant]}
@@ -52,6 +54,7 @@ const Button = ({
         cursor-pointer
         transition-all duration-150 ease-out
         active:scale-95
+        disabled:opacity-50 disabled:cursor-not-allowed
         ${className}
       `}
     >

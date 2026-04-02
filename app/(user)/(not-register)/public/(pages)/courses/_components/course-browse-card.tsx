@@ -26,7 +26,7 @@ export default function CourseBrowseCard({
 
   return (
     <div
-      onClick={() => router.push("/public/courses/details/12")}
+      onClick={() => router.push(`/public/courses/details/${course.id}`)}
       className={[
         "rounded-3xl bg-white border border-light-slate/15 shadow-sm overflow-hidden cursor-pointer",
         "flex flex-col h-full",

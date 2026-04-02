@@ -11,6 +11,7 @@ import { ProductDetails } from "@/app/(user)/(not-register)/public/types/product
 import Breadcrumb from "@/app/(user)/(not-register)/public/(pages)/store/product-details/_components/breadcrumb";
 import BundleSetupClient from "@/app/(user)/(not-register)/public/(pages)/store/product-details/_components/bundle-setup.client";
 import FrequentlyBoughtTogether from "@/app/(user)/(not-register)/public/(pages)/store/product-details/_components/frequently-bought-together";
+import ReviewSection from "../_components/review-section";
 import { getProductDetails } from "@/service/public/product.service";
 import type { ProductDetailResponse } from "@/types/product/public-product.types";
 import { use } from "react";
@@ -35,8 +36,8 @@ function transformApiToProductDetails(
     ],
     title: apiData.name,
     sku: apiData.sku,
-    categoryLabel: apiData.categories.map((c) => c.name).join(", ") || "Uncategorized",
-    badges: apiData.frontendBadges.map((badge, idx) => ({
+    categoryLabel: apiData.categories.map((c: any) => c.name).join(", ") || "Uncategorized",
+    badges: apiData.frontendBadges.map((badge: any, idx: number) => ({
       id: `badge-${idx}`,
       label: badge.toUpperCase().replace(/-/g, " "),
       tone: idx === 0 ? "primary" : "dark",
@@ -63,14 +64,14 @@ function transformApiToProductDetails(
     media: {
       heroImageUrl: apiData.images[0] || "/photos/store_product.png",
       heroHasPlayButton: false,
-      thumbnails: apiData.images.map((img, idx) => ({
+      thumbnails: apiData.images.map((img: any, idx: number) => ({
         id: `thumb-${idx}`,
         imageUrl: img,
       })),
     },
     bulkPricing: {
       title: "Bulk Pricing Calculator",
-      tiers: apiData.bulkPriceTiers.map((tier, idx) => ({
+      tiers: apiData.bulkPriceTiers.map((tier: any, idx: number) => ({
         id: `tier-${idx}`,
         minUnitsLabel: `${tier.minQty}+ units`,
         price: parseFloat(tier.price),
@@ -96,7 +97,7 @@ function transformApiToProductDetails(
     overview: {
       title: "Product Overview & Clinical Indication",
       description: apiData.clinicalDescription || "",
-      features: apiData.clinicalBenefits.map((benefit, idx) => ({
+      features: apiData.clinicalBenefits.map((benefit: any, idx: number) => ({
         id: `feature-${idx}`,
         title: benefit.title,
         description: benefit.description,
@@ -105,7 +106,7 @@ function transformApiToProductDetails(
     },
     specs: {
       title: "Technical Specifications",
-      rows: apiData.technicalSpecifications.map((spec, idx) => ({
+      rows: apiData.technicalSpecifications.map((spec: any, idx: number) => ({
         id: `spec-${idx}`,
         label: spec.name,
         value: spec.value,
@@ -192,6 +193,7 @@ export default function ProductDetailsPage({
         <div className="mx-auto max-w-5xl space-y-5">
           <OverviewSection product={product} />
           <SpecsTable product={product} />
+          <ReviewSection productId={productId} />
         </div>
         <FrequentlyBoughtTogether />
       </div>

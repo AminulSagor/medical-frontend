@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useCallback, useEffect } from "react";
+import Image from "next/image";
 import {
     ArrowLeft,
     Check,
@@ -9,14 +10,22 @@ import {
     X,
     Trash2,
     ExternalLink,
+    Upload,
+    Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import ProductPublishedModal from "./product-published-modal";
 import ProductUpdatedModal from "./product-updated-modal";
-
-
-type BulkTier = { id: string; qty: number | ""; price: number | "" };
-
+import { uploadFile, validateFile, FILE_TYPE_PRESETS } from "@/utils/upload/fileUpload";
+import {
+    getProductCategories,
+    createProductCategory,
+    getProductTags,
+    createProductTag,
+    createProduct,
+    updateProduct,
+} from "@/service/admin/product.service";
+import type { ProductCategory, ProductTag, CreateProductRequest, UpdateProductRequest } from "@/types/admin/product.types";
 
 function cx(...parts: Array<string | false | null | undefined>) {
     return parts.filter(Boolean).join(" ");
@@ -158,15 +167,18 @@ function IconBtn({
 function PrimaryButton({
     children,
     onClick,
+    disabled,
 }: {
     children: React.ReactNode;
     onClick?: () => void;
+    disabled?: boolean;
 }) {
     return (
         <button
             type="button"
             onClick={onClick}
-            className="inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--primary-hover)] transition"
+            disabled={disabled}
+            className="inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--primary-hover)] transition disabled:cursor-not-allowed disabled:opacity-50"
         >
             {children}
         </button>
@@ -227,6 +239,8 @@ type Benefit = {
 
 type Spec = { id: string; name: string; value: string };
 
+type BulkTier = { id: string; qty: number | ""; price: number | "" };
+
 function uid(prefix = "id") {
     return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
@@ -244,6 +258,7 @@ export default function ProductForm({
 }: ProductFormProps) {
     const router = useRouter();
     const [publishedOpen, setPublishedOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     // General info
     const [productName, setProductName] = useState(
         initialData?.productName ?? ""
@@ -267,29 +282,134 @@ export default function ProductForm({
     const [stockQty, setStockQty] = useState<number>(
         Number(initialData?.stockQty ?? 0)
     );
-    // Media placeholders only (no assumptions)
-    const thumbs = useMemo(() => Array.from({ length: 4 }), []);
+
+    // Media
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    type MediaItem = { id: string; previewUrl: string; readUrl: string; uploading: boolean; error?: string };
+    const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+
+    const handleFilesSelected = useCallback(async (files: FileList | null) => {
+        if (!files) return;
+        const remaining = 5 - mediaItems.length;
+        const toUpload = Array.from(files).slice(0, remaining);
+        for (const file of toUpload) {
+            const validation = validateFile(file, { maxSizeMB: 10, allowedTypes: FILE_TYPE_PRESETS.images });
+            if (!validation.valid) { alert(validation.error); continue; }
+            const preview = URL.createObjectURL(file);
+            const tempId = `tmp_${Date.now()}_${Math.random()}`;
+            setMediaItems((p) => [...p, { id: tempId, previewUrl: preview, readUrl: "", uploading: true }]);
+            const result = await uploadFile(file, { folder: "products" });
+            setMediaItems((p) => p.map((m) =>
+                m.id === tempId
+                    ? result.success
+                        ? { ...m, readUrl: result.readUrl, uploading: false }
+                        : { ...m, uploading: false, error: result.error }
+                    : m
+            ));
+        }
+    }, [mediaItems.length]);
+
     // Organization
     const [statusLive, setStatusLive] = useState(true);
     const [badgeProfessional, setBadgeProfessional] = useState(true);
     const [badgeWorkshop, setBadgeWorkshop] = useState(true);
     const [badgeNewArrival, setBadgeNewArrival] = useState(false);
-    const [category, setCategory] = useState("Airway Management");
-    const [categoryDraft, setCategoryDraft] = useState("");
-    const [tags, setTags] = useState("");
-    const tagPills = useMemo(
-        () =>
-            tags
-                .split(",")
-                .map((t) => t.trim())
-                .filter(Boolean)
-                .slice(0, 6),
-        [tags]
-    );
+
+    // Category async search
+    const [selectedCategories, setSelectedCategories] = useState<ProductCategory[]>([]);
+    const [categoryQuery, setCategoryQuery] = useState("");
+    const [categoryResults, setCategoryResults] = useState<ProductCategory[]>([]);
+    const [categoryLoading, setCategoryLoading] = useState(false);
+    const [categoryOpen, setCategoryOpen] = useState(false);
+    const categoryRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (categoryQuery.length < 3) { setCategoryResults([]); setCategoryOpen(false); return; }
+        const t = setTimeout(async () => {
+            setCategoryLoading(true);
+            try {
+                const res = await getProductCategories(categoryQuery);
+                setCategoryResults(res);
+                setCategoryOpen(true);
+            } catch { /* ignore */ } finally { setCategoryLoading(false); }
+        }, 300);
+        return () => clearTimeout(t);
+    }, [categoryQuery]);
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) {
+                setCategoryOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
+
+    const addCategory = useCallback((cat: ProductCategory) => {
+        setSelectedCategories((p) => p.find((c) => c.id === cat.id) ? p : [...p, cat]);
+        setCategoryQuery("");
+        setCategoryOpen(false);
+    }, []);
+
+    const createAndAddCategory = useCallback(async () => {
+        const name = categoryQuery.trim();
+        if (!name) return;
+        try {
+            const created = await createProductCategory({ name });
+            addCategory(created);
+        } catch { alert("Failed to create category"); }
+    }, [categoryQuery, addCategory]);
+
+    // Tag async search
+    const [selectedTags, setSelectedTags] = useState<ProductTag[]>([]);
+    const [tagQuery, setTagQuery] = useState("");
+    const [tagResults, setTagResults] = useState<ProductTag[]>([]);
+    const [tagLoading, setTagLoading] = useState(false);
+    const [tagOpen, setTagOpen] = useState(false);
+    const tagRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (tagQuery.length < 3) { setTagResults([]); setTagOpen(false); return; }
+        const t = setTimeout(async () => {
+            setTagLoading(true);
+            try {
+                const res = await getProductTags(tagQuery);
+                setTagResults(res);
+                setTagOpen(true);
+            } catch { /* ignore */ } finally { setTagLoading(false); }
+        }, 300);
+        return () => clearTimeout(t);
+    }, [tagQuery]);
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (tagRef.current && !tagRef.current.contains(e.target as Node)) {
+                setTagOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
+
+    const addTag = useCallback((tag: ProductTag) => {
+        setSelectedTags((p) => p.find((t) => t.id === tag.id) ? p : [...p, tag]);
+        setTagQuery("");
+        setTagOpen(false);
+    }, []);
+
+    const createAndAddTag = useCallback(async () => {
+        const name = tagQuery.trim();
+        if (!name) return;
+        try {
+            const created = await createProductTag({ name });
+            addTag(created);
+        } catch { alert("Failed to create tag"); }
+    }, [tagQuery, addTag]);
 
     // Relationships
     const [fbSearch, setFbSearch] = useState("");
-    const [fbItems, setFbItems] = useState<string[]>(["Luer Lock Syringe 20ml"]);
+    const [fbItems, setFbItems] = useState<string[]>([]);
 
     // Benefits
     const [benefits, setBenefits] = useState<Benefit[]>([
@@ -302,12 +422,9 @@ export default function ProductForm({
     const [specValueDraft, setSpecValueDraft] = useState("");
 
     // Pricing & inventory
-    const [bulkQty, setBulkQty] = useState("");
-    const [bulkPrice, setBulkPrice] = useState("");
     const [barcode, setBarcode] = useState("");
     const [lowStockAlert, setLowStockAlert] = useState("");
     const [backorder, setBackorder] = useState(false);
-
 
     const [bulkTiers, setBulkTiers] = useState<BulkTier[]>([
         { id: uid("tier"), qty: "", price: "" },
@@ -341,9 +458,114 @@ export default function ProductForm({
         setSpecValueDraft("");
     }
 
+    const handleSubmit = useCallback(async () => {
+        if (isSubmitting) return;
+        
+        // Basic validation
+        if (!productName.trim()) {
+            alert("Product name is required");
+            return;
+        }
+        if (!sku.trim()) {
+            alert("SKU is required");
+            return;
+        }
+        
+        // Validate required arrays
+        const validBenefits = benefits.filter(b => b.title.trim() && b.description.trim());
+        if (validBenefits.length === 0) {
+            alert("At least one clinical benefit is required");
+            return;
+        }
+        
+        if (specs.length === 0) {
+            alert("At least one technical specification is required");
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            // Prepare badges array
+            const badges = [];
+            if (badgeProfessional) badges.push("professional-grade");
+            if (badgeWorkshop) badges.push("used-in-workshop");
+            if (badgeNewArrival) badges.push("new-arrival");
+
+            // Prepare bulk price tiers
+            const validBulkTiers = bulkTiers
+                .filter(t => t.qty !== "" && t.price !== "")
+                .map(t => ({ minQty: Number(t.qty), price: String(t.price) }));
+
+            // Prepare images
+            const images = mediaItems
+                .filter(m => !m.uploading && !m.error && m.readUrl)
+                .map(m => m.readUrl);
+
+            const productData: CreateProductRequest = {
+                name: productName.trim(),
+                clinicalDescription: clinicalDescription.trim(),
+                sku: sku.trim(),
+                barcode: barcode.trim() || undefined,
+                categoryId: selectedCategories.map(c => c.id),
+                tags: selectedTags.map(t => t.name),
+                actualPrice: actualPrice.trim(),
+                offerPrice: offerPrice.trim() || undefined,
+                bulkPriceTiers: validBulkTiers.length > 0 ? validBulkTiers : undefined,
+                stockQuantity: stockQty,
+                lowStockAlert: lowStockAlert ? Number(lowStockAlert) : undefined,
+                backorder,
+                isActive: statusLive,
+                images: images.length > 0 ? images : undefined,
+                frontendBadges: badges.length > 0 ? badges : undefined,
+                clinicalBenefits: benefits
+                    .filter(b => b.title.trim() && b.description.trim())
+                    .map(({ id, ...rest }) => rest),
+                technicalSpecifications: specs.map(({ id, ...rest }) => rest),
+                frequentlyBoughtTogether: fbItems,
+            };
+
+            if (mode === "add") {
+                await createProduct(productData);
+            } else {
+                await updateProduct(initialData?.id, productData as UpdateProductRequest);
+            }
+
+            setPublishedOpen(true);
+        } catch (error: any) {
+            console.error("Failed to save product:", error);
+            alert(error?.response?.data?.message || error?.message || "Failed to save product. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    }, [
+        isSubmitting,
+        productName,
+        sku,
+        actualPrice,
+        clinicalDescription,
+        barcode,
+        selectedCategories,
+        selectedTags,
+        offerPrice,
+        bulkTiers,
+        stockQty,
+        lowStockAlert,
+        backorder,
+        statusLive,
+        badgeProfessional,
+        badgeWorkshop,
+        badgeNewArrival,
+        mediaItems,
+        benefits,
+        specs,
+        fbItems,
+        mode,
+        initialData?.id,
+    ]);
+
     return (
         <div className="space-y-6">
-            {/* Header row (matches screenshot) */}
+            {/* Header row */}
             <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
                     <button
@@ -354,25 +576,30 @@ export default function ProductForm({
                     >
                         <ArrowLeft size={18} />
                     </button>
-
                     <div>
-                        <div>
-                            <h1 className="text-lg font-bold text-slate-900">
-                                {mode === "edit" ? "Edit Product" : "Add New Product"}
-                            </h1>
-                            <p className="text-xs text-slate-500">
-                                Texas Airway Institute · Clinical Catalog Manager
-                            </p>
-                        </div>
+                        <h1 className="text-lg font-bold text-slate-900">
+                            {mode === "edit" ? "Edit Product" : "Add New Product"}
+                        </h1>
+                        <p className="text-xs text-slate-500">
+                            Texas Airway Institute · Clinical Catalog Manager
+                        </p>
                     </div>
                 </div>
-
                 <div className="flex items-center gap-3">
                     <GhostButton onClick={() => router.back()}>Discard</GhostButton>
-                    <PrimaryButton onClick={() => setPublishedOpen(true)}>
+                    <PrimaryButton onClick={handleSubmit} disabled={isSubmitting}>
                         <span className="inline-flex items-center gap-2">
-                            {mode === "edit" ? "Save Changes" : "Publish Product"}
-                            <ExternalLink size={16} />
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 size={16} className="animate-spin" />
+                                    {mode === "edit" ? "Saving..." : "Publishing..."}
+                                </>
+                            ) : (
+                                <>
+                                    {mode === "edit" ? "Save Changes" : "Publish Product"}
+                                    <ExternalLink size={16} />
+                                </>
+                            )}
                         </span>
                     </PrimaryButton>
                 </div>
@@ -384,30 +611,73 @@ export default function ProductForm({
                 <div className="space-y-6">
                     <LeftPanel
                         title="Product Media"
-                        right={<p className="text-xs text-slate-400">0/5 Images</p>}
+                        right={<p className="text-xs text-slate-400">{mediaItems.length}/5 Images</p>}
                     >
-                        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-6 py-10">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => handleFilesSelected(e.target.files)}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={mediaItems.length >= 5}
+                            className="w-full rounded-lg border border-dashed border-slate-300 bg-slate-50 px-6 py-10 transition hover:border-[var(--primary)] hover:bg-[var(--primary-50)] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
                             <div className="mx-auto flex max-w-[260px] flex-col items-center text-center">
                                 <div className="grid h-12 w-12 place-items-center rounded-lg bg-white ring-1 ring-slate-200">
-                                    <span className="text-slate-400">📷</span>
+                                    <Upload size={22} className="text-slate-400" />
                                 </div>
                                 <p className="mt-4 text-sm font-semibold text-slate-900">
-                                    Upload Product Photos
+                                    {mediaItems.length >= 5 ? "Maximum 5 images reached" : "Click to Upload Product Photos"}
                                 </p>
                                 <p className="mt-1 text-xs text-slate-500">
-                                    High-res PNG or JPG preferred
+                                    High-res PNG or JPG · Max 10 MB each
                                 </p>
                             </div>
-                        </div>
+                        </button>
 
-                        <div className="mt-4 grid grid-cols-4 gap-3">
-                            {thumbs.map((_, i) => (
-                                <div
-                                    key={i}
-                                    className="aspect-square rounded-lg border border-slate-200 bg-slate-50"
-                                />
-                            ))}
-                        </div>
+                        {mediaItems.length > 0 && (
+                            <div className="mt-4 grid grid-cols-4 gap-3">
+                                {mediaItems.map((m) => (
+                                    <div key={m.id} className="relative aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                                        <Image
+                                            src={m.previewUrl}
+                                            alt="product"
+                                            fill
+                                            className="object-cover"
+                                            unoptimized
+                                        />
+                                        {m.uploading && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                                                <Loader2 size={18} className="animate-spin text-[var(--primary)]" />
+                                            </div>
+                                        )}
+                                        {m.error && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-red-50/80">
+                                                <span className="text-[10px] text-red-500 text-center px-1">{m.error}</span>
+                                            </div>
+                                        )}
+                                        {!m.uploading && !m.error && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setMediaItems((p) => p.filter((x) => x.id !== m.id))}
+                                                className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-white/90 text-slate-600 shadow hover:bg-red-50 hover:text-red-500 transition"
+                                                aria-label="Remove image"
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                                {mediaItems.length < 5 && Array.from({ length: 4 - (mediaItems.length % 4 === 0 ? 4 : mediaItems.length % 4) }).map((_, i) => (
+                                    <div key={`empty_${i}`} className="aspect-square rounded-lg border border-dashed border-slate-200 bg-slate-50" />
+                                ))}
+                            </div>
+                        )}
                     </LeftPanel>
 
                     <LeftPanel title="Organization">
@@ -446,65 +716,129 @@ export default function ProductForm({
                                 </div>
                             </div>
 
-                            {/* Category + add inline */}
+                            {/* Category async search */}
                             <div>
                                 <Label>Category</Label>
-                                <select
-                                    value={category}
-                                    onChange={(e) => setCategory(e.target.value)}
-                                    className={cx(
-                                        "h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none",
-                                        "focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-50)]"
+                                {selectedCategories.length > 0 && (
+                                    <div className="mb-2 flex flex-wrap gap-1.5">
+                                        {selectedCategories.map((c) => (
+                                            <span key={c.id} className="inline-flex items-center gap-1 rounded-full bg-[var(--primary-50)] px-2.5 py-1 text-[11px] font-semibold text-[var(--primary)]">
+                                                {c.name}
+                                                <button type="button" onClick={() => setSelectedCategories((p) => p.filter((x) => x.id !== c.id))} aria-label="Remove" className="ml-0.5 hover:text-red-500">
+                                                    <X size={11} />
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                                <div ref={categoryRef} className="relative">
+                                    <div className="relative">
+                                        <input
+                                            value={categoryQuery}
+                                            onChange={(e) => setCategoryQuery(e.target.value)}
+                                            placeholder="Type 3+ chars to search categories..."
+                                            className={cx(
+                                                "h-10 w-full rounded-md border border-slate-200 bg-white px-3 pr-8 text-sm text-slate-900 outline-none placeholder:text-slate-400",
+                                                "focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-50)]"
+                                            )}
+                                        />
+                                        {categoryLoading && (
+                                            <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-slate-400" />
+                                        )}
+                                    </div>
+                                    {categoryOpen && (
+                                        <div className="absolute z-20 mt-1 w-full rounded-md border border-slate-200 bg-white shadow-lg">
+                                            {categoryResults.length === 0 ? (
+                                                <div className="px-3 py-2">
+                                                    <button type="button" onClick={createAndAddCategory} className="w-full text-left text-sm text-[var(--primary)] hover:font-semibold">
+                                                        + Create &ldquo;{categoryQuery}&rdquo;
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    {categoryResults.map((c) => (
+                                                        <button
+                                                            key={c.id}
+                                                            type="button"
+                                                            onClick={() => addCategory(c)}
+                                                            className="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-800 hover:bg-slate-50"
+                                                        >
+                                                            {c.name}
+                                                            {selectedCategories.find((x) => x.id === c.id) && <Check size={14} className="text-[var(--primary)]" />}
+                                                        </button>
+                                                    ))}
+                                                    <div className="border-t border-slate-100 px-3 py-2">
+                                                        <button type="button" onClick={createAndAddCategory} className="w-full text-left text-xs text-[var(--primary)] hover:font-semibold">
+                                                            + Create &ldquo;{categoryQuery}&rdquo;
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
                                     )}
-                                >
-                                    <option>Airway Management</option>
-                                    <option>Diagnostic Instruments</option>
-                                    <option>Surgical Supplies</option>
-                                    <option>Training Equipment</option>
-                                </select>
-
-                                <div className="mt-3 flex items-center gap-2">
-                                    <Input
-                                        value={categoryDraft}
-                                        onChange={setCategoryDraft}
-                                        placeholder="Enter Category name..."
-                                        className="flex-1"
-                                    />
-                                    <IconBtn
-                                        label="Save category"
-                                        onClick={() => {
-                                            const v = categoryDraft.trim();
-                                            if (!v) return;
-                                            setCategory(v);
-                                            setCategoryDraft("");
-                                        }}
-                                        className="text-[var(--primary)] hover:bg-[var(--primary-50)]"
-                                    >
-                                        <Check size={18} />
-                                    </IconBtn>
-                                    <IconBtn
-                                        label="Clear"
-                                        onClick={() => setCategoryDraft("")}
-                                        className="text-slate-500"
-                                    >
-                                        <X size={18} />
-                                    </IconBtn>
                                 </div>
                             </div>
 
-                            {/* Tags */}
+                            {/* Tags async search */}
                             <div>
                                 <Label>Search Tags</Label>
-                                <Input value={tags} onChange={setTags} placeholder="Enter tags..." />
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                    {tagPills.map((t) => (
-                                        <span
-                                            key={t}
-                                            className="rounded-full bg-[var(--primary-50)] px-2.5 py-1 text-[11px] font-semibold text-[var(--primary)]"
-                                        >
-                                            {t.toUpperCase()}
-                                        </span>
-                                    ))}
+                                {selectedTags.length > 0 && (
+                                    <div className="mb-2 flex flex-wrap gap-1.5">
+                                        {selectedTags.map((t) => (
+                                            <span key={t.id} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+                                                {t.name.toUpperCase()}
+                                                <button type="button" onClick={() => setSelectedTags((p) => p.filter((x) => x.id !== t.id))} aria-label="Remove tag" className="ml-0.5 hover:text-red-500">
+                                                    <X size={11} />
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                                <div ref={tagRef} className="relative">
+                                    <div className="relative">
+                                        <input
+                                            value={tagQuery}
+                                            onChange={(e) => setTagQuery(e.target.value)}
+                                            placeholder="Type 3+ chars to search tags..."
+                                            className={cx(
+                                                "h-10 w-full rounded-md border border-slate-200 bg-white px-3 pr-8 text-sm text-slate-900 outline-none placeholder:text-slate-400",
+                                                "focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-50)]"
+                                            )}
+                                        />
+                                        {tagLoading && (
+                                            <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-slate-400" />
+                                        )}
+                                    </div>
+                                    {tagOpen && (
+                                        <div className="absolute z-20 mt-1 w-full rounded-md border border-slate-200 bg-white shadow-lg">
+                                            {tagResults.length === 0 ? (
+                                                <div className="px-3 py-2">
+                                                    <button type="button" onClick={createAndAddTag} className="w-full text-left text-sm text-[var(--primary)] hover:font-semibold">
+                                                        + Create &ldquo;{tagQuery}&rdquo;
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    {tagResults.map((t) => (
+                                                        <button
+                                                            key={t.id}
+                                                            type="button"
+                                                            onClick={() => addTag(t)}
+                                                            className="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-800 hover:bg-slate-50"
+                                                        >
+                                                            {t.name}
+                                                            {selectedTags.find((x) => x.id === t.id) && <Check size={14} className="text-[var(--primary)]" />}
+                                                        </button>
+                                                    ))}
+                                                    <div className="border-t border-slate-100 px-3 py-2">
+                                                        <button type="button" onClick={createAndAddTag} className="w-full text-left text-xs text-[var(--primary)] hover:font-semibold">
+                                                            + Create &ldquo;{tagQuery}&rdquo;
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

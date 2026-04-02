@@ -1,13 +1,13 @@
 import { serviceClient } from "@/service/base/axios_client";
-import type {
-  PublicProductsResponse,
-  PublicProductsParams,
-  ProductFiltersResponse,
-  ProductDetailResponse,
-} from "@/types/product/public-product.types";
+import { ListProductsPublicParams, PublicProductsResponse, ProductFiltersResponse } from "@/types/product/public-product.types";
 
+/**
+ * Fetches products from the public products API.
+ * @param params Filtering, sorting, and pagination parameters.
+ * @returns A promise that resolves to the public products response.
+ */
 export const getPublicProducts = async (
-  params?: PublicProductsParams
+  params?: ListProductsPublicParams | Record<string, string | number>
 ): Promise<PublicProductsResponse> => {
   const response = await serviceClient.get<PublicProductsResponse>(
     "/public/products",
@@ -16,18 +16,29 @@ export const getPublicProducts = async (
   return response.data;
 };
 
-export const getProductFilters = async (): Promise<ProductFiltersResponse> => {
-  const response = await serviceClient.get<ProductFiltersResponse>(
-    "/public/products/filters"
-  );
-  return response.data;
-};
+// Alias for getPublicProducts if needed in other places, 
+// though the products-section uses getPublicProducts.
+export const getProducts = getPublicProducts;
 
-export const getProductDetails = async (
-  id: string
-): Promise<ProductDetailResponse> => {
-  const response = await serviceClient.get<ProductDetailResponse>(
-    `/public/products/${id}`
-  );
-  return response.data;
-};
+/**
+ * Fetches filters (categories, brands, price range) from the public products API.
+ */
+export const getPublicProductFilters = async (): Promise<ProductFiltersResponse> => {
+    const response = await serviceClient.get<ProductFiltersResponse>("/public/products/filters");
+    return response.data;
+}
+
+// Alias to satisfy filters-sidebar.tsx
+export const getProductFilters = getPublicProductFilters;
+
+/**
+ * Fetches full product details from the public products API by ID.
+ * @param id The product ID.
+ */
+export const getPublicProductDetails = async (id: string) => {
+    const response = await serviceClient.get(`/public/products/${id}`);
+    return response.data;
+}
+
+// Alias for getProductDetails
+export const getProductDetails = getPublicProductDetails;
