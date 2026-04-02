@@ -11,11 +11,11 @@ import { motion } from "motion/react";
 
 import NavbarLogo from "@/components/logo";
 import { NAV_LINKS } from "@/constant/navigation-links";
-import NavbarSearch from "@/app/(user)/(not-register)/public/(pages)/home/_components/navbar-search";
 import { IMAGE } from "@/constant/image-config";
 import CartSidebar from "@/components/cart-sidebar";
 import PublicSidebar from "@/components/public-sidebar";
 import { LogOut, Settings } from "lucide-react";
+import NavbarSearch from "@/app/public/(pages)/home/_components/navbar-search";
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/public/home") return pathname === "/public/home";
@@ -34,7 +34,8 @@ export default function Navbar() {
 
   const links = useMemo(() => NAV_LINKS, []);
 
-  const isPublicRoute = pathname.startsWith("/public/") || pathname.startsWith("/auth/");
+  const isPublicRoute =
+    pathname.startsWith("/public/") || pathname.startsWith("/auth/");
   const isAuthRoute = pathname.startsWith("/auth/");
 
   useEffect(() => {
@@ -137,7 +138,11 @@ export default function Navbar() {
               ].join(" ")}
               aria-label={isSearchOpen ? "Close search" : "Open search"}
             >
-              {isSearchOpen ? <X size={18} className="text-black" /> : <Search size={18} className="text-black" />}
+              {isSearchOpen ? (
+                <X size={18} className="text-black" />
+              ) : (
+                <Search size={18} className="text-black" />
+              )}
             </button>
 
             {/* Desktop: Navigation */}
@@ -256,7 +261,7 @@ function AccountAccessDropdown() {
   if (!isAuthenticated) {
     return (
       <Link
-        href="/auth/sign-in"
+        href="/public/auth/sign-in"
         className={[
           "hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full",
           "border-2 border-primary text-primary",
@@ -323,20 +328,24 @@ function AccountAccessDropdown() {
                   onClick={() => {
                     removeToken();
                     setIsAuthenticated(false);
-                    router.push("/auth/sign-in");
+                    router.push("public/auth/sign-in");
                   }}
                   className="flex w-full items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
                 >
                   <LogOut size={20} className="text-light-slate" />
-                  <span className="text-base font-semibold text-black">Sign Out</span>
+                  <span className="text-base font-semibold text-black">
+                    Sign Out
+                  </span>
                 </button>
               ) : (
                 <Link
-                  href="/auth/sign-in"
+                  href="public/auth/sign-in"
                   className="flex items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
                 >
                   <LogIn size={20} className="text-light-slate" />
-                  <span className="text-base font-semibold text-black">Sign In</span>
+                  <span className="text-base font-semibold text-black">
+                    Sign In
+                  </span>
                 </Link>
               )}
 

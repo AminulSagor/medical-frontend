@@ -4,11 +4,8 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { X, Minus, Plus, ShoppingBag, ArrowRight, Lock } from "lucide-react";
-import {
-  DUMMY_CART_ITEMS,
-  DUMMY_UPSELL,
-} from "@/app/(user)/(not-register)/public/data/cart.data";
-import type { CartItem } from "@/app/(user)/(not-register)/public/types/cart.type";
+import { DUMMY_CART_ITEMS, DUMMY_UPSELL } from "@/app/public/data/cart.data";
+import type { CartItem } from "@/app/public/types/cart.type";
 
 export default function CartSidebar({
   open,
@@ -182,7 +179,7 @@ export default function CartSidebar({
         </div>
       </aside>
     </div>,
-    document.body
+    document.body,
   );
 }
 
@@ -217,10 +214,7 @@ function CartRow({ it }: { it: CartItem }) {
 
         <div className="mt-4 flex items-center justify-between">
           <QtyPill />
-          <button
-            type="button"
-            className="text-xs font-semibold text-red-500"
-          >
+          <button type="button" className="text-xs font-semibold text-red-500">
             Remove
           </button>
         </div>

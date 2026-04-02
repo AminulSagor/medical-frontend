@@ -8,7 +8,7 @@ import {
   FOOTER_BOTTOM,
   FOOTER_INSTITUTE,
   FOOTER_PROGRAMS,
-} from "@/app/(user)/(not-register)/public/data/footer.data";
+} from "@/app/public/data/footer.data";
 
 function FooterColTitle({ children }: { children: React.ReactNode }) {
   return <h3 className="text-sm font-extrabold text-black">{children}</h3>;
