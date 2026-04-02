@@ -4,8 +4,22 @@ import type {
   PublicWorkshopDetailsResponse,
 } from "@/types/workshop/public-workshop.types";
 
-export const getPublicWorkshops = async (): Promise<PublicWorkshopsResponse> => {
-  const response = await serviceClient.get<PublicWorkshopsResponse>("/workshops");
+export interface PublicWorkshopsQueryParams {
+  deliveryMode?: "in_person" | "online";
+  offersCmeCredits?: "true" | "false";
+  hasAvailableSeats?: "true" | "false";
+  page?: number;
+  limit?: number;
+  sortBy?: "date" | "price" | "title";
+  sortOrder?: "asc" | "desc";
+}
+
+export const getPublicWorkshops = async (
+  params?: PublicWorkshopsQueryParams
+): Promise<PublicWorkshopsResponse> => {
+  const response = await serviceClient.get<PublicWorkshopsResponse>("/workshops", {
+    params,
+  });
   return response.data;
 };
 

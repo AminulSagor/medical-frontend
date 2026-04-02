@@ -9,7 +9,7 @@ export const SHOP_THE_LAB_PRODUCTS: Product[] = [
     price: 249,
     imageSrc: IMAGE.product_1,
     imageAlt: "Laryngoscope Blades Set",
-    detailsHref: "/store/laryngoscope-blades-set",
+    detailsHref: "/public/store/product-details/laryngoscope-blades-set",
   },
   {
     id: "training-mannequin",
@@ -18,7 +18,7 @@ export const SHOP_THE_LAB_PRODUCTS: Product[] = [
     price: 3499,
     imageSrc: IMAGE.product_2,
     imageAlt: "Adv. Training Mannequin",
-    detailsHref: "/store/training-mannequin",
+    detailsHref: "/public/store/product-details/training-mannequin",
   },
   {
     id: "video-laryngoscope",
@@ -27,7 +27,7 @@ export const SHOP_THE_LAB_PRODUCTS: Product[] = [
     price: 1150,
     imageSrc: IMAGE.product_2,
     imageAlt: "Video Laryngoscope",
-    detailsHref: "/store/video-laryngoscope",
+    detailsHref: "/public/store/product-details/video-laryngoscope",
   },
   {
     id: "airway-kit-pro",
@@ -36,6 +36,6 @@ export const SHOP_THE_LAB_PRODUCTS: Product[] = [
     price: 185,
     imageSrc: IMAGE.product_2,
     imageAlt: "Airway Kit Pro",
-    detailsHref: "/store/airway-kit-pro",
+    detailsHref: "/public/store/product-details/airway-kit-pro",
   },
 ];

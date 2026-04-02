@@ -1,17 +1,20 @@
 // Public Product Types
 
-export interface PublicProduct {
+export interface PublicProductItem {
   id: string;
   photo: string | null;
   category: string;
   title: string;
-  description: string;
+  description: string | null;
   price: string;
-  discountedPrice: string | null;
-  brand: string;
+  discountedPrice: string;
+  brand: string | null;
   inStock: boolean;
   badge: string | null;
 }
+
+// Aliases for compatibility with existing components
+export type PublicProduct = PublicProductItem;
 
 export interface PublicProductMeta {
   page: number;
@@ -21,71 +24,19 @@ export interface PublicProductMeta {
 }
 
 export interface PublicProductsResponse {
-  items: PublicProduct[];
+  items: PublicProductItem[];
   meta: PublicProductMeta;
 }
 
-export interface PublicProductsParams {
-  search?: string;
-  categoryNames?: string;
-  brands?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  sortBy?: string;
+export interface ListProductsPublicParams {
   page?: number;
   limit?: number;
-}
-
-// Product Details Types
-export interface ProductDetailCategory {
-  id: string;
-  name: string;
-}
-
-export interface ProductDetailBulkTier {
-  minQty: number;
-  price: string;
-}
-
-export interface ProductDetailClinicalBenefit {
-  icon: string;
-  title: string;
-  description: string;
-}
-
-export interface ProductDetailTechnicalSpec {
-  name: string;
-  value: string;
-}
-
-export interface ProductDetailRating {
-  average: number;
-  count: number;
-}
-
-export interface ProductDetailResponse {
-  id: string;
-  name: string;
-  brand: string;
-  sku: string;
-  clinicalDescription: string;
-  categories: ProductDetailCategory[];
-  tags: string[];
-  actualPrice: string;
-  offerPrice: string;
-  bulkPriceTiers: ProductDetailBulkTier[];
-  stockQuantity: number;
-  inStock: boolean;
-  backorder: boolean;
-  images: string[];
-  frontendBadges: string[];
-  clinicalBenefits: ProductDetailClinicalBenefit[];
-  technicalSpecifications: ProductDetailTechnicalSpec[];
-  frequentlyBoughtTogether: string[];
-  bundleUpsells: string[];
-  rating: ProductDetailRating;
-  createdAt: string;
-  updatedAt: string;
+  search?: string;
+  categoryNames?: string[];
+  brands?: string[];
+  minPrice?: string;
+  maxPrice?: string;
+  sortBy?: 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc' | 'newest';
 }
 
 // Filter Types
@@ -94,22 +45,61 @@ export interface ProductCategory {
   productCount: number;
 }
 
-export interface ProductPriceRange {
-  min: number;
-  max: number;
-}
-
 export interface ProductFiltersResponse {
   categories: ProductCategory[];
   brands: string[];
-  priceRange: ProductPriceRange;
+  priceRange: {
+    min: number;
+    max: number;
+  };
 }
 
-// Local filter state
 export interface ProductFilters {
   category: string;
   brands: string[];
   minPrice: number;
   maxPrice: number;
-  sortBy?: string;
+}
+export interface ClinicalBenefit {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+export interface TechnicalSpecification {
+  name: string;
+  value: string;
+}
+
+export interface BulkPriceTier {
+  minQty: number;
+  price: string;
+}
+
+export interface ProductDetailResponse {
+  id: string;
+  name: string;
+  brand: string | null;
+  sku: string;
+  clinicalDescription: string | null;
+  categories: { id: string; name: string }[];
+  tags: string[];
+  actualPrice: string;
+  offerPrice: string;
+  bulkPriceTiers: BulkPriceTier[];
+  stockQuantity: number;
+  inStock: boolean;
+  backorder: boolean;
+  images: string[];
+  frontendBadges: string[];
+  clinicalBenefits: ClinicalBenefit[];
+  technicalSpecifications: TechnicalSpecification[];
+  frequentlyBoughtTogether: string[];
+  bundleUpsells: string[];
+  rating: {
+    average: number;
+    count: number;
+  };
+  createdAt: string;
+  updatedAt: string;
 }

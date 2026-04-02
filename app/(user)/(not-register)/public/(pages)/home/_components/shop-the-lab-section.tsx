@@ -1,15 +1,45 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
-import { SHOP_THE_LAB_PRODUCTS } from "@/app/(user)/(not-register)/public/data/equipment.data";
+import { getPublicProducts } from "@/service/public/product.service";
+import { Product } from "@/app/(user)/(not-register)/public/types/equipment.types";
 import EquipmentCard from "./equipment-card";
 
 export default function ShopTheLabSection() {
-  const products = useMemo(() => SHOP_THE_LAB_PRODUCTS, []);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [wishedIds, setWishedIds] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        setLoading(true);
+        const response = await getPublicProducts({ limit: 4 });
+
+        // Map backend products to the expectations of EquipmentCard
+        const mappedProducts: Product[] = response.items.map((item) => ({
+          id: item.id,
+          category: (item.category?.split(",")[0]?.trim()?.toUpperCase() as any) || "EQUIPMENT",
+          title: item.title,
+          price: Number(item.discountedPrice) || Number(item.price) || 0,
+          imageSrc: item.photo || undefined,
+          imageAlt: item.title,
+          detailsHref: `/public/store/product-details/${item.id}`,
+        }));
+
+        setProducts(mappedProducts);
+      } catch (error) {
+        console.error("Failed to fetch products for home page:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProducts();
+  }, []);
 
   function toggleWish(id: string) {
     setWishedIds((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -50,7 +80,7 @@ export default function ShopTheLabSection() {
             }}
           >
             <Link
-              href="/store"
+              href="/public/store"
               className="group mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:opacity-80"
             >
               View All Products
@@ -65,27 +95,35 @@ export default function ShopTheLabSection() {
           </motion.div>
         </div>
 
-        <div className="mt-10 grid items-stretch gap-8 md:grid-cols-2 lg:grid-cols-4">
-          {products.map((p, index) => (
-            <motion.div
-              key={p.id}
-              initial={{ opacity: 0, y: 24, scale: 0.98 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{
-                duration: 0.5,
-                delay: index * 0.08,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-            >
-              <EquipmentCard
-                product={p}
-                wished={!!wishedIds[p.id]}
-                onToggleWish={toggleWish}
-                onAddToCart={addToCart}
-              />
-            </motion.div>
-          ))}
+        <div className="mt-10 min-h-[300px]">
+          {loading ? (
+            <div className="flex h-64 w-full items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="grid items-stretch gap-8 md:grid-cols-2 lg:grid-cols-4">
+              {products.map((p, index) => (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, y: 24, scale: 0.98 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{
+                    duration: 0.5,
+                    delay: index * 0.08,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                >
+                  <EquipmentCard
+                    product={p}
+                    wished={!!wishedIds[p.id]}
+                    onToggleWish={toggleWish}
+                    onAddToCart={addToCart}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>
