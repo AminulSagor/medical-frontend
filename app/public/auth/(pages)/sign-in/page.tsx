@@ -45,14 +45,14 @@ export default function SignInPage() {
 
       const role = response.user.role;
       if (role === "admin") {
-        router.push("/admin-dashboard");
+        router.push("/dashbaord/admin/admin-dashboard");
       } else {
-        router.push("/dashboard");
+        router.push("/dashboard/user/dashboard");
       }
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       setApiError(
-        axiosErr?.response?.data?.message || "Login failed. Please try again."
+        axiosErr?.response?.data?.message || "Login failed. Please try again.",
       );
     } finally {
       setSubmitting(false);
@@ -149,7 +149,7 @@ export default function SignInPage() {
             {/* keep forget password AFTER password field */}
             <div className="mt-3 flex items-center justify-end">
               <Link
-                href="/auth/reset-password"
+                href="/public/auth/reset-password"
                 className="text-sm font-semibold text-sky-600 hover:text-sky-700 hover:underline"
               >
                 Forgot Password?
@@ -169,7 +169,6 @@ export default function SignInPage() {
             >
               <span className="h-2 w-2 rounded-full bg-white" />
             </span>
-
             <input
               type="checkbox"
               checked={keepSignedIn}
@@ -202,7 +201,7 @@ export default function SignInPage() {
 
           {/* Create account */}
           <div className="text-center text-sm text-slate-500">
-            <Link href="/auth/sign-up" className="text-sky-600 hover:underline">
+            <Link href="/public/auth/sign-up" className="text-sky-600 hover:underline">
               New to the Institute? Create a professional account
             </Link>
           </div>

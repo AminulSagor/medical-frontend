@@ -27,7 +27,7 @@ export default function ResetPasswordPage() {
     try {
       await sendOtp({ email });
       // Redirect to OTP verification with email and mode=reset
-      router.push(`/auth/verify-otp-reset?email=${encodeURIComponent(email)}`);
+      router.push(`/public/auth/verify-otp-reset?email=${encodeURIComponent(email)}`);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       setError(
@@ -43,7 +43,7 @@ export default function ResetPasswordPage() {
       <div className="rounded-[34px] border border-slate-200 bg-white p-10 shadow-[0_18px_60px_rgba(15,23,42,0.10)]">
         {/* Back */}
         <Link
-          href="/auth/sign-in"
+          href="/public/auth/sign-in"
           className="inline-flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-700"
         >
           <ChevronLeft className="h-4 w-4" />
