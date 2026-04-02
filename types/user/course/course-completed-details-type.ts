@@ -1,5 +1,5 @@
-import type { CourseBookingDetailsCardProps } from "@/types/course/course-details-type";
-import type { CourseScheduleItem } from "@/types/course/course-details-type";
+import type { CourseBookingDetailsCardProps } from "@/types/user/course/course-details-type";
+import type { CourseScheduleItem } from "@/types/user/course/course-details-type";
 
 export type CompletedHeroProps = {
   title: string;

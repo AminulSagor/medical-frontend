@@ -1,7 +1,7 @@
 "use client";
 
 import { Users2, Video, CreditCard, RotateCcw } from "lucide-react";
-import type { OnlineBookingCardProps } from "@/types/course/course-online-details-type";
+import type { OnlineBookingCardProps } from "@/types/user/course/course-online-details-type";
 
 export default function OnlineBookingCardClient({
   booking,

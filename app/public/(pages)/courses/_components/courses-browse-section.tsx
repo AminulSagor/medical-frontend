@@ -10,7 +10,7 @@ import {
 } from "@/app/public/types/course-browse.types";
 
 import { getPublicWorkshops } from "@/service/public/workshop.service";
-import type { PublicWorkshop } from "@/types/workshop/public-workshop.types";
+import type { PublicWorkshop } from "@/types/public/workshop/public-workshop.types";
 import CourseFiltersSidebar, {
   CourseFiltersState,
 } from "@/app/public/(pages)/courses/_components/course-filters-sidebar";

@@ -2,7 +2,7 @@
 
 "use client";
 
-import type { CourseDetailsHeroProps } from "@/types/course/course-details-type";
+import type { CourseDetailsHeroProps } from "@/types/user/course/course-details-type";
 
 export default function CourseDetailsHero({
   badges,

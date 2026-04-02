@@ -1,4 +1,4 @@
-import { PublicWorkshopDetails } from "@/types/workshop/public-workshop.types";
+import { PublicWorkshopDetails } from "@/types/public/workshop/public-workshop.types";
 import { IMAGE } from "@/constant/image-config";
 import { CourseDetails } from "@/app/public/types/course.details.types";
 

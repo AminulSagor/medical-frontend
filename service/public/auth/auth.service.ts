@@ -10,54 +10,49 @@ import type {
   LoginResponse,
   ResetPasswordRequest,
   ResetPasswordResponse,
-} from "@/types/auth/auth.types";
+} from "@/types/public/auth/auth.types";
 
 export const registerUser = async (
-  data: RegisterRequest
+  data: RegisterRequest,
 ): Promise<RegisterResponse> => {
   const response = await serviceClient.post<RegisterResponse>(
     `/auth/register`,
-    data
+    data,
   );
   return response.data;
 };
 
 export const sendOtp = async (
-  data: SendOtpRequest
+  data: SendOtpRequest,
 ): Promise<SendOtpResponse> => {
   const response = await serviceClient.post<SendOtpResponse>(
     `/auth/send-otp`,
-    data
+    data,
   );
   return response.data;
 };
 
 export const verifyOtp = async (
-  data: VerifyOtpRequest
+  data: VerifyOtpRequest,
 ): Promise<VerifyOtpResponse> => {
   const response = await serviceClient.post<VerifyOtpResponse>(
     `/auth/verify-otp`,
-    data
+    data,
   );
   return response.data;
 };
 
-export const loginUser = async (
-  data: LoginRequest
-): Promise<LoginResponse> => {
-  const response = await serviceClient.post<LoginResponse>(
-    `/auth/login`,
-    data
-  );
+export const loginUser = async (data: LoginRequest): Promise<LoginResponse> => {
+  const response = await serviceClient.post<LoginResponse>(`/auth/login`, data);
   return response.data;
 };
 
 export const resetPassword = async (
-  data: ResetPasswordRequest
+  data: ResetPasswordRequest,
 ): Promise<ResetPasswordResponse> => {
   const response = await serviceClient.put<ResetPasswordResponse>(
     `/auth/reset-password`,
-    data
+    data,
   );
   return response.data;
 };

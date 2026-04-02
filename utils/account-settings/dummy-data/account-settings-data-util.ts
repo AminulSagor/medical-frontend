@@ -1,10 +1,12 @@
 // utils/settings/account-settings-data-util.ts
 import { accountProfileSchema } from "@/schema/account-settings/account-settings-schema";
-import { AccountSettingsPageModel } from "@/types/account-settings/account-settings-type";
-
+import { AccountSettingsPageModel } from "@/types/user/account-settings/account-settings-type";
 
 export async function getAccountSettingsSeed(
-  section: "public-profile" | "security-password" | "payment-methods" = "public-profile"
+  section:
+    | "public-profile"
+    | "security-password"
+    | "payment-methods" = "public-profile",
 ): Promise<AccountSettingsPageModel> {
   // ✅ later: replace with API response
   const raw = {

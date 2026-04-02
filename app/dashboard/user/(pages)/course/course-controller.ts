@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CourseTabKey, CourseToolbarState } from "@/types/course/course-type";
+import type {
+  CourseTabKey,
+  CourseToolbarState,
+} from "@/types/user/course/course-type";
 import {
   getActiveCoursesSeed,
   getCourseStatsSeed,

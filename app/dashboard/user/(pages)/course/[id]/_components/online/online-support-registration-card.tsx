@@ -1,5 +1,5 @@
 import { Headset, ArrowRight } from "lucide-react";
-import type { OnlineSupportAndRegistrationCardProps } from "@/types/course/course-online-details-type";
+import type { OnlineSupportAndRegistrationCardProps } from "@/types/user/course/course-online-details-type";
 
 export default function OnlineSupportRegistrationCard({
   help,

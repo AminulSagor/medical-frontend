@@ -1,6 +1,5 @@
-import { TicketDetailsModel } from "@/types/ticket/ticket-details-type";
+import { TicketDetailsModel } from "@/types/user/ticket/ticket-details-type";
 import TicketDetailsLayout from "./_component/ticket-details-layout";
-
 
 const SEED: TicketDetailsModel = {
   profile: {

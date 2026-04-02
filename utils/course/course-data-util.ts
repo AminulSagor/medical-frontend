@@ -1,16 +1,17 @@
 // utils/course/course-data-util.ts
 // This is only for dummy data will be removed when api will be integrated
 
-import { CourseDeliveryType } from "@/types/course/course-details-type";
+import { CourseDeliveryType } from "@/types/user/course/course-details-type";
 import type {
   ActiveCoursesSectionModel,
   CourseStats,
   CompletedCourseCard,
   BrowseCoursesModel,
-} from "@/types/course/course-type";
+} from "@/types/user/course/course-type";
 
-
-export function getCourseDeliveryTypeSeed(courseId: string): CourseDeliveryType {
+export function getCourseDeliveryTypeSeed(
+  courseId: string,
+): CourseDeliveryType {
   // ✅ Dummy decision (replace with API value later)
   // Example: courseId contains "online" -> online
   const id = (courseId || "").toLowerCase();
@@ -66,7 +67,8 @@ export function getCompletedCoursesSeed(): CompletedCourseCard[] {
       title: "Pediatric Sedation Basics",
       completedOnText: "Completed on Dec 20, 2023",
       imageSrc: "/photos/strethoscope.png",
-      onViewDetails: () => console.log("View Course Details: Pediatric Sedation"),
+      onViewDetails: () =>
+        console.log("View Course Details: Pediatric Sedation"),
     },
     {
       cmeCreditsLabel: "6.0 CME CREDITS",

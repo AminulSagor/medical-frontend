@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Award, BookOpen, Video } from "lucide-react";
-import type { CourseStats } from "@/types/course/course-type";
+import type { CourseStats } from "@/types/user/course/course-type";
 
 type Props = CourseStats;
 

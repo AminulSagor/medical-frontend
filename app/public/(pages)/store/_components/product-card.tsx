@@ -1,6 +1,6 @@
 "use client";
 
-import { PublicProduct } from "@/types/product/public-product.types";
+import { PublicProduct } from "@/types/public/product/public-product.types";
 import Button from "@/components/buttons/button";
 import Image from "next/image";
 import Link from "next/link";

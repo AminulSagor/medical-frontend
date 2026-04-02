@@ -1,8 +1,8 @@
 import { serviceClient } from "@/service/base/axios_client";
-import type { 
+import type {
   PublicWorkshopsResponse,
   PublicWorkshopDetailsResponse,
-} from "@/types/workshop/public-workshop.types";
+} from "@/types/public/workshop/public-workshop.types";
 
 export interface PublicWorkshopsQueryParams {
   deliveryMode?: "in_person" | "online";
@@ -15,19 +15,22 @@ export interface PublicWorkshopsQueryParams {
 }
 
 export const getPublicWorkshops = async (
-  params?: PublicWorkshopsQueryParams
+  params?: PublicWorkshopsQueryParams,
 ): Promise<PublicWorkshopsResponse> => {
-  const response = await serviceClient.get<PublicWorkshopsResponse>("/workshops", {
-    params,
-  });
+  const response = await serviceClient.get<PublicWorkshopsResponse>(
+    "/workshops",
+    {
+      params,
+    },
+  );
   return response.data;
 };
 
 export const getPublicWorkshopById = async (
-  workshopId: string
+  workshopId: string,
 ): Promise<PublicWorkshopDetailsResponse> => {
   const response = await serviceClient.get<PublicWorkshopDetailsResponse>(
-    `/workshops/${workshopId}`
+    `/workshops/${workshopId}`,
   );
   return response.data;
 };

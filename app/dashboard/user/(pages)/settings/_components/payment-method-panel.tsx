@@ -1,6 +1,5 @@
-import { PaymentMethodsModel } from "@/types/account-settings/payment-method-type";
+import { PaymentMethodsModel } from "@/types/user/account-settings/payment-method-type";
 import PaymentMethodsClient from "./payment-methods-client";
-
 
 const SEED: PaymentMethodsModel = {
   cards: [

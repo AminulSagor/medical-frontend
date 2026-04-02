@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, Eye, EyeOff, Lock, ShieldCheck } from "lucide-react";
-import { resetPassword } from "@/service/auth/auth.service";
+import { resetPassword } from "@/service/public/auth/auth.service";
 
 function SetNewPasswordContent() {
   const router = useRouter();
@@ -38,7 +38,9 @@ function SetNewPasswordContent() {
     if (!canSubmit) return;
 
     if (!email) {
-      setApiError("Email not found. Please restart the password reset process.");
+      setApiError(
+        "Email not found. Please restart the password reset process.",
+      );
       return;
     }
 
@@ -56,7 +58,8 @@ function SetNewPasswordContent() {
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       setApiError(
-        axiosErr?.response?.data?.message || "Failed to reset password. Please try again."
+        axiosErr?.response?.data?.message ||
+          "Failed to reset password. Please try again.",
       );
     } finally {
       setSubmitting(false);
@@ -157,7 +160,9 @@ function SetNewPasswordContent() {
             </div>
 
             {confirm.length > 0 && password !== confirm && (
-              <p className="mt-2 text-xs text-rose-600">Passwords do not match.</p>
+              <p className="mt-2 text-xs text-rose-600">
+                Passwords do not match.
+              </p>
             )}
           </div>
 
@@ -193,7 +198,8 @@ function SetNewPasswordContent() {
               !canSubmit && "cursor-not-allowed opacity-60",
             ].join(" ")}
           >
-            {submitting ? "Updating..." : "Update Password"} <ShieldCheck className="h-5 w-5" />
+            {submitting ? "Updating..." : "Update Password"}{" "}
+            <ShieldCheck className="h-5 w-5" />
           </button>
         </form>
       </div>
@@ -203,11 +209,13 @@ function SetNewPasswordContent() {
 
 export default function SetNewPasswordPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
-        <div className="text-slate-500">Loading...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
+          <div className="text-slate-500">Loading...</div>
+        </div>
+      }
+    >
       <SetNewPasswordContent />
     </Suspense>
   );

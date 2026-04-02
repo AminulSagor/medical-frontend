@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import Card from "@/components/cards/card";
-import { BlogPost } from "@/types/blogs/blog-type";
+import { BlogPost } from "@/types/public/blogs/blog-type";
 
 export default function WideInterviewCard({ post }: { post: BlogPost }) {
   return (

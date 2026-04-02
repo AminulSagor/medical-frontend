@@ -7,7 +7,7 @@ import type {
   ProductFilters,
   PublicProduct,
   PublicProductMeta,
-} from "@/types/product/public-product.types";
+} from "@/types/public/product/public-product.types";
 import FiltersSidebar from "@/app/public/(pages)/store/_components/filters-sidebar";
 import ProductCard from "@/app/public/(pages)/store/_components/product-card";
 import Pagination from "@/app/public/(pages)/store/_components/pagination";

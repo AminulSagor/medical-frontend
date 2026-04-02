@@ -2,13 +2,20 @@
 
 import { useEffect, useState } from "react";
 import Card from "@/components/cards/card";
-import { Plus, Bandage, Microscope, Scissors, Shield, Package } from "lucide-react";
+import {
+  Plus,
+  Bandage,
+  Microscope,
+  Scissors,
+  Shield,
+  Package,
+} from "lucide-react";
 import { getProductFilters } from "@/service/public/product.service";
 import type {
   ProductFiltersResponse,
   ProductFilters,
   ProductCategory,
-} from "@/types/product/public-product.types";
+} from "@/types/public/product/public-product.types";
 
 interface FiltersSidebarProps {
   filters: ProductFilters;
@@ -188,7 +195,9 @@ export default function FiltersSidebar({
   filters,
   onFiltersChange,
 }: FiltersSidebarProps) {
-  const [filtersData, setFiltersData] = useState<ProductFiltersResponse | null>(null);
+  const [filtersData, setFiltersData] = useState<ProductFiltersResponse | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

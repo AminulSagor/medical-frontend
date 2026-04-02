@@ -2,22 +2,23 @@
 
 import { useMemo, useState } from "react";
 import { MapPin, User2, CalendarPlus } from "lucide-react";
-import type { CourseDetailsSummaryProps } from "@/types/course/course-details-type";
+import type { CourseDetailsSummaryProps } from "@/types/user/course/course-details-type";
 import AddToCalendarModalClient from "../shared/add-to-calender-modal";
 
-
 export default function CourseDetailsSummary(
-  props: CourseDetailsSummaryProps & { onAddToCalendar: () => void }
+  props: CourseDetailsSummaryProps & { onAddToCalendar: () => void },
 ) {
   const { organizerLabel, organizerText, chips } = props;
 
   const [open, setOpen] = useState(false);
 
   const locationText =
-    chips.find((c) => c.iconKey === "pin")?.text ?? "Houston Sim Center, Room 4B";
+    chips.find((c) => c.iconKey === "pin")?.text ??
+    "Houston Sim Center, Room 4B";
 
   const secondText =
-    chips.find((c) => c.iconKey === "users")?.text ?? "Instructor: Dr. Alan Grant";
+    chips.find((c) => c.iconKey === "users")?.text ??
+    "Instructor: Dr. Alan Grant";
 
   // dummy modal preview info (later from backend)
   const modalEvent = useMemo(() => {

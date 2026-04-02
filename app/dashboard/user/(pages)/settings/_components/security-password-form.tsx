@@ -6,7 +6,7 @@ import { securityPasswordSchema } from "@/schema/account-settings/security-passw
 import type {
   SecurityPasswordDraft,
   SecurityPasswordPayload,
-} from "@/types/account-settings/security-password-type";
+} from "@/types/user/account-settings/security-password-type";
 
 function cx(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(" ");
@@ -46,14 +46,16 @@ function Field({
 }) {
   return (
     <div>
-      <label className="text-[12px] font-semibold text-slate-700">{label}</label>
+      <label className="text-[12px] font-semibold text-slate-700">
+        {label}
+      </label>
 
       <div
         className={cx(
           "mt-2 flex h-11 w-full items-center gap-2 rounded-xl border bg-white px-3",
           error
             ? "border-rose-300 ring-4 ring-rose-50"
-            : "border-slate-200 focus-within:ring-4 focus-within:ring-sky-100"
+            : "border-slate-200 focus-within:ring-4 focus-within:ring-sky-100",
         )}
       >
         <span className="grid h-8 w-8 place-items-center rounded-lg text-slate-400">
@@ -109,7 +111,7 @@ export default function SecurityPasswordFormClient() {
 
   function set<K extends keyof SecurityPasswordDraft>(
     key: K,
-    value: SecurityPasswordDraft[K]
+    value: SecurityPasswordDraft[K],
   ) {
     setForm((p) => ({ ...p, [key]: value }));
   }

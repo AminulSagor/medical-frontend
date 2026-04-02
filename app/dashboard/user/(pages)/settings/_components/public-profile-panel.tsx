@@ -1,5 +1,8 @@
 // app/(user)/(registered-user)/settings/_components/public-profile-panel.tsx
-import type { AccountProfile, RoleOption } from "@/types/account-settings/account-settings-type";
+import type {
+  AccountProfile,
+  RoleOption,
+} from "@/types/user/account-settings/account-settings-type";
 import PublicProfileFormClient from "./public-profile-form";
 
 export default function PublicProfilePanel({

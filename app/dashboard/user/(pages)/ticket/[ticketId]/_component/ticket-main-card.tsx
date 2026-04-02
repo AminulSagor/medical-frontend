@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { BadgeCheck, User2 } from "lucide-react";
-import type { TicketDetailsModel } from "@/types/ticket/ticket-details-type";
+import type { TicketDetailsModel } from "@/types/user/ticket/ticket-details-type";
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
@@ -18,12 +18,18 @@ function Label({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function TicketMainCard({ model }: { model: TicketDetailsModel }) {
+export default function TicketMainCard({
+  model,
+}: {
+  model: TicketDetailsModel;
+}) {
   const p = model.profile;
   const a = model.attendees[0];
 
   return (
-<section className="w-full max-w-6xl rounded-3xl border-2 border-sky-400 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)]">      {/* Header */}
+    <section className="w-full max-w-6xl rounded-3xl border-2 border-sky-400 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+      {" "}
+      {/* Header */}
       <div className="flex items-start gap-5 px-7 py-6">
         <div className="relative h-16 w-16 overflow-hidden rounded-full bg-slate-100 ring-4 ring-white">
           {p.avatarUrl ? (
@@ -62,11 +68,9 @@ export default function TicketMainCard({ model }: { model: TicketDetailsModel })
           <div className="mt-1 text-[12px] text-slate-400">{p.meta}</div>
         </div>
       </div>
-
       <div className="px-7">
         <div className="h-px w-full bg-slate-100" />
       </div>
-
       {/* Group attendees */}
       <div className="px-7 py-6">
         <Label>GROUP ATTENDEES</Label>
@@ -94,7 +98,6 @@ export default function TicketMainCard({ model }: { model: TicketDetailsModel })
           </div>
         </div>
       </div>
-
       {/* Bottom grid */}
       <div className="px-7 pb-7">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

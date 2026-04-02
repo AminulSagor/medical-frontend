@@ -1,4 +1,4 @@
-import type { TicketDetailsModel } from "@/types/ticket/ticket-details-type";
+import type { TicketDetailsModel } from "@/types/user/ticket/ticket-details-type";
 import TicketMainCard from "./ticket-main-card";
 import VenueLogisticsCard from "./vanue-logistics-card";
 import HelpDeskCard from "./help-desk-card";

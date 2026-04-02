@@ -1,6 +1,9 @@
 import { IMAGE } from "@/constant/image-config";
-import { BlogPost, BlogPromoCard, TrendingItem } from "@/types/blogs/blog-type";
-
+import {
+  BlogPost,
+  BlogPromoCard,
+  TrendingItem,
+} from "@/types/public/blogs/blog-type";
 
 export const BLOG_FEATURED: BlogPost = {
   id: "featured-trauma-haptics",
@@ -54,7 +57,7 @@ export const BLOG_LATEST: BlogPost[] = [
   {
     id: "simulation-is-not-just-practice",
     category: "Interview",
-    title: "\"Simulation is not just\npractice; it's patient\nsafety.\"",
+    title: '"Simulation is not just\npractice; it\'s patient\nsafety."',
     excerpt:
       "An exclusive conversation with Dr. Emily Chen, Director of Clinical Education, on the shifting paradigms of medical certification.",
     dateLabel: "Oct 18, 2023",

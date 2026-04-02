@@ -1,5 +1,5 @@
 import { Heart } from "lucide-react";
-import type { AboutQuote } from "@/types/about/about-types";
+import type { AboutQuote } from "@/types/public/about/about-types";
 
 const Q: AboutQuote = {
   icon: "heart",
@@ -18,7 +18,6 @@ export default function AboutQuoteSection() {
 
       <div className="relative padding">
         <div className="mx-auto max-w-[820px] text-center">
-          
           {/* PERFECT CENTER HEART */}
           <div className="flex justify-center">
             <Heart

@@ -1,7 +1,6 @@
 "use client";
 
-
-import type { CourseCheckinCardProps } from "@/types/course/course-details-type";
+import type { CourseCheckinCardProps } from "@/types/user/course/course-details-type";
 import CourseCheckinCard from "../course-chekin-card";
 
 export default function CourseCheckinCardClient({

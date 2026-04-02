@@ -1,6 +1,9 @@
-import type { CompletedAboutProps } from "@/types/course/course-completed-details-type";
+import type { CompletedAboutProps } from "@/types/user/course/course-completed-details-type";
 
-export default function CompletedAboutCard({ heading, paragraphs }: CompletedAboutProps) {
+export default function CompletedAboutCard({
+  heading,
+  paragraphs,
+}: CompletedAboutProps) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="text-[13px] font-extrabold text-slate-900">{heading}</div>

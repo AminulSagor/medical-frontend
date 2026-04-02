@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import type { AuthErrors, AuthSignupPayload } from "../../types/auth.types";
 import { signupSchema } from "@/schema/auth/signup.schema";
 import { zodErrorToFieldErrors } from "@/schema/zodErrorToFieldErrors";
-import { registerUser, sendOtp } from "@/service/auth/auth.service";
-import type { RegisterRequest } from "@/types/auth/auth.types";
+import { registerUser, sendOtp } from "@/service/public/auth/auth.service";
+import type { RegisterRequest } from "@/types/public/auth/auth.types";
 
 export function useSignUpController() {
   const router = useRouter();

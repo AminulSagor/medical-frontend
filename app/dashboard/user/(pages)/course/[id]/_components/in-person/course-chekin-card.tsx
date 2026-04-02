@@ -1,13 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import type { CourseCheckinCardProps } from "@/types/course/course-details-type";
+import type { CourseCheckinCardProps } from "@/types/user/course/course-details-type";
 
 export default function CourseCheckinCard(
   props: CourseCheckinCardProps & {
     onHowToCheckin: () => void;
     onDownloadTicket: () => void;
-  }
+  },
 ) {
   const {
     title,
@@ -24,7 +24,9 @@ export default function CourseCheckinCard(
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
       <div className="text-[12px] font-semibold text-slate-900">{title}</div>
-      <p className="mt-2 text-[12px] leading-relaxed text-slate-500">{subtitle}</p>
+      <p className="mt-2 text-[12px] leading-relaxed text-slate-500">
+        {subtitle}
+      </p>
 
       <div className="mt-4 flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-4">
         <div className="relative h-[140px] w-[140px] overflow-hidden rounded-lg bg-white">
@@ -52,7 +54,9 @@ export default function CourseCheckinCard(
         <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
           {ticketCodeLabel}
         </div>
-        <div className="mt-1 text-[12px] font-semibold text-slate-900">{ticketCodeValue}</div>
+        <div className="mt-1 text-[12px] font-semibold text-slate-900">
+          {ticketCodeValue}
+        </div>
       </div>
     </div>
   );

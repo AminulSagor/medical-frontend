@@ -7,9 +7,9 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail, LogIn } from "lucide-react";
 import { loginSchema } from "@/schema/auth/login.schema";
 import { zodErrorToFieldErrors } from "@/schema/zodErrorToFieldErrors";
-import { loginUser } from "@/service/auth/auth.service";
+import { loginUser } from "@/service/public/auth/auth.service";
 import { setToken } from "@/utils/token/cookie_utils";
-import type { LoginRequest } from "@/types/auth/auth.types";
+import type { LoginRequest } from "@/types/public/auth/auth.types";
 
 type FieldErrors = Partial<Record<keyof LoginRequest, string>>;
 
@@ -201,7 +201,10 @@ export default function SignInPage() {
 
           {/* Create account */}
           <div className="text-center text-sm text-slate-500">
-            <Link href="/public/auth/sign-up" className="text-sky-600 hover:underline">
+            <Link
+              href="/public/auth/sign-up"
+              className="text-sky-600 hover:underline"
+            >
               New to the Institute? Create a professional account
             </Link>
           </div>

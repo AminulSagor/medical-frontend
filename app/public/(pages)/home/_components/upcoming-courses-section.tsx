@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { getPublicWorkshops } from "@/service/public/workshop.service";
-import { PublicWorkshop } from "@/types/workshop/public-workshop.types";
+import { PublicWorkshop } from "@/types/public/workshop/public-workshop.types";
 import CourseCard from "@/app/public/(pages)/home/_components/course-card";
 
 export default function UpcomingCoursesSection() {

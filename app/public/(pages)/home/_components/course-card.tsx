@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CalendarDays } from "lucide-react";
 import { motion } from "motion/react";
-import { PublicWorkshop } from "@/types/workshop/public-workshop.types";
+import { PublicWorkshop } from "@/types/public/workshop/public-workshop.types";
 
 function money(price: string) {
   const num = parseFloat(price);

@@ -1,7 +1,7 @@
 "use client";
 
 import CompletedCourseCard from "./completed-course-card";
-import type { CompletedCourseCard as CompletedCourseCardType } from "@/types/course/course-type";
+import type { CompletedCourseCard as CompletedCourseCardType } from "@/types/user/course/course-type";
 
 export default function CompletedCoursesSection({
   items,

@@ -1,4 +1,4 @@
-import type { CompletedDetailsViewProps } from "@/types/course/course-completed-details-type";
+import type { CompletedDetailsViewProps } from "@/types/user/course/course-completed-details-type";
 
 import CourseBookingDetailsCard from "../_components/in-person/course-booking-details-card";
 import CourseScheduleTimeline from "../_components/course-scheduling-timeline";
@@ -9,7 +9,11 @@ import CompletedAboutCard from "../_components/completed/completed-about-card";
 import CompletedCertificateCardClient from "../_components/completed/completed-certificate-card";
 import CompletedNextStepsCardClient from "../_components/completed/completed-next-steps-card";
 
-export default function CompletedView({ data }: { data: CompletedDetailsViewProps }) {
+export default function CompletedView({
+  data,
+}: {
+  data: CompletedDetailsViewProps;
+}) {
   return (
     <div className="space-y-6">
       <CompletedHero {...data.hero} />

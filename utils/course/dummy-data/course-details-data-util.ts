@@ -6,9 +6,11 @@ import type {
   CourseScheduleItem,
   CourseCheckinCardProps,
   CourseHelpCardProps,
-} from "@/types/course/course-details-type";
+} from "@/types/user/course/course-details-type";
 
-export function getCourseDetailsHeroSeed(_courseId: string): CourseDetailsHeroProps {
+export function getCourseDetailsHeroSeed(
+  _courseId: string,
+): CourseDetailsHeroProps {
   return {
     badges: ["IN-PERSON WORKSHOP", "6.0 CME CREDITS"],
     title: "Advanced Difficult Airway Workshop",
@@ -16,7 +18,9 @@ export function getCourseDetailsHeroSeed(_courseId: string): CourseDetailsHeroPr
   };
 }
 
-export function getCourseDetailsSummarySeed(_courseId: string): CourseDetailsSummaryProps {
+export function getCourseDetailsSummarySeed(
+  _courseId: string,
+): CourseDetailsSummaryProps {
   return {
     organizerLabel: "Registered Course",
     organizerText:
@@ -46,7 +50,7 @@ export function getCourseAboutSeed(_courseId: string): CourseAboutCardProps {
 }
 
 export function getCourseBookingDetailsSeed(
-  _courseId: string
+  _courseId: string,
 ): CourseBookingDetailsCardProps {
   return {
     status: {
@@ -58,8 +62,7 @@ export function getCourseBookingDetailsSeed(
       label: "TOTAL PAYMENT",
       title: "Total Fee",
       amount: "$450.00",
-      refundNote:
-        "Refunds are available up to 48 hours before the event.",
+      refundNote: "Refunds are available up to 48 hours before the event.",
     },
 
     refund: {
@@ -120,8 +123,7 @@ export function getCourseScheduleSeed(_courseId: string): CourseScheduleItem[] {
       timeRange: "10:30 AM",
       partLabel: "PART A: ASSESSMENT",
       title: "Practical Competency Check",
-      subtitle:
-        "Individual skill assessments under lead clinical instructors.",
+      subtitle: "Individual skill assessments under lead clinical instructors.",
       status: "upcoming",
     },
     {
@@ -136,7 +138,9 @@ export function getCourseScheduleSeed(_courseId: string): CourseScheduleItem[] {
   ];
 }
 
-export function getCourseCheckinSeed(_courseId: string): CourseCheckinCardProps {
+export function getCourseCheckinSeed(
+  _courseId: string,
+): CourseCheckinCardProps {
   return {
     title: "Workshop Check-in",
     subtitle: "Present this QR code at the venue entrance for check-in.",

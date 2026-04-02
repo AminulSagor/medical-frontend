@@ -3,7 +3,10 @@
 
 import { useMemo, useState } from "react";
 import { ChevronDown, Lock, UploadCloud } from "lucide-react";
-import type { AccountProfile, RoleOption } from "@/types/account-settings/account-settings-type";
+import type {
+  AccountProfile,
+  RoleOption,
+} from "@/types/user/account-settings/account-settings-type";
 import { accountProfileSchema } from "@/schema/account-settings/account-settings-schema";
 
 function cx(...v: Array<string | false | null | undefined>) {
@@ -13,7 +16,7 @@ function cx(...v: Array<string | false | null | undefined>) {
 function initialsFrom(firstName: string, lastName: string) {
   const a = (firstName?.trim()?.[0] ?? "").toUpperCase();
   const b = (lastName?.trim()?.[0] ?? "").toUpperCase();
-  return (a + b) || "U";
+  return a + b || "U";
 }
 
 export default function PublicProfileFormClient({
@@ -24,15 +27,23 @@ export default function PublicProfileFormClient({
   roleOptions: RoleOption[];
 }) {
   const [form, setForm] = useState<AccountProfile>({ ...initial });
-  const [avatarPreview, setAvatarPreview] = useState<string>(initial.avatarUrl || "");
+  const [avatarPreview, setAvatarPreview] = useState<string>(
+    initial.avatarUrl || "",
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const avatarLabel = useMemo(
-    () => (form.avatarInitials?.trim() ? form.avatarInitials : initialsFrom(form.firstName, form.lastName)),
-    [form.avatarInitials, form.firstName, form.lastName]
+    () =>
+      form.avatarInitials?.trim()
+        ? form.avatarInitials
+        : initialsFrom(form.firstName, form.lastName),
+    [form.avatarInitials, form.firstName, form.lastName],
   );
 
-  function set<K extends keyof AccountProfile>(key: K, value: AccountProfile[K]) {
+  function set<K extends keyof AccountProfile>(
+    key: K,
+    value: AccountProfile[K],
+  ) {
     setForm((p) => ({ ...p, [key]: value }));
   }
 
@@ -127,35 +138,53 @@ export default function PublicProfileFormClient({
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* First name */}
         <div>
-          <label className="text-[12px] font-semibold text-slate-700">First Name</label>
+          <label className="text-[12px] font-semibold text-slate-700">
+            First Name
+          </label>
           <input
             value={form.firstName}
             onChange={(e) => set("firstName", e.target.value)}
             className={cx(
               "mt-2 h-11 w-full rounded-xl border bg-white px-4 text-[13px] text-slate-900 outline-none",
-              errors.firstName ? "border-rose-300 ring-4 ring-rose-50" : "border-slate-200 focus:ring-4 focus:ring-sky-100"
+              errors.firstName
+                ? "border-rose-300 ring-4 ring-rose-50"
+                : "border-slate-200 focus:ring-4 focus:ring-sky-100",
             )}
           />
-          {errors.firstName && <div className="mt-1 text-[11px] text-rose-600">{errors.firstName}</div>}
+          {errors.firstName && (
+            <div className="mt-1 text-[11px] text-rose-600">
+              {errors.firstName}
+            </div>
+          )}
         </div>
 
         {/* Last name */}
         <div>
-          <label className="text-[12px] font-semibold text-slate-700">Last Name</label>
+          <label className="text-[12px] font-semibold text-slate-700">
+            Last Name
+          </label>
           <input
             value={form.lastName}
             onChange={(e) => set("lastName", e.target.value)}
             className={cx(
               "mt-2 h-11 w-full rounded-xl border bg-white px-4 text-[13px] text-slate-900 outline-none",
-              errors.lastName ? "border-rose-300 ring-4 ring-rose-50" : "border-slate-200 focus:ring-4 focus:ring-sky-100"
+              errors.lastName
+                ? "border-rose-300 ring-4 ring-rose-50"
+                : "border-slate-200 focus:ring-4 focus:ring-sky-100",
             )}
           />
-          {errors.lastName && <div className="mt-1 text-[11px] text-rose-600">{errors.lastName}</div>}
+          {errors.lastName && (
+            <div className="mt-1 text-[11px] text-rose-600">
+              {errors.lastName}
+            </div>
+          )}
         </div>
 
         {/* Email (locked) */}
         <div>
-          <label className="text-[12px] font-semibold text-slate-700">Email Address</label>
+          <label className="text-[12px] font-semibold text-slate-700">
+            Email Address
+          </label>
           <div className="mt-2 flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4">
             <Lock className="h-4 w-4 text-slate-400" />
             <input
@@ -168,16 +197,22 @@ export default function PublicProfileFormClient({
 
         {/* Phone */}
         <div>
-          <label className="text-[12px] font-semibold text-slate-700">Phone Number</label>
+          <label className="text-[12px] font-semibold text-slate-700">
+            Phone Number
+          </label>
           <input
             value={form.phone ?? ""}
             onChange={(e) => set("phone", e.target.value)}
             className={cx(
               "mt-2 h-11 w-full rounded-xl border bg-white px-4 text-[13px] text-slate-900 outline-none",
-              errors.phone ? "border-rose-300 ring-4 ring-rose-50" : "border-slate-200 focus:ring-4 focus:ring-sky-100"
+              errors.phone
+                ? "border-rose-300 ring-4 ring-rose-50"
+                : "border-slate-200 focus:ring-4 focus:ring-sky-100",
             )}
           />
-          {errors.phone && <div className="mt-1 text-[11px] text-rose-600">{errors.phone}</div>}
+          {errors.phone && (
+            <div className="mt-1 text-[11px] text-rose-600">{errors.phone}</div>
+          )}
         </div>
       </div>
 
@@ -185,19 +220,25 @@ export default function PublicProfileFormClient({
 
       {/* Professional Details */}
       <div>
-        <div className="text-[14px] font-semibold text-slate-900">Professional Details</div>
+        <div className="text-[14px] font-semibold text-slate-900">
+          Professional Details
+        </div>
 
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Title / Role (select) */}
           <div className="md:col-span-2">
-            <label className="text-[12px] font-semibold text-slate-700">Title / Role</label>
+            <label className="text-[12px] font-semibold text-slate-700">
+              Title / Role
+            </label>
             <div className="relative mt-2">
               <select
                 value={form.titleRole}
                 onChange={(e) => set("titleRole", e.target.value)}
                 className={cx(
                   "h-11 w-full appearance-none rounded-xl border bg-white px-4 pr-10 text-[13px] text-slate-900 outline-none",
-                  errors.titleRole ? "border-rose-300 ring-4 ring-rose-50" : "border-slate-200 focus:ring-4 focus:ring-sky-100"
+                  errors.titleRole
+                    ? "border-rose-300 ring-4 ring-rose-50"
+                    : "border-slate-200 focus:ring-4 focus:ring-sky-100",
                 )}
               >
                 {roleOptions.map((o) => (
@@ -209,13 +250,18 @@ export default function PublicProfileFormClient({
 
               <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             </div>
-            {errors.titleRole && <div className="mt-1 text-[11px] text-rose-600">{errors.titleRole}</div>}
+            {errors.titleRole && (
+              <div className="mt-1 text-[11px] text-rose-600">
+                {errors.titleRole}
+              </div>
+            )}
           </div>
 
           {/* Institution */}
           <div>
             <label className="text-[12px] font-semibold text-slate-700">
-              Institution / Hospital <span className="text-slate-400">(Optional)</span>
+              Institution / Hospital{" "}
+              <span className="text-slate-400">(Optional)</span>
             </label>
             <input
               value={form.institution ?? ""}

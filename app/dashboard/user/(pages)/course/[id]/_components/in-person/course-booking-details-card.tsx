@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { Users2, CreditCard, RotateCcw } from "lucide-react";
-import type { CourseBookingDetailsCardProps } from "@/types/course/course-details-type";
+import type { CourseBookingDetailsCardProps } from "@/types/user/course/course-details-type";
 import RequestRefundModalClient, {
   type RefundReason,
 } from "../shared/request-refund-modal";

@@ -1,5 +1,5 @@
 import { MapPin, User2, CheckCircle2, Download } from "lucide-react";
-import type { CompletedTopStripProps } from "@/types/course/course-completed-details-type";
+import type { CompletedTopStripProps } from "@/types/user/course/course-completed-details-type";
 
 export default function CompletedTopStrip({
   locationText,

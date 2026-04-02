@@ -1,15 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import Card from "@/components/cards/card";
-import { BlogPost } from "@/types/blogs/blog-type";
+import { BlogPost } from "@/types/public/blogs/blog-type";
 
 export default function ListPostRow({ post }: { post: BlogPost }) {
   return (
     <Card className="p-0 overflow-hidden rounded-[22px]" shape="soft">
-      <Link
-        href={post.href}
-        className="grid gap-0 md:grid-cols-[240px_1fr]"
-      >
+      <Link href={post.href} className="grid gap-0 md:grid-cols-[240px_1fr]">
         {/* left image */}
         <div className="relative h-[200px] w-full overflow-hidden md:h-[190px] md:w-[240px] rounded-l-[22px]">
           <Image

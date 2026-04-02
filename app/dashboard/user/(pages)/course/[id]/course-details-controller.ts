@@ -1,5 +1,5 @@
-import type { OnlineDetailsViewProps } from "@/types/course/course-online-details-type";
-import type { CompletedDetailsViewProps } from "@/types/course/course-completed-details-type";
+import type { OnlineDetailsViewProps } from "@/types/user/course/course-online-details-type";
+import type { CompletedDetailsViewProps } from "@/types/user/course/course-completed-details-type";
 
 import {
   getCourseDetailsHeroSeed,
@@ -50,9 +50,11 @@ function getProgressStatusSeed(courseId: string): CourseProgressStatus {
 }
 
 export async function getCourseDetailsController(
-  courseId: string
+  courseId: string,
 ): Promise<CourseDetailsControllerState> {
-  const deliveryType = getCourseDeliveryTypeSeed(courseId) as CourseDeliveryType;
+  const deliveryType = getCourseDeliveryTypeSeed(
+    courseId,
+  ) as CourseDeliveryType;
   const progressStatus = getProgressStatusSeed(courseId);
 
   // ✅ completed is independent of deliveryType

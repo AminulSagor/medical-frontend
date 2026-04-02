@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Mail, SendHorizonal } from "lucide-react";
 import { useState } from "react";
-import { sendOtp } from "@/service/auth/auth.service";
+import { sendOtp } from "@/service/public/auth/auth.service";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -27,11 +27,14 @@ export default function ResetPasswordPage() {
     try {
       await sendOtp({ email });
       // Redirect to OTP verification with email and mode=reset
-      router.push(`/public/auth/verify-otp-reset?email=${encodeURIComponent(email)}`);
+      router.push(
+        `/public/auth/verify-otp-reset?email=${encodeURIComponent(email)}`,
+      );
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       setError(
-        axiosErr?.response?.data?.message || "Failed to send reset code. Please try again."
+        axiosErr?.response?.data?.message ||
+          "Failed to send reset code. Please try again.",
       );
     } finally {
       setSubmitting(false);
@@ -79,15 +82,15 @@ export default function ResetPasswordPage() {
                 placeholder="doctor@clinic.org"
                 className={[
                   "h-14 w-full rounded-2xl border bg-white pl-12 pr-4 text-base text-slate-900 outline-none",
-                  error ? "border-rose-300" : "border-slate-200 placeholder:text-slate-300",
+                  error
+                    ? "border-rose-300"
+                    : "border-slate-200 placeholder:text-slate-300",
                   "focus:border-sky-300 focus:ring-4 focus:ring-sky-100",
                 ].join(" ")}
               />
             </div>
 
-            {error && (
-              <p className="mt-2 text-sm text-rose-600">{error}</p>
-            )}
+            {error && <p className="mt-2 text-sm text-rose-600">{error}</p>}
           </div>
 
           <button

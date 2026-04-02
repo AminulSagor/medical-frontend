@@ -1,8 +1,8 @@
-import type { ActiveCoursesSectionModel } from "@/types/course/course-type";
+import type { ActiveCoursesSectionModel } from "@/types/user/course/course-type";
 
 export function filterActiveCourses(
   data: ActiveCoursesSectionModel,
-  search: string
+  search: string,
 ): ActiveCoursesSectionModel {
   if (!search.trim()) return data;
 

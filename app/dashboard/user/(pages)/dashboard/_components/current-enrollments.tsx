@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Clock, MapPin, Video, BookOpen, LogIn } from "lucide-react";
-import { Enrollment } from "@/types/dashboard/enrollment-type";
+import { Enrollment } from "@/types/user/dashboard/enrollment-type";
 
 
 export default function CurrentEnrollments(props: { items?: Enrollment[] }) {

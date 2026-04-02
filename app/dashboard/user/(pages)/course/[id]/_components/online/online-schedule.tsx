@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { OnlineScheduleProps, OnlineScheduleDayKey } from "@/types/course/course-online-details-type";
+import type {
+  OnlineScheduleProps,
+  OnlineScheduleDayKey,
+} from "@/types/user/course/course-online-details-type";
 import { filterScheduleByDay } from "@/utils/course/online-course-schedule-util";
 
 function pill(active: boolean) {
@@ -10,10 +13,17 @@ function pill(active: boolean) {
     : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-50";
 }
 
-export default function OnlineScheduleClient({ schedule }: { schedule: OnlineScheduleProps }) {
+export default function OnlineScheduleClient({
+  schedule,
+}: {
+  schedule: OnlineScheduleProps;
+}) {
   const [day, setDay] = useState<OnlineScheduleDayKey>("day1");
 
-  const items = useMemo(() => filterScheduleByDay(schedule.items, day), [schedule.items, day]);
+  const items = useMemo(
+    () => filterScheduleByDay(schedule.items, day),
+    [schedule.items, day],
+  );
 
   return (
     <section>
@@ -44,10 +54,16 @@ export default function OnlineScheduleClient({ schedule }: { schedule: OnlineSch
                 <div className="text-[10px] font-extrabold tracking-wide text-sky-600">
                   {it.partLabel}
                 </div>
-                <div className="mt-1 text-[10px] font-bold text-slate-400">{it.timeText}</div>
+                <div className="mt-1 text-[10px] font-bold text-slate-400">
+                  {it.timeText}
+                </div>
 
-                <div className="mt-2 text-[13px] font-extrabold text-slate-900">{it.title}</div>
-                <div className="mt-1 text-[12px] leading-relaxed text-slate-500">{it.subtitle}</div>
+                <div className="mt-2 text-[13px] font-extrabold text-slate-900">
+                  {it.title}
+                </div>
+                <div className="mt-1 text-[12px] leading-relaxed text-slate-500">
+                  {it.subtitle}
+                </div>
               </div>
 
               {it.status === "live" && (

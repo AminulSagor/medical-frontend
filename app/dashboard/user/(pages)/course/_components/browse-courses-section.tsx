@@ -2,9 +2,13 @@
 
 import BrowseFeaturedBanner from "./browse-featured-banner";
 import BrowseCourseCard from "./browse-course-card";
-import type { BrowseCoursesModel } from "@/types/course/course-type";
+import type { BrowseCoursesModel } from "@/types/user/course/course-type";
 
-export default function BrowseCoursesSection({ model }: { model: BrowseCoursesModel }) {
+export default function BrowseCoursesSection({
+  model,
+}: {
+  model: BrowseCoursesModel;
+}) {
   return (
     <section className="mt-6 space-y-6">
       {/* Featured */}

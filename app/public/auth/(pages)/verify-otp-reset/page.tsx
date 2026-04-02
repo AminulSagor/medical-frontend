@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, Mail, Clock, Shield } from "lucide-react";
-import { verifyOtp, sendOtp } from "@/service/auth/auth.service";
+import { verifyOtp, sendOtp } from "@/service/public/auth/auth.service";
 
 function VerifyOtpResetContent() {
   const router = useRouter();
@@ -46,7 +46,7 @@ function VerifyOtpResetContent() {
 
   const handleKeyDown = (
     index: number,
-    e: React.KeyboardEvent<HTMLInputElement>
+    e: React.KeyboardEvent<HTMLInputElement>,
   ) => {
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
@@ -75,7 +75,8 @@ function VerifyOtpResetContent() {
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       setApiError(
-        axiosErr?.response?.data?.message || "Verification failed. Please try again."
+        axiosErr?.response?.data?.message ||
+          "Verification failed. Please try again.",
       );
     } finally {
       setSubmitting(false);
@@ -96,7 +97,8 @@ function VerifyOtpResetContent() {
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       setApiError(
-        axiosErr?.response?.data?.message || "Failed to resend code. Please try again."
+        axiosErr?.response?.data?.message ||
+          "Failed to resend code. Please try again.",
       );
     } finally {
       setResending(false);
@@ -107,9 +109,8 @@ function VerifyOtpResetContent() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center font-sans relative px-4">
-      
       <div className="w-full max-w-md absolute top-8 left-0 right-0 mx-auto px-4">
-        <button 
+        <button
           onClick={() => router.push("/auth/reset-password")}
           className="flex items-center text-slate-500 hover:text-slate-800 font-semibold text-sm transition-colors"
         >
@@ -119,7 +120,6 @@ function VerifyOtpResetContent() {
       </div>
 
       <div className="bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 sm:p-10 w-full max-w-md flex flex-col items-center text-center mt-12">
-        
         <div className="bg-[#f0f9ff] w-16 h-16 rounded-2xl flex items-center justify-center mb-6">
           <Mail className="w-8 h-8 text-[#38bdf8]" strokeWidth={2} />
         </div>
@@ -129,8 +129,10 @@ function VerifyOtpResetContent() {
         </h1>
         <p className="text-slate-500 text-sm leading-relaxed mb-8 px-2">
           A 6-digit code was sent to{" "}
-          <span className="font-semibold text-slate-700">{email || "your email"}</span>.
-          Enter it below to proceed with password reset.
+          <span className="font-semibold text-slate-700">
+            {email || "your email"}
+          </span>
+          . Enter it below to proceed with password reset.
         </p>
 
         <div className="flex justify-between w-full gap-2 sm:gap-3 mb-6">
@@ -160,16 +162,15 @@ function VerifyOtpResetContent() {
           </span>
         </div>
 
-        {apiError && (
-          <p className="text-sm text-rose-600 mb-4">{apiError}</p>
-        )}
+        {apiError && <p className="text-sm text-rose-600 mb-4">{apiError}</p>}
 
-        <button 
+        <button
           onClick={handleVerify}
           disabled={submitting || otp.join("").length !== 6}
           className={[
             "w-full bg-[#38bdf8] hover:bg-[#0ea5e9] text-white font-bold text-base py-4 rounded-xl transition-colors shadow-lg shadow-sky-200 mb-6",
-            (submitting || otp.join("").length !== 6) && "opacity-60 cursor-not-allowed"
+            (submitting || otp.join("").length !== 6) &&
+              "opacity-60 cursor-not-allowed",
           ].join(" ")}
         >
           {submitting ? "Verifying..." : "Verify & Continue"}
@@ -177,12 +178,12 @@ function VerifyOtpResetContent() {
 
         <div className="text-sm font-medium text-slate-500">
           Didn&apos;t receive the code?{" "}
-          <button 
+          <button
             onClick={handleResend}
             disabled={!canResend}
             className={[
               "text-[#38bdf8] hover:underline hover:text-[#0ea5e9]",
-              !canResend && "opacity-50 cursor-not-allowed no-underline"
+              !canResend && "opacity-50 cursor-not-allowed no-underline",
             ].join(" ")}
           >
             {resending ? "Sending..." : "Resend Code"}
@@ -196,18 +197,19 @@ function VerifyOtpResetContent() {
           Secure Password Reset Portal
         </span>
       </div>
-      
     </div>
   );
 }
 
 export default function VerifyOtpResetPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
-        <div className="text-slate-500">Loading...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
+          <div className="text-slate-500">Loading...</div>
+        </div>
+      }
+    >
       <VerifyOtpResetContent />
     </Suspense>
   );

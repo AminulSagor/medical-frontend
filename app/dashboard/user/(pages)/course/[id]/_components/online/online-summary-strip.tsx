@@ -1,11 +1,11 @@
 "use client";
 
 import { Video, User2, CalendarPlus } from "lucide-react";
-import type { OnlineSummaryStripProps } from "@/types/course/course-online-details-type";
+import type { OnlineSummaryStripProps } from "@/types/user/course/course-online-details-type";
 import SessionPill from "../shared/session-pill";
 
 export default function OnlineSummaryStripClient(
-  props: OnlineSummaryStripProps & { onAddToCalendar?: () => void }
+  props: OnlineSummaryStripProps & { onAddToCalendar?: () => void },
 ) {
   const {
     statusPillText,
@@ -64,7 +64,8 @@ export default function OnlineSummaryStripClient(
 
             {/* match figma: "Instructor: Dr. Alan Grant" with bold name */}
             <span className="font-medium">
-              Instructor: <span className="font-extrabold">{instructorText}</span>
+              Instructor:{" "}
+              <span className="font-extrabold">{instructorText}</span>
             </span>
           </div>
         </div>

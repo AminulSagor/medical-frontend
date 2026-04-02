@@ -1,5 +1,5 @@
 import { Building2, Stethoscope, BarChart3 } from "lucide-react";
-import type { VenueLogistics } from "@/types/ticket/ticket-details-type";
+import type { VenueLogistics } from "@/types/user/ticket/ticket-details-type";
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
@@ -9,7 +9,11 @@ function Label({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function VenueLogisticsCard({ venue }: { venue: VenueLogistics }) {
+export default function VenueLogisticsCard({
+  venue,
+}: {
+  venue: VenueLogistics;
+}) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white px-6 py-6 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
       <div className="flex items-center gap-3">

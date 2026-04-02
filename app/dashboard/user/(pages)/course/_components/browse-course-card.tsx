@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import type { BrowseCourseCardItem } from "@/types/course/course-type";
+import type { BrowseCourseCardItem } from "@/types/user/course/course-type";
 import { useRouter } from "next/navigation";
 
 export default function BrowseCourseCard({
@@ -42,7 +42,9 @@ export default function BrowseCourseCard({
         </p>
 
         <div className="mt-3 flex items-center justify-between">
-          <div className="text-[12px] font-extrabold text-slate-900">{priceLabel}</div>
+          <div className="text-[12px] font-extrabold text-slate-900">
+            {priceLabel}
+          </div>
 
           <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[9px] font-bold text-slate-600">
             {creditsLabel}
@@ -51,9 +53,7 @@ export default function BrowseCourseCard({
 
         <button
           type="button"
-          onClick={() =>
-                    router.push(`/course/online`)
-                  }
+          onClick={() => router.push(`/course/online`)}
           className={[
             "mt-3 h-9 w-full rounded-md bg-sky-600",
             "text-[11px] font-semibold text-white",

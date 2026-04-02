@@ -4,18 +4,18 @@ import {
   ReviewsResponse,
   CreateReviewDto,
   ReviewSummary,
-} from "@/types/review/review.types";
+} from "@/types/public/review/review.types";
 
 /**
  * Get reviews for a product (Public)
  */
 export const getProductReviews = async (
   productId: string,
-  query?: QueryReviewsDto
+  query?: QueryReviewsDto,
 ): Promise<ReviewsResponse> => {
   const response = await serviceClient.get<ReviewsResponse>(
     `/public/reviews/product/${productId}`,
-    { params: query }
+    { params: query },
   );
   return response.data;
 };
@@ -24,10 +24,10 @@ export const getProductReviews = async (
  * Get rating summary for a product (Public)
  */
 export const getProductRatingSummary = async (
-  productId: string
+  productId: string,
 ): Promise<ReviewSummary> => {
   const response = await serviceClient.get<ReviewSummary>(
-    `/public/reviews/product/${productId}/summary`
+    `/public/reviews/product/${productId}/summary`,
   );
   return response.data;
 };
@@ -37,7 +37,7 @@ export const getProductRatingSummary = async (
  */
 export const markReviewHelpful = async (reviewId: string): Promise<any> => {
   const response = await serviceClient.post(
-    `/public/reviews/${reviewId}/helpful`
+    `/public/reviews/${reviewId}/helpful`,
   );
   return response.data;
 };

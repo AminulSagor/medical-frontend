@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, Search } from "lucide-react";
-import type { CourseTabKey } from "@/types/course/course-type";
+import type { CourseTabKey } from "@/types/user/course/course-type";
 
 type Props = {
   search: string;
@@ -87,7 +87,9 @@ export default function CoursesToolbarWithTabs({
                 onClick={() => onTabChange(t.key)}
                 className={[
                   "relative -mb-px pb-3 text-[11px] font-medium leading-none whitespace-nowrap",
-                  isActive ? "text-sky-600" : "text-slate-500 hover:text-slate-700",
+                  isActive
+                    ? "text-sky-600"
+                    : "text-slate-500 hover:text-slate-700",
                 ].join(" ")}
               >
                 {t.label}

@@ -3,21 +3,23 @@ import type {
   Review,
   CreateReviewRequest,
   UpdateReviewRequest,
-} from "@/types/review/review.types";
+} from "@/types/public/review/review.types";
 
 // Create a review (authenticated)
 export const createReview = async (
-  data: CreateReviewRequest
+  data: CreateReviewRequest,
 ): Promise<Review> => {
   const response = await serviceClient.post<Review>("/reviews", data);
   return response.data;
 };
 
 // Get user's review for a product
-export const getMyReview = async (productId: string): Promise<Review | null> => {
+export const getMyReview = async (
+  productId: string,
+): Promise<Review | null> => {
   try {
     const response = await serviceClient.get<Review>(
-      `/reviews/my-review/${productId}`
+      `/reviews/my-review/${productId}`,
     );
     return response.data;
   } catch (error: any) {
@@ -31,11 +33,11 @@ export const getMyReview = async (productId: string): Promise<Review | null> => 
 // Update user's review
 export const updateReview = async (
   reviewId: string,
-  data: UpdateReviewRequest
+  data: UpdateReviewRequest,
 ): Promise<Review> => {
   const response = await serviceClient.patch<Review>(
     `/reviews/${reviewId}`,
-    data
+    data,
   );
   return response.data;
 };

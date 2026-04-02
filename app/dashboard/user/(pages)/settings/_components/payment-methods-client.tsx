@@ -7,7 +7,7 @@ import { paymentMethodsSchema } from "@/schema/account-settings/payment-method-s
 import type {
   PaymentCardItem,
   PaymentMethodsModel,
-} from "@/types/account-settings/payment-method-type";
+} from "@/types/user/account-settings/payment-method-type";
 
 function cx(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(" ");
@@ -59,7 +59,11 @@ function CardRow({ item }: { item: PaymentCardItem }) {
   );
 }
 
-export default function PaymentMethodsClient({ seed }: { seed: PaymentMethodsModel }) {
+export default function PaymentMethodsClient({
+  seed,
+}: {
+  seed: PaymentMethodsModel;
+}) {
   const model = useMemo(() => {
     // validate seed (UI-only, but keeps it aligned for API later)
     const parsed = paymentMethodsSchema.safeParse(seed);
@@ -76,11 +80,9 @@ export default function PaymentMethodsClient({ seed }: { seed: PaymentMethodsMod
     // UI only for now
   }
 
-  function onCancel() {
-  }
+  function onCancel() {}
 
-  function onSave() {
-  }
+  function onSave() {}
 
   return (
     <div>
@@ -97,7 +99,7 @@ export default function PaymentMethodsClient({ seed }: { seed: PaymentMethodsMod
           onClick={onAddNew}
           className={cx(
             "flex items-center gap-3 rounded-2xl border-2 border-dashed px-5 py-4",
-            "border-slate-200 bg-white text-sky-600 hover:bg-slate-50/60"
+            "border-slate-200 bg-white text-sky-600 hover:bg-slate-50/60",
           )}
         >
           <span className="grid h-8 w-8 place-items-center rounded-full bg-sky-50 ring-1 ring-sky-100">

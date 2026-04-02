@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { IMAGE } from "@/constant/image-config";
-import type { AboutHero as AboutHeroType } from "@/types/about/about-types";
+import type { AboutHero as AboutHeroType } from "@/types/public/about/about-types";
 
 const HERO: AboutHeroType = {
   eyebrow: "FOUNDER, TEXAS AIRWAY INSTITUTE",

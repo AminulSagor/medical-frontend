@@ -11,7 +11,7 @@ import { ProductDetails } from "@/app/public/types/product.details";
 
 import ReviewSection from "../_components/review-section";
 import { getProductDetails } from "@/service/public/product.service";
-import type { ProductDetailResponse } from "@/types/product/public-product.types";
+import type { ProductDetailResponse } from "@/types/public/product/public-product.types";
 import { use } from "react";
 import Breadcrumb from "@/app/public/(pages)/store/product-details/_components/breadcrumb";
 import BundleSetupClient from "@/app/public/(pages)/store/product-details/_components/bundle-setup.client";

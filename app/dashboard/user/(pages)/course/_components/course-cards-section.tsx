@@ -10,7 +10,10 @@ import {
   Info,
   Video,
 } from "lucide-react";
-import type { InPersonCourseCard, OnlineCourseCard } from "@/types/course/course-type";
+import type {
+  InPersonCourseCard,
+  OnlineCourseCard,
+} from "@/types/user/course/course-type";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -140,9 +143,7 @@ export default function CourseCardsSection({ inPerson, online }: Props) {
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
-                    router.push(`/course/inperson`)
-                  }
+                  onClick={() => router.push(`/course/inperson`)}
                   className={[
                     "h-11 flex-1 rounded-xl bg-sky-50 px-4",
                     "text-sm font-semibold text-sky-700",

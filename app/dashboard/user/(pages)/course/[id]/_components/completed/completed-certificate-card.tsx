@@ -1,9 +1,11 @@
 "use client";
 
 import { Download, Share2, CheckCircle2 } from "lucide-react";
-import type { CompletedCertificateCardProps } from "@/types/course/course-completed-details-type";
+import type { CompletedCertificateCardProps } from "@/types/user/course/course-completed-details-type";
 
-export default function CompletedCertificateCardClient(props: CompletedCertificateCardProps) {
+export default function CompletedCertificateCardClient(
+  props: CompletedCertificateCardProps,
+) {
   const {
     title,
     subtitle,
@@ -27,8 +29,12 @@ export default function CompletedCertificateCardClient(props: CompletedCertifica
           <CheckCircle2 className="h-5 w-5" />
         </div>
 
-        <div className="mt-3 text-[13px] font-extrabold text-slate-900">{congratsTitle}</div>
-        <div className="mt-1 text-[12px] leading-relaxed text-slate-500">{congratsText}</div>
+        <div className="mt-3 text-[13px] font-extrabold text-slate-900">
+          {congratsTitle}
+        </div>
+        <div className="mt-1 text-[12px] leading-relaxed text-slate-500">
+          {congratsText}
+        </div>
 
         <button
           type="button"

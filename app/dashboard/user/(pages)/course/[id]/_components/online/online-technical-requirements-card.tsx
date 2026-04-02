@@ -1,5 +1,5 @@
 import { Wifi, Webcam, Mic } from "lucide-react";
-import type { OnlineTechnicalRequirementsCardProps } from "@/types/course/course-online-details-type";
+import type { OnlineTechnicalRequirementsCardProps } from "@/types/user/course/course-online-details-type";
 
 function Icon({ k }: { k: "wifi" | "camera" | "mic" }) {
   if (k === "wifi") return <Wifi className="h-4 w-4" />;
@@ -13,7 +13,9 @@ export default function OnlineTechnicalRequirementsCard({
 }: OnlineTechnicalRequirementsCardProps) {
   return (
     <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
-      <div className="text-[10px] font-extrabold tracking-[0.18em] text-slate-300">{heading}</div>
+      <div className="text-[10px] font-extrabold tracking-[0.18em] text-slate-300">
+        {heading}
+      </div>
 
       <div className="mt-4 space-y-4">
         {items.map((it, idx) => (
@@ -22,8 +24,12 @@ export default function OnlineTechnicalRequirementsCard({
               <Icon k={it.iconKey} />
             </div>
             <div>
-              <div className="text-[12px] font-extrabold text-slate-900">{it.title}</div>
-              <div className="mt-1 text-[12px] leading-relaxed text-slate-500">{it.desc}</div>
+              <div className="text-[12px] font-extrabold text-slate-900">
+                {it.title}
+              </div>
+              <div className="mt-1 text-[12px] leading-relaxed text-slate-500">
+                {it.desc}
+              </div>
             </div>
           </div>
         ))}

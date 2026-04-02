@@ -1,4 +1,4 @@
-import type { OnlineDetailsViewProps } from "@/types/course/course-online-details-type";
+import type { OnlineDetailsViewProps } from "@/types/user/course/course-online-details-type";
 
 import OnlineAboutCard from "../_components/online/online-about-card";
 import OnlineTechnicalRequirementsCard from "../_components/online/online-technical-requirements-card";

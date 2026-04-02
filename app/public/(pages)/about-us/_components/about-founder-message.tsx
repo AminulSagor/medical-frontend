@@ -1,13 +1,12 @@
 import Card from "@/components/cards/card";
 import { Quote } from "lucide-react";
-import type { FounderMessage } from "@/types/about/about-types";
+import type { FounderMessage } from "@/types/public/about/about-types";
 
 const MSG: FounderMessage = {
   title: "Message from the Founder",
   quote:
     "“Medicine is not merely the application of science, but the profound act of standing with someone in their most vulnerable moments. My journey has taught me that true healing requires both the precision of a surgeon and the empathy of a friend.”",
-  body:
-    "At the Texas Airway Institute, we believe that resilience is built through understanding. Every patient brings a unique story, and it is our privilege to listen, to care, and to guide them towards recovery with dignity and expertise. This philosophy is the cornerstone of every procedure we perform and every life we touch.",
+  body: "At the Texas Airway Institute, we believe that resilience is built through understanding. Every patient brings a unique story, and it is our privilege to listen, to care, and to guide them towards recovery with dignity and expertise. This philosophy is the cornerstone of every procedure we perform and every life we touch.",
   signature: "Victor Enoh, MD",
 };
 
