@@ -1,34 +1,36 @@
-import { CourseDetails } from "@/app/(user)/(not-register)/public/types/course.details.types";
 import { PublicWorkshopDetails } from "@/types/workshop/public-workshop.types";
 import { IMAGE } from "@/constant/image-config";
+import { CourseDetails } from "@/app/public/types/course.details.types";
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  }).toUpperCase();
+  return date
+    .toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    })
+    .toUpperCase();
 }
 
 function formatDateRange(startDate: string, endDate: string): string {
   const start = new Date(startDate);
   const end = new Date(endDate);
-  
+
   const startFormatted = start.toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
   });
-  
+
   if (startDate === endDate) {
     return `${startFormatted}, ${start.getFullYear()}`;
   }
-  
+
   const endFormatted = end.toLocaleDateString("en-US", {
     day: "numeric",
     year: "numeric",
   });
-  
+
   return `${startFormatted} - ${endFormatted}`;
 }
 
@@ -45,10 +47,16 @@ function getDayPill(dayNumber: number): string {
   return `DAY ${words[dayNumber - 1] || dayNumber}`;
 }
 
-export function transformWorkshopToDetails(workshop: PublicWorkshopDetails): CourseDetails {
-  const deliveryModeLabel = workshop.deliveryMode === "online" ? "ONLINE" : "IN-PERSON";
-  const daysLabel = workshop.numberOfDays === 1 ? "1-DAY WORKSHOP" : `${workshop.numberOfDays}-DAY WORKSHOP`;
-  
+export function transformWorkshopToDetails(
+  workshop: PublicWorkshopDetails,
+): CourseDetails {
+  const deliveryModeLabel =
+    workshop.deliveryMode === "online" ? "ONLINE" : "IN-PERSON";
+  const daysLabel =
+    workshop.numberOfDays === 1
+      ? "1-DAY WORKSHOP"
+      : `${workshop.numberOfDays}-DAY WORKSHOP`;
+
   return {
     id: workshop.id,
 
@@ -56,7 +64,9 @@ export function transformWorkshopToDetails(workshop: PublicWorkshopDetails): Cou
       title: workshop.title,
       badges: [
         { label: daysLabel, tone: "primary" },
-        ...(workshop.offersCmeCredits ? [{ label: "CME CREDITS", tone: "muted" as const }] : []),
+        ...(workshop.offersCmeCredits
+          ? [{ label: "CME CREDITS", tone: "muted" as const }]
+          : []),
       ],
       backgroundSrc: workshop.workshopPhoto || IMAGE.course_details_cover,
       backgroundAlt: workshop.title,
@@ -98,29 +108,42 @@ export function transformWorkshopToDetails(workshop: PublicWorkshopDetails): Cou
       price: parseFloat(workshop.standardPrice),
       perLabel: "Per Participant",
       features: [
-        { id: "f1", label: `Full ${workshop.numberOfDays}-Day Curriculum Access` },
-        { id: "f2", label: workshop.deliveryMode === "online" ? "Live Interactive Sessions" : "Hands-on Training Materials" },
-        ...(workshop.offersCmeCredits ? [{ id: "f3", label: "CME Certificate of Completion" }] : []),
+        {
+          id: "f1",
+          label: `Full ${workshop.numberOfDays}-Day Curriculum Access`,
+        },
+        {
+          id: "f2",
+          label:
+            workshop.deliveryMode === "online"
+              ? "Live Interactive Sessions"
+              : "Hands-on Training Materials",
+        },
+        ...(workshop.offersCmeCredits
+          ? [{ id: "f3", label: "CME Certificate of Completion" }]
+          : []),
       ],
-      groupSave: workshop.groupDiscountEnabled && workshop.groupDiscounts.length > 0
-        ? {
-            title: "GROUP & SAVE",
-            oldPrice: parseFloat(workshop.standardPrice),
-            newPrice: parseFloat(workshop.groupDiscounts[0].pricePerPerson),
-            discountLabel: `SAVE $${workshop.groupDiscounts[0].savingsPerPerson}`,
-            note: `Special pricing for ${workshop.groupDiscounts[0].minimumAttendees}+ attendees`,
-          }
-        : {
-            title: "GROUP & SAVE",
-            oldPrice: parseFloat(workshop.standardPrice),
-            newPrice: parseFloat(workshop.standardPrice),
-            discountLabel: "N/A",
-            note: "Group discounts not available",
-          },
+      groupSave:
+        workshop.groupDiscountEnabled && workshop.groupDiscounts.length > 0
+          ? {
+              title: "GROUP & SAVE",
+              oldPrice: parseFloat(workshop.standardPrice),
+              newPrice: parseFloat(workshop.groupDiscounts[0].pricePerPerson),
+              discountLabel: `SAVE $${workshop.groupDiscounts[0].savingsPerPerson}`,
+              note: `Special pricing for ${workshop.groupDiscounts[0].minimumAttendees}+ attendees`,
+            }
+          : {
+              title: "GROUP & SAVE",
+              oldPrice: parseFloat(workshop.standardPrice),
+              newPrice: parseFloat(workshop.standardPrice),
+              discountLabel: "N/A",
+              note: "Group discounts not available",
+            },
       ctaLabel: "Enroll Now",
-      warningLabel: workshop.availableSeats <= workshop.alertAt
-        ? `Only ${workshop.availableSeats} seats remaining!`
-        : `${workshop.availableSeats} seats available`,
+      warningLabel:
+        workshop.availableSeats <= workshop.alertAt
+          ? `Only ${workshop.availableSeats} seats remaining!`
+          : `${workshop.availableSeats} seats available`,
       footnote: `LIMITED SLOTS: ONLY ${workshop.totalCapacity} AVAILABLE`,
     },
 
@@ -138,7 +161,8 @@ export function transformWorkshopToDetails(workshop: PublicWorkshopDetails): Cou
           id: `d${day.dayNumber}s${seg.segmentNumber}`,
           at: formatTime(seg.startTime),
           title: seg.courseTopic,
-          description: seg.topicDetails || `Duration: ${seg.durationHours} hours`,
+          description:
+            seg.topicDetails || `Duration: ${seg.durationHours} hours`,
         })),
       })),
     },
