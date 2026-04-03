@@ -79,7 +79,7 @@ export function useSignUpController() {
 
       // Redirect to OTP verification with email as query param
       router.push(
-        `/auth/otp-verification?email=${encodeURIComponent(result.data.medicalEmail)}`,
+        `/pubic/auth/otp-verification?email=${encodeURIComponent(result.data.medicalEmail)}`,
       );
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };

@@ -59,7 +59,9 @@ export default function SignUpPage() {
                 className={[
                   "mt-1 h-10 w-full rounded-lg border bg-white px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400",
                   "focus:border-sky-300 focus:ring-4 focus:ring-sky-100",
-                  c.errors.fullLegalName ? "border-rose-300" : "border-slate-200",
+                  c.errors.fullLegalName
+                    ? "border-rose-300"
+                    : "border-slate-200",
                 ].join(" ")}
               />
               {c.errors.fullLegalName && (
@@ -82,7 +84,9 @@ export default function SignUpPage() {
                 className={[
                   "mt-1 h-10 w-full rounded-lg border bg-white px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400",
                   "focus:border-sky-300 focus:ring-4 focus:ring-sky-100",
-                  c.errors.medicalEmail ? "border-rose-300" : "border-slate-200",
+                  c.errors.medicalEmail
+                    ? "border-rose-300"
+                    : "border-slate-200",
                 ].join(" ")}
               />
               {c.errors.medicalEmail && (
@@ -104,7 +108,9 @@ export default function SignUpPage() {
                 className={[
                   "mt-1 h-10 w-full rounded-lg border bg-white px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400",
                   "focus:border-sky-300 focus:ring-4 focus:ring-sky-100",
-                  c.errors.professionalRole ? "border-rose-300" : "border-slate-200",
+                  c.errors.professionalRole
+                    ? "border-rose-300"
+                    : "border-slate-200",
                 ].join(" ")}
               />
               {c.errors.professionalRole && (
@@ -214,7 +220,10 @@ export default function SignUpPage() {
 
             <div className="pt-1 text-center text-xs text-slate-600">
               Already have an account?{" "}
-              <Link className="text-sky-600 hover:underline" href="/public/auth/sign-in">
+              <Link
+                className="text-sky-600 hover:underline"
+                href="/public/auth/sign-in"
+              >
                 Sign in
               </Link>
             </div>
