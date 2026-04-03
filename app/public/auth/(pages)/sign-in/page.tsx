@@ -10,6 +10,7 @@ import { zodErrorToFieldErrors } from "@/schema/zodErrorToFieldErrors";
 import { loginUser } from "@/service/public/auth/auth.service";
 import { setToken, setUserRole } from "@/utils/token/cookie_utils";
 import type { LoginRequest } from "@/types/public/auth/auth.types";
+import { getRoleFromToken } from "@/utils/decode-token.utils";
 
 type FieldErrors = Partial<Record<keyof LoginRequest, string>>;
 
@@ -45,7 +46,7 @@ export default function SignInPage() {
       setToken(response.accessToken);
       // setUserRole(response.user.role);
 
-      const role = response.user.role;
+      const role = getRoleFromToken(response.accessToken);
 
       if (role === "admin") {
         router.push("/dashboard/admin/admin-dashboard");
