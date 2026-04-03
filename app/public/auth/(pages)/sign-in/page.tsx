@@ -8,7 +8,7 @@ import { Eye, EyeOff, Lock, Mail, LogIn } from "lucide-react";
 import { loginSchema } from "@/schema/auth/login.schema";
 import { zodErrorToFieldErrors } from "@/schema/zodErrorToFieldErrors";
 import { loginUser } from "@/service/public/auth/auth.service";
-import { setToken } from "@/utils/token/cookie_utils";
+import { setToken, setUserRole } from "@/utils/token/cookie_utils";
 import type { LoginRequest } from "@/types/public/auth/auth.types";
 
 type FieldErrors = Partial<Record<keyof LoginRequest, string>>;
@@ -41,11 +41,14 @@ export default function SignInPage() {
 
     try {
       const response = await loginUser(result.data);
+
       setToken(response.accessToken);
+      // setUserRole(response.user.role);
 
       const role = response.user.role;
+
       if (role === "admin") {
-        router.push("/dashbaord/admin/admin-dashboard");
+        router.push("/dashboard/admin/admin-dashboard");
       } else {
         router.push("/dashboard/user/dashboard");
       }
