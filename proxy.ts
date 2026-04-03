@@ -1,0 +1,80 @@
+// proxy.ts
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+const PUBLIC_ROUTES = [
+  "/public/auth/sign-in",
+  "/public/auth/sign-up",
+  "/public",
+];
+const ADMIN_ONLY_ROUTES = ["/dashboard/admin"];
+const USER_ONLY_ROUTES = ["/dashboard/user"];
+
+function isPublicRoute(pathname: string) {
+  return PUBLIC_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
+}
+
+function isAdminRoute(pathname: string) {
+  return ADMIN_ONLY_ROUTES.some((route) => pathname.startsWith(route));
+}
+
+function isUserRoute(pathname: string) {
+  return USER_ONLY_ROUTES.some((route) => pathname.startsWith(route));
+}
+
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname.includes(".")
+  ) {
+    return NextResponse.next();
+  }
+
+  const token = request.cookies.get("access_token")?.value;
+  const role = request.cookies.get("user_role")?.value;
+
+  if (!token && !isPublicRoute(pathname)) {
+    return NextResponse.redirect(new URL("/public/auth/sign-in", request.url));
+  }
+
+  if (
+    token &&
+    (pathname === "/public/auth/sign-in" || pathname === "/public/auth/sign-up")
+  ) {
+    if (role === "admin") {
+      return NextResponse.redirect(
+        new URL("/dashboard/admin/admin-dashboard", request.url),
+      );
+    }
+
+    return NextResponse.redirect(
+      new URL("/dashboard/user/dashboard", request.url),
+    );
+  }
+
+  // Role-based protection
+  if (token && role) {
+    if (isAdminRoute(pathname) && role !== "admin") {
+      return NextResponse.redirect(
+        new URL("/dashboard/user/dashboard", request.url),
+      );
+    }
+
+    if (isUserRoute(pathname) && role !== "user") {
+      return NextResponse.redirect(
+        new URL("/dashboard/admin/admin-dashboard", request.url),
+      );
+    }
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+};
