@@ -82,7 +82,7 @@ export default function AdminTopbar() {
                     onViewAll={() => {
                       // navigate to page later if you create one
                       setOpenNotif(false);
-                      router.push("/notifications");
+                      router.push("/dashboard/admin/notifications");
                     }}
                   />
                 </div>

@@ -3,51 +3,21 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  LayoutDashboard,
-  BookOpen,
-  Package,
-  ShoppingCart,
-  FileText,
-  Mail,
-  Users,
-  BarChart3,
-  Settings,
-  LogOut,
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 import { removeToken } from "@/utils/token/cookie_utils";
-import { ADMIN_NAV } from "@/app/dashboard/admin/_data/admin-nav";
-
-type Item = {
-  label: string;
-  href: string;
-  icon: React.ElementType;
-};
-
-const NAV: Item[] = [
-  { label: "Dashboard", href: "/admin-dashboard", icon: LayoutDashboard },
-  { label: "Courses", href: "/courses", icon: BookOpen },
-  { label: "Products", href: "/products", icon: Package },
-  { label: "Orders and Sales", href: "/orders-and-sales", icon: ShoppingCart },
-  { label: "Blogs", href: "/blogs", icon: FileText },
-  { label: "Newsletters", href: "/newsletters", icon: Mail },
-  { label: "Users", href: "/users", icon: Users },
-  { label: "Analytics", href: "/analytics", icon: BarChart3 },
-  { label: "Settings", href: "/settings", icon: Settings },
-];
-
+import { ADMIN_NAV_LINKS } from "@/constant/navigation-links";
+import { logoutUser } from "@/utils/logout.utils";
 function isActivePath(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
-  // highlight exact or nested routes
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+
   return (
     <div className="flex h-full flex-col">
-      {/* Brand */}
       <div className="flex items-center gap-3 px-5 py-4">
         <div className="grid h-9 w-9 place-items-center rounded-md bg-sky-50 ring-1 ring-sky-100">
           <span className="text-sm font-bold text-sky-700">TA</span>
@@ -60,10 +30,9 @@ export default function AdminSidebar() {
         </div>
       </div>
 
-      {/* Nav */}
       <nav className="px-3 py-2">
         <ul className="space-y-1">
-          {ADMIN_NAV.map((it) => {
+          {ADMIN_NAV_LINKS.map((it) => {
             const Icon = it.icon;
             const active = isActivePath(pathname, it.href);
 
@@ -94,7 +63,6 @@ export default function AdminSidebar() {
         </ul>
       </nav>
 
-      {/* Footer user */}
       <div className="mt-auto border-t px-5 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -113,13 +81,13 @@ export default function AdminSidebar() {
               <p className="truncate text-xs text-slate-500">Administrator</p>
             </div>
           </div>
+
           <button
             type="button"
             onClick={() => {
-              removeToken();
-              router.push("/auth/sign-in");
+              logoutUser();
             }}
-            className="grid h-9 w-9 place-items-center rounded-md text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition"
+            className="grid h-9 w-9 place-items-center rounded-md text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"
             aria-label="Sign out"
             title="Sign out"
           >
