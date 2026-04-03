@@ -3,8 +3,7 @@
 import { usePathname } from "next/navigation";
 import AccountSidebarCard from "./_components/account-sidebar";
 import Navbar from "@/components/layout/navbar";
-
-type NavKey = "dashboard" | "courses" | "orders" | "settings";
+import { USER_NAV_LINKS, type UserNavKey } from "@/constant/navigation-links";
 
 export default function UserLayout({
   children,
@@ -13,27 +12,37 @@ export default function UserLayout({
 }) {
   const pathname = usePathname();
 
+  const hrefs = {
+    dashboard:
+      USER_NAV_LINKS.find((item) => item.key === "dashboard")?.href ??
+      "/dashboard/user/dashboard",
+    courses:
+      USER_NAV_LINKS.find((item) => item.key === "courses")?.href ??
+      "/dashboard/user/course",
+    orders:
+      USER_NAV_LINKS.find((item) => item.key === "orders")?.href ??
+      "/dashboard/user/order-history",
+    settings:
+      USER_NAV_LINKS.find((item) => item.key === "settings")?.href ??
+      "/dashboard/user/settings",
+  };
+
   const useSidebar =
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/courses") ||
-    pathname.startsWith("/orders") ||
-    pathname.startsWith("/settings") ||
-    pathname.startsWith("/order-details") ||
-    pathname.startsWith("/course") ||
-    pathname.startsWith("/order-history");
+    pathname.startsWith(hrefs.dashboard) ||
+    pathname.startsWith(hrefs.courses) ||
+    pathname.startsWith(hrefs.orders) ||
+    pathname.startsWith(hrefs.settings) ||
+    pathname.startsWith("/dashboard/user/order-details");
 
-  const active: NavKey =
-    pathname.startsWith("/courses") || pathname.startsWith("/course")
-      ? "courses"
-      : pathname.startsWith("/orders") ||
-          pathname.startsWith("/order-history") ||
-          pathname.startsWith("/order-details")
-        ? "orders"
-        : pathname.startsWith("/settings")
-          ? "settings"
-          : "dashboard";
+  const active: UserNavKey = pathname.startsWith(hrefs.courses)
+    ? "courses"
+    : pathname.startsWith(hrefs.orders) ||
+        pathname.startsWith("/dashboard/user/order-details")
+      ? "orders"
+      : pathname.startsWith(hrefs.settings)
+        ? "settings"
+        : "dashboard";
 
-  // ✅ pages without sidebar
   if (!useSidebar) {
     return (
       <div className="flex h-screen flex-col bg-slate-50">
@@ -46,45 +55,30 @@ export default function UserLayout({
   }
 
   return (
-    // ✅ important: keep everything in a fixed-height viewport, and only main scrolls
     <div className="h-screen overflow-hidden bg-slate-50">
       <div className="grid h-full grid-rows-[auto_1fr] md:grid-cols-[240px_1fr]">
-        {/* ✅ Sidebar column: sticky + full height */}
         <aside className="hidden md:block md:row-span-2 md:h-full md:border-r md:border-slate-200 md:bg-white">
           <div className="sticky top-0 h-screen">
             <AccountSidebarCard
               active={active}
               className="h-screen"
-              hrefs={{
-                dashboard: "/dashboard",
-                courses: "/course",
-                orders: "/order-history",
-                settings: "/settings",
-              }}
+              hrefs={hrefs}
             />
           </div>
         </aside>
 
-        {/* Top navbar */}
-        <div className="sticky top-0 z-50 bg-slate-50/70 backdrop-blur w-full">
-          <div className="mx-auto max-w-[1100px] mt-4">
+        <div className="sticky top-0 z-50 w-full bg-slate-50/70 backdrop-blur">
+          <div className="mx-auto mt-4 max-w-[1100px]">
             <Navbar />
           </div>
         </div>
 
-        {/* ✅ Only main scrolls */}
         <main className="min-h-0 overflow-y-auto">
           <div className="mx-auto w-full max-w-[1100px] px-6 py-6">
-            {/* ✅ Mobile drawer trigger */}
             <AccountSidebarCard
               active={active}
               className="md:hidden"
-              hrefs={{
-                dashboard: "/dashboard",
-                courses: "/course",
-                orders: "/order-history",
-                settings: "/settings",
-              }}
+              hrefs={hrefs}
             />
             {children}
           </div>

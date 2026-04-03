@@ -12,6 +12,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { logoutUser } from "@/utils/logout.utils";
 
 type NavKey = "dashboard" | "courses" | "orders" | "settings";
 
@@ -40,10 +41,26 @@ const NAV: Array<{
   label: string;
   icon: React.ReactNode;
 }> = [
-  { key: "dashboard", label: "Dashboard", icon: <LayoutGrid className="h-[18px] w-[18px]" /> },
-  { key: "courses", label: "My Courses", icon: <BookOpen className="h-[18px] w-[18px]" /> },
-  { key: "orders", label: "Order History", icon: <ShoppingBag className="h-[18px] w-[18px]" /> },
-  { key: "settings", label: "Settings", icon: <Settings className="h-[18px] w-[18px]" /> },
+  {
+    key: "dashboard",
+    label: "Dashboard",
+    icon: <LayoutGrid className="h-[18px] w-[18px]" />,
+  },
+  {
+    key: "courses",
+    label: "My Courses",
+    icon: <BookOpen className="h-[18px] w-[18px]" />,
+  },
+  {
+    key: "orders",
+    label: "Order History",
+    icon: <ShoppingBag className="h-[18px] w-[18px]" />,
+  },
+  {
+    key: "settings",
+    label: "Settings",
+    icon: <Settings className="h-[18px] w-[18px]" />,
+  },
 ];
 
 function cx(...parts: Array<string | false | null | undefined>) {
@@ -82,28 +99,36 @@ export default function AccountSidebarCard({
     };
   }, [open]);
 
-  const renderNavItem = (item: (typeof NAV)[number], opts?: { mobile?: boolean }) => {
+  const renderNavItem = (
+    item: (typeof NAV)[number],
+    opts?: { mobile?: boolean },
+  ) => {
     const isActive = item.key === active;
 
     const base = cx(
       "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition",
       "focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100",
-      isActive ? "bg-sky-50 text-sky-700" : "text-slate-700 hover:bg-slate-50"
+      isActive ? "bg-sky-50 text-sky-700" : "text-slate-700 hover:bg-slate-50",
     );
 
     const leftBar = cx(
       "absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-full transition-opacity",
-      isActive ? "bg-sky-500 opacity-100" : "bg-transparent opacity-0 group-hover:opacity-30"
+      isActive
+        ? "bg-sky-500 opacity-100"
+        : "bg-transparent opacity-0 group-hover:opacity-30",
     );
 
     const iconWrap = cx(
       "grid h-9 w-9 place-items-center rounded-xl border transition",
       isActive
         ? "border-sky-200 bg-white text-sky-600"
-        : "border-slate-200 bg-white text-slate-600 group-hover:bg-white"
+        : "border-slate-200 bg-white text-slate-600 group-hover:bg-white",
     );
 
-    const label = cx("text-[14px] font-medium", isActive ? "text-sky-700" : "text-slate-800");
+    const label = cx(
+      "text-[14px] font-medium",
+      isActive ? "text-sky-700" : "text-slate-800",
+    );
 
     const content = (
       <>
@@ -175,7 +200,9 @@ export default function AccountSidebarCard({
               {user.name}
             </div>
             {user.subtitle ? (
-              <div className="truncate text-[12px] leading-4 text-slate-500">{user.subtitle}</div>
+              <div className="truncate text-[12px] leading-4 text-slate-500">
+                {user.subtitle}
+              </div>
             ) : null}
           </div>
         </div>
@@ -185,7 +212,9 @@ export default function AccountSidebarCard({
 
       {/* Middle: nav */}
       <nav className="flex-1 overflow-auto px-3 py-4">
-        <div className="space-y-1">{NAV.map((n) => renderNavItem(n, { mobile }))}</div>
+        <div className="space-y-1">
+          {NAV.map((n) => renderNavItem(n, { mobile }))}
+        </div>
       </nav>
 
       {/* Bottom: sign out */}
@@ -195,20 +224,22 @@ export default function AccountSidebarCard({
         <button
           type="button"
           onClick={() => {
-            onSignOut?.();
+            logoutUser();
             if (mobile) closeDrawer();
           }}
           className={cx(
             "flex w-full items-center justify-center gap-3 rounded-xl px-3 py-2.5 transition",
             "border border-slate-200 bg-white",
             "hover:bg-slate-50 hover:border-slate-300",
-            "focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100"
+            "focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100",
           )}
         >
-          <span className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700">
+          <button className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700">
             <LogOut className="h-[18px] w-[18px]" />
+          </button>
+          <span className="text-[14px] font-medium text-slate-900">
+            Sign out
           </span>
-          <span className="text-[14px] font-medium text-slate-900">Sign out</span>
         </button>
       </div>
     </div>
@@ -221,7 +252,7 @@ export default function AccountSidebarCard({
         className={cx(
           "hidden w-[240px] shrink-0 box-border md:block",
           "md:sticky md:top-0 md:h-screen",
-          className
+          className,
         )}
       >
         <SidebarInner />
@@ -235,7 +266,7 @@ export default function AccountSidebarCard({
           "fixed left-4 top-[72px] z-40 md:hidden",
           "grid h-11 w-11 place-items-center rounded-xl border border-slate-200 bg-white shadow-sm",
           "hover:bg-slate-50",
-          "focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100"
+          "focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100",
         )}
         aria-label="Open menu"
       >
@@ -246,7 +277,7 @@ export default function AccountSidebarCard({
       <div
         className={cx(
           "fixed inset-0 z-50 md:hidden",
-          open ? "pointer-events-auto" : "pointer-events-none"
+          open ? "pointer-events-auto" : "pointer-events-none",
         )}
         aria-hidden={!open}
       >
@@ -254,7 +285,7 @@ export default function AccountSidebarCard({
           type="button"
           className={cx(
             "absolute inset-0 transition-opacity",
-            open ? "bg-black/30 opacity-100" : "bg-black/0 opacity-0"
+            open ? "bg-black/30 opacity-100" : "bg-black/0 opacity-0",
           )}
           onClick={closeDrawer}
           aria-label="Close menu overlay"
@@ -263,7 +294,7 @@ export default function AccountSidebarCard({
         <div
           className={cx(
             "absolute left-0 top-0 h-full w-[280px] bg-white shadow-xl transition-transform",
-            open ? "translate-x-0" : "-translate-x-full"
+            open ? "translate-x-0" : "-translate-x-full",
           )}
           role="dialog"
           aria-modal="true"
@@ -276,7 +307,7 @@ export default function AccountSidebarCard({
               className={cx(
                 "grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white",
                 "hover:bg-slate-50",
-                "focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100"
+                "focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100",
               )}
               aria-label="Close menu"
             >

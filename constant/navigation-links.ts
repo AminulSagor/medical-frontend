@@ -22,6 +22,14 @@ export type AdminNavLink = {
   icon: React.ElementType;
 };
 
+export type UserNavKey = "dashboard" | "courses" | "orders" | "settings";
+
+export type UserNavLink = {
+  key: UserNavKey;
+  label: string;
+  href: string;
+};
+
 //public routes
 export const NAV_LINKS: NavLink[] = [
   { label: "Courses", href: "/public/courses" },
@@ -78,4 +86,12 @@ export const ADMIN_NAV_LINKS: AdminNavLink[] = [
     href: "/dashboard/admin/setting",
     icon: Settings,
   },
+];
+
+//user rotues
+export const USER_NAV_LINKS: UserNavLink[] = [
+  { key: "dashboard", label: "Dashboard", href: "/dashboard/user/dashboard" },
+  { key: "courses", label: "Courses", href: "/dashboard/user/course" },
+  { key: "orders", label: "Orders", href: "/dashboard/user/order-history" },
+  { key: "settings", label: "Settings", href: "/dashboard/user/settings" },
 ];
