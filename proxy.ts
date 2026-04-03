@@ -1,12 +1,8 @@
-// proxy.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_ROUTES = [
-  "/public/auth/sign-in",
-  "/public/auth/sign-up",
-  "/public",
-];
+const PUBLIC_ROUTES = ["/public"];
+const AUTH_ROUTES = ["/public/auth/sign-in", "/public/auth/sign-up"];
 const ADMIN_ONLY_ROUTES = ["/dashboard/admin"];
 const USER_ONLY_ROUTES = ["/dashboard/user"];
 
@@ -14,6 +10,10 @@ function isPublicRoute(pathname: string) {
   return PUBLIC_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
+}
+
+function isAuthRoute(pathname: string) {
+  return AUTH_ROUTES.includes(pathname);
 }
 
 function isAdminRoute(pathname: string) {
@@ -27,6 +27,10 @@ function isUserRoute(pathname: string) {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  if (pathname === "/") {
+    return NextResponse.redirect(new URL("/public/home", request.url));
+  }
+
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
@@ -38,27 +42,26 @@ export function proxy(request: NextRequest) {
   const token = request.cookies.get("access_token")?.value;
   const role = request.cookies.get("user_role")?.value;
 
-  if (!token && !isPublicRoute(pathname)) {
-    return NextResponse.redirect(new URL("/public/auth/sign-in", request.url));
-  }
-
-  if (
-    token &&
-    (pathname === "/public/auth/sign-in" || pathname === "/public/auth/sign-up")
-  ) {
-    if (role === "admin") {
+  if (isPublicRoute(pathname)) {
+    if (token && isAuthRoute(pathname)) {
+      if (role === "admin") {
+        return NextResponse.redirect(
+          new URL("/dashboard/admin/admin-dashboard", request.url),
+        );
+      }
       return NextResponse.redirect(
-        new URL("/dashboard/admin/admin-dashboard", request.url),
+        new URL("/dashboard/user/dashboard", request.url),
       );
     }
 
-    return NextResponse.redirect(
-      new URL("/dashboard/user/dashboard", request.url),
-    );
+    return NextResponse.next();
   }
 
-  // Role-based protection
-  if (token && role) {
+  if (!token) {
+    return NextResponse.redirect(new URL("/public/auth/sign-in", request.url));
+  }
+
+  if (role) {
     if (isAdminRoute(pathname) && role !== "admin") {
       return NextResponse.redirect(
         new URL("/dashboard/user/dashboard", request.url),
