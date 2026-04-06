@@ -51,6 +51,16 @@ type CreatedBlogModalData = {
   readTime: string;
 };
 
+type DraftSavedModalData = {
+  title: string;
+};
+
+type ScheduledBlogModalData = {
+  title: string;
+  publishDate: string;
+  publishTime: string;
+};
+
 type CreatedBlogPostResponse = {
   id?: string;
   title?: string;
@@ -178,6 +188,15 @@ export function useCreateBlogPost() {
   const [isLiveNowModalOpen, setIsLiveNowModalOpen] = useState(false);
   const [createdBlogModalData, setCreatedBlogModalData] =
     useState<CreatedBlogModalData | null>(null);
+
+  const [isDraftSavedModalOpen, setIsDraftSavedModalOpen] = useState(false);
+  const [createdDraftModalData, setCreatedDraftModalData] =
+    useState<DraftSavedModalData | null>(null);
+
+  const [isPublishScheduledModalOpen, setIsPublishScheduledModalOpen] =
+    useState(false);
+  const [scheduledBlogModalData, setScheduledBlogModalData] =
+    useState<ScheduledBlogModalData | null>(null);
 
   const wordCount = useMemo(() => {
     return countWords([title, content, excerpt, metaTitle, metaDescription]);
@@ -566,6 +585,41 @@ export function useCreateBlogPost() {
 
   const handleDoneAfterPublish = () => {
     setIsLiveNowModalOpen(false);
+    setCreatedBlogModalData(null);
+    clearPreview();
+    router.push(BLOG_MANAGEMENT_PATH);
+    router.refresh();
+  };
+
+  const handleCloseDraftSavedModal = () => {
+    setIsDraftSavedModalOpen(false);
+  };
+
+  const handleContinueEditingDraft = () => {
+    setIsDraftSavedModalOpen(false);
+  };
+
+  const handleReturnToBlogManagement = () => {
+    setIsDraftSavedModalOpen(false);
+    setCreatedDraftModalData(null);
+    clearPreview();
+    router.push(BLOG_MANAGEMENT_PATH);
+    router.refresh();
+  };
+
+  const handleClosePublishScheduledModal = () => {
+    setIsPublishScheduledModalOpen(false);
+  };
+
+  const handleViewScheduledArticles = () => {
+    setIsPublishScheduledModalOpen(false);
+    clearPreview();
+    router.push(BLOG_MANAGEMENT_PATH);
+    router.refresh();
+  };
+
+  const handleReturnDashboardAfterSchedule = () => {
+    setIsPublishScheduledModalOpen(false);
     clearPreview();
     router.push(BLOG_MANAGEMENT_PATH);
     router.refresh();
@@ -606,6 +660,25 @@ export function useCreateBlogPost() {
       const createdPost = (await createBlogPost(
         payload,
       )) as CreatedBlogPostResponse;
+
+      if (status === "draft") {
+        setCreatedDraftModalData({
+          title: createdPost?.title?.trim() || title.trim() || "Untitled Draft",
+        });
+        setIsDraftSavedModalOpen(true);
+        return;
+      }
+
+      if (status === "scheduled") {
+        setScheduledBlogModalData({
+          title:
+            createdPost?.title?.trim() || title.trim() || "Untitled Article",
+          publishDate: scheduleDate,
+          publishTime: scheduleTime,
+        });
+        setIsPublishScheduledModalOpen(true);
+        return;
+      }
 
       const modalAuthor =
         createdPost?.authors?.[0]?.fullLegalName ||
@@ -693,6 +766,10 @@ export function useCreateBlogPost() {
     readTimeLabel,
     isLiveNowModalOpen,
     createdBlogModalData,
+    isDraftSavedModalOpen,
+    createdDraftModalData,
+    isPublishScheduledModalOpen,
+    scheduledBlogModalData,
     handleSelectCoverImage,
     handleRemoveCoverImage,
     handleAddTag,
@@ -703,6 +780,12 @@ export function useCreateBlogPost() {
     handleViewLiveArticle,
     handleShareArticle,
     handleDoneAfterPublish,
+    handleCloseDraftSavedModal,
+    handleContinueEditingDraft,
+    handleReturnToBlogManagement,
+    handleClosePublishScheduledModal,
+    handleViewScheduledArticles,
+    handleReturnDashboardAfterSchedule,
     clearAuthorError,
     clearTitleError,
     clearContentError,

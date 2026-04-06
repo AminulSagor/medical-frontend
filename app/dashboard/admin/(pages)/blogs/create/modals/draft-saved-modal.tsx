@@ -15,6 +15,8 @@ export default function DraftSavedModal({
   onContinue,
   onReturn,
 }: DraftSavedModalProps) {
+  const displayTitle = title.trim() || "Untitled Draft";
+
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
       <button
@@ -47,7 +49,9 @@ export default function DraftSavedModal({
             Article Title
           </p>
           <p className="mt-1 text-sm font-semibold text-slate-900">
-            {title.length > 34 ? `${title.slice(0, 34)}...` : title}
+            {displayTitle.length > 34
+              ? `${displayTitle.slice(0, 34)}...`
+              : displayTitle}
           </p>
 
           <div className="mt-3 flex items-center justify-between gap-3">

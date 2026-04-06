@@ -1,10 +1,17 @@
 "use client";
 
-import { EllipsisVertical, Save, TriangleAlert } from "lucide-react";
+import {
+  CalendarDays,
+  EllipsisVertical,
+  Save,
+  TriangleAlert,
+} from "lucide-react";
 import CreateBlogPostEditor from "../helper/create-blog-post-editor";
 import CreateBlogPostPreview from "../helper/create-blog-post-preview";
 import CreateBlogPostSettingsSidebar from "../helper/create-blog-post-settings-sidebar";
+import DraftSavedModal from "../modals/draft-saved-modal";
 import LiveNowModal from "../modals/live-now-modal";
+import PublishScheduledModal from "../modals/publish-scheduled-modal";
 import { BLOG_MANAGEMENT_PATH } from "../_utils/create-blog-post.constants";
 import { useCreateBlogPost } from "@/app/dashboard/admin/(pages)/blogs/create/_utils/use-create-blog-post";
 import { useBlogPreviewStore } from "@/store/blog-preview.store";
@@ -61,6 +68,10 @@ export default function CreateBlogPostPage() {
     readTimeLabel,
     isLiveNowModalOpen,
     createdBlogModalData,
+    isDraftSavedModalOpen,
+    createdDraftModalData,
+    isPublishScheduledModalOpen,
+    scheduledBlogModalData,
     handleSelectCoverImage,
     handleRemoveCoverImage,
     handleAddTag,
@@ -71,6 +82,12 @@ export default function CreateBlogPostPage() {
     handleViewLiveArticle,
     handleShareArticle,
     handleDoneAfterPublish,
+    handleCloseDraftSavedModal,
+    handleContinueEditingDraft,
+    handleReturnToBlogManagement,
+    handleClosePublishScheduledModal,
+    handleViewScheduledArticles,
+    handleReturnDashboardAfterSchedule,
     clearAuthorError,
     clearTitleError,
     clearContentError,
@@ -170,7 +187,7 @@ export default function CreateBlogPostPage() {
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => handleSubmit("draft")}
@@ -184,6 +201,16 @@ export default function CreateBlogPostPage() {
             <button
               type="button"
               onClick={() => handleSubmit("scheduled")}
+              disabled={isSubmitting || isUploadingCoverImage}
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60"
+            >
+              <CalendarDays size={16} />
+              Schedule
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSubmit("published")}
               disabled={isSubmitting || isUploadingCoverImage}
               className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--primary-hover)] disabled:opacity-60"
             >
@@ -335,6 +362,26 @@ export default function CreateBlogPostPage() {
           </aside>
         </div>
       </div>
+
+      {isDraftSavedModalOpen && createdDraftModalData ? (
+        <DraftSavedModal
+          title={createdDraftModalData.title}
+          onClose={handleCloseDraftSavedModal}
+          onContinue={handleContinueEditingDraft}
+          onReturn={handleReturnToBlogManagement}
+        />
+      ) : null}
+
+      {isPublishScheduledModalOpen && scheduledBlogModalData ? (
+        <PublishScheduledModal
+          title={scheduledBlogModalData.title}
+          publishDate={scheduledBlogModalData.publishDate}
+          publishTime={scheduledBlogModalData.publishTime}
+          onClose={handleClosePublishScheduledModal}
+          onViewSchedule={handleViewScheduledArticles}
+          onReturnDashboard={handleReturnDashboardAfterSchedule}
+        />
+      ) : null}
 
       {isLiveNowModalOpen && createdBlogModalData ? (
         <LiveNowModal
