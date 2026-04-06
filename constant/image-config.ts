@@ -11,4 +11,5 @@ export const IMAGE = {
   instructor_1: "/photos/instructor_1.png",
   hand_gloves: "/photos/store_product.png",
   child: "/photos/child.png",
+  fallbackImage: "/fallback-image/images.png",
 } as const;
