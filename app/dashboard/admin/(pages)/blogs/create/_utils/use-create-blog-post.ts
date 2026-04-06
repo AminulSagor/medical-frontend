@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   createBlogCategories,
   getBlogCategories,
@@ -12,6 +12,7 @@ import {
   getBlogTags,
 } from "@/service/admin/blogs/blog-tag.service";
 import { getAdminUsers } from "@/service/admin/users/admin-user.service";
+import { useBlogPreviewStore } from "@/store/blog-preview.store";
 import {
   getUploadUrl,
   uploadFileToSignedUrl,
@@ -92,8 +93,43 @@ function buildBlogContentHtml(content: string) {
     .join("");
 }
 
+function buildLocalDateInputValue(value?: string | null) {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function buildLocalTimeInputValue(value?: string | null) {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const hours = `${date.getHours()}`.padStart(2, "0");
+  const minutes = `${date.getMinutes()}`.padStart(2, "0");
+
+  return `${hours}:${minutes}`;
+}
+
 export function useCreateBlogPost() {
   const router = useRouter();
+  const previewBlog = useBlogPreviewStore((state) => state.previewBlog);
+  const clearPreview = useBlogPreviewStore((state) => state.clearPreview);
+
+  const didHydrateFromPreviewRef = useRef(false);
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -259,6 +295,38 @@ export function useCreateBlogPost() {
     void loadCategories();
     void loadTags();
   }, []);
+
+  useEffect(() => {
+    if (!previewBlog || didHydrateFromPreviewRef.current) {
+      return;
+    }
+
+    didHydrateFromPreviewRef.current = true;
+
+    setTitle(previewBlog.title || "");
+    setContent(previewBlog.content || "");
+    setExcerpt(previewBlog.excerpt || "");
+    setCoverImageUrl(previewBlog.coverImageUrl || "");
+    setIsFeatured(Boolean(previewBlog.isFeatured));
+
+    setMetaTitle(previewBlog.seo?.metaTitle || DEFAULT_BLOG_CREATE_META_TITLE);
+    setMetaDescription(
+      previewBlog.seo?.metaDescription || DEFAULT_BLOG_CREATE_META_DESCRIPTION,
+    );
+
+    setSelectedAuthorId(previewBlog.authors?.[0]?.id || "");
+    setSelectedCategoryIds(
+      previewBlog.categories?.map((category) => category.id) || [],
+    );
+    setSelectedTagIds(previewBlog.tags?.map((tag) => tag.id) || []);
+
+    setScheduleDate(
+      buildLocalDateInputValue(previewBlog.scheduledPublishDate || null),
+    );
+    setScheduleTime(
+      buildLocalTimeInputValue(previewBlog.scheduledPublishDate || null),
+    );
+  }, [previewBlog]);
 
   const handleSelectCoverImage = async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -498,6 +566,7 @@ export function useCreateBlogPost() {
 
   const handleDoneAfterPublish = () => {
     setIsLiveNowModalOpen(false);
+    clearPreview();
     router.push(BLOG_MANAGEMENT_PATH);
     router.refresh();
   };

@@ -262,7 +262,7 @@ export default function BlogsClient() {
         rows={rows}
         tabCounts={tabCounts}
         onViewPublicationCalendar={() =>
-          router.push("/blogs/publication-calendar")
+          router.push("/dashboard/admin/blogs/publication-calendar")
         }
       />
     </section>

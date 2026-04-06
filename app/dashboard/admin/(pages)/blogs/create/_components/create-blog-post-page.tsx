@@ -7,6 +7,7 @@ import CreateBlogPostSettingsSidebar from "../helper/create-blog-post-settings-s
 import LiveNowModal from "../modals/live-now-modal";
 import { BLOG_MANAGEMENT_PATH } from "../_utils/create-blog-post.constants";
 import { useCreateBlogPost } from "@/app/dashboard/admin/(pages)/blogs/create/_utils/use-create-blog-post";
+import { useBlogPreviewStore } from "@/store/blog-preview.store";
 
 export default function CreateBlogPostPage() {
   const {
@@ -78,6 +79,83 @@ export default function CreateBlogPostPage() {
     clearCreateTagError,
   } = useCreateBlogPost();
 
+  const setDraftPreview = useBlogPreviewStore((state) => state.setDraftPreview);
+
+  const handlePreview = () => {
+    if (
+      !title.trim() ||
+      !content.trim() ||
+      !selectedAuthorId ||
+      selectedCategoryIds.length === 0
+    ) {
+      return;
+    }
+
+    const selectedAuthor = authorOptions.find(
+      (author) => author.id === selectedAuthorId,
+    );
+
+    const selectedCategory = categoryOptions.find((category) =>
+      selectedCategoryIds.includes(category.id),
+    );
+
+    setDraftPreview({
+      id: "",
+      title: title.trim(),
+      content,
+      coverImageUrl,
+      excerpt,
+      readTimeMinutes: Number.parseInt(readTimeLabel, 10) || 0,
+      authors: selectedAuthor
+        ? [
+            {
+              id: selectedAuthor.id,
+              fullLegalName: selectedAuthor.name,
+              medicalEmail: "",
+              professionalRole: "",
+            },
+          ]
+        : [],
+      categories: selectedCategory
+        ? [
+            {
+              id: selectedCategory.id,
+              name: selectedCategory.name,
+              slug: "",
+              description: null,
+              isActive: true,
+              createdAt: "",
+              updatedAt: "",
+            },
+          ]
+        : [],
+      tags: tagOptions
+        .filter((tag) => selectedTagIds.includes(tag.id))
+        .map((tag) => ({
+          id: tag.id,
+          name: tag.name,
+          slug: "",
+          createdAt: "",
+        })),
+      publishingStatus: "draft",
+      scheduledPublishDate: null,
+      isFeatured,
+      publishedAt: null,
+      seo: {
+        id: "",
+        postId: "",
+        metaTitle,
+        metaDescription,
+        createdAt: "",
+        updatedAt: "",
+      },
+      createdAt: "",
+      updatedAt: "",
+    });
+
+    router.push("/dashboard/admin/blogs/preview?source=draft");
+  };
+
   return (
     <div className="min-h-screen">
       <div className="border-b border-slate-200 bg-white px-4 py-3">
@@ -144,7 +222,15 @@ export default function CreateBlogPostPage() {
 
           <aside className="min-w-0 xl:w-[320px]">
             <div className="sticky top-6 space-y-4">
-              <CreateBlogPostPreview />
+              <CreateBlogPostPreview
+                disabled={
+                  !title ||
+                  !content ||
+                  !selectedAuthorId ||
+                  selectedCategoryIds.length === 0
+                }
+                onClick={handlePreview}
+              />
 
               <CreateBlogPostSettingsSidebar
                 title={title}
