@@ -6,22 +6,22 @@ import CreateBlogPostToolbar from "./create-blog-post-toolbar";
 
 type CreateBlogPostEditorProps = {
   title: string;
+  content: string;
   excerpt: string;
   coverImageUrl: string;
   isUploadingCoverImage: boolean;
   coverImageError?: string;
-  onTitleChange: (value: string) => void;
   onSelectCoverImage: (file: File) => Promise<void> | void;
   onRemoveCoverImage: () => void;
 };
 
 export default function CreateBlogPostEditor({
   title,
+  content,
   excerpt,
   coverImageUrl,
   isUploadingCoverImage,
   coverImageError,
-  onTitleChange,
   onSelectCoverImage,
   onRemoveCoverImage,
 }: CreateBlogPostEditorProps) {
@@ -58,12 +58,14 @@ export default function CreateBlogPostEditor({
           className="hidden"
         />
 
+        {/* Toolbar */}
         <div className="mb-8 flex justify-center">
           <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-md shadow-slate-200/60">
             <CreateBlogPostToolbar />
           </div>
         </div>
 
+        {/* Cover Image Picker */}
         <div className="relative">
           {coverImageUrl ? (
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -74,14 +76,14 @@ export default function CreateBlogPostEditor({
                   className="h-full w-full object-cover"
                 />
 
-                {isUploadingCoverImage ? (
+                {isUploadingCoverImage && (
                   <div className="absolute inset-0 grid place-items-center bg-white/70">
                     <div className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow">
                       <Loader2 size={16} className="animate-spin" />
                       Uploading image...
                     </div>
                   </div>
-                ) : null}
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
@@ -89,7 +91,7 @@ export default function CreateBlogPostEditor({
                   type="button"
                   onClick={handleOpenFilePicker}
                   disabled={isUploadingCoverImage}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                   <Upload size={16} />
                   Change Image
@@ -99,7 +101,7 @@ export default function CreateBlogPostEditor({
                   type="button"
                   onClick={onRemoveCoverImage}
                   disabled={isUploadingCoverImage}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 text-sm font-medium text-rose-500 transition hover:bg-rose-50 disabled:opacity-60"
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 text-sm font-medium text-rose-500 hover:bg-rose-50"
                 >
                   <Trash2 size={16} />
                   Remove
@@ -111,24 +113,20 @@ export default function CreateBlogPostEditor({
               type="button"
               onClick={handleOpenFilePicker}
               disabled={isUploadingCoverImage}
-              className="grid h-[240px] w-full place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-center transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 md:h-[360px]"
+              className="grid h-[240px] w-full place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 md:h-[360px]"
             >
               <div>
                 {isUploadingCoverImage ? (
                   <>
-                    <div className="mx-auto grid h-12 w-12 place-items-center rounded-lg text-slate-500">
-                      <Loader2 size={28} className="animate-spin" />
-                    </div>
-                    <p className="mt-3 text-sm font-medium text-slate-500">
+                    <Loader2 size={28} className="mx-auto animate-spin" />
+                    <p className="mt-3 text-sm text-slate-500">
                       Uploading image...
                     </p>
                   </>
                 ) : (
                   <>
-                    <div className="mx-auto grid h-12 w-12 place-items-center rounded-lg text-slate-500">
-                      <ImageIcon size={28} />
-                    </div>
-                    <p className="mt-3 text-sm font-medium text-slate-500">
+                    <ImageIcon size={28} className="mx-auto text-slate-500" />
+                    <p className="mt-3 text-sm text-slate-500">
                       Add Cover Image
                     </p>
                   </>
@@ -138,23 +136,49 @@ export default function CreateBlogPostEditor({
           )}
         </div>
 
-        {coverImageError ? (
+        {coverImageError && (
           <p className="mt-3 text-sm text-rose-500">{coverImageError}</p>
-        ) : null}
+        )}
 
-        <textarea
-          value={title}
-          onChange={(e) => onTitleChange(e.target.value)}
-          rows={2}
-          placeholder="Write article title..."
-          className="mt-8 w-full resize-none border-0 bg-transparent p-0 text-[44px] font-black leading-[1.08] tracking-[-0.03em] text-slate-900 outline-none placeholder:text-slate-300"
-        />
+        {/* Title */}
+        <div className="mt-8">
+          <h1
+            className={`text-[44px] font-black leading-[1.08] tracking-[-0.03em] ${
+              title ? "text-slate-900" : "text-slate-300"
+            }`}
+          >
+            {title || "Write article title from the sidebar..."}
+          </h1>
+        </div>
 
-        <div className="mt-5 max-w-[760px]">
-          <p className="text-[15px] leading-8 text-slate-700">
-            {excerpt ||
-              "The short excerpt you write from the sidebar will appear here as the article intro preview."}
-          </p>
+        {/* Content */}
+        <div className="mt-5 max-w-[760px] space-y-5">
+          {excerpt && (
+            <p className="text-[15px] leading-8 text-slate-700">{excerpt}</p>
+          )}
+
+          {/* NEW: Render image inside article body */}
+          {coverImageUrl && (
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white h-96">
+              <img
+                src={coverImageUrl}
+                alt="Article image"
+                className="h-full w-full object-cover"
+              />
+              <p className="px-4 py-2 text-xs text-slate-400 text-center">
+                Figure: Article cover image preview
+              </p>
+            </div>
+          )}
+
+          <div
+            className={`whitespace-pre-wrap text-[16px] leading-8 ${
+              content ? "text-slate-700" : "text-slate-400"
+            }`}
+          >
+            {content ||
+              "The content you write from the sidebar will appear here as the article body preview."}
+          </div>
         </div>
       </div>
     </div>

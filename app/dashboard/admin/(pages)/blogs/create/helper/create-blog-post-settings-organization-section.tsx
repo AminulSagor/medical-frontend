@@ -10,6 +10,12 @@ import { cx } from "../_utils/create-blog-post.helpers";
 import CreateBlogPostSettingsSection from "./create-blog-post-settings-section";
 
 type CreateBlogPostSettingsOrganizationSectionProps = {
+  title: string;
+  content: string;
+  onTitleChange: (value: string) => void;
+  onContentChange: (value: string) => void;
+  titleError?: string;
+  contentError?: string;
   categoryOptions: BlogCategoryOption[];
   selectedCategoryIds: string[];
   onToggleCategory: (value: string) => void;
@@ -27,9 +33,19 @@ type CreateBlogPostSettingsOrganizationSectionProps = {
   onTagInputChange: (value: string) => void;
   onAddTag: () => void;
   onRemoveTag: (value: string) => void;
+  isLoadingTags?: boolean;
+  tagLoadError?: string;
+  isCreatingTag?: boolean;
+  createTagError?: string;
 };
 
 export default function CreateBlogPostSettingsOrganizationSection({
+  title,
+  content,
+  onTitleChange,
+  onContentChange,
+  titleError,
+  contentError,
   categoryOptions,
   selectedCategoryIds,
   onToggleCategory,
@@ -47,6 +63,10 @@ export default function CreateBlogPostSettingsOrganizationSection({
   onTagInputChange,
   onAddTag,
   onRemoveTag,
+  isLoadingTags = false,
+  tagLoadError,
+  isCreatingTag = false,
+  createTagError,
 }: CreateBlogPostSettingsOrganizationSectionProps) {
   const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
 
@@ -57,6 +77,47 @@ export default function CreateBlogPostSettingsOrganizationSection({
   return (
     <CreateBlogPostSettingsSection title="Organization">
       <div>
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+          Title
+        </p>
+
+        <input
+          value={title}
+          onChange={(e) => onTitleChange(e.target.value)}
+          placeholder="Enter post title..."
+          className={cx(
+            "h-11 w-full rounded-xl border bg-white px-3 text-sm text-slate-800 outline-none placeholder:text-slate-400",
+            titleError ? "border-rose-300" : "border-slate-200",
+          )}
+        />
+
+        {titleError ? (
+          <p className="mt-2 text-xs text-rose-500">{titleError}</p>
+        ) : null}
+      </div>
+
+      <div className="mt-5">
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+          Content
+        </p>
+
+        <textarea
+          value={content}
+          onChange={(e) => onContentChange(e.target.value)}
+          rows={8}
+          placeholder="Write your blog content here..."
+          className={cx(
+            "w-full resize-none rounded-xl border bg-white px-3 py-3 text-sm leading-6 text-slate-800 outline-none placeholder:text-slate-400",
+            contentError ? "border-rose-300" : "border-slate-200",
+          )}
+        />
+
+        {contentError ? (
+          <p className="mt-2 text-xs text-rose-500">{contentError}</p>
+        ) : null}
+      </div>
+
+      <div className="mt-5">
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
           Categories
         </p>
@@ -154,38 +215,72 @@ export default function CreateBlogPostSettingsOrganizationSection({
           Tags
         </p>
 
-        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
-          <div className="flex flex-wrap items-center gap-2">
-            {selectedTagOptions.map((tag) => (
-              <span
-                key={tag.id}
-                className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2.5 py-1.5 text-xs font-medium text-slate-700"
-              >
-                {tag.name}
+        <div className="rounded-xl border border-slate-200 bg-white p-3">
+          {isLoadingTags ? (
+            <div className="flex items-center gap-2 text-sm text-slate-500">
+              <Loader2 size={14} className="animate-spin" />
+              Loading tags...
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center gap-2">
+                {selectedTagOptions.map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2.5 py-1.5 text-xs font-medium text-slate-700"
+                  >
+                    {tag.name}
+                    <button
+                      type="button"
+                      onClick={() => onRemoveTag(tag.id)}
+                      className="text-slate-400 transition hover:text-slate-700"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+
+                {selectedTagOptions.length === 0 ? (
+                  <span className="text-sm text-slate-400">
+                    No tags selected yet.
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
+                <input
+                  value={tagInput}
+                  onChange={(e) => onTagInputChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      onAddTag();
+                    }
+                  }}
+                  placeholder="Add tag..."
+                  className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none placeholder:text-slate-400"
+                />
+
                 <button
                   type="button"
-                  onClick={() => onRemoveTag(tag.id)}
-                  className="text-slate-400 transition hover:text-slate-700"
+                  onClick={onAddTag}
+                  disabled={isCreatingTag || !tagInput.trim()}
+                  className="inline-flex h-10 items-center rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--primary-hover)] disabled:opacity-60"
                 >
-                  ×
+                  {isCreatingTag ? "Adding..." : "Add"}
                 </button>
-              </span>
-            ))}
-
-            <input
-              value={tagInput}
-              onChange={(e) => onTagInputChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  onAddTag();
-                }
-              }}
-              placeholder="Add tag..."
-              className="min-w-[90px] flex-1 border-0 bg-transparent p-0 text-sm text-slate-700 outline-none placeholder:text-slate-400"
-            />
-          </div>
+              </div>
+            </>
+          )}
         </div>
+
+        {tagLoadError ? (
+          <p className="mt-2 text-xs text-rose-500">{tagLoadError}</p>
+        ) : null}
+
+        {createTagError ? (
+          <p className="mt-2 text-xs text-rose-500">{createTagError}</p>
+        ) : null}
       </div>
     </CreateBlogPostSettingsSection>
   );

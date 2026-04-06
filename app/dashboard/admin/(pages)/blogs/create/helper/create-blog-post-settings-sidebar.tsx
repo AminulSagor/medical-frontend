@@ -11,6 +11,12 @@ import CreateBlogPostSettingsPublishingSection from "./create-blog-post-settings
 import CreateBlogPostSettingsSeoSection from "./create-blog-post-settings-seo-section";
 
 type CreateBlogPostSettingsSidebarProps = {
+  title: string;
+  content: string;
+  onTitleChange: (value: string) => void;
+  onContentChange: (value: string) => void;
+  titleError?: string;
+  contentError?: string;
   authorOptions: BlogAuthorOption[];
   selectedAuthorId: string;
   authorSearch: string;
@@ -44,6 +50,10 @@ type CreateBlogPostSettingsSidebarProps = {
   onTagInputChange: (value: string) => void;
   onAddTag: () => void;
   onRemoveTag: (value: string) => void;
+  isLoadingTags?: boolean;
+  tagLoadError?: string;
+  isCreatingTag?: boolean;
+  createTagError?: string;
   excerpt: string;
   onExcerptChange: (value: string) => void;
   metaTitle: string;
@@ -54,6 +64,12 @@ type CreateBlogPostSettingsSidebarProps = {
 };
 
 export default function CreateBlogPostSettingsSidebar({
+  title,
+  content,
+  onTitleChange,
+  onContentChange,
+  titleError,
+  contentError,
   authorOptions,
   selectedAuthorId,
   authorSearch,
@@ -87,6 +103,10 @@ export default function CreateBlogPostSettingsSidebar({
   onTagInputChange,
   onAddTag,
   onRemoveTag,
+  isLoadingTags,
+  tagLoadError,
+  isCreatingTag,
+  createTagError,
   excerpt,
   onExcerptChange,
   metaTitle,
@@ -122,6 +142,12 @@ export default function CreateBlogPostSettingsSidebar({
       />
 
       <CreateBlogPostSettingsOrganizationSection
+        title={title}
+        content={content}
+        onTitleChange={onTitleChange}
+        onContentChange={onContentChange}
+        titleError={titleError}
+        contentError={contentError}
         categoryOptions={categoryOptions}
         selectedCategoryIds={selectedCategoryIds}
         onToggleCategory={onToggleCategory}
@@ -139,6 +165,10 @@ export default function CreateBlogPostSettingsSidebar({
         onTagInputChange={onTagInputChange}
         onAddTag={onAddTag}
         onRemoveTag={onRemoveTag}
+        isLoadingTags={isLoadingTags}
+        tagLoadError={tagLoadError}
+        isCreatingTag={isCreatingTag}
+        createTagError={createTagError}
       />
 
       <CreateBlogPostSettingsExcerptSection

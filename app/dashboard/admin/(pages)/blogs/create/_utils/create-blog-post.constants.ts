@@ -4,7 +4,7 @@ import type {
   BlogTagOption,
 } from "@/types/admin/blogs/blog-create.types";
 
-export const BLOG_MANAGEMENT_PATH = "/admin/blog";
+export const BLOG_MANAGEMENT_PATH = "/dashboard/admin/blogs";
 
 export const BLOG_CREATE_AUTHOR_OPTIONS: BlogAuthorOption[] = [
   { id: "author_1", name: "Dr. Sarah Miller" },

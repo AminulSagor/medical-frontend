@@ -135,7 +135,7 @@ export default function CreateBlogPostSettingsPublishingSection({
             value={selectedAuthorId}
             onChange={(e) => onAuthorSelect(e.target.value)}
             className={cx(
-              "h-14 w-full appearance-none rounded-2xl border bg-[#f9fafb] pl-4 pr-11 text-[15px] font-medium text-slate-800 outline-none",
+              "h-14 w-full appearance-none rounded-2xl border bg-[#f9fafb] pl-4 pr-11 text-xs font-medium text-slate-800 outline-none",
               authorError ? "border-rose-300" : "border-slate-200",
             )}
           >
@@ -159,7 +159,7 @@ export default function CreateBlogPostSettingsPublishingSection({
             value={authorSearch}
             onChange={(e) => onAuthorSearchChange(e.target.value)}
             placeholder="Enter Author name..."
-            className="h-13 flex-1 rounded-xl border border-cyan-400 bg-white px-4 text-[15px] text-slate-800 outline-none placeholder:text-slate-400"
+            className="flex-1 rounded-xl border border-cyan-400 bg-white px-4 py-3 text-xs text-slate-800 outline-none placeholder:text-slate-400"
           />
 
           <button
@@ -222,8 +222,8 @@ export default function CreateBlogPostSettingsPublishingSection({
             onClick={() => openNativePicker(dateInputRef.current)}
             className="flex min-w-0 items-center gap-3 text-left"
           >
-            <CalendarDays size={22} className="shrink-0 text-slate-400" />
-            <span className="truncate text-[16px] font-medium text-slate-800">
+            <CalendarDays size={20} className="shrink-0 text-slate-400" />
+            <span className="truncate text-xs font-medium text-slate-800">
               {scheduleDateLabel}
             </span>
           </button>
@@ -231,7 +231,7 @@ export default function CreateBlogPostSettingsPublishingSection({
           <button
             type="button"
             onClick={() => openNativePicker(timeInputRef.current)}
-            className="ml-4 shrink-0 text-[15px] font-medium text-slate-400"
+            className="ml-4 shrink-0 text-xs font-medium text-slate-400"
           >
             {scheduleTimeLabel}
           </button>
@@ -243,7 +243,7 @@ export default function CreateBlogPostSettingsPublishingSection({
       </div>
 
       <div className="mt-8 flex items-center justify-between">
-        <span className="text-[15px] font-medium text-slate-900">
+        <span className="text-xs font-medium text-slate-900">
           Featured Post
         </span>
 
@@ -265,7 +265,7 @@ export default function CreateBlogPostSettingsPublishingSection({
         </button>
       </div>
 
-      <div className="mt-10 flex items-center justify-between text-[15px] text-slate-500">
+      <div className="mt-10 flex items-center justify-between text-xs text-slate-500">
         <span className="inline-flex items-center gap-2">
           <Minus size={16} />
           {wordCount} words
