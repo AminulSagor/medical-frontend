@@ -1,6 +1,6 @@
 import React from "react";
 import { CalendarDays, RefreshCcw, Users } from "lucide-react";
-import { OverviewStatItem } from "@/app/dashboard/admin/(pages)/newsletters/view-scheduled-broadcast/types/scheduled-broadcast-view.type";
+import { OverviewStatItem } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/types/scheduled-broadcast-view.type";
 
 type Props = {
   items: OverviewStatItem[];

@@ -4,11 +4,11 @@ import React, { useState } from "react";
 import { ArrowLeft, Pencil, XCircle } from "lucide-react";
 
 import { useRouter } from "next/navigation";
-import { ScheduledBroadcastHeaderData } from "@/app/dashboard/admin/(pages)/newsletters/view-scheduled-broadcast/types/scheduled-broadcast-view.type";
+import { ScheduledBroadcastHeaderData } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/types/scheduled-broadcast-view.type";
 import {
   BroadcastCancelledSuccessDialog,
   CancelScheduledBroadcastDialog,
-} from "@/app/dashboard/admin/(pages)/newsletters/view-scheduled-broadcast/_components/cancel-scheduled-broadcast-dialogs";
+} from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_components/cancel-scheduled-broadcast-dialogs";
 
 type Props = {
   data: ScheduledBroadcastHeaderData;

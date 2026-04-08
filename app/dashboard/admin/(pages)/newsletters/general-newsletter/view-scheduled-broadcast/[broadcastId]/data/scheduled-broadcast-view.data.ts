@@ -1,4 +1,4 @@
-import { ScheduledBroadcastViewPageData } from "@/app/dashboard/admin/(pages)/newsletters/view-scheduled-broadcast/types/scheduled-broadcast-view.type";
+import { ScheduledBroadcastViewPageData } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/types/scheduled-broadcast-view.type";
 
 export const scheduledBroadcastViewData: ScheduledBroadcastViewPageData = {
   header: {

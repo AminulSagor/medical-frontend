@@ -2,13 +2,13 @@
 
 import CadenceEditorContentSection, {
   ContentTypeMode,
-} from "@/app/dashboard/admin/(pages)/newsletters/cadence-broadcast/_components/cadence-editor-content-section";
+} from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/cadence-broadcast-edit/[broadcastId]/_components/cadence-editor-content-section";
 import CadenceEditorDeliverySection, {
   AudienceOption,
   BroadcastFrequencyMode,
-} from "@/app/dashboard/admin/(pages)/newsletters/cadence-broadcast/_components/cadence-editor-delivery-section";
-import CadenceEditorHeader from "@/app/dashboard/admin/(pages)/newsletters/cadence-broadcast/_components/cadence-editor-header";
-import { application } from "@/app/dashboard/admin/(pages)/newsletters/cadence-broadcast/data";
+} from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/cadence-broadcast-edit/[broadcastId]/_components/cadence-editor-delivery-section";
+import CadenceEditorHeader from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/cadence-broadcast-edit/[broadcastId]/_components/cadence-editor-header";
+import { application } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/cadence-broadcast-edit/[broadcastId]/data";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 

@@ -1,5 +1,5 @@
-import ScheduledBroadcastSectionShell from "@/app/dashboard/admin/(pages)/newsletters/view-scheduled-broadcast/_components/scheduled-broadcast-section-shell";
-import { MessageContentData } from "@/app/dashboard/admin/(pages)/newsletters/view-scheduled-broadcast/types/scheduled-broadcast-view.type";
+import ScheduledBroadcastSectionShell from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_components/scheduled-broadcast-section-shell";
+import { MessageContentData } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/types/scheduled-broadcast-view.type";
 
 type Props = {
   data: MessageContentData;
