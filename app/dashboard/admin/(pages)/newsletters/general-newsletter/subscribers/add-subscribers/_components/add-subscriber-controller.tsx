@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import AddSubscriberHeader from "./add-subscriber-header";
-import AddSubscriberForm from "./add-subscriber-form";
+import AddSubscriberForm from "../add-subscriber-form";
 import ClinicianRegisteredDialog, {
   ClinicianRegisteredDialogData,
 } from "./clinician-registered-dialog";

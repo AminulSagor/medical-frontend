@@ -27,7 +27,10 @@ export default function SubscriptionSettingsSection({
 }: {
   values: AddSubscriberInput;
   errors: Errors;
-  setField: <K extends keyof AddSubscriberInput>(k: K, v: AddSubscriberInput[K]) => void;
+  setField: <K extends keyof AddSubscriberInput>(
+    k: K,
+    v: AddSubscriberInput[K],
+  ) => void;
   selectData: AddSubscriberSelectData;
 
   tagDraft: string;

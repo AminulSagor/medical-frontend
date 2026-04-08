@@ -2,7 +2,7 @@
 
 import React from "react";
 import { ArrowLeft, Mail, Pencil } from "lucide-react";
-import { SubscriberProfile } from "@/app/dashboard/admin/(pages)/newsletters/subscriber-profile/types/subscriber-profile.type";
+import { SubscriberProfile } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/subscribers/subscriber-profile/types/subscriber-profile.type";
 function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }

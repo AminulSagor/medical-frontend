@@ -14,7 +14,10 @@ export default function PersonalContactSection({
 }: {
   values: AddSubscriberInput;
   errors: Errors;
-  setField: <K extends keyof AddSubscriberInput>(k: K, v: AddSubscriberInput[K]) => void;
+  setField: <K extends keyof AddSubscriberInput>(
+    k: K,
+    v: AddSubscriberInput[K],
+  ) => void;
 }) {
   return (
     <SectionCard

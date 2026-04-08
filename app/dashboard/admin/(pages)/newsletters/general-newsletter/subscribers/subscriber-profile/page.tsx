@@ -3,7 +3,7 @@ import SubscriberProfileHeader from "./_components/subscriber-profile-header";
 import SubscriberStatsOverview from "./_components/subscriber-stats-overview";
 import SubscriberProfileCard from "./_components/subscriber-profile-card";
 import SubscriberHistory from "./_components/subscriber-history";
-import { subscriberProfileMock } from "@/app/dashboard/admin/(pages)/newsletters/subscriber-profile/data/subscriber-profile.mock";
+import { subscriberProfileMock } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/subscribers/subscriber-profile/data/subscriber-profile.mock";
 
 export default function SubscriberProfilePage() {
   const data = subscriberProfileMock;

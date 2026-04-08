@@ -1,4 +1,4 @@
-import { SubscriberProfile } from "@/app/dashboard/admin/(pages)/newsletters/subscriber-profile/types/subscriber-profile.type";
+import { SubscriberProfile } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/subscribers/subscriber-profile/types/subscriber-profile.type";
 
 export const subscriberProfileMock: SubscriberProfile = {
   id: "sub_001",

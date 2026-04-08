@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { ShoppingCart, Mail } from "lucide-react";
 import OrdersTable from "./orders-table";
 import NewslettersTable from "./newsletters-table";
-import { SubscriberProfile } from "@/app/dashboard/admin/(pages)/newsletters/subscriber-profile/types/subscriber-profile.type";
+import { SubscriberProfile } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/subscribers/subscriber-profile/types/subscriber-profile.type";
 
 type TabKey = "orders" | "newsletters";
 

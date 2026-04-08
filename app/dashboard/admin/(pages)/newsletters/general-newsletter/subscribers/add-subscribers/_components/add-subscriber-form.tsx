@@ -9,7 +9,7 @@ import type {
 import PersonalContactSection from "./sections/personal-contact-section";
 import ClinicalProfileSection from "./sections/clinical-profile-section";
 import SubscriptionSettingsSection from "./sections/subscription-settings-section";
-import { addSubscriberSchema } from "../schema/add-subscribers-schema";
+import { addSubscriberSchema } from "./schema/add-subscribers-schema";
 
 type Errors = Partial<Record<keyof AddSubscriberInput, string>> & {
   audienceTags?: string;

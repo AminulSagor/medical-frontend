@@ -19,7 +19,10 @@ export default function ClinicalProfileSection({
 }: {
   values: AddSubscriberInput;
   errors: Errors;
-  setField: <K extends keyof AddSubscriberInput>(k: K, v: AddSubscriberInput[K]) => void;
+  setField: <K extends keyof AddSubscriberInput>(
+    k: K,
+    v: AddSubscriberInput[K],
+  ) => void;
   selectData: AddSubscriberSelectData;
 }) {
   return (
