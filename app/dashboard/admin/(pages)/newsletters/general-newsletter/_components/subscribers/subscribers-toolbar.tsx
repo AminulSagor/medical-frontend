@@ -52,7 +52,11 @@ export default function SubscribersToolbar({
         <button
           type="button"
           className="inline-flex h-12 items-center gap-2 rounded-2xl bg-teal-500 px-5 text-sm font-bold text-white shadow-sm hover:bg-teal-600"
-          onClick={() => router.push("/newsletters/add-subscribers")}
+          onClick={() =>
+            router.push(
+              "/dashboard/admin/newsletters/general-newsletter/subscribers/add-subscribers",
+            )
+          }
         >
           <UserPlus size={16} />
           Add Subscriber

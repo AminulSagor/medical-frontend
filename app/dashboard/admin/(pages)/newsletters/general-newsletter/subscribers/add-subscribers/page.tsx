@@ -1,4 +1,4 @@
-import AddSubscriberController from "@/app/dashboard/admin/(pages)/newsletters/add-subscribers/_components/add-subscriber-controller";
+import AddSubscriberController from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/subscribers/add-subscribers/_components/add-subscriber-controller";
 import { AddSubscriberSelectData } from "./types/add-subscribers-type";
 
 export const metadata = { title: "Add Subscriber" };
