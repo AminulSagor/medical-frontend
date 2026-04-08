@@ -39,3 +39,56 @@ export type BlogPromoCard = {
   backgroundImageSrc: string;
   backgroundImageAlt: string;
 };
+
+// API Types
+export type BlogCategoryApi = {
+  id: string;
+  name: string;
+};
+
+export type BlogAuthorApi = {
+  id: string;
+  fullLegalName: string;
+  professionalRole: string;
+  profilePhotoUrl: string;
+};
+
+export type BlogPostApi = {
+  id: string;
+  title: string;
+  description: string;
+  coverImageUrl: string;
+  categories: BlogCategoryApi[];
+  authors: BlogAuthorApi[];
+  readTimeMinutes: number;
+  publishedAt: string;
+  isFeatured: boolean;
+};
+
+export type BlogTagApi = {
+  id: string;
+  name: string;
+};
+
+export type BlogSeoApi = {
+  metaTitle: string;
+  metaDescription: string;
+};
+
+export type BlogDetailsApi = BlogPostApi & {
+  content: string;
+  tags: BlogTagApi[];
+  seo: BlogSeoApi;
+};
+
+export type PaginationMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export type GetBlogsResponseApi = {
+  items: BlogPostApi[];
+  meta: PaginationMeta;
+};

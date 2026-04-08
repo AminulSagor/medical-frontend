@@ -23,12 +23,12 @@ export default function ShopTheLabSection() {
         const mappedProducts: Product[] = response.items.map((item) => ({
           id: item.id,
           category:
-            (item.category?.split(",")[0]?.trim()?.toUpperCase() as any) ||
+            (item.tags?.[0]?.toUpperCase() as any) ||
             "EQUIPMENT",
-          title: item.title,
-          price: Number(item.discountedPrice) || Number(item.price) || 0,
-          imageSrc: item.photo || undefined,
-          imageAlt: item.title,
+          title: item.name,
+          price: Number(item.offerPrice) || Number(item.actualPrice) || 0,
+          imageSrc: undefined,
+          imageAlt: item.name,
           detailsHref: `/public/store/product-details/${item.id}`,
         }));
 

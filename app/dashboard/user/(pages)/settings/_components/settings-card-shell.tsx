@@ -34,10 +34,7 @@ export default function SettingsCardShell({
         {/* RIGHT CONTENT */}
         <div className="p-6">
           {model.activeSection === "public-profile" ? (
-            <PublicProfilePanel
-              profile={model.profile}
-              roleOptions={model.roleOptions}
-            />
+            <PublicProfilePanel profile={model.profile} />
           ) : model.activeSection === "security-password" ? (
             <SecurityPasswordPanel />
           ) : model.activeSection === "payment-methods" ? (

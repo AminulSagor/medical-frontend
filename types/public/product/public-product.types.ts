@@ -2,15 +2,23 @@
 
 export interface PublicProductItem {
   id: string;
-  photo: string | null;
-  category: string;
-  title: string;
-  description: string | null;
-  price: string;
-  discountedPrice: string;
+  name: string;
+  clinicalDescription: string | null;
   brand: string | null;
-  inStock: boolean;
-  badge: string | null;
+  categoryId: string[];
+  tags: string[];
+  actualPrice: string;
+  offerPrice: string;
+  bulkPriceTiers: any[];
+  sku: string;
+  stockQuantity: number;
+  lowStockAlert: number;
+  isActive: boolean;
+  backorder: boolean;
+  images?: string[];
+  thumbnail?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Aliases for compatibility with existing components
@@ -26,14 +34,15 @@ export interface PublicProductMeta {
 export interface PublicProductsResponse {
   items: PublicProductItem[];
   meta: PublicProductMeta;
+  tabsCount?: Record<string, number>;
 }
 
 export interface ListProductsPublicParams {
   page?: number;
   limit?: number;
   search?: string;
-  categoryNames?: string[];
-  brands?: string[];
+  categoryIds?: string | string[];
+  brands?: string | string[];
   minPrice?: string;
   maxPrice?: string;
   sortBy?: 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc' | 'newest';
@@ -41,21 +50,23 @@ export interface ListProductsPublicParams {
 
 // Filter Types
 export interface ProductCategory {
+  id?: string;
   name: string;
   productCount: number;
+  products?: PublicProductItem[];
 }
 
 export interface ProductFiltersResponse {
   categories: ProductCategory[];
   brands: string[];
-  priceRange: {
+  priceRange?: {
     min: number;
     max: number;
   };
 }
 
 export interface ProductFilters {
-  category: string;
+  categoryId: string;
   brands: string[];
   minPrice: number;
   maxPrice: number;
@@ -96,7 +107,7 @@ export interface ProductDetailResponse {
   technicalSpecifications: TechnicalSpecification[];
   frequentlyBoughtTogether: string[];
   bundleUpsells: string[];
-  rating: {
+  rating?: {
     average: number;
     count: number;
   };

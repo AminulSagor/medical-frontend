@@ -1,14 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BlogsRightSideCard from "./right-side-cards/blogs-card";
 import LatestDiscoveriesList from "./latest-discoveries-list";
 import LatestDiscoveriesGrid from "@/app/public/(pages)/blogs/_components/latest-discoveries-grid";
+import { getPublicBlogs } from "@/service/public/blogs/blogs.service";
+import type { BlogPost, BlogPostApi } from "@/types/public/blogs/blog-type";
 
 type ViewMode = "grid" | "list";
 
+// Helper to map API type to UI type
+const mapApiBlogToUiBlog = (apiPost: BlogPostApi): BlogPost => {
+  return {
+    id: apiPost.id,
+    category: apiPost.categories.length > 0 ? apiPost.categories[0].name : "Uncategorized",
+    title: apiPost.title,
+    excerpt: apiPost.description,
+    dateLabel: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(apiPost.publishedAt)),
+    readTimeLabel: `${apiPost.readTimeMinutes} min read`,
+    coverImageSrc: apiPost.coverImageUrl,
+    coverImageAlt: apiPost.title,
+    author: apiPost.authors.length > 0 ? {
+      name: apiPost.authors[0].fullLegalName,
+      avatarSrc: apiPost.authors[0].profilePhotoUrl
+    } : undefined,
+    href: `/public/blogs/${apiPost.id}`,
+    badge: apiPost.isFeatured ? { label: "EDITOR'S PICK" } : undefined,
+  };
+};
+
+
 export default function LatestDiscoveriesSection() {
   const [view, setView] = useState<ViewMode>("grid");
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        setLoading(true);
+        const data = await getPublicBlogs({ page, limit: 10, sortBy: "latest" });
+        const mappedPosts = data.items.map(mapApiBlogToUiBlog);
+        if (page === 1) {
+          setPosts(mappedPosts);
+        } else {
+          setPosts(prev => [...prev, ...mappedPosts]);
+        }
+        setHasMore(data.meta.page < data.meta.totalPages);
+      } catch (error) {
+        console.error("Failed to fetch blogs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBlogs();
+  }, [page]);
 
   return (
     <section className="w-full pt-10">
@@ -72,20 +121,26 @@ export default function LatestDiscoveriesSection() {
             </div>
 
             <div className="mt-6">
-              {view === "grid" ? (
-                <LatestDiscoveriesGrid />
+              {loading && page === 1 ? (
+                <div className="py-12 text-center text-slate-500">Loading articles...</div>
+              ) : view === "grid" ? (
+                <LatestDiscoveriesGrid posts={posts} />
               ) : (
-                <LatestDiscoveriesList />
+                <LatestDiscoveriesList posts={posts} />
               )}
             </div>
 
             <div className="mt-10 flex justify-center">
-              <button
-                type="button"
-                className="rounded-full border border-light-slate/15 bg-white px-6 py-2.5 text-sm font-semibold text-light-slate hover:bg-light-slate/5 active:scale-95 transition"
-              >
-                Load More Articles
-              </button>
+              {hasMore && (
+                <button
+                  type="button"
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={loading}
+                  className="rounded-full border border-light-slate/15 bg-white px-6 py-2.5 text-sm font-semibold text-light-slate hover:bg-light-slate/5 active:scale-95 transition disabled:opacity-50"
+                >
+                  {loading ? "Loading..." : "Load More Articles"}
+                </button>
+              )}
             </div>
           </div>
 

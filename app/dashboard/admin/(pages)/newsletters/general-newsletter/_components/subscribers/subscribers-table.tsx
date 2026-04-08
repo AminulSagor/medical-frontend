@@ -124,7 +124,7 @@ export default function SubscribersTable({
                   <div className="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-slate-100 text-xs font-bold text-slate-600 ring-1 ring-slate-200/60">
                     {r.avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.avatarUrl} alt="" className="h-full w-full object-cover" />
+                      <img src={r.avatarUrl} alt={`${r.name} avatar`} className="h-full w-full object-cover" />
                     ) : (
                       (r.avatarInitials ?? r.name.slice(0, 2)).toUpperCase()
                     )}

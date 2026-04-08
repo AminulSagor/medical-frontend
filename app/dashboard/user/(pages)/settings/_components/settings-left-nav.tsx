@@ -1,4 +1,3 @@
-// app/(user)/(registered-user)/settings/_components/settings-left-nav.tsx
 import Link from "next/link";
 import { IdCard, Lock, CreditCard } from "lucide-react";
 import type { SettingsSectionKey } from "@/types/user/account-settings/account-settings-type";
@@ -12,22 +11,22 @@ const NAV: Array<{
   label: string;
   icon: React.ReactNode;
 }> = [
-  {
-    key: "public-profile",
-    label: "Public Profile",
-    icon: <IdCard className="h-5 w-5" />,
-  },
-  {
-    key: "security-password",
-    label: "Security & Password",
-    icon: <Lock className="h-5 w-5" />,
-  },
-  {
-    key: "payment-methods",
-    label: "Payment Methods",
-    icon: <CreditCard className="h-5 w-5" />,
-  },
-];
+    {
+      key: "public-profile",
+      label: "Public Profile",
+      icon: <IdCard className="h-5 w-5" />,
+    },
+    {
+      key: "security-password",
+      label: "Security & Password",
+      icon: <Lock className="h-5 w-5" />,
+    },
+    {
+      key: "payment-methods",
+      label: "Payment Methods",
+      icon: <CreditCard className="h-5 w-5" />,
+    },
+  ];
 
 export default function SettingsLeftNav({
   active,
@@ -39,10 +38,11 @@ export default function SettingsLeftNav({
       <nav className="space-y-1">
         {NAV.map((it) => {
           const isActive = it.key === active;
+
           return (
             <Link
               key={it.key}
-              href={`/settings?section=${it.key}`}
+              href={`/dashboard/user/settings?section=${it.key}`}
               className={cx(
                 "group relative flex items-center gap-3 rounded-xl px-3 py-3 transition",
                 isActive

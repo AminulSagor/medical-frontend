@@ -1,12 +1,27 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import TestimonialCard from "./testimonial-card";
-import { TESTIMONIALS } from "@/app/public/data/testimonials.data";
+import { getExpertReviews } from "@/service/public/expert-review.service";
+import { ExpertReview } from "@/types/public/review/expert-review.types";
 
 export default function TestimonialsSection() {
-  const items = useMemo(() => TESTIMONIALS, []);
+  const [items, setItems] = useState<ExpertReview[]>([]);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const response = await getExpertReviews(1, 10);
+        if (response.data) setItems(response.data);
+      } catch (error) {
+        console.error("Failed to load expert reviews", error);
+      }
+    };
+    fetchReviews();
+  }, []);
+
+  // if (!items || items.length === 0) return null;
 
   return (
     <section className="w-full padding overflow-hidden">
@@ -86,33 +101,51 @@ export default function TestimonialsSection() {
           }}
           className="mt-12 grid items-stretch gap-8 lg:grid-cols-3"
         >
-          {items.map((t, index) => (
-            <motion.div
-              key={t.id}
-              variants={{
-                hidden: {
-                  opacity: 0,
-                  y: 50,
-                  scale: 0.96,
-                  filter: "blur(10px)",
-                },
-                show: {
-                  opacity: 1,
-                  y: 0,
-                  scale: 1,
-                  filter: "blur(0px)",
-                  transition: {
-                    duration: 0.8,
-                    ease: [0.22, 1, 0.36, 1],
-                    delay: index * 0.03,
+          {items.length === 0 ? (
+            <div className="col-span-full py-12 text-center text-light-slate">
+              No expert reviews found yet. Be the first to leave one!
+            </div>
+          ) : (
+            items.map((t, index) => (
+              <motion.div
+                key={t.id}
+                variants={{
+                  hidden: {
+                    opacity: 0,
+                    y: 50,
+                    scale: 0.96,
+                    filter: "blur(10px)",
                   },
-                },
-              }}
-              className="h-full"
-            >
-              <TestimonialCard item={t} index={index} />
-            </motion.div>
-          ))}
+                  show: {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    filter: "blur(0px)",
+                    transition: {
+                      duration: 0.8,
+                      ease: [0.22, 1, 0.36, 1],
+                      delay: index * 0.03,
+                    },
+                  },
+                }}
+                className="h-full"
+              >
+                <TestimonialCard 
+                  item={{
+                    id: t.id,
+                    rating: t.rating as 1 | 2 | 3 | 4 | 5,
+                    quote: t.reviewMessage,
+                    author: {
+                      name: t.reviewByInfo.name,
+                      role: t.reviewByInfo.designation,
+                      avatarSrc: t.reviewByInfo.profileImg
+                    }
+                  }} 
+                  index={index} 
+                />
+              </motion.div>
+            ))
+          )}
         </motion.div>
       </div>
     </section>

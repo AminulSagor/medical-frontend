@@ -16,6 +16,7 @@ import CartSidebar from "@/components/cart-sidebar";
 import PublicSidebar from "@/components/public-sidebar";
 import { LogOut, Settings } from "lucide-react";
 import NavbarSearch from "@/app/public/(pages)/home/_components/navbar-search";
+import { useCart } from "@/app/public/context/cart-context";
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/public/home") return pathname === "/public/home";
@@ -24,6 +25,7 @@ function isActivePath(pathname: string, href: string) {
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { totalItems } = useCart();
 
   const [q, setQ] = useState("");
   const [cartSidebar, setCartSidebar] = useState(false);
@@ -206,7 +208,7 @@ export default function Navbar() {
                     "bg-primary text-[11px] font-bold text-white",
                   ].join(" ")}
                 >
-                  2
+                  {totalItems}
                 </span>
               </button>
             )}
@@ -328,7 +330,7 @@ function AccountAccessDropdown() {
                   onClick={() => {
                     removeToken();
                     setIsAuthenticated(false);
-                    router.push("public/auth/sign-in");
+                    router.push("/public/auth/sign-in");
                   }}
                   className="flex w-full items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
                 >
@@ -339,7 +341,7 @@ function AccountAccessDropdown() {
                 </button>
               ) : (
                 <Link
-                  href="public/auth/sign-in"
+                  href="/public/auth/sign-in"
                   className="flex items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
                 >
                   <LogIn size={20} className="text-light-slate" />
