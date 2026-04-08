@@ -84,7 +84,7 @@ export default function NewsletterActions() {
         statValue="2,450"
         statLabel="Subscribers"
         buttonLabel="Manage Newsletter"
-        href="/newsletters/general-newsletter"
+        href="/dashboard/admin/newsletters/general-newsletter"
         variant="primary"
       />
 
@@ -96,7 +96,7 @@ export default function NewsletterActions() {
         statValue="12"
         statLabel="Cohorts"
         buttonLabel="Manage Course Announcement"
-        href="/newsletters/course-announcements"
+        href="/dashboard/admin/newsletters/course-announcements"
         variant="dark"
       />
     </div>

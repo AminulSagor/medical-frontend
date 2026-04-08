@@ -1,6 +1,5 @@
-import CourseAnnouncements from "./_components/course-annoucement";
-import { COURSE_ANNOUNCEMENTS_MOCK } from "./_components/course-annoucement-mock";
+import CourseAnnouncements from "@/app/dashboard/admin/(pages)/newsletters/course-announcements/_components/course-annoucement";
 
 export default function CourseAnnouncementsPage() {
-  return <CourseAnnouncements data={COURSE_ANNOUNCEMENTS_MOCK} />;
+  return <CourseAnnouncements />;
 }

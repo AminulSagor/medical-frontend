@@ -1,3 +1,4 @@
+"use client";
 
 import { cx } from "@/utils/course-admin-ui";
 import type { CourseAnnouncementsTabKey } from "../types/course-annoucements-types";
@@ -6,7 +7,7 @@ const TABS: Array<{ key: CourseAnnouncementsTabKey; label: string }> = [
   { key: "all", label: "All Cohorts" },
   { key: "upcoming", label: "Upcoming" },
   { key: "completed", label: "Completed" },
-  { key: "cancelled", label: "Cancelled" },
+  { key: "cancelled", label: "Canceled" },
 ];
 
 export default function CourseTabs({
@@ -17,22 +18,23 @@ export default function CourseTabs({
   onChange: (next: CourseAnnouncementsTabKey) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {TABS.map((t) => {
-        const isActive = active === t.key;
+    <div className="inline-flex flex-wrap items-center gap-2 rounded-2xl bg-slate-100 p-1.5">
+      {TABS.map((tab) => {
+        const isActive = active === tab.key;
+
         return (
           <button
-            key={t.key}
+            key={tab.key}
             type="button"
-            onClick={() => onChange(t.key)}
+            onClick={() => onChange(tab.key)}
             className={cx(
-              "h-9 rounded-xl px-4 text-xs font-semibold",
+              "rounded-xl px-5 py-3 text-sm font-semibold transition",
               isActive
-                ? "bg-slate-100 text-slate-900 ring-1 ring-slate-200/70"
-                : "bg-white text-slate-600 hover:bg-slate-50 ring-1 ring-slate-200/60"
+                ? "bg-white text-teal-500 shadow-sm"
+                : "bg-transparent text-slate-500 hover:text-slate-700",
             )}
           >
-            {t.label}
+            {tab.label}
           </button>
         );
       })}
