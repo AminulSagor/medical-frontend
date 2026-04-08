@@ -1,63 +1,88 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Users, ChevronDown, ChevronUp } from "lucide-react";
 import type { Recipient } from "../_lib/compose-types";
 import RecipientsList from "./recipients-list";
 
 const INITIAL_VISIBLE = 6;
 
-export default function RecipientsPanel({
-  recipients,
-}: {
+type RecipientsPanelProps = {
   recipients: Recipient[];
-}) {
+};
+
+function buildSelectedState(recipients: Recipient[]): Record<string, boolean> {
+  return Object.fromEntries(
+    recipients.map((recipient) => [recipient.id, true]),
+  );
+}
+
+export default function RecipientsPanel({ recipients }: RecipientsPanelProps) {
   const [q, setQ] = useState("");
   const [expanded, setExpanded] = useState(false);
-
-  const [selected, setSelected] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(recipients.map((r) => [r.id, true]))
+  const [selected, setSelected] = useState<Record<string, boolean>>(
+    buildSelectedState(recipients),
   );
 
+  useEffect(() => {
+    setSelected(buildSelectedState(recipients));
+  }, [recipients]);
+
   const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    if (!s) return recipients;
-    return recipients.filter(
-      (r) =>
-        r.name.toLowerCase().includes(s) ||
-        r.email.toLowerCase().includes(s)
-    );
+    const search = q.trim().toLowerCase();
+
+    if (!search) return recipients;
+
+    return recipients.filter((recipient) => {
+      const name = recipient.name?.toLowerCase() ?? "";
+      const email = recipient.email?.toLowerCase() ?? "";
+
+      return name.includes(search) || email.includes(search);
+    });
   }, [q, recipients]);
 
-  const visibleRecipients = expanded
-    ? filtered
-    : filtered.slice(0, INITIAL_VISIBLE);
+  const visibleRecipients = useMemo(() => {
+    if (expanded) return filtered;
+    return filtered.slice(0, INITIAL_VISIBLE);
+  }, [expanded, filtered]);
 
-  const allSelected = filtered.every((r) => selected[r.id]);
+  const allSelected =
+    filtered.length > 0 &&
+    filtered.every((recipient) => selected[recipient.id]);
+
+  const selectedCount = useMemo(() => {
+    return recipients.filter((recipient) => selected[recipient.id]).length;
+  }, [recipients, selected]);
 
   const toggleAll = () => {
     setSelected((prev) => {
       const next = { ...prev };
-      filtered.forEach((r) => (next[r.id] = !allSelected));
+
+      filtered.forEach((recipient) => {
+        next[recipient.id] = !allSelected;
+      });
+
       return next;
     });
   };
 
+  const handleToggleRecipient = (id: string) => {
+    setSelected((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
   return (
     <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60">
-
-      {/* Header */}
       <div className="flex items-center justify-between gap-4 px-6 py-5">
-
         <div className="flex items-center gap-3">
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-slate-50 text-slate-600 ring-1 ring-slate-200/60">
             <Users size={18} />
           </div>
 
           <div>
-            <p className="text-[14px] font-bold text-slate-900">
-              Recipients
-            </p>
+            <p className="text-[14px] font-bold text-slate-900">Recipients</p>
             <p className="text-xs text-slate-500">
               Select specific students or broadcast to all
             </p>
@@ -65,8 +90,6 @@ export default function RecipientsPanel({
         </div>
 
         <div className="flex items-center gap-3">
-
-          {/* Search */}
           <div className="relative">
             <Search
               size={16}
@@ -80,10 +103,11 @@ export default function RecipientsPanel({
             />
           </div>
 
-          {/* Select All */}
           <button
+            type="button"
             onClick={toggleAll}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-xs font-bold text-slate-900 ring-1 ring-slate-200/70 hover:bg-slate-50"
+            disabled={filtered.length === 0}
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-xs font-bold text-slate-900 ring-1 ring-slate-200/70 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span
               className={[
@@ -97,44 +121,40 @@ export default function RecipientsPanel({
             </span>
             SELECT ALL
           </button>
-
         </div>
       </div>
 
-      {/* Divider */}
       <div className="h-px bg-slate-100" />
 
-      {/* List */}
-      <RecipientsList
-        recipients={visibleRecipients}
-        selected={selected}
-        onToggle={(id) =>
-          setSelected((p) => ({
-            ...p,
-            [id]: !p[id],
-          }))
-        }
-      />
+      {visibleRecipients.length > 0 ? (
+        <RecipientsList
+          recipients={visibleRecipients}
+          selected={selected}
+          onToggle={handleToggleRecipient}
+        />
+      ) : (
+        <div className="px-6 py-10 text-center text-sm text-slate-500">
+          No recipients found.
+        </div>
+      )}
 
-      {/* Footer */}
       <div className="flex items-center justify-between px-6 py-4 text-xs">
-
-        <span className="font-semibold tracking-[0.1em] text-slate-400 uppercase">
-          SHOWING {visibleRecipients.length} OF {filtered.length} STUDENTS
+        <span className="font-semibold uppercase tracking-[0.1em] text-slate-400">
+          SHOWING {visibleRecipients.length} OF {filtered.length} STUDENTS •{" "}
+          {selectedCount} SELECTED
         </span>
 
         {filtered.length > INITIAL_VISIBLE && (
           <button
-            onClick={() => setExpanded(!expanded)}
+            type="button"
+            onClick={() => setExpanded((prev) => !prev)}
             className="flex items-center gap-1 font-semibold text-teal-600 hover:underline"
           >
             {expanded ? "See Less" : "See More"}
             {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
         )}
-
       </div>
-
     </section>
   );
 }
