@@ -1,0 +1,63 @@
+export const test = {
+  id: "3c6db7b8-4b92-4b79-8c7f-3f29d1b7488c",
+  orderId: "ORD-2024-001",
+  placedAt: "2026-04-06T11:52:21.964Z",
+  paymentStatus: "paid",
+  fulfillmentStatus: "unfulfilled",
+  customer: {
+    name: "Dr. Sarah Smith",
+    email: "s.smith@hospital.org",
+    phone: "+1 (512) 555-0198",
+    avatar: "NULL",
+    shippingAddress: {
+      company: "St. Jude Medical Center",
+      attention: "Airway Lab, Room 402",
+      addressLine1: "1200 North Lamar Blvd",
+      addressLine2: "NULL",
+      city: "Austin",
+      state: "TX",
+      postalCode: "78701",
+      country: "USA",
+    },
+  },
+  items: [
+    {
+      id: "7d5c8c19-4ff9-49ba-8c49-5b544b7d8adb",
+      productId: "5bcb4ea9-4c5b-4660-a702-d728e7fa543a",
+      name: "Laryngeal Mask Airway (LMA)",
+      sku: "LMA-VS-524",
+      image: "NULL",
+      price: "12.00",
+      quantity: 2,
+      total: "24.00",
+    },
+  ],
+  summary: {
+    subtotal: "28.50",
+    shipping: "0.00",
+    tax: "1.70",
+    grandTotal: "30.20",
+  },
+  dispatch: {
+    carrier: "FedEx",
+    trackingNumber: "1Z999AA101234",
+    estimatedDeliveryDate: "2026-04-27T18:00:00.000Z",
+    shippingNotes: "Leave at front desk",
+  },
+  timeline: [
+    {
+      id: "a2dd1111-aaaa-bbbb-cccc-111111111111",
+      type: "payment_authorized",
+      title: "Payment Authorized",
+      description: "NULL",
+      createdAt: "2026-04-05T03:43:00.000Z",
+    },
+    {
+      id: "b7cd2222-aaaa-bbbb-cccc-222222222222",
+      type: "order_placed",
+      title: "Order Placed",
+      description: "NULL",
+      createdAt: "2026-04-05T03:42:00.000Z",
+    },
+  ],
+};

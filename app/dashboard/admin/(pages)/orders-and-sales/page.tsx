@@ -1,104 +1,194 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import OrdersHeader from "./_components/orders-header";
 import OrderStats from "./_components/order-stats";
 import OrdersToolbar from "./_components/orders-toolbar";
 import OrdersTable, {
-    type OrderRow,
-    type FulfillmentStatus,
+  type OrderRow,
+  type PaymentStatusFilter,
 } from "./_components/orders-table";
+import { getAdminOrdersSummary } from "@/service/admin/orders/order.summary.service";
+import { getAdminOrderTransactions } from "@/service/admin/orders/order.transaction.service";
+import { AdminOrdersSummaryCards } from "@/types/admin/orders/order.summary.types";
+import {
+  AdminOrderTransaction,
+  AdminOrderTransactionMeta,
+} from "@/types/admin/orders/order.transaction.types";
 
 const PAGE_SIZE = 10;
 
-const MOCK: OrderRow[] = [
-    { id: "#ORD-2026-001", date: "Oct 24, 2026", customer: "Sarah Jenkins", type: "product", paymentStatus: "paid", fulfillment: "shipped", total: "$145.00" },
-    { id: "#ORD-2026-002", date: "Oct 23, 2026", customer: "Michael Chen", type: "course", paymentStatus: "pending", fulfillment: "processing", total: "$2,150.00" },
-    { id: "#ORD-2026-003", date: "Oct 23, 2026", customer: "Robert Taylor", type: "product", paymentStatus: "paid", fulfillment: "shipped", total: "$89.95" },
-    { id: "#ORD-2026-004", date: "Oct 22, 2026", customer: "Emily Davis", type: "product", paymentStatus: "refunded", fulfillment: "received", total: "$120.00" },
+const DEFAULT_SUMMARY_CARDS: AdminOrdersSummaryCards = {
+  thisMonthRevenue: 0,
+  totalOrders: 0,
+  toBeShipped: 0,
+  avgOrderValue: 0,
+};
 
-    { id: "#ORD-2026-005", date: "Oct 22, 2026", customer: "David Wilson", type: "course", paymentStatus: "paid", fulfillment: "received", total: "$275.00" },
-    { id: "#ORD-2026-006", date: "Oct 21, 2026", customer: "Sophia Brown", type: "product", paymentStatus: "pending", fulfillment: "processing", total: "$49.99" },
-    { id: "#ORD-2026-007", date: "Oct 21, 2026", customer: "James Anderson", type: "product", paymentStatus: "paid", fulfillment: "shipped", total: "$310.00" },
-    { id: "#ORD-2026-008", date: "Oct 20, 2026", customer: "Olivia Martinez", type: "course", paymentStatus: "paid", fulfillment: "received", total: "$1,200.00" },
-    { id: "#ORD-2026-009", date: "Oct 20, 2026", customer: "Noah Thomas", type: "product", paymentStatus: "pending", fulfillment: "processing", total: "$79.50" },
-    { id: "#ORD-2026-010", date: "Oct 19, 2026", customer: "Ava Garcia", type: "product", paymentStatus: "paid", fulfillment: "shipped", total: "$59.00" },
+const DEFAULT_TRANSACTION_META: AdminOrderTransactionMeta = {
+  page: 1,
+  limit: PAGE_SIZE,
+  total: 0,
+  totalPages: 1,
+};
 
-    { id: "#ORD-2026-011", date: "Oct 19, 2026", customer: "Liam Taylor", type: "course", paymentStatus: "refunded", fulfillment: "received", total: "$650.00" },
-    { id: "#ORD-2026-012", date: "Oct 18, 2026", customer: "Mia Johnson", type: "product", paymentStatus: "paid", fulfillment: "shipped", total: "$99.99" },
-    { id: "#ORD-2026-013", date: "Oct 18, 2026", customer: "Ethan Lee", type: "product", paymentStatus: "pending", fulfillment: "processing", total: "$210.00" },
-    { id: "#ORD-2026-014", date: "Oct 17, 2026", customer: "Isabella Clark", type: "course", paymentStatus: "paid", fulfillment: "received", total: "$899.00" },
-    { id: "#ORD-2026-015", date: "Oct 17, 2026", customer: "Logan Walker", type: "product", paymentStatus: "paid", fulfillment: "shipped", total: "$35.00" },
-];
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+
+  if (Number.isNaN(date.getTime())) {
+    return dateString;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatCurrency(value: string | number): string {
+  const amount =
+    typeof value === "number" ? value : Number.parseFloat(value || "0");
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(Number.isNaN(amount) ? 0 : amount);
+}
+
+function normalizeFulfillmentStatus(status: string): OrderRow["fulfillment"] {
+  const value = status.toLowerCase();
+
+  if (value === "shipped") {
+    return "shipped";
+  }
+
+  if (value === "processing" || value === "pending") {
+    return "processing";
+  }
+
+  return "received";
+}
+
+function mapTransactionToRow(item: AdminOrderTransaction): OrderRow {
+  return {
+    id: item.id,
+    orderCode: item.orderId,
+    date: formatDate(item.date),
+    customer: item.customer?.name || "Unknown Customer",
+    customerEmail: item.customer?.email || "",
+    customerAvatar: item.customer?.avatar,
+    type: item.type === "course" ? "course" : "product",
+    paymentStatus:
+      item.paymentStatus === "paid" ||
+      item.paymentStatus === "pending" ||
+      item.paymentStatus === "refunded"
+        ? item.paymentStatus
+        : "pending",
+    fulfillment: normalizeFulfillmentStatus(item.fulfillment),
+    fulfillmentLabel: item.fulfillment,
+    total: formatCurrency(item.total),
+  };
+}
 
 export default function OrdersAndSalesPage() {
-    const [search, setSearch] = useState("");
-    const [status, setStatus] = useState<"all" | FulfillmentStatus>("all");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<PaymentStatusFilter>("all");
+  const [page, setPage] = useState(1);
 
-    // pagination state
-    const [page, setPage] = useState(1);
+  const [summaryCards, setSummaryCards] = useState<AdminOrdersSummaryCards>(
+    DEFAULT_SUMMARY_CARDS,
+  );
+  const [isSummaryLoading, setIsSummaryLoading] = useState(true);
 
-    const filtered = useMemo(() => {
-        const q = search.trim().toLowerCase();
+  const [transactions, setTransactions] = useState<AdminOrderTransaction[]>([]);
+  const [transactionsMeta, setTransactionsMeta] =
+    useState<AdminOrderTransactionMeta>(DEFAULT_TRANSACTION_META);
+  const [isTransactionLoading, setIsTransactionLoading] = useState(true);
 
-        return MOCK.filter((r) => {
-            const matchesSearch =
-                !q ||
-                r.id.toLowerCase().includes(q) ||
-                r.customer.toLowerCase().includes(q);
+  useEffect(() => {
+    const loadOrdersSummary = async () => {
+      try {
+        setIsSummaryLoading(true);
+        const response = await getAdminOrdersSummary();
+        setSummaryCards(response.cards ?? DEFAULT_SUMMARY_CARDS);
+      } catch (error) {
+        console.error("Failed to load orders summary:", error);
+        setSummaryCards(DEFAULT_SUMMARY_CARDS);
+      } finally {
+        setIsSummaryLoading(false);
+      }
+    };
 
-            const matchesStatus = status === "all" ? true : r.fulfillment === status;
+    void loadOrdersSummary();
+  }, []);
 
-            return matchesSearch && matchesStatus;
+  useEffect(() => {
+    const timeout = window.setTimeout(async () => {
+      try {
+        setIsTransactionLoading(true);
+
+        const response = await getAdminOrderTransactions({
+          page,
+          limit: PAGE_SIZE,
+          search: search.trim() || undefined,
+          paymentStatus: status === "all" ? undefined : status,
         });
-    }, [search, status]);
 
-    // reset page if filter reduces results
-    const totalCount = filtered.length;
-    const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-    const safePage = Math.min(page, totalPages);
+        setTransactions(response.items ?? []);
+        setTransactionsMeta(response.meta ?? DEFAULT_TRANSACTION_META);
+      } catch (error) {
+        console.error("Failed to load order transactions:", error);
+        setTransactions([]);
+        setTransactionsMeta(DEFAULT_TRANSACTION_META);
+      } finally {
+        setIsTransactionLoading(false);
+      }
+    }, 350);
 
-    const pagedRows = useMemo(() => {
-        const start = (safePage - 1) * PAGE_SIZE;
-        return filtered.slice(start, start + PAGE_SIZE);
-    }, [filtered, safePage]);
+    return () => window.clearTimeout(timeout);
+  }, [page, search, status]);
 
-    return (
-        <div className="space-y-6">
-            {/* ✅ HEADER + ACTIONS IN ONE ROW (like pic 2) */}
-            <div className="flex items-end justify-between gap-4">
-                <OrdersHeader />
+  const rows = useMemo(() => {
+    return transactions.map(mapTransactionToRow);
+  }, [transactions]);
 
-                <div className="shrink-0">
-                    <OrdersToolbar
-                        onDownload={() => console.log("download csv")}
-                        onNewOrder={() => console.log("new order")}
-                    />
-                </div>
-            </div>
+  return (
+    <div className="space-y-6">
+      <div className="flex items-end justify-between gap-4">
+        <OrdersHeader />
 
-            <OrderStats />
-
-            {/* ✅ CARD ONLY CONTAINS TABLE */}
-            <div className="rounded-2xl bg-white p-5 ring-1 ring-slate-200 shadow-sm">
-                <OrdersTable
-                    rows={pagedRows}
-                    search={search}
-                    onSearchChange={(v) => {
-                        setSearch(v);
-                        setPage(1);
-                    }}
-                    status={status}
-                    onStatusChange={(v) => {
-                        setStatus(v);
-                        setPage(1);
-                    }}
-                    page={safePage}
-                    pageSize={PAGE_SIZE}
-                    totalCount={totalCount}
-                    onPageChange={setPage}
-                />
-            </div>
+        <div className="shrink-0">
+          <OrdersToolbar
+            onDownload={() => console.log("download csv")}
+            onNewOrder={() => console.log("new order")}
+          />
         </div>
-    );
+      </div>
+
+      <OrderStats cards={summaryCards} isLoading={isSummaryLoading} />
+
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <OrdersTable
+          rows={rows}
+          search={search}
+          onSearchChange={(value) => {
+            setSearch(value);
+            setPage(1);
+          }}
+          status={status}
+          onStatusChange={(value) => {
+            setStatus(value);
+            setPage(1);
+          }}
+          page={transactionsMeta.page || page}
+          pageSize={transactionsMeta.limit || PAGE_SIZE}
+          totalCount={transactionsMeta.total || 0}
+          totalPages={transactionsMeta.totalPages || 1}
+          isLoading={isTransactionLoading}
+          onPageChange={setPage}
+        />
+      </div>
+    </div>
+  );
 }

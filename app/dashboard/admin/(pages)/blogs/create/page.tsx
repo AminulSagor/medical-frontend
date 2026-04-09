@@ -1,5 +1,5 @@
-import BlogCreateClient from "./_components/blog-create-client";
+import CreateBlogPostPage from "./_components/create-blog-post-page";
 
 export default function Page() {
-    return <BlogCreateClient />;
+  return <CreateBlogPostPage />;
 }

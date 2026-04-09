@@ -9,12 +9,12 @@ export default function CourseHeader({
   const router = useRouter();
 
   return (
-    <div className="rounded-2xl px-6 pt-6 pb-8">
+    <div className="rounded-2xl pt-6 pb-8">
       {/* Top Row */}
       <div className="flex items-start gap-3">
         <button
-          onClick={() => router.back()}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+          onClick={() => router.push("/dashboard/admin/newsletters")}
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 mt-1"
         >
           <ArrowLeft size={16} />
         </button>
