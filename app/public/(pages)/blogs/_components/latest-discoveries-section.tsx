@@ -1,36 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import BlogsRightSideCard from "./right-side-cards/blogs-card";
+import { useEffect, useState } from "react";
+import LatestDiscoveriesGrid from "./latest-discoveries-grid";
 import LatestDiscoveriesList from "./latest-discoveries-list";
-import LatestDiscoveriesGrid from "@/app/public/(pages)/blogs/_components/latest-discoveries-grid";
+import BlogsRightSideCard from "./right-side-cards/blogs-card";
 import { getPublicBlogs } from "@/service/public/blogs/blogs.service";
-import type { BlogPost, BlogPostApi } from "@/types/public/blogs/blog-type";
+import { mapApiBlogToUiBlog } from "../_utils/blogs.mapper";
+import type { BlogPost, TrendingItem } from "@/types/public/blogs/blog-type";
 
 type ViewMode = "grid" | "list";
 
-// Helper to map API type to UI type
-const mapApiBlogToUiBlog = (apiPost: BlogPostApi): BlogPost => {
-  return {
-    id: apiPost.id,
-    category: apiPost.categories.length > 0 ? apiPost.categories[0].name : "Uncategorized",
-    title: apiPost.title,
-    excerpt: apiPost.description,
-    dateLabel: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(apiPost.publishedAt)),
-    readTimeLabel: `${apiPost.readTimeMinutes} min read`,
-    coverImageSrc: apiPost.coverImageUrl,
-    coverImageAlt: apiPost.title,
-    author: apiPost.authors.length > 0 ? {
-      name: apiPost.authors[0].fullLegalName,
-      avatarSrc: apiPost.authors[0].profilePhotoUrl
-    } : undefined,
-    href: `/public/blogs/${apiPost.id}`,
-    badge: apiPost.isFeatured ? { label: "EDITOR'S PICK" } : undefined,
-  };
+type LatestDiscoveriesSectionProps = {
+  trendingItems: TrendingItem[];
 };
 
-
-export default function LatestDiscoveriesSection() {
+export default function LatestDiscoveriesSection({
+  trendingItems,
+}: LatestDiscoveriesSectionProps) {
   const [view, setView] = useState<ViewMode>("grid");
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [page, setPage] = useState(1);
@@ -43,11 +29,13 @@ export default function LatestDiscoveriesSection() {
         setLoading(true);
         const data = await getPublicBlogs({ page, limit: 10, sortBy: "latest" });
         const mappedPosts = data.items.map(mapApiBlogToUiBlog);
+
         if (page === 1) {
           setPosts(mappedPosts);
         } else {
-          setPosts(prev => [...prev, ...mappedPosts]);
+          setPosts((prev) => [...prev, ...mappedPosts]);
         }
+
         setHasMore(data.meta.page < data.meta.totalPages);
       } catch (error) {
         console.error("Failed to fetch blogs:", error);
@@ -64,13 +52,11 @@ export default function LatestDiscoveriesSection() {
       <div className="padding">
         <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
           <div>
-            {/* header */}
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-[30px] leading-[34px] font-bold text-black">
                 Latest Discoveries
               </h2>
 
-              {/* view toggle (list will be used later) */}
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -84,7 +70,6 @@ export default function LatestDiscoveriesSection() {
                   aria-label="Grid view"
                   title="Grid view"
                 >
-                  {/* grid icon */}
                   <span className="text-light-slate/70">
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                       <path
@@ -107,13 +92,9 @@ export default function LatestDiscoveriesSection() {
                   aria-label="List view"
                   title="List view"
                 >
-                  {/* list icon */}
                   <span className="text-light-slate/70">
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                      <path
-                        d="M4 5h11v2H4V5Zm0 6h11v2H4v-2Z"
-                        fill="currentColor"
-                      />
+                      <path d="M4 5h11v2H4V5Zm0 6h11v2H4v-2Z" fill="currentColor" />
                     </svg>
                   </span>
                 </button>
@@ -131,21 +112,21 @@ export default function LatestDiscoveriesSection() {
             </div>
 
             <div className="mt-10 flex justify-center">
-              {hasMore && (
+              {hasMore ? (
                 <button
                   type="button"
-                  onClick={() => setPage(p => p + 1)}
+                  onClick={() => setPage((prev) => prev + 1)}
                   disabled={loading}
-                  className="rounded-full border border-light-slate/15 bg-white px-6 py-2.5 text-sm font-semibold text-light-slate hover:bg-light-slate/5 active:scale-95 transition disabled:opacity-50"
+                  className="rounded-full border border-light-slate/15 bg-white px-6 py-2.5 text-sm font-semibold text-light-slate transition hover:bg-light-slate/5 active:scale-95 disabled:opacity-50"
                 >
                   {loading ? "Loading..." : "Load More Articles"}
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
 
           <div className="lg:pt-11">
-            <BlogsRightSideCard />
+            <BlogsRightSideCard trendingItems={trendingItems} />
           </div>
         </div>
       </div>

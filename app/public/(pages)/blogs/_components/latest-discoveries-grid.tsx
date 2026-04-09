@@ -1,47 +1,45 @@
 import type { BlogPost } from "@/types/public/blogs/blog-type";
-
+import BigFeatureCard from "./post-cards/big-feature-card";
 import SmallPostCard from "./post-cards/small-feature-card";
-import BigFeatureCard from "@/app/public/(pages)/blogs/_components/post-cards/big-feature-card";
-import WideInterviewCard from "@/app/public/(pages)/blogs/_components/post-cards/wide-interview-card";
+import WideInterviewCard from "./post-cards/wide-interview-card";
 
 export default function LatestDiscoveriesGrid({ posts }: { posts: BlogPost[] }) {
-  if (!posts || posts.length === 0) {
+  if (!posts.length) {
     return <div className="py-10 text-center text-slate-500">No articles available.</div>;
   }
 
   const big = posts[0];
   const rightTop = posts[1];
   const rightBottom = posts[2];
-  const wide = posts[3] || posts.slice(4).find(p => p) || posts[0]; // fallback if not exactly 4
+  const wide = posts[3];
 
   return (
     <div className="grid gap-6 md:grid-cols-3">
-      {big && (
+      {big ? (
         <div className="md:col-span-2 md:row-span-2">
           <BigFeatureCard post={big} />
         </div>
-      )}
+      ) : null}
 
-      {rightTop && (
+      {rightTop ? (
         <div className="md:col-span-1">
           <SmallPostCard post={rightTop} />
         </div>
-      )}
+      ) : null}
 
-      {rightBottom && (
+      {rightBottom ? (
         <div className="md:col-span-1">
           <SmallPostCard post={rightBottom} />
         </div>
-      )}
+      ) : null}
 
-      {wide && posts.length >= 4 && (
+      {wide ? (
         <div className="md:col-span-3">
           <WideInterviewCard post={wide} />
         </div>
-      )}
-      
-      {/* If there are more than 4, render them gracefully (e.g. as regular small cards in row) */}
-      {posts.slice(4).map((post, idx) => (
+      ) : null}
+
+      {posts.slice(4).map((post) => (
         <div key={post.id} className="md:col-span-1">
           <SmallPostCard post={post} />
         </div>

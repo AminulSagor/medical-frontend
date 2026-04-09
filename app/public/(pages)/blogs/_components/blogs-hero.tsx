@@ -1,31 +1,35 @@
-import Image from "next/image";
 import Link from "next/link";
 import Button from "@/components/buttons/button";
-import { BLOG_FEATURED } from "@/app/public/data/blogs.data";
+import type { BlogPost } from "@/types/public/blogs/blog-type";
+import FallbackNetworkImage from "./fallback-network-image";
 
-export default function BlogsHero() {
-  const post = BLOG_FEATURED;
+type BlogsHeroProps = {
+  post: BlogPost | null;
+};
+
+export default function BlogsHero({ post }: BlogsHeroProps) {
+  if (!post) {
+    return null;
+  }
 
   return (
-    <section className="w-full pt-6 mt-20">
+    <section className="mt-20 w-full pt-6">
       <div className="padding">
         <div className="relative overflow-hidden rounded-[28px] shadow-[0_18px_50px_rgba(16,24,25,0.10)]">
           <div className="relative h-[1216px] w-full p-4 md:h-[650px] md:p-8">
             <div className="relative h-full w-full overflow-hidden rounded-[22px]">
-              <Image
+              <FallbackNetworkImage
                 src={post.coverImageSrc}
                 alt={post.coverImageAlt}
-                fill
                 priority
-                sizes="(max-width: 768px) 100vw, 1200px"
                 className="object-cover"
+                fallbackClassName="bg-light-slate/10 text-light-slate/45"
+                iconSize={42}
               />
 
-              {/* cinematic overlay like reference */}
               <div className="absolute inset-0 bg-black/15" />
               <div className="absolute inset-0 bg-linear-to-r from-black/30 via-black/10 to-transparent" />
 
-              {/* ✅ inner card: right + vertically centered (like screenshot-2) */}
               <div className="absolute right-6 top-1/2 w-full max-w-[540px] -translate-y-1/2 md:right-10">
                 <div className="rounded-[26px] border border-light-slate/10 bg-white px-8 py-10 shadow-[0_22px_60px_rgba(16,24,25,0.16)] md:px-12 md:py-12">
                   <div className="flex items-center gap-4">
@@ -40,7 +44,6 @@ export default function BlogsHero() {
                     </span>
                   </div>
 
-                  {/* ✅ serif title */}
                   <h1 className="mt-6 whitespace-pre-line font-serif text-[44px] leading-[1.02] font-bold text-black">
                     {post.title}
                   </h1>
@@ -49,7 +52,6 @@ export default function BlogsHero() {
                     {post.excerpt}
                   </p>
 
-                  {/* ✅ buttons spacing like ref */}
                   <div className="mt-8 flex flex-wrap items-center gap-4">
                     <Link href={post.href}>
                       <Button size="base" variant="primary" shape="pill">
@@ -71,7 +73,6 @@ export default function BlogsHero() {
                 </div>
               </div>
 
-              {/* subtle inner ring like reference */}
               <div className="pointer-events-none absolute inset-0 rounded-[22px] ring-1 ring-black/5" />
             </div>
           </div>
