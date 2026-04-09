@@ -1,23 +1,27 @@
-// utils/settings/account-settings-data-util.ts
 import { accountProfileSchema } from "@/schema/account-settings/account-settings-schema";
-import { AccountSettingsPageModel } from "@/types/account-settings/account-settings-type";
-
+import { getUserProfile } from "@/service/user/profile.server.service";
+import { AccountSettingsPageModel } from "@/types/user/account-settings/account-settings-type";
 
 export async function getAccountSettingsSeed(
-  section: "public-profile" | "security-password" | "payment-methods" = "public-profile"
+  section:
+    | "public-profile"
+    | "security-password"
+    | "payment-methods" = "public-profile",
 ): Promise<AccountSettingsPageModel> {
-  // ✅ later: replace with API response
+  const response = await getUserProfile();
+  const profileData = response.data;
+
   const raw = {
     section,
-    firstName: "Sarah",
-    lastName: "Thompson",
-    email: "sarah.t@example.com",
-    phone: "+1 (555) 000-0000",
-    titleRole: "Anesthesiologist",
-    institution: "Houston Methodist",
-    npiNumber: "",
-    avatarUrl: "",
-    avatarInitials: "ST",
+    firstName: profileData.firstName ?? "",
+    lastName: profileData.lastName ?? "",
+    email: profileData.emailAddress ?? "",
+    phone: profileData.phoneNumber ?? "",
+    titleRole: profileData.title ?? profileData.role ?? "",
+    institution: profileData.institutionOrHospital ?? "",
+    npiNumber: profileData.npiNumber ?? "",
+    avatarUrl: profileData.profilePicture ?? "",
+    avatarInitials: `${profileData.firstName?.[0] ?? ""}${profileData.lastName?.[0] ?? ""}`.toUpperCase(),
   };
 
   const profile = accountProfileSchema.parse(raw);
@@ -25,11 +29,6 @@ export async function getAccountSettingsSeed(
   return {
     activeSection: section,
     profile,
-    roleOptions: [
-      { value: "Anesthesiologist", label: "Anesthesiologist" },
-      { value: "Emergency Physician", label: "Emergency Physician" },
-      { value: "CRNA", label: "CRNA" },
-      { value: "Resident", label: "Resident" },
-    ],
+    roleOptions: [],
   };
 }

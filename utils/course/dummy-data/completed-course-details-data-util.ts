@@ -1,7 +1,12 @@
-import type { CompletedDetailsViewProps } from "@/types/course/course-completed-details-type";
-import { getCourseBookingDetailsSeed, getCourseScheduleSeed } from "./course-details-data-util";
+import type { CompletedDetailsViewProps } from "@/types/user/course/course-completed-details-type";
+import {
+  getCourseBookingDetailsSeed,
+  getCourseScheduleSeed,
+} from "./course-details-data-util";
 
-export function getCompletedDetailsSeed(courseId: string): CompletedDetailsViewProps {
+export function getCompletedDetailsSeed(
+  courseId: string,
+): CompletedDetailsViewProps {
   return {
     hero: {
       title: "Advanced Difficult Airway Workshop",
@@ -46,8 +51,7 @@ export function getCompletedDetailsSeed(courseId: string): CompletedDetailsViewP
 
     nextSteps: {
       title: "Next Steps?",
-      text:
-        "Want to keep improving? Explore your next clinical competency module or schedule another workshop.",
+      text: "Want to keep improving? Explore your next clinical competency module or schedule another workshop.",
       actionLabel: "View My Profile →",
     },
   };

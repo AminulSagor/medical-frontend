@@ -26,11 +26,13 @@ export default function PublicSidebar({
   onClose,
   onOpenCart,
   cartCount = 0,
+  hideCart = false,
 }: {
   open: boolean;
   onClose: () => void;
   onOpenCart: () => void;
   cartCount?: number;
+  hideCart?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -141,29 +143,33 @@ export default function PublicSidebar({
         {/* bottom actions */}
         <div className="absolute bottom-0 left-0 right-0 p-5">
           <div className="rounded-3xl border border-light-slate/15 bg-white p-3 shadow-sm">
-            {/* cart */}
-            <button
-              type="button"
-              onClick={onOpenCart}
-              className="flex w-full items-center justify-between rounded-2xl px-4 py-3 hover:bg-light-slate/5 transition"
-            >
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-full border border-light-slate/15 bg-white">
-                  <ShoppingCart size={18} className="text-black" />
-                </div>
-                <span className="text-sm font-semibold text-black">Cart</span>
-              </div>
+            {/* cart - hidden on auth routes */}
+            {!hideCart && (
+              <>
+                <button
+                  type="button"
+                  onClick={onOpenCart}
+                  className="flex w-full items-center justify-between rounded-2xl px-4 py-3 hover:bg-light-slate/5 transition"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-10 w-10 place-items-center rounded-full border border-light-slate/15 bg-white">
+                      <ShoppingCart size={18} className="text-black" />
+                    </div>
+                    <span className="text-sm font-semibold text-black">Cart</span>
+                  </div>
 
-              <span className="grid h-6 min-w-6 place-items-center rounded-full bg-primary px-2 text-[12px] font-bold text-white">
-                {cartCount}
-              </span>
-            </button>
+                  <span className="grid h-6 min-w-6 place-items-center rounded-full bg-primary px-2 text-[12px] font-bold text-white">
+                    {cartCount}
+                  </span>
+                </button>
 
-            <div className="my-2 h-px w-full bg-light-slate/15" />
+                <div className="my-2 h-px w-full bg-light-slate/15" />
+              </>
+            )}
 
             {/* auth actions */}
             <Link
-              href="#"
+              href="/auth/sign-in"
               onClick={onClose}
               className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-light-slate/5 transition"
             >
@@ -172,7 +178,7 @@ export default function PublicSidebar({
             </Link>
 
             <Link
-              href="#"
+              href="/auth/sign-up"
               onClick={onClose}
               className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-light-slate/5 transition"
             >

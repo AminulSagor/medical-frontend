@@ -1,6 +1,6 @@
 // utils/course/course-schedule-helpers.ts
 
-import type { CourseScheduleItem } from "@/types/course/course-details-type";
+import type { CourseScheduleItem } from "@/types/user/course/course-details-type";
 
 export type CourseDayState = "done" | "active" | "upcoming";
 
@@ -10,7 +10,7 @@ export type CourseScheduleDayGroup = {
 };
 
 export function groupScheduleByDay(
-  items: CourseScheduleItem[]
+  items: CourseScheduleItem[],
 ): CourseScheduleDayGroup[] {
   const map = new Map<string, CourseScheduleItem[]>();
 

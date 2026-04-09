@@ -1,18 +1,18 @@
 import { z } from "zod";
 
 export const signupSchema = z.object({
-  fullName: z
+  fullLegalName: z
     .string()
     .trim()
     .min(1, "Full name is required."),
 
-  email: z
+  medicalEmail: z
     .string()
     .trim()
     .min(1, "Email is required.")
     .email("Enter a valid email address."),
 
-  role: z
+  professionalRole: z
     .string()
     .trim()
     .min(1, "Professional role is required."),
