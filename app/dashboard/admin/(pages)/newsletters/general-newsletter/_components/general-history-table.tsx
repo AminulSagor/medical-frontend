@@ -2,37 +2,42 @@
 
 import React from "react";
 import { Copy, Eye } from "lucide-react";
-import {
-  HistoryRow,
-  PaginationState,
-} from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/types/general-newsletter-data.type";
 import GeneralDataPagination from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_components/general-data-pagination";
+import { PaginationState } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/types/general-newsletter-data.type";
+import {
+  formatDateLabel,
+  formatTimeLabel,
+} from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_utils/general-broadcast-workspace.utils";
+import { GeneralBroadcastWorkspaceItem } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-workspace.types";
 
 type Props = {
-  rows: HistoryRow[];
+  items: GeneralBroadcastWorkspaceItem[];
   pagination: PaginationState;
+  onPageChange: (page: number) => void;
 };
 
 function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
-function TypeTag({ value }: { value: HistoryRow["typeTag"] }) {
+function TypeTag({ label, variant }: { label: string; variant: string }) {
   return (
     <span
       className={cx(
         "inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]",
-        value === "clinical"
-          ? "bg-[#dff7f4] text-[#10b7aa]"
+        variant === "gray"
+          ? "bg-slate-100 text-slate-600"
           : "bg-[#efe2fb] text-[#8b3dff]",
       )}
     >
-      {value}
+      {label}
     </span>
   );
 }
 
-function CadenceTag({ value }: { value: HistoryRow["cadenceTag"] }) {
+function CadenceTag({ value }: { value: string | null }) {
+  if (!value) return null;
+
   return (
     <span className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
       {value}
@@ -48,6 +53,7 @@ function EngagementBar({
   value: number;
 }) {
   const width = Math.min(Math.max(value, 0), 100);
+
   return (
     <div className="flex items-center gap-2">
       <span className="min-w-[30px] text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">
@@ -64,7 +70,11 @@ function EngagementBar({
   );
 }
 
-export default function GeneralHistoryTable({ rows, pagination }: Props) {
+export default function GeneralHistoryTable({
+  items,
+  pagination,
+  onPageChange,
+}: Props) {
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
       <div className="overflow-x-auto">
@@ -96,80 +106,100 @@ export default function GeneralHistoryTable({ rows, pagination }: Props) {
           </thead>
 
           <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.id}
-                className="border-b border-slate-100 last:border-b-0"
-              >
-                <td className="px-4 py-4">
-                  <div className="font-semibold text-slate-800">
-                    {row.sentDate}
-                  </div>
-                  <div className="text-xs text-slate-400">{row.sentTime}</div>
-                </td>
+            {items.length > 0 ? (
+              items.map((item) => (
+                <tr
+                  key={item.id}
+                  className="border-b border-slate-100 last:border-b-0"
+                >
+                  <td className="px-4 py-4">
+                    <div className="font-semibold text-slate-800">
+                      {formatDateLabel(item.sentDate)}
+                    </div>
+                    <div className="text-xs text-slate-400">
+                      {formatTimeLabel(item.sentDate)}
+                    </div>
+                  </td>
 
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-2">
-                    <TypeTag value={row.typeTag} />
-                    <CadenceTag value={row.cadenceTag} />
-                  </div>
-                </td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-2">
+                      <TypeTag
+                        label={item.type.displayLabel}
+                        variant={item.type.badgeVariant}
+                      />
+                      <CadenceTag value={item.frequency} />
+                    </div>
+                  </td>
 
-                <td className="px-4 py-4">
-                  <div className="max-w-[430px] font-semibold leading-6 text-slate-800">
-                    {row.articleTitle}
-                  </div>
-                </td>
+                  <td className="px-4 py-4">
+                    <div className="max-w-[430px] font-semibold leading-6 text-slate-800">
+                      {item.articleTitle || item.subjectLine || "—"}
+                    </div>
+                  </td>
 
-                <td className="px-4 py-4 text-lg font-semibold text-slate-800">
-                  {row.recipients.toLocaleString()}
-                </td>
+                  <td className="px-4 py-4 text-lg font-semibold text-slate-800">
+                    {item.recipients.toLocaleString()}
+                  </td>
 
-                <td className="px-4 py-4">
-                  <div className="space-y-2">
-                    <EngagementBar
-                      label="OPEN"
-                      value={row.engagement.openPct}
-                    />
-                    <EngagementBar
-                      label="CLICK"
-                      value={row.engagement.clickPct}
-                    />
-                  </div>
-                </td>
+                  <td className="px-4 py-4">
+                    <div className="space-y-2">
+                      <EngagementBar
+                        label="OPEN"
+                        value={item.engagement.openRatePercent}
+                      />
+                      <EngagementBar
+                        label="CLICK"
+                        value={item.engagement.clickRatePercent}
+                      />
+                    </div>
+                  </td>
 
-                <td className="px-4 py-4">
-                  <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#12b76a]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#12b76a]" />
-                    Sent
-                  </span>
-                </td>
+                  <td className="px-4 py-4">
+                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#12b76a]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#12b76a]" />
+                      {item.status.displayLabel}
+                    </span>
+                  </td>
 
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-4 text-slate-400">
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1.5 hover:text-slate-600"
-                    >
-                      <Eye size={15} />
-                      <span className="text-xs font-semibold">Report</span>
-                    </button>
-                    <button type="button" className="hover:text-slate-600">
-                      <Copy size={15} />
-                    </button>
-                  </div>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-4 text-slate-400">
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 hover:text-slate-600"
+                      >
+                        <Eye size={15} />
+                        <span className="text-xs font-semibold">Report</span>
+                      </button>
+                      <button type="button" className="hover:text-slate-600">
+                        <Copy size={15} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="px-4 py-10 text-center text-sm font-medium text-slate-400"
+                >
+                  No historical transmissions found.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
 
       <div className="flex flex-col gap-4 border-t border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between">
         <p className="text-xs italic text-slate-400">
-          Showing 10 of 142 historical transmissions
+          Showing {items.length} of {pagination.totalItems} historical
+          transmissions
         </p>
-        <GeneralDataPagination pagination={pagination} />
+        <GeneralDataPagination
+          pagination={pagination}
+          onPageChange={onPageChange}
+        />
       </div>
     </div>
   );

@@ -2,14 +2,19 @@
 
 import React, { useMemo, useState } from "react";
 import { Calendar, Search, X } from "lucide-react";
-
-type ContentTypeKey = "clinical" | "special" | "custom";
-type AuthorKey = "sarah" | "james" | "robert";
-type DatePresetKey = "last7" | "last30" | "custom";
+import { WorkspaceFilterState } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/types/general-newsletter-data.type";
+import { GeneralBroadcastWorkspaceFilterOptions } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-workspace.types";
 
 function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
+
+type Props = {
+  value: WorkspaceFilterState;
+  options?: GeneralBroadcastWorkspaceFilterOptions;
+  onApply: (filters: WorkspaceFilterState) => void;
+  onRequestClose?: () => void;
+};
 
 function CheckboxRow({
   checked,
@@ -29,7 +34,9 @@ function CheckboxRow({
       <span
         className={cx(
           "flex h-4 w-4 items-center justify-center rounded-[5px] border",
-          checked ? "border-[#14b8ad] bg-[#14b8ad]" : "border-slate-200 bg-white",
+          checked
+            ? "border-[#14b8ad] bg-[#14b8ad]"
+            : "border-slate-200 bg-white",
         )}
       >
         {checked ? <span className="h-2 w-2 rounded-[3px] bg-white" /> : null}
@@ -39,15 +46,13 @@ function CheckboxRow({
   );
 }
 
-function AuthorRow({
+function SelectableRow({
   active,
-  name,
-  initials,
+  label,
   onClick,
 }: {
   active: boolean;
-  name: string;
-  initials: string;
+  label: string;
   onClick: () => void;
 }) {
   return (
@@ -56,11 +61,7 @@ function AuthorRow({
       onClick={onClick}
       className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-slate-50"
     >
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-[11px] font-semibold text-slate-600">
-        {initials}
-      </div>
-
-      <span className="flex-1 text-sm font-medium text-slate-700">{name}</span>
+      <span className="flex-1 text-sm font-medium text-slate-700">{label}</span>
 
       {active ? (
         <span className="text-[#14b8ad]">
@@ -105,34 +106,44 @@ function DatePill({
 }
 
 export default function FilterOptionsPopover({
+  value,
+  options,
+  onApply,
   onRequestClose,
-}: {
-  onRequestClose?: () => void;
-}) {
-  const [contentType, setContentType] = useState<Record<ContentTypeKey, boolean>>(
-    {
-      clinical: true,
-      special: false,
-      custom: false,
-    },
+}: Props) {
+  const [draft, setDraft] = useState<WorkspaceFilterState>(value);
+
+  const contentTypeOptions = options?.contentTypes ?? [];
+  const authorOptions = options?.authors ?? [];
+  const audienceSegmentOptions = options?.audienceSegments ?? [];
+  const quickDateRangeOptions = options?.quickDateRanges ?? [];
+
+  const hasAudience = useMemo(
+    () => Boolean(draft.audienceSegment?.trim()),
+    [draft.audienceSegment],
   );
 
-  const [audience, setAudience] = useState<string>("All Subscribers");
-  const [author, setAuthor] = useState<AuthorKey>("sarah");
-
-  const [datePreset, setDatePreset] = useState<DatePresetKey>("custom");
-  const [fromDate, setFromDate] = useState("11/01/2026");
-  const [toDate, setToDate] = useState("11/30/2026");
-
-  const hasAudience = useMemo(() => Boolean(audience?.trim()), [audience]);
+  const toggleContentType = (contentType: string) => {
+    setDraft((prev) => ({
+      ...prev,
+      contentTypes: prev.contentTypes.includes(contentType)
+        ? prev.contentTypes.filter((item) => item !== contentType)
+        : [...prev.contentTypes, contentType],
+    }));
+  };
 
   const clearAll = () => {
-    setContentType({ clinical: false, special: false, custom: false });
-    setAudience("");
-    setAuthor("sarah");
-    setDatePreset("last7");
-    setFromDate("");
-    setToDate("");
+    const cleared: WorkspaceFilterState = {
+      contentTypes: [],
+      author: null,
+      audienceSegment: null,
+      quickDateRange: null,
+      fromDate: "",
+      toDate: "",
+    };
+
+    setDraft(cleared);
+    onApply(cleared);
   };
 
   return (
@@ -155,25 +166,18 @@ export default function FilterOptionsPopover({
         </p>
 
         <div className="mt-2 space-y-1">
-          <CheckboxRow
-            checked={contentType.clinical}
-            label="Clinical Article"
-            onClick={() =>
-              setContentType((p) => ({ ...p, clinical: !p.clinical }))
-            }
-          />
-          <CheckboxRow
-            checked={contentType.special}
-            label="Special Report"
-            onClick={() =>
-              setContentType((p) => ({ ...p, special: !p.special }))
-            }
-          />
-          <CheckboxRow
-            checked={contentType.custom}
-            label="Custom Message"
-            onClick={() => setContentType((p) => ({ ...p, custom: !p.custom }))}
-          />
+          {contentTypeOptions.length > 0 ? (
+            contentTypeOptions.map((item) => (
+              <CheckboxRow
+                key={item}
+                checked={draft.contentTypes.includes(item)}
+                label={item}
+                onClick={() => toggleContentType(item)}
+              />
+            ))
+          ) : (
+            <p className="px-2 py-2 text-sm text-slate-400">No content types</p>
+          )}
         </div>
       </div>
 
@@ -188,10 +192,15 @@ export default function FilterOptionsPopover({
 
             {hasAudience ? (
               <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[12px] font-semibold text-slate-600">
-                {audience}
+                {draft.audienceSegment}
                 <button
                   type="button"
-                  onClick={() => setAudience("")}
+                  onClick={() =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      audienceSegment: null,
+                    }))
+                  }
                   className="text-slate-400 hover:text-slate-600"
                   aria-label="Remove audience"
                 >
@@ -203,11 +212,35 @@ export default function FilterOptionsPopover({
             <input
               className="h-7 flex-1 bg-transparent text-[12px] font-medium text-slate-600 outline-none placeholder:text-slate-400"
               placeholder="Search audiences..."
-              value={hasAudience ? "" : audience}
-              onChange={(e) => setAudience(e.target.value)}
+              value={hasAudience ? "" : (draft.audienceSegment ?? "")}
+              onChange={(e) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  audienceSegment: e.target.value || null,
+                }))
+              }
             />
           </div>
         </div>
+
+        {audienceSegmentOptions.length > 0 ? (
+          <div className="mt-2 space-y-1">
+            {audienceSegmentOptions.map((segment) => (
+              <SelectableRow
+                key={segment}
+                active={draft.audienceSegment === segment}
+                label={segment}
+                onClick={() =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    audienceSegment:
+                      prev.audienceSegment === segment ? null : segment,
+                  }))
+                }
+              />
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-4">
@@ -216,24 +249,23 @@ export default function FilterOptionsPopover({
         </p>
 
         <div className="mt-2 space-y-1">
-          <AuthorRow
-            active={author === "sarah"}
-            name="Dr. Sarah Smith"
-            initials="SS"
-            onClick={() => setAuthor("sarah")}
-          />
-          <AuthorRow
-            active={author === "james"}
-            name="Prof. James Miller"
-            initials="JM"
-            onClick={() => setAuthor("james")}
-          />
-          <AuthorRow
-            active={author === "robert"}
-            name="Dr. Robert Chen"
-            initials="RC"
-            onClick={() => setAuthor("robert")}
-          />
+          {authorOptions.length > 0 ? (
+            authorOptions.map((author) => (
+              <SelectableRow
+                key={author}
+                active={draft.author === author}
+                label={author}
+                onClick={() =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    author: prev.author === author ? null : author,
+                  }))
+                }
+              />
+            ))
+          ) : (
+            <p className="px-2 py-2 text-sm text-slate-400">No authors</p>
+          )}
         </div>
       </div>
 
@@ -243,21 +275,20 @@ export default function FilterOptionsPopover({
         </p>
 
         <div className="mt-2 flex items-center gap-2">
-          <DatePill
-            active={datePreset === "last7"}
-            label="Last 7 Days"
-            onClick={() => setDatePreset("last7")}
-          />
-          <DatePill
-            active={datePreset === "last30"}
-            label="Last 30 Days"
-            onClick={() => setDatePreset("last30")}
-          />
-          <DatePill
-            active={datePreset === "custom"}
-            label="Custom"
-            onClick={() => setDatePreset("custom")}
-          />
+          {quickDateRangeOptions.map((preset) => (
+            <DatePill
+              key={preset}
+              active={draft.quickDateRange === preset}
+              label={preset.replaceAll("_", " ")}
+              onClick={() =>
+                setDraft((prev) => ({
+                  ...prev,
+                  quickDateRange:
+                    prev.quickDateRange === preset ? null : preset,
+                }))
+              }
+            />
+          ))}
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2">
@@ -267,10 +298,15 @@ export default function FilterOptionsPopover({
             </p>
             <div className="mt-1 flex items-center gap-2">
               <input
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                className="h-6 w-full bg-transparent text-[12px] font-semibold text-slate-700 outline-none placeholder:text-slate-400"
-                placeholder="MM/DD/YYYY"
+                type="date"
+                value={draft.fromDate}
+                onChange={(e) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    fromDate: e.target.value,
+                  }))
+                }
+                className="h-6 w-full bg-transparent text-[12px] font-semibold text-slate-700 outline-none"
               />
               <Calendar size={14} className="text-slate-400" />
             </div>
@@ -282,10 +318,15 @@ export default function FilterOptionsPopover({
             </p>
             <div className="mt-1 flex items-center gap-2">
               <input
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                className="h-6 w-full bg-transparent text-[12px] font-semibold text-slate-700 outline-none placeholder:text-slate-400"
-                placeholder="MM/DD/YYYY"
+                type="date"
+                value={draft.toDate}
+                onChange={(e) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    toDate: e.target.value,
+                  }))
+                }
+                className="h-6 w-full bg-transparent text-[12px] font-semibold text-slate-700 outline-none"
               />
               <Calendar size={14} className="text-slate-400" />
             </div>
@@ -304,6 +345,10 @@ export default function FilterOptionsPopover({
 
         <button
           type="button"
+          onClick={() => {
+            onApply(draft);
+            onRequestClose?.();
+          }}
           className="h-10 rounded-xl bg-[#14b8ad] px-5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(20,184,173,0.22)] hover:opacity-95"
         >
           Apply Filters

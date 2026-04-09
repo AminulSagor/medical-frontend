@@ -2,7 +2,9 @@
 
 import React, { useRef, useState } from "react";
 import { Calendar, ChevronDown, Funnel, Search } from "lucide-react";
-import FilterOptionsPopover from "./FilterOptionsPopover"; // ✅ same folder (adjust if needed)
+import { WorkspaceFilterState } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/types/general-newsletter-data.type";
+import { GeneralBroadcastWorkspaceFilterOptions } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-workspace.types";
+import FilterOptionsPopover from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_components/FilterOptionsPopover";
 
 type Props = {
   title: string;
@@ -11,6 +13,11 @@ type Props = {
   sortBy: string;
   actionLabel: string;
   dateRangeLabel?: string;
+  searchValue: string;
+  onSearchChange: (value: string) => void;
+  filters: WorkspaceFilterState;
+  filterOptions?: GeneralBroadcastWorkspaceFilterOptions;
+  onApplyFilters: (filters: WorkspaceFilterState) => void;
 };
 
 export default function GeneralDataToolbar({
@@ -20,6 +27,11 @@ export default function GeneralDataToolbar({
   sortBy,
   actionLabel,
   dateRangeLabel,
+  searchValue,
+  onSearchChange,
+  filters,
+  filterOptions,
+  onApplyFilters,
 }: Props) {
   const [openFilter, setOpenFilter] = useState(false);
   const closeTimer = useRef<number | null>(null);
@@ -79,6 +91,8 @@ export default function GeneralDataToolbar({
           />
           <input
             type="text"
+            value={searchValue}
+            onChange={(e) => onSearchChange(e.target.value)}
             placeholder={searchPlaceholder}
             className="h-11 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:border-slate-300"
           />
@@ -101,6 +115,9 @@ export default function GeneralDataToolbar({
             {openFilter ? (
               <div className="absolute right-0 top-[calc(100%+12px)] z-50">
                 <FilterOptionsPopover
+                  value={filters}
+                  options={filterOptions}
+                  onApply={onApplyFilters}
                   onRequestClose={() => setOpenFilter(false)}
                 />
               </div>

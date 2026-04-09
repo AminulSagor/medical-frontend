@@ -2,31 +2,34 @@
 
 import React from "react";
 import { Eye, Pencil, Trash2 } from "lucide-react";
-import {
-  DraftRow,
-  PaginationState,
-} from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/types/general-newsletter-data.type";
 import GeneralDataPagination from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_components/general-data-pagination";
+import { PaginationState } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/types/general-newsletter-data.type";
+import {
+  formatAuthorInitials,
+  formatAuthorName,
+  formatDateLabel,
+  formatEstimatedReadMinutes,
+  formatTimeLabel,
+} from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_utils/general-broadcast-workspace.utils";
+import { GeneralBroadcastWorkspaceItem } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-workspace.types";
 
 type Props = {
-  rows: DraftRow[];
+  items: GeneralBroadcastWorkspaceItem[];
   pagination: PaginationState;
+  onPageChange: (page: number) => void;
 };
 
 function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
-function TypePill({ value }: { value: DraftRow["type"] }) {
-  const label =
-    value === "clinical_article" ? "Clinical Article" : "Special Report";
-
+function TypePill({ label, variant }: { label: string; variant: string }) {
   return (
     <span
       className={cx(
         "inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.08em]",
-        value === "clinical_article"
-          ? "bg-[#dff7f4] text-[#10b7aa]"
+        variant === "gray"
+          ? "bg-slate-100 text-slate-600"
           : "bg-[#efe2fb] text-[#8b3dff]",
       )}
     >
@@ -46,31 +49,47 @@ function Avatar({ name, initials }: { name: string; initials?: string }) {
   );
 }
 
-function DraftBadge() {
+function DraftBadge({ label }: { label: string }) {
   return (
     <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
-      Draft
+      {label}
     </span>
   );
 }
 
-function ActionButtons() {
+function ActionButtons({ item }: { item: GeneralBroadcastWorkspaceItem }) {
   return (
     <div className="flex items-center gap-3 text-slate-400">
-      <button type="button" className="hover:text-slate-600">
+      <button
+        type="button"
+        disabled={!item.actions?.edit}
+        className="hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+      >
         <Pencil size={15} />
       </button>
-      <button type="button" className="hover:text-slate-600">
+      <button
+        type="button"
+        disabled={!item.actions?.view}
+        className="hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+      >
         <Eye size={15} />
       </button>
-      <button type="button" className="hover:text-slate-600">
+      <button
+        type="button"
+        disabled={!item.actions?.delete}
+        className="hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+      >
         <Trash2 size={15} />
       </button>
     </div>
   );
 }
 
-export default function GeneralDraftsTable({ rows, pagination }: Props) {
+export default function GeneralDraftsTable({
+  items,
+  pagination,
+  onPageChange,
+}: Props) {
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
       <div className="overflow-x-auto">
@@ -102,50 +121,68 @@ export default function GeneralDraftsTable({ rows, pagination }: Props) {
           </thead>
 
           <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.id}
-                className="border-b border-slate-100 last:border-b-0"
-              >
-                <td className="px-4 py-5">
-                  <div className="font-semibold text-slate-800">
-                    {row.lastModifiedDate}
-                  </div>
-                  <div className="text-xs text-slate-400">
-                    {row.lastModifiedTime}
-                  </div>
-                </td>
+            {items.length > 0 ? (
+              items.map((item) => {
+                const authorName = formatAuthorName(item.author);
 
-                <td className="px-4 py-5">
-                  <TypePill value={row.type} />
-                </td>
+                return (
+                  <tr
+                    key={item.id}
+                    className="border-b border-slate-100 last:border-b-0"
+                  >
+                    <td className="px-4 py-5">
+                      <div className="font-semibold text-slate-800">
+                        {formatDateLabel(item.lastModified)}
+                      </div>
+                      <div className="text-xs text-slate-400">
+                        {formatTimeLabel(item.lastModified)}
+                      </div>
+                    </td>
 
-                <td className="px-4 py-5">
-                  <div className="max-w-[360px] font-semibold leading-6 text-slate-800">
-                    {row.articleTitle}
-                  </div>
-                </td>
+                    <td className="px-4 py-5">
+                      <TypePill
+                        label={item.type.displayLabel}
+                        variant={item.type.badgeVariant}
+                      />
+                    </td>
 
-                <td className="px-4 py-5">
-                  <Avatar
-                    name={row.author.name}
-                    initials={row.author.initials}
-                  />
-                </td>
+                    <td className="px-4 py-5">
+                      <div className="max-w-[360px] font-semibold leading-6 text-slate-800">
+                        {item.articleTitle || item.subjectLine || "—"}
+                      </div>
+                    </td>
 
-                <td className="px-4 py-5 text-sm font-medium text-slate-500">
-                  {row.estimatedReadMinutes} min
-                </td>
+                    <td className="px-4 py-5">
+                      <Avatar
+                        name={authorName}
+                        initials={formatAuthorInitials(item.author)}
+                      />
+                    </td>
 
-                <td className="px-4 py-5">
-                  <DraftBadge />
-                </td>
+                    <td className="px-4 py-5 text-sm font-medium text-slate-500">
+                      {formatEstimatedReadMinutes(item.estReadMinutes)}
+                    </td>
 
-                <td className="px-4 py-5">
-                  <ActionButtons />
+                    <td className="px-4 py-5">
+                      <DraftBadge label={item.status.displayLabel} />
+                    </td>
+
+                    <td className="px-4 py-5">
+                      <ActionButtons item={item} />
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="px-4 py-10 text-center text-sm font-medium text-slate-400"
+                >
+                  No drafts found.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
@@ -154,7 +191,10 @@ export default function GeneralDraftsTable({ rows, pagination }: Props) {
         <p className="text-xs italic text-slate-400">
           Showing recent work in progress drafts
         </p>
-        <GeneralDataPagination pagination={pagination} />
+        <GeneralDataPagination
+          pagination={pagination}
+          onPageChange={onPageChange}
+        />
       </div>
     </div>
   );
