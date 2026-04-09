@@ -174,6 +174,35 @@ export function getWorkspaceRelevantDate(
   return item.sentDate;
 }
 
+function extractTextValue(value: unknown, fallback = ""): string {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (typeof value === "number") {
+    return String(value);
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+
+    const candidates = [
+      record.fullName,
+      record.name,
+      record.displayName,
+      record.email,
+    ];
+
+    for (const candidate of candidates) {
+      if (typeof candidate === "string" && candidate.trim()) {
+        return candidate.trim();
+      }
+    }
+  }
+
+  return fallback;
+}
+
 export function filterWorkspaceItems(params: {
   items: GeneralBroadcastWorkspaceItem[];
   parentTab: GeneralDataParentTabKey;
@@ -190,7 +219,7 @@ export function filterWorkspaceItems(params: {
       item.type.displayLabel,
       item.type.code,
       item.target.displayLabel,
-      item.author,
+      formatAuthorName(item.author),
       item.status.displayLabel,
       item.frequency,
     ]
@@ -209,7 +238,7 @@ export function filterWorkspaceItems(params: {
       return false;
     }
 
-    if (filters.author && item.author !== filters.author) {
+    if (filters.author && formatAuthorName(item.author) !== filters.author) {
       return false;
     }
 
@@ -280,11 +309,11 @@ export function formatTimeLabel(value: string | null): string {
   }).format(new Date(value));
 }
 
-export function formatAuthorName(value: string | null): string {
-  return value?.trim() ? value : "System";
+export function formatAuthorName(value: unknown): string {
+  return extractTextValue(value, "System");
 }
 
-export function formatAuthorInitials(value: string | null): string {
+export function formatAuthorInitials(value: unknown): string {
   const name = formatAuthorName(value);
   const parts = name.split(" ").filter(Boolean);
 
@@ -292,7 +321,7 @@ export function formatAuthorInitials(value: string | null): string {
     return parts[0].slice(0, 2).toUpperCase();
   }
 
-  return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+  return `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase();
 }
 
 export function formatFrequencyLabel(
@@ -321,11 +350,11 @@ export function hasActiveClientFilters(
 ): boolean {
   return Boolean(
     searchQuery.trim() ||
-      filters.contentTypes.length ||
-      filters.author ||
-      filters.audienceSegment ||
-      filters.quickDateRange ||
-      filters.fromDate ||
-      filters.toDate,
+    filters.contentTypes.length ||
+    filters.author ||
+    filters.audienceSegment ||
+    filters.quickDateRange ||
+    filters.fromDate ||
+    filters.toDate,
   );
 }
