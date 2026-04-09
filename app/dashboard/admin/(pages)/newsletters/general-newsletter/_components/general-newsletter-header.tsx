@@ -2,12 +2,14 @@
 
 import BackButton from "@/components/buttons/back-button";
 import { Plus, Send } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
 export default function NewsletterHeader() {
+  const router = useRouter();
   return (
     <div className="flex items-start justify-between gap-4">
       {/* LEFT */}
@@ -27,7 +29,7 @@ export default function NewsletterHeader() {
 
       {/* RIGHT */}
       <div className="flex items-center gap-3">
-        <button
+        {/* <button
           type="button"
           className={cx(
             "inline-flex items-center justify-center gap-2",
@@ -42,7 +44,7 @@ export default function NewsletterHeader() {
         >
           <Send size={16} />
           Compose Blast
-        </button>
+        </button> */}
 
         <button
           type="button"
@@ -55,6 +57,11 @@ export default function NewsletterHeader() {
             "hover:opacity-95",
             "active:scale-95",
           )}
+          onClick={() =>
+            router.push(
+              "/dashboard/admin/newsletters/general-newsletter/create-broadcast",
+            )
+          }
         >
           <Plus size={16} />
           Create New
