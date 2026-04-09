@@ -1,5 +1,10 @@
+import { Suspense } from "react";
 import TopSellingProductsViewAllClient from "./_components/top-selling-products-view-all-client";
 
 export default function TopSellingProductsViewAllPage() {
-    return <TopSellingProductsViewAllClient />;
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <TopSellingProductsViewAllClient />
+        </Suspense>
+    );
 }

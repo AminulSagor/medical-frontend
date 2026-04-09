@@ -1,27 +1,62 @@
 "use client";
 
-import { useState } from "react";
-import BlogsRightSideCard from "./right-side-cards/blogs-card";
+import { useEffect, useState } from "react";
+import LatestDiscoveriesGrid from "./latest-discoveries-grid";
 import LatestDiscoveriesList from "./latest-discoveries-list";
-import LatestDiscoveriesGrid from "@/app/public/(pages)/blogs/_components/latest-discoveries-grid";
+import BlogsRightSideCard from "./right-side-cards/blogs-card";
+import { getPublicBlogs } from "@/service/public/blogs/blogs.service";
+import { mapApiBlogToUiBlog } from "../_utils/blogs.mapper";
+import type { BlogPost, TrendingItem } from "@/types/public/blogs/blog-type";
 
 type ViewMode = "grid" | "list";
 
-export default function LatestDiscoveriesSection() {
+type LatestDiscoveriesSectionProps = {
+  trendingItems: TrendingItem[];
+};
+
+export default function LatestDiscoveriesSection({
+  trendingItems,
+}: LatestDiscoveriesSectionProps) {
   const [view, setView] = useState<ViewMode>("grid");
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        setLoading(true);
+        const data = await getPublicBlogs({ page, limit: 10, sortBy: "latest" });
+        const mappedPosts = data.items.map(mapApiBlogToUiBlog);
+
+        if (page === 1) {
+          setPosts(mappedPosts);
+        } else {
+          setPosts((prev) => [...prev, ...mappedPosts]);
+        }
+
+        setHasMore(data.meta.page < data.meta.totalPages);
+      } catch (error) {
+        console.error("Failed to fetch blogs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBlogs();
+  }, [page]);
 
   return (
     <section className="w-full pt-10">
       <div className="padding">
         <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
           <div>
-            {/* header */}
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-[30px] leading-[34px] font-bold text-black">
                 Latest Discoveries
               </h2>
 
-              {/* view toggle (list will be used later) */}
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -35,7 +70,6 @@ export default function LatestDiscoveriesSection() {
                   aria-label="Grid view"
                   title="Grid view"
                 >
-                  {/* grid icon */}
                   <span className="text-light-slate/70">
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                       <path
@@ -58,13 +92,9 @@ export default function LatestDiscoveriesSection() {
                   aria-label="List view"
                   title="List view"
                 >
-                  {/* list icon */}
                   <span className="text-light-slate/70">
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                      <path
-                        d="M4 5h11v2H4V5Zm0 6h11v2H4v-2Z"
-                        fill="currentColor"
-                      />
+                      <path d="M4 5h11v2H4V5Zm0 6h11v2H4v-2Z" fill="currentColor" />
                     </svg>
                   </span>
                 </button>
@@ -72,25 +102,31 @@ export default function LatestDiscoveriesSection() {
             </div>
 
             <div className="mt-6">
-              {view === "grid" ? (
-                <LatestDiscoveriesGrid />
+              {loading && page === 1 ? (
+                <div className="py-12 text-center text-slate-500">Loading articles...</div>
+              ) : view === "grid" ? (
+                <LatestDiscoveriesGrid posts={posts} />
               ) : (
-                <LatestDiscoveriesList />
+                <LatestDiscoveriesList posts={posts} />
               )}
             </div>
 
             <div className="mt-10 flex justify-center">
-              <button
-                type="button"
-                className="rounded-full border border-light-slate/15 bg-white px-6 py-2.5 text-sm font-semibold text-light-slate hover:bg-light-slate/5 active:scale-95 transition"
-              >
-                Load More Articles
-              </button>
+              {hasMore ? (
+                <button
+                  type="button"
+                  onClick={() => setPage((prev) => prev + 1)}
+                  disabled={loading}
+                  className="rounded-full border border-light-slate/15 bg-white px-6 py-2.5 text-sm font-semibold text-light-slate transition hover:bg-light-slate/5 active:scale-95 disabled:opacity-50"
+                >
+                  {loading ? "Loading..." : "Load More Articles"}
+                </button>
+              ) : null}
             </div>
           </div>
 
           <div className="lg:pt-11">
-            <BlogsRightSideCard />
+            <BlogsRightSideCard trendingItems={trendingItems} />
           </div>
         </div>
       </div>

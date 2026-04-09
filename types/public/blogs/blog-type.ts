@@ -1,19 +1,19 @@
 export type BlogBadge = {
-  label: string; // e.g. "EDITOR'S PICK"
+  label: string;
 };
 
 export type BlogAuthor = {
   name: string;
-  avatarSrc?: string; // optional
+  avatarSrc?: string;
 };
 
 export type BlogPost = {
   id: string;
-  category: string; // keep flexible for API
+  category: string;
   title: string;
   excerpt: string;
-  dateLabel: string; // "Oct 24, 2023"
-  readTimeLabel?: string; // "8 min read"
+  dateLabel: string;
+  readTimeLabel?: string;
   coverImageSrc: string;
   coverImageAlt: string;
   author?: BlogAuthor;
@@ -24,18 +24,82 @@ export type BlogPost = {
 export type TrendingItem = {
   id: string;
   title: string;
-  readsLabel: string; // "3.2k reads"
+  readsLabel: string;
   href: string;
 };
 
 export type BlogPromoCard = {
-  pill: string; // e.g. "UPCOMING COURSE"
+  pill: string;
   title: string;
   subtitle: string;
-  dateLabel: string; // "NOV 12-14"
-  noteLabel: string; // "LIMITED SEATS"
-  ctaLabel: string; // "Register Now"
+  dateLabel: string;
+  noteLabel: string;
+  ctaLabel: string;
   href: string;
   backgroundImageSrc: string;
   backgroundImageAlt: string;
+};
+
+export type BlogCategoryApi = {
+  id: string;
+  name: string;
+};
+
+export type BlogAuthorApi = {
+  id: string;
+  fullLegalName: string;
+  professionalRole?: string;
+  profilePhotoUrl?: string;
+};
+
+export type BlogPostApi = {
+  id: string;
+  title: string;
+  description: string;
+  coverImageUrl: string;
+  categories: BlogCategoryApi[];
+  authors: BlogAuthorApi[];
+  readTimeMinutes: number;
+  readCount?: number;
+  readBy?: string;
+  publishedAt: string;
+  isFeatured: boolean;
+};
+
+export type BlogTagApi = {
+  id: string;
+  name: string;
+};
+
+export type BlogSeoApi = {
+  metaTitle?: string;
+  metaDescription?: string;
+};
+
+export type BlogDetailsApi = BlogPostApi & {
+  content: string;
+  tags: BlogTagApi[];
+  seo?: BlogSeoApi;
+};
+
+export type PaginationMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export type TrendingMeta = {
+  limit: number;
+  total: number;
+};
+
+export type GetBlogsResponseApi = {
+  items: BlogPostApi[];
+  meta: PaginationMeta;
+};
+
+export type GetTrendingBlogsResponseApi = {
+  items: BlogPostApi[];
+  meta: TrendingMeta;
 };

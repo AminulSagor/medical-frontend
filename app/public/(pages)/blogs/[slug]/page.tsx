@@ -1,29 +1,82 @@
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
 import BlogDetailsContent from "./_components/blog-details-content";
 import BlogDetailsHeader from "./_components/blog-details-header";
 import BlogDetailsHeroImage from "./_components/blog-details-hero-image";
 import BlogDetailsSidebar from "./_components/blog-details-sidebar";
+import {
+  getBlogById,
+  getTrendingPublicBlogs,
+} from "@/service/public/blogs/blogs.service";
+import { mapApiBlogToTrendingItem } from "../_utils/blogs.mapper";
+import type { TrendingItem } from "@/types/public/blogs/blog-type";
 
-export default function BlogDetailsPage() {
+type BlogDetailsPageProps = {
+  params: Promise<{ slug: string }>;
+};
+
+export async function generateMetadata({
+  params,
+}: BlogDetailsPageProps): Promise<Metadata> {
+  const { slug } = await params;
+
+  try {
+    const blog = await getBlogById(slug);
+
+    return {
+      title: blog.seo?.metaTitle || blog.title,
+      description: blog.seo?.metaDescription || blog.description,
+    };
+  } catch {
+    return {
+      title: "Blog Not Found",
+    };
+  }
+}
+
+export default async function BlogDetailsPage({
+  params,
+}: BlogDetailsPageProps) {
+  const { slug } = await params;
+
+  let blog;
+  let trendingItems: TrendingItem[] = [];
+
+  try {
+    blog = await getBlogById(slug);
+  } catch {
+    return notFound();
+  }
+
+  try {
+    const trendingResponse = await getTrendingPublicBlogs({ limit: 3 });
+    trendingItems = trendingResponse.items
+      .filter((item) => item.id !== blog.id)
+      .slice(0, 3)
+      .map(mapApiBlogToTrendingItem);
+  } catch (error) {
+    console.error("Failed to load trending blogs", error);
+  }
+
   return (
     <div className="min-h-screen bg-white">
-      {/* top spacing because navbar is fixed overlay */}
-      <div className="padding pt-28 pb-16">
-        {/* Header */}
-        <BlogDetailsHeader />
+      <div className="padding pb-16 pt-28">
+        <BlogDetailsHeader blog={blog} />
 
-        {/* Hero Image (FULL WIDTH) */}
         <div className="mt-10">
-          <BlogDetailsHeroImage />
+          <BlogDetailsHeroImage blog={blog} />
         </div>
 
-        {/* Content + Sidebar Grid */}
         <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_320px]">
           <div className="min-w-0">
-            <BlogDetailsContent />
+            <BlogDetailsContent blog={blog} />
           </div>
 
           <div className="lg:pt-4">
-            <BlogDetailsSidebar />
+            <BlogDetailsSidebar
+              author={blog.authors[0]}
+              trendingItems={trendingItems}
+            />
           </div>
         </div>
       </div>

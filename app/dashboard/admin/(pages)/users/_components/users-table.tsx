@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import type { UserTabKey } from "./users-tabs";
 
-
 export type UserStatus = "active" | "inactive";
 export type UserRole = "Student" | "Instructor" | "Admin";
 
@@ -26,6 +25,7 @@ export type UserRow = {
     status: UserStatus;
     courses: number;
     joined: string;
+    profilePhoto?: string | null;
 };
 
 function RoleBadge({ role }: { role: UserRole }) {
@@ -36,7 +36,10 @@ function RoleBadge({ role }: { role: UserRole }) {
                 Icon: GraduationCap,
             }
             : role === "Student"
-                ? { cls: "bg-blue-50 text-blue-700 ring-1 ring-blue-100", Icon: UserRound }
+                ? {
+                    cls: "bg-blue-50 text-blue-700 ring-1 ring-blue-100",
+                    Icon: UserRound,
+                }
                 : { cls: "bg-slate-900 text-white", Icon: Shield };
 
     const Icon = cfg.Icon;
@@ -56,6 +59,7 @@ function RoleBadge({ role }: { role: UserRole }) {
 
 function StatusCell({ status }: { status: UserStatus }) {
     const active = status === "active";
+
     return (
         <div className="inline-flex items-center gap-2 text-sm">
             <span
@@ -80,9 +84,10 @@ function CoursesPill({ n }: { n: number }) {
 }
 
 function getVisiblePages(page: number, totalPages: number): Array<number | "..."> {
-    if (totalPages <= 6) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (totalPages <= 6) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
 
-    const out: Array<number | "..."> = [];
     const nearStart = page <= 3;
     const nearEnd = page >= totalPages - 2;
 
@@ -113,7 +118,9 @@ function Pagination({
                 onClick={() => onPageChange(Math.max(1, page - 1))}
                 className={[
                     "grid h-9 w-9 place-items-center rounded-full transition",
-                    canPrev ? "bg-white text-slate-600 hover:bg-slate-50" : "text-slate-300 cursor-not-allowed",
+                    canPrev
+                        ? "bg-white text-slate-600 hover:bg-slate-50"
+                        : "cursor-not-allowed text-slate-300",
                 ].join(" ")}
                 aria-label="Previous page"
             >
@@ -148,7 +155,9 @@ function Pagination({
                 onClick={() => onPageChange(Math.min(totalPages, page + 1))}
                 className={[
                     "grid h-9 w-9 place-items-center rounded-full transition",
-                    canNext ? "bg-white text-slate-600 hover:bg-slate-50" : "text-slate-300 cursor-not-allowed",
+                    canNext
+                        ? "bg-white text-slate-600 hover:bg-slate-50"
+                        : "cursor-not-allowed text-slate-300",
                 ].join(" ")}
                 aria-label="Next page"
             >
@@ -168,25 +177,24 @@ export default function UsersTable({
     onPageChange,
     onView,
     onEdit,
+    isLoading = false,
 }: {
     items: UserRow[];
     tab: UserTabKey;
-
     page: number;
     pageSize: number;
     totalItems: number;
     totalPages: number;
     onPageChange: (p: number) => void;
-
     onView: (id: string) => void;
     onEdit: (id: string) => void;
+    isLoading?: boolean;
 }) {
     const from = totalItems === 0 ? 0 : (page - 1) * pageSize + 1;
     const to = Math.min(page * pageSize, totalItems);
 
     return (
         <div className="pt-4">
-            {/* Table grid lines */}
             <div className="overflow-x-auto">
                 <table className="w-full min-w-[920px]">
                     <thead>
@@ -202,91 +210,96 @@ export default function UsersTable({
                     </thead>
 
                     <tbody>
-                        {items.map((u) => (
-                            <tr key={u.id} className="border-b border-slate-200">
-                                <td className="px-5 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="relative h-9 w-9 overflow-hidden rounded-full ring-1 ring-slate-200">
-                                            <Image src="/photos/image.png" alt={u.name} fill className="object-cover" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <div className="truncate text-sm font-semibold text-slate-900">
-                                                {u.name}
-                                            </div>
-                                            <div className="truncate text-xs text-slate-500">{u.email}</div>
-                                        </div>
-                                    </div>
-                                </td>
-
-                                <td className="py-4">
-                                    <RoleBadge role={u.role} />
-                                </td>
-
-                                <td className="py-4 text-sm text-slate-700">{u.credential}</td>
-
-                                <td className="py-4">
-                                    <StatusCell status={u.status} />
-                                </td>
-
-                                <td className="py-4">
-                                    <CoursesPill n={u.courses} />
-                                </td>
-
-                                <td className="py-4 text-sm text-slate-700">{u.joined}</td>
-
-                                {/* Actions: no borders, no delete */}
-                                <td className="py-4 pr-5">
-                                    <div className="flex items-center justify-end gap-6 text-slate-600">
-                                        <button
-                                            type="button"
-                                            onClick={() => onView(u.id)}
-                                            className="hover:text-slate-900 transition"
-                                            aria-label="View"
-                                        >
-                                            <Eye size={18} />
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => onEdit(u.id)}
-                                            className="hover:text-slate-900 transition"
-                                            aria-label="Edit"
-                                        >
-                                            <Pencil size={18} />
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            className="hover:text-slate-900 transition"
-                                            aria-label="More"
-                                            onClick={() => console.log("more", { id: u.id, tab })}
-                                        >
-                                            <MoreVertical size={18} />
-                                        </button>
-                                    </div>
+                        {isLoading ? (
+                            <tr>
+                                <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-500">
+                                    Loading users...
                                 </td>
                             </tr>
-                        ))}
-
-                        {items.length === 0 && (
+                        ) : items.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-500">
                                     No users found.
                                 </td>
                             </tr>
+                        ) : (
+                            items.map((u) => (
+                                <tr key={u.id} className="border-b border-slate-200">
+                                    <td className="px-5 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="relative h-9 w-9 overflow-hidden rounded-full ring-1 ring-slate-200">
+                                                <Image
+                                                    src={u.profilePhoto || "/photos/image.png"}
+                                                    alt={u.name}
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="truncate text-sm font-semibold text-slate-900">
+                                                    {u.name}
+                                                </div>
+                                                <div className="truncate text-xs text-slate-500">{u.email}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <td className="py-4">
+                                        <RoleBadge role={u.role} />
+                                    </td>
+
+                                    <td className="py-4 text-sm text-slate-700">{u.credential}</td>
+
+                                    <td className="py-4">
+                                        <StatusCell status={u.status} />
+                                    </td>
+
+                                    <td className="py-4">
+                                        <CoursesPill n={u.courses} />
+                                    </td>
+
+                                    <td className="py-4 text-sm text-slate-700">{u.joined}</td>
+
+                                    <td className="py-4 pr-5">
+                                        <div className="flex items-center justify-end gap-6 text-slate-600">
+                                            <button
+                                                type="button"
+                                                onClick={() => onView(u.id)}
+                                                className="transition hover:text-slate-900"
+                                                aria-label="View"
+                                            >
+                                                <Eye size={18} />
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => onEdit(u.id)}
+                                                className="transition hover:text-slate-900"
+                                                aria-label="Edit"
+                                            >
+                                                <Pencil size={18} />
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                className="transition hover:text-slate-900"
+                                                aria-label="More"
+                                                onClick={() => console.log("more", { id: u.id, tab })}
+                                            >
+                                                <MoreVertical size={18} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
                         )}
                     </tbody>
                 </table>
             </div>
 
-            {/* Footer: showing + pagination */}
             <div className="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between">
                 <div className="text-xs text-slate-500">
-                    Showing{" "}
-                    <span className="font-medium text-slate-700">
-                        {from}-{to}
-                    </span>{" "}
-                    of{" "}
+                    Showing <span className="font-medium text-slate-700">{from}-{to}</span> of{" "}
                     <span className="font-medium text-slate-700">
                         {totalItems.toLocaleString()}
                     </span>{" "}

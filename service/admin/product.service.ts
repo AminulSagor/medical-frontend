@@ -8,6 +8,8 @@ import type {
   CreateCategoryRequest,
   ProductTag,
   CreateTagRequest,
+  AdminProductsListResponse,
+  AdminProductsListParams,
 } from "@/types/admin/product.types";
 
 // Get all categories with optional search
@@ -19,6 +21,18 @@ export const getProductCategories = async (
     { params: query ? { q: query } : {} }
   );
   return response.data;
+};
+
+// Get products list with pagination and filters
+export const getProductsList = async (
+  params?: AdminProductsListParams
+): Promise<AdminProductsListResponse> => {
+  const response = await serviceClient.get<{
+    message: string;
+    statusCode: number;
+    data: AdminProductsListResponse;
+  }>("/admin/products", { params });
+  return response.data.data;
 };
 
 // Create a new category

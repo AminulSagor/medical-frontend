@@ -124,3 +124,35 @@ export interface ProductTag {
 export interface CreateTagRequest {
   name: string;
 }
+
+// Product List Item (for GET /admin/products)
+export interface AdminProductListItem {
+  id: string;
+  name: string;
+  categoryId: string[];
+  sku: string;
+  stockQuantity: number;
+  isActive: boolean;
+  actualPrice: string;
+  offerPrice: string;
+  createdAt: string;
+  updatedAt?: string;
+  images?: string[];
+}
+
+// Products List Response
+export interface AdminProductsListResponse {
+  products: AdminProductListItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+// Products List Params
+export interface AdminProductsListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  categoryId?: string;
+  status?: 'active' | 'draft' | 'all';
+}

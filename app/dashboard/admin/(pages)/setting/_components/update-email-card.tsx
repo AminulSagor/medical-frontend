@@ -1,7 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AtSign } from "lucide-react";
+import { updateAdminEmail } from "@/service/admin/user-settings.service";
+import { getToken } from "@/utils/token/cookie_utils";
+import { decodeToken } from "@/utils/decode-token.utils";
 
 function CardShell({
   title,
@@ -53,11 +56,25 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
 }
 
 export default function UpdateEmailCard() {
-  const currentEmail = "admin@tal.edu"; // replace with real user email when you wire API
-
+  const [currentEmail, setCurrentEmail] = useState("");
   const [email, setEmail] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Load current email from JWT token on mount
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      const decoded = decodeToken(token);
+      if (decoded?.medicalEmail) {
+        setCurrentEmail(decoded.medicalEmail);
+      }
+    }
+    setLoading(false);
+  }, []);
 
   const canSubmit = useMemo(() => {
     if (!email || !confirm) return false;
@@ -70,11 +87,20 @@ export default function UpdateEmailCard() {
   async function onSubmit() {
     if (!canSubmit) return;
     setSubmitting(true);
+    setError(null);
+    setSuccess(false);
     try {
-      // TODO: call API here
-      await new Promise((r) => setTimeout(r, 600));
+      const response = await updateAdminEmail({
+        newEmail: email,
+      });
+      setCurrentEmail(response.medicalEmail || email);
       setEmail("");
       setConfirm("");
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err: any) {
+      console.error("Failed to update email:", err);
+      setError(err.response?.data?.message || "Failed to update email. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -86,7 +112,9 @@ export default function UpdateEmailCard() {
       subtitle={
         <>
           Current Email:{" "}
-          <span className="font-medium text-sky-600">{currentEmail}</span>
+          <span className="font-medium text-sky-600">
+            {loading ? "Loading..." : currentEmail}
+          </span>
         </>
       }
       icon={<AtSign size={18} />}
@@ -98,7 +126,9 @@ export default function UpdateEmailCard() {
             placeholder="Enter new email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            type="email"
+            type="text"
+            autoComplete="off"
+            spellCheck="false"
           />
         </div>
 
@@ -108,7 +138,8 @@ export default function UpdateEmailCard() {
             placeholder="Re-enter new email address"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            type="email"
+            type="text"
+            autoComplete="off"
           />
         </div>
       </div>
@@ -129,6 +160,14 @@ export default function UpdateEmailCard() {
 
         {email && confirm && email !== confirm && (
           <p className="mt-2 text-xs text-red-500">Emails do not match.</p>
+        )}
+
+        {error && (
+          <p className="mt-2 text-xs text-red-500">{error}</p>
+        )}
+
+        {success && (
+          <p className="mt-2 text-xs text-green-600">Email updated successfully!</p>
         )}
       </div>
     </CardShell>

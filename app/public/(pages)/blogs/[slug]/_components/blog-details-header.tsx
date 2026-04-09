@@ -1,7 +1,10 @@
 import { Linkedin, Mail, Twitter } from "lucide-react";
 import Link from "next/link";
+import { BlogDetailsApi } from "@/types/public/blogs/blog-type";
 
-export default function BlogDetailsHeader() {
+export default function BlogDetailsHeader({ blog }: { blog: BlogDetailsApi }) {
+    const author = blog.authors.length > 0 ? blog.authors[0] : null;
+
     return (
         <div>
             {/* breadcrumb */}
@@ -13,26 +16,26 @@ export default function BlogDetailsHeader() {
 
             {/* center title */}
             <div className="mt-6 text-center">
-                <div className="text-[11px] font-extrabold tracking-[0.22em] text-primary">
-                    EDITOR&apos;S PICK
-                </div>
+                {blog.isFeatured && (
+                    <div className="text-[11px] font-extrabold tracking-[0.22em] text-primary">
+                        EDITOR&apos;S PICK
+                    </div>
+                )}
 
                 <h1 className="mt-3 font-serif text-[34px] leading-[1.1] font-bold text-black md:text-[44px]">
-                    Revolutionizing Trauma
-                    <br />
-                    Simulation with Haptic
-                    <br />
-                    Feedback
+                    {blog.title}
                 </h1>
 
                 {/* meta row */}
                 <div className="mt-5 flex flex-wrap items-center justify-center gap-6 text-xs text-light-slate/60">
-                    <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-[#F2C94C]" />
-                        <span className="font-semibold text-light-slate/70">Dr. Alex Reid</span>
-                    </div>
-                    <span>Oct 24, 2023</span>
-                    <span>8 min read</span>
+                    {author && (
+                        <div className="flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full bg-[#F2C94C]" />
+                            <span className="font-semibold text-light-slate/70">{author.fullLegalName}</span>
+                        </div>
+                    )}
+                    <span>{new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(blog.publishedAt))}</span>
+                    <span>{blog.readTimeMinutes} min read</span>
                 </div>
 
                 {/* small share icons row */}

@@ -1,12 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { AxiosError } from "axios";
 import { Eye, EyeOff, Lock, CheckCircle2, Circle } from "lucide-react";
 import { securityPasswordSchema } from "@/schema/account-settings/security-password-schema";
 import type {
   SecurityPasswordDraft,
   SecurityPasswordPayload,
 } from "@/types/user/account-settings/security-password-type";
+import type { ChangePasswordErrorResponse } from "@/types/user/password.types";
+import { changeUserPassword } from "@/service/user/password.service";
 
 function cx(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(" ");
@@ -94,6 +97,9 @@ function Field({
 export default function SecurityPasswordFormClient() {
   const [form, setForm] = useState<SecurityPasswordDraft>({ ...EMPTY });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [apiError, setApiError] = useState("");
+  const [apiSuccess, setApiSuccess] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const [show, setShow] = useState({
     current: false,
     next: false,
@@ -135,21 +141,48 @@ export default function SecurityPasswordFormClient() {
   function onCancel() {
     setForm({ ...EMPTY });
     setErrors({});
+    setApiError("");
+    setApiSuccess("");
     setShow({ current: false, next: false, confirm: false });
   }
 
-  function onSave() {
-    // ✅ later: call backend API
+  async function onSave() {
+    setApiError("");
+    setApiSuccess("");
+
     const res = validateDraft(form);
     if (!res.ok) return;
 
-    // Convert validated form to backend payload shape
     const payload: SecurityPasswordPayload = {
       currentPassword: res.data.currentPassword,
       newPassword: res.data.newPassword,
     };
 
-    console.log("CHANGE PASSWORD payload:", payload);
+    try {
+      setIsSaving(true);
+
+      const response = await changeUserPassword(payload);
+
+      setApiSuccess(response.message || "Password changed successfully");
+      setForm({ ...EMPTY });
+      setErrors({});
+      setShow({ current: false, next: false, confirm: false });
+    } catch (error) {
+      const axiosError = error as AxiosError<ChangePasswordErrorResponse>;
+      const message =
+        axiosError.response?.data?.message || "Failed to change password";
+
+      if (message === "Current password is incorrect") {
+        setErrors((prev) => ({
+          ...prev,
+          currentPassword: message,
+        }));
+      } else {
+        setApiError(message);
+      }
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -187,6 +220,18 @@ export default function SecurityPasswordFormClient() {
           onToggle={() => setShow((p) => ({ ...p, confirm: !p.confirm }))}
           error={errors.confirmNewPassword}
         />
+
+        {apiError ? (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[12px] text-rose-700">
+            {apiError}
+          </div>
+        ) : null}
+
+        {apiSuccess ? (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[12px] text-emerald-700">
+            {apiSuccess}
+          </div>
+        ) : null}
 
         <div className="pt-1">
           <div className="text-[12px] font-semibold text-slate-700">
@@ -237,9 +282,10 @@ export default function SecurityPasswordFormClient() {
           <button
             type="button"
             onClick={onSave}
-            className="h-10 rounded-xl bg-sky-500 px-5 text-[12px] font-extrabold text-white shadow-[0_10px_18px_rgba(14,165,233,0.25)] hover:opacity-95"
+            disabled={isSaving}
+            className="h-10 rounded-xl bg-sky-500 px-5 text-[12px] font-extrabold text-white shadow-[0_10px_18px_rgba(14,165,233,0.25)] hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            Save Changes
+            {isSaving ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </div>

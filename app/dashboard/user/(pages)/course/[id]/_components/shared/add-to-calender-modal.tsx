@@ -85,7 +85,7 @@ export default function AddToCalendarModalClient({
               {imageSrc ? (
                 <Image
                   src={imageSrc}
-                  alt=""
+                  alt="Event cover image"
                   fill
                   priority
                   className="object-cover"

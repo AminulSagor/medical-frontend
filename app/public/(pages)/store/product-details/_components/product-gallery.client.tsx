@@ -90,7 +90,7 @@ export default function ProductGalleryClient({
               <div className="relative aspect-square w-full">
                 <Image
                   src={t.imageUrl}
-                  alt=""
+                  alt={`${product.title} - Thumbnail ${product.media.thumbnails.indexOf(t) + 1}`}
                   fill
                   className="object-cover"
                   sizes="25vw"

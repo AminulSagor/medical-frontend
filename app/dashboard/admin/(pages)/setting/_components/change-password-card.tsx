@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Eye, EyeOff, KeyRound, CheckCircle2 } from "lucide-react";
+import { updateAdminPassword } from "@/service/admin/user-settings.service";
 
 function CardShell({
   title,
@@ -85,6 +86,8 @@ export default function ChangePasswordCard() {
   const [confirm, setConfirm] = useState("");
   const [showCurrent, setShowCurrent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const checks = useMemo(() => {
     const min8 = next.length >= 8;
@@ -105,12 +108,21 @@ export default function ChangePasswordCard() {
   async function onSubmit() {
     if (!canSubmit) return;
     setSubmitting(true);
+    setError(null);
+    setSuccess(false);
     try {
-      // TODO: call API here
-      await new Promise((r) => setTimeout(r, 700));
+      await updateAdminPassword({
+        currentPassword: current,
+        newPassword: next,
+      });
       setCurrent("");
       setNext("");
       setConfirm("");
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err: any) {
+      console.error("Failed to update password:", err);
+      setError(err.response?.data?.message || "Failed to update password. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -183,6 +195,14 @@ export default function ChangePasswordCard() {
           >
             {submitting ? "Resetting..." : "Reset Password"}
           </button>
+
+          {error && (
+            <p className="mt-2 text-xs text-red-500">{error}</p>
+          )}
+
+          {success && (
+            <p className="mt-2 text-xs text-green-600">Password updated successfully!</p>
+          )}
         </div>
 
         {/* Right requirements */}

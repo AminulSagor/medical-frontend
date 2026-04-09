@@ -1,43 +1,48 @@
-import Image from "next/image";
 import Link from "next/link";
 import Card from "@/components/cards/card";
-import { IMAGE } from "@/constant/image-config";
+import type { BlogAuthorApi } from "@/types/public/blogs/blog-type";
+import FallbackNetworkImage from "../../../_components/fallback-network-image";
 
-export default function AuthorCard() {
+type AuthorCardProps = {
+  author?: BlogAuthorApi;
+};
+
+export default function AuthorCard({ author }: AuthorCardProps) {
+  if (!author) {
+    return null;
+  }
+
   return (
-    <Card className="p-7 rounded-[22px] border border-light-slate/10 shadow-sm">
-      {/* top row */}
+    <Card className="rounded-[22px] border border-light-slate/10 p-7 shadow-sm">
       <div className="flex items-start gap-5">
         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-4 border-white shadow-sm">
-          <Image
-            src={IMAGE.user}
-            alt="Author"
-            fill
-            sizes="56px"
+          <FallbackNetworkImage
+            src={author.profilePhotoUrl}
+            alt={author.fullLegalName}
             className="object-cover"
+            iconSize={18}
           />
         </div>
 
         <div className="min-w-0">
           <h3 className="font-serif text-[22px] leading-[26px] font-bold text-black">
-            Dr. Alan Grant
+            {author.fullLegalName}
           </h3>
-          <p className="mt-1 text-[12px] font-extrabold tracking-[0.22em] text-primary uppercase">
-            CHIEF EDITOR
-          </p>
+          {author.professionalRole ? (
+            <p className="mt-1 text-[12px] font-extrabold tracking-[0.22em] uppercase text-primary">
+              {author.professionalRole}
+            </p>
+          ) : null}
         </div>
       </div>
 
-      {/* bio */}
       <p className="mt-5 text-[16px] leading-[26px] text-light-slate/70">
-        Clinical Director at the Center for Advanced Medical Simulation.
-        Specialist in trauma surgery and educational methodology.
+        Explore more published articles from our public blog library.
       </p>
 
-      {/* link */}
       <Link
         href="/public/blogs"
-        className="mt-6 inline-flex items-center gap-2 text-[16px] font-bold text-primary hover:opacity-80 transition"
+        className="mt-6 inline-flex items-center gap-2 text-[16px] font-bold text-primary transition hover:opacity-80"
       >
         View all articles <span aria-hidden>→</span>
       </Link>

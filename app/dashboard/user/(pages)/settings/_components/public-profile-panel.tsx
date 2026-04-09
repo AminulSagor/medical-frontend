@@ -1,16 +1,10 @@
-// app/(user)/(registered-user)/settings/_components/public-profile-panel.tsx
-import type {
-  AccountProfile,
-  RoleOption,
-} from "@/types/user/account-settings/account-settings-type";
+import type { AccountProfile } from "@/types/user/account-settings/account-settings-type";
 import PublicProfileFormClient from "./public-profile-form";
 
 export default function PublicProfilePanel({
   profile,
-  roleOptions,
 }: {
   profile: AccountProfile;
-  roleOptions: RoleOption[];
 }) {
   return (
     <div>
@@ -24,7 +18,7 @@ export default function PublicProfilePanel({
       </div>
 
       <div className="mt-5">
-        <PublicProfileFormClient initial={profile} roleOptions={roleOptions} />
+        <PublicProfileFormClient initial={profile} />
       </div>
     </div>
   );

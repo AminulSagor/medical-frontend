@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "react-day-picker/dist/style.css";
 import "./globals.css";
+import { CartProvider } from "@/app/public/context/cart-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-slate-50 antialiased`}
       >
-        {children}
+        <CartProvider>{children}</CartProvider>
       </body>
     </html>
   );

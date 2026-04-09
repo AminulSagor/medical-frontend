@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import CourseAboutAndInfo from "@/app/(user)/(not-register)/public/(pages)/courses/_components/course-about-and-info";
-import CourseDetailsHeroSection from "@/app/(user)/(not-register)/public/(pages)/courses/_components/course-details-hero-section";
-import CourseInstructors from "@/app/(user)/(not-register)/public/(pages)/courses/_components/course-instructors";
-import CourseItinerary from "@/app/(user)/(not-register)/public/(pages)/courses/_components/course-itinerary";
-import CoursePricingCard from "@/app/(user)/(not-register)/public/(pages)/courses/_components/course-pricing-card";
-import CourseTrustedByRow from "@/app/(user)/(not-register)/public/(pages)/courses/_components/course-trusted-by-row";
 import { CourseDetails } from "@/app/public/types/course.details.types";
 import { getPublicWorkshopById } from "@/service/public/workshop.service";
 import { transformWorkshopToDetails } from "@/utils/workshop/transform-workshop-details";
 import { IMAGE } from "@/constant/image-config";
+import CourseDetailsHeroSection from "../../_components/course-details-hero-section";
+import CourseAboutAndInfo from "../../_components/course-about-and-info";
+import CourseInstructors from "../../_components/course-instructors";
+import CourseItinerary from "../../_components/course-itinerary";
+import CoursePricingCard from "../../_components/course-pricing-card";
+import CourseTrustedByRow from "../../_components/course-trusted-by-row";
 
 export default function WorkshopDetailsPage() {
   const params = useParams();

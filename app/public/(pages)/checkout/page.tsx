@@ -1,7 +1,7 @@
-import CheckOutHeader from "@/app/(user)/(not-register)/public/(pages)/checkout/_components/checkout-header";
-import OrderReviewCard from "@/app/(user)/(not-register)/public/(pages)/checkout/_components/order-review-card";
-import PaymentMethodCard from "@/app/(user)/(not-register)/public/(pages)/checkout/_components/payment-method-card";
-import ShippingAddressCard from "@/app/(user)/(not-register)/public/(pages)/checkout/_components/shipping-address-card";
+import CheckOutHeader from "@/app/public/(pages)/checkout/_components/checkout-header";
+import OrderReviewCard from "@/app/public/(pages)/checkout/_components/order-review-card";
+import PaymentMethodCard from "@/app/public/(pages)/checkout/_components/payment-method-card";
+import ShippingAddressCard from "@/app/public/(pages)/checkout/_components/shipping-address-card";
 
 const page = () => {
   return (

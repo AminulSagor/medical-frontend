@@ -34,7 +34,7 @@ function getCategoryIcon(name: string) {
 }
 
 function SidebarShell({ children }: { children: React.ReactNode }) {
-  return <div className="space-y-6">{children}</div>;
+  return <div className="space-y-4 md:space-y-6">{children}</div>;
 }
 
 function SectionHeader({
@@ -46,7 +46,7 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <div className="text-base font-bold text-slate-900">{title}</div>
+      <div className="text-sm md:text-base font-bold text-slate-900">{title}</div>
       {right}
     </div>
   );
@@ -70,14 +70,14 @@ function CategoryRow({
       type="button"
       onClick={onClick}
       className={[
-        "w-full flex items-center justify-between rounded-2xl px-4 py-1 transition",
+        "w-full flex items-center justify-between rounded-xl md:rounded-2xl px-3 md:px-4 py-1.5 md:py-2 transition text-sm md:text-base",
         active ? "bg-primary/10 ring-1 ring-primary/25" : "hover:bg-slate-50",
       ].join(" ")}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3 min-w-0">
         <span
           className={[
-            "flex h-9 w-9 items-center justify-center rounded-xl",
+            "flex h-7 md:h-9 w-7 md:w-9 items-center justify-center rounded-lg md:rounded-xl flex-shrink-0",
             active ? "bg-primary/10 text-primary" : "text-slate-500",
           ].join(" ")}
         >
@@ -86,7 +86,7 @@ function CategoryRow({
 
         <span
           className={[
-            "text-sm font-bold",
+            "text-xs md:text-sm font-bold truncate",
             active ? "text-primary" : "text-slate-700",
           ].join(" ")}
         >
@@ -96,7 +96,7 @@ function CategoryRow({
 
       <span
         className={[
-          "text-xs font-extrabold",
+          "text-xs font-extrabold flex-shrink-0 ml-2",
           active ? "text-primary" : "text-slate-400",
         ].join(" ")}
       >
@@ -175,18 +175,18 @@ function BrandRow({
     <button
       type="button"
       onClick={onClick}
-      className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+      className="w-full flex items-center gap-2 md:gap-3 rounded-lg md:rounded-2xl border border-slate-200 bg-white px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
     >
       <span
         className={[
-          "flex h-5 w-5 items-center justify-center rounded-full border",
+          "flex h-4 md:h-5 w-4 md:w-5 items-center justify-center rounded-full border flex-shrink-0",
           checked ? "bg-primary border-primary" : "bg-white border-slate-300",
         ].join(" ")}
       >
-        {checked ? <span className="h-2 w-2 rounded-full bg-white" /> : null}
+        {checked ? <span className="h-1.5 md:h-2 w-1.5 md:w-2 rounded-full bg-white" /> : null}
       </span>
 
-      {label}
+      <span className="truncate">{label}</span>
     </button>
   );
 }
@@ -222,10 +222,10 @@ export default function FiltersSidebar({
     fetchFilters();
   }, []);
 
-  const handleCategoryClick = (categoryName: string) => {
+  const handleCategoryClick = (categoryId: string) => {
     onFiltersChange({
       ...filters,
-      category: filters.category === categoryName ? "All" : categoryName,
+      categoryId: filters.categoryId === categoryId ? "All" : categoryId,
     });
   };
 
@@ -237,7 +237,7 @@ export default function FiltersSidebar({
   };
 
   const handleClearCategories = () => {
-    onFiltersChange({ ...filters, category: "All" });
+    onFiltersChange({ ...filters, categoryId: "All" });
   };
 
   const handleClearBrands = () => {
@@ -262,39 +262,39 @@ export default function FiltersSidebar({
 
   return (
     <SidebarShell>
-      <Card>
+      <Card className="p-4 md:p-6">
         <SectionHeader
           title="Categories"
           right={
             <button
               type="button"
               onClick={handleClearCategories}
-              className="text-sm font-semibold text-slate-400 hover:opacity-80"
+              className="text-xs md:text-sm font-semibold text-slate-400 hover:opacity-80"
             >
               Clear
             </button>
           }
         />
 
-        <div className="mt-4 space-y-2">
+        <div className="mt-3 md:mt-4 space-y-1 max-h-64 md:max-h-none overflow-y-auto">
           {categories.map((c) => (
             <CategoryRow
-              key={c.name}
-              active={filters.category === c.name}
+              key={c.id || c.name}
+              active={filters.categoryId === (c.id || c.name)}
               icon={getCategoryIcon(c.name)}
               label={c.name}
               count={c.productCount}
-              onClick={() => handleCategoryClick(c.name)}
+              onClick={() => handleCategoryClick(c.id || c.name)}
             />
           ))}
         </div>
       </Card>
 
-      <Card className="rounded-3xl p-6">
+      <Card className="p-4 md:p-6 rounded-2xl md:rounded-3xl">
         <SectionHeader
           title="Price Range"
           right={
-            <div className="text-sm font-extrabold text-primary">
+            <div className="text-xs md:text-sm font-extrabold text-primary">
               ${filters.minPrice} - ${filters.maxPrice}
             </div>
           }
@@ -310,7 +310,7 @@ export default function FiltersSidebar({
         />
       </Card>
 
-      <Card className="rounded-3xl p-6">
+      <Card className="p-4 md:p-6 rounded-2xl md:rounded-3xl">
         <SectionHeader
           title="Brands"
           right={
@@ -318,14 +318,14 @@ export default function FiltersSidebar({
               <button
                 type="button"
                 onClick={handleClearBrands}
-                className="text-sm font-semibold text-slate-400 hover:opacity-80"
+                className="text-xs md:text-sm font-semibold text-slate-400 hover:opacity-80"
               >
                 Clear
               </button>
             ) : null
           }
         />
-        <div className="mt-4 space-y-2">
+        <div className="mt-3 md:mt-4 space-y-1 max-h-48 md:max-h-none overflow-y-auto">
           {brands.map((b) => (
             <BrandRow
               key={b}

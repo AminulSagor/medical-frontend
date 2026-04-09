@@ -173,7 +173,7 @@ export default function InternalAdministrativeNotesModal({
                                         // eslint-disable-next-line @next/next/no-img-element
                                         <img
                                             src={avatarSrc}
-                                            alt=""
+                                            alt="User avatar"
                                             className="h-full w-full object-cover"
                                             draggable={false}
                                         />

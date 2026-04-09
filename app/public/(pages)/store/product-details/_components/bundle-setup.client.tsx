@@ -69,7 +69,7 @@ export default function BundleSetupClient({
                 <div className="relative h-12 w-12 overflow-hidden rounded-2xl bg-light-slate/10">
                   <Image
                     src={it.imageUrl}
-                    alt=""
+                    alt={`Bundle item - ${it.title}`}
                     fill
                     className="object-cover"
                   />
