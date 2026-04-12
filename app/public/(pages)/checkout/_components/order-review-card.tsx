@@ -1,39 +1,159 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Button from "@/components/buttons/button";
 import Card from "@/components/cards/card";
 import { IMAGE } from "@/constant/image-config";
-import { Lock, ShieldCheck } from "lucide-react";
+import { Lock, ShieldCheck, Loader2 } from "lucide-react";
+import { useCart } from "@/app/public/context/cart-context";
+import { OrderSummaryResponse } from "@/app/public/types/order-summary.types";
+import { getOrderSummary } from "@/service/user/order-summary.service";
+import {
+  createCheckoutSession,
+  getCheckoutRedirectUrl,
+} from "@/service/user/checkout-session.service";
+import { UpdateShippingAddressPayload } from "@/app/public/types/shipping-address.types";
+import { updateShippingAddress } from "@/service/user/shipping-address.service";
 
 type OrderItemData = {
+  id: string;
   title: string;
   qty: number;
   price: string;
-  imageSrc?: string;
+  imageSrc?: string | null;
 };
 
-const OrderReviewCard = () => {
-  const items: OrderItemData[] = [
-    {
-      title: "Nitrile Exam Gloves",
-      qty: 1,
-      price: "$12.99",
-      imageSrc: IMAGE.hand_gloves,
-    },
-    {
-      title: "Digital Otoscope Pro",
-      qty: 1,
-      price: "$145.00",
-      imageSrc: IMAGE.hand_gloves,
-    },
-    {
-      title: "Kelly Forceps - Curved",
-      qty: 2,
-      price: "$37.50",
-      imageSrc: IMAGE.hand_gloves,
-    },
-  ];
+function formatMoney(value: string | number | null | undefined) {
+  const numericValue =
+    typeof value === "number" ? value : Number.parseFloat(value ?? "0");
+
+  if (Number.isNaN(numericValue)) return "$0.00";
+
+  return `$${numericValue.toFixed(2)}`;
+}
+
+type OrderReviewCardProps = {
+  shippingAddress: UpdateShippingAddressPayload;
+};
+
+const OrderReviewCard = ({ shippingAddress }: OrderReviewCardProps) => {
+  const { items } = useCart();
+  const [summary, setSummary] = useState<OrderSummaryResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [isStartingCheckout, setIsStartingCheckout] = useState(false);
+
+  useEffect(() => {
+    if (items.length === 0) {
+      setSummary(null);
+      return;
+    }
+
+    const fetchOrderSummary = async () => {
+      setLoading(true);
+
+      try {
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+        const validItems = items.filter((item) =>
+          uuidRegex.test(item.productId),
+        );
+
+        if (validItems.length === 0) {
+          setSummary(null);
+          return;
+        }
+
+        const data = await getOrderSummary({
+          items: validItems.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+        });
+
+        setSummary(data);
+      } catch (error) {
+        console.error("Failed to fetch order summary", error);
+        setSummary(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrderSummary();
+  }, [items]);
+
+  const handlePay = async () => {
+    if (!summary?.orderSummaryId) {
+      console.error("orderSummaryId is missing");
+      return;
+    }
+
+    if (
+      !shippingAddress.fullName?.trim() ||
+      !shippingAddress.addressLine1?.trim() ||
+      !shippingAddress.city?.trim() ||
+      !shippingAddress.state?.trim() ||
+      !shippingAddress.zipCode?.trim()
+    ) {
+      console.error("Shipping address is incomplete");
+      return;
+    }
+
+    try {
+      setIsStartingCheckout(true);
+
+      const shippingResult = await updateShippingAddress({
+        fullName: shippingAddress.fullName.trim(),
+        addressLine1: shippingAddress.addressLine1.trim(),
+        addressLine2: shippingAddress.addressLine2?.trim() || null,
+        city: shippingAddress.city.trim(),
+        state: shippingAddress.state.trim(),
+        zipCode: shippingAddress.zipCode.trim(),
+      });
+
+      if (!shippingResult.isComplete) {
+        throw new Error("Shipping address is incomplete");
+      }
+
+      const origin = window.location.origin;
+
+      const response = await createCheckoutSession({
+        domainType: "product",
+        orderSummaryId: summary.orderSummaryId,
+        successUrl: `${origin}/public/order-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${origin}/public/checkout`,
+      });
+
+      const redirectUrl = getCheckoutRedirectUrl(response);
+
+      if (!redirectUrl) {
+        throw new Error("No checkout url returned from API");
+      }
+
+      window.location.href = redirectUrl;
+    } catch (error) {
+      console.error("Failed to start checkout session", error);
+    } finally {
+      setIsStartingCheckout(false);
+    }
+  };
+
+  const orderItems: OrderItemData[] =
+    summary?.items.map((item) => ({
+      id: item.productId,
+      title: item.name,
+      qty: item.quantity,
+      price: formatMoney(item.lineTotal),
+      imageSrc: item.photo,
+    })) ?? [];
+
+  const subtotal = formatMoney(summary?.subtotal);
+  const shippingNumber = Number(summary?.estimatedShipping ?? 0);
+  const shipping = shippingNumber === 0 ? "Free" : formatMoney(shippingNumber);
+  const tax = formatMoney(summary?.estimatedTax);
+  const total = formatMoney(summary?.orderTotal);
 
   return (
     <Card>
@@ -43,34 +163,50 @@ const OrderReviewCard = () => {
 
       <div className="mt-4 h-px bg-light-slate/20" />
 
-      {/* Items */}
-      <div className="mt-5 space-y-4">
-        {items.map((it, idx) => (
-          <OrderItem key={`${it.title}-${idx}`} {...it} />
-        ))}
+      <div className="mt-5">
+        {loading ? (
+          <div className="flex items-center justify-center py-10">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        ) : orderItems.length > 0 ? (
+          <div className="space-y-4">
+            {orderItems.map((it) => (
+              <OrderItem key={it.id} {...it} />
+            ))}
+          </div>
+        ) : (
+          <div className="py-6 text-sm text-slate-500">No items to review.</div>
+        )}
       </div>
 
       <div className="mt-6 h-px bg-light-slate/20" />
 
-      {/* Summary */}
       <div className="mt-4 space-y-2 text-sm">
-        <Row label="Subtotal" value="$195.49" />
-        <Row label="Shipping" value="Free" highlight />
-        <Row label="Tax" value="$15.64" />
+        <Row label="Subtotal" value={subtotal} />
+        <Row
+          label="Shipping"
+          value={shipping}
+          highlight={shippingNumber === 0}
+        />
+        <Row label="Tax" value={tax} />
       </div>
 
       <div className="mt-6 h-px bg-light-slate/20" />
 
-      {/* Total */}
       <div className="mt-5 flex items-end justify-between">
         <span className="font-semibold text-slate-900">Total</span>
-        <span className="text-2xl font-semibold text-slate-900">$211.13</span>
+        <span className="text-2xl font-semibold text-slate-900">{total}</span>
       </div>
 
-      {/* Pay Button */}
-      <Button className="mt-5 w-full justify-center rounded-full py-3 text-base">
+      <Button
+        disabled={
+          loading || isStartingCheckout || orderItems.length === 0 || !summary
+        }
+        onClick={handlePay}
+        className="mt-5 w-full justify-center rounded-full py-3 text-base"
+      >
         <Lock size={18} />
-        Pay $211.13
+        {isStartingCheckout ? "Redirecting..." : `Pay ${total}`}
       </Button>
 
       <p className="mt-3 text-center text-xs text-slate-400">
@@ -78,7 +214,6 @@ const OrderReviewCard = () => {
         Service and Privacy Policy.
       </p>
 
-      {/* Trust Row */}
       <div className="mt-6 flex items-center justify-center gap-6 border-t border-light-slate/20 pt-4 text-[10px] font-semibold tracking-widest text-slate-400">
         <TrustItem label="SSL SECURE" />
         <TrustItem label="MCAFEE" />
@@ -93,7 +228,7 @@ const OrderItem = ({ title, qty, price, imageSrc }: OrderItemData) => {
     <div className="flex items-start gap-3">
       <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-light-slate">
         <Image
-          src={imageSrc ?? IMAGE.hand_gloves}
+          src={imageSrc || IMAGE.hand_gloves}
           alt={title}
           width={48}
           height={48}
