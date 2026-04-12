@@ -93,6 +93,10 @@ export default function ProcessBulkModal({
                         {i === breakdown.length - 1 ? null : null}
                       </div>
                     ))}
+
+                    {breakdown.length === 0 ? (
+                      <p className="text-xs text-slate-500">No selected segment data.</p>
+                    ) : null}
                   </div>
                 </div>
               </div>

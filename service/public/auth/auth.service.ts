@@ -46,6 +46,7 @@ export const verifyOtp = async (
 
 export const loginUser = async (data: LoginRequest): Promise<LoginResponse> => {
   const response = await serviceClient.post<LoginResponse>(`/auth/login`, data);
+  console.log("📥 LOGIN RESPONSE:", response.data);
   return response.data;
 };
 

@@ -1,26 +1,9 @@
+import type { UnsubscriptionDetailResponseDto } from "@/types/admin/newsletter/general-newsletter/subscribes/unsubscription-management.types";
+
 export type ClinicalActivityItem = {
-  id: string;
-  title: string;
-  subtitle: string;
-  isActive?: boolean; // first one green dot
+  label: string;
+  value: string;
+  active?: boolean;
 };
 
-export type UnsubscriptionDetails = {
-  id: string;
-
-  subscriberName: string;
-  subscriberEmail: string;
-
-  roleTag?: string; // "CHIEF ANESTHESIOLOGIST"
-
-  avatarMode?: "logo" | "initials";
-  initials?: string;
-
-  requestInfo: {
-    dateLabel: string;
-    sourceLabel: string;
-    feedback: string;
-  };
-
-  clinicalActivityHistory: ClinicalActivityItem[];
-};
+export type UnsubscriptionDetails = UnsubscriptionDetailResponseDto;

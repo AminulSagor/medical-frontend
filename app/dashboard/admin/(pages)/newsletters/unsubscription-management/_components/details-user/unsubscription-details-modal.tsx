@@ -16,12 +16,16 @@ export default function UnsubscriptionDetailsModal({
   onClose,
   onConfirm,
   onDismiss,
+  isConfirming = false,
+  confirmError,
 }: {
   open: boolean;
   data: UnsubscriptionDetails | null;
   onClose: () => void;
   onConfirm?: (id: string) => void;
   onDismiss?: (id: string) => void;
+  isConfirming?: boolean;
+  confirmError?: string | null;
 }) {
   if (!open || !data) return null;
 
@@ -47,7 +51,7 @@ export default function UnsubscriptionDetailsModal({
               <p className="mt-1 text-sm text-slate-500">
                 Reviewing request from{" "}
                 <span className="font-semibold text-teal-600">
-                  {data.subscriberName}
+                  {data.subscriber.fullName}
                 </span>
               </p>
             </div>
@@ -79,11 +83,13 @@ export default function UnsubscriptionDetailsModal({
             <div className="flex items-center justify-end gap-4">
               <button
                 type="button"
-                onClick={() => onDismiss?.(data.id)}
+                onClick={() => onDismiss?.(data.request.id)}
+                disabled={isConfirming}
                 className={cn(
                   "h-12 rounded-2xl px-6 text-sm font-semibold",
                   "bg-white text-slate-700 ring-1 ring-slate-200/70",
-                  "hover:bg-slate-50"
+                  "hover:bg-slate-50",
+                  isConfirming && "cursor-not-allowed opacity-60"
                 )}
               >
                 Keep Subscribed (Dismiss Request)
@@ -91,16 +97,22 @@ export default function UnsubscriptionDetailsModal({
 
               <button
                 type="button"
-                onClick={() => onConfirm?.(data.id)}
+                onClick={() => onConfirm?.(data.request.id)}
+                disabled={isConfirming}
                 className={cn(
                   "h-12 rounded-2xl px-7 text-sm font-bold text-white",
                   "bg-teal-500 hover:bg-teal-600",
-                  "shadow-[0_16px_35px_rgba(20,184,166,0.25)]"
+                  "shadow-[0_16px_35px_rgba(20,184,166,0.25)]",
+                  isConfirming && "cursor-not-allowed opacity-60"
                 )}
               >
-                Confirm Unsubscription
+                {isConfirming ? "Confirming..." : "Confirm Unsubscription"}
               </button>
             </div>
+
+            {confirmError ? (
+              <p className="mt-3 text-right text-sm text-rose-600">{confirmError}</p>
+            ) : null}
           </div>
         </div>
       </div>

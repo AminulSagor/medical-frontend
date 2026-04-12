@@ -1,41 +1,20 @@
+import type {
+  UnsubscribeRequestListItemDto,
+  UnsubscribeRequestsListResponseDto,
+} from "@/types/admin/newsletter/general-newsletter/subscribes/unsubscription-management.types";
+
 export type UnsubTabKey = "requested" | "unsubscribed";
 
-export type UnsubMetric = {
-  pendingRequests: number;
-  pendingSubLabel?: string;
+export type UnsubMetric = UnsubscribeRequestsListResponseDto["cards"];
 
-  totalUnsubscribed: number;
-  totalUnsubscribedSubLabel?: string;
+export type UnsubRow = UnsubscribeRequestListItemDto;
 
-  avgResponseTimeLabel: string;
-  avgResponseTimeSubLabel?: string;
-};
-
-export type UnsubSourceTag = {
-  id: string;
-  label: string;
-  tone?: "teal" | "slate";
-};
-
-export type UnsubStatus = "pending" | "processed";
-
-export type UnsubRow = {
-  id: string;
-  subscriberName: string;
-  subscriberEmail: string;
-  avatarUrl?: string;
-  initials?: string;
-
-  requestDateLabel: string;
-  source: UnsubSourceTag;
-
-  feedback?: string;
-
-  status: UnsubStatus;
-};
+export type UnsubMeta = UnsubscribeRequestsListResponseDto["meta"];
 
 export type UnsubPageData = {
   metrics: UnsubMetric;
   requested: UnsubRow[];
+  requestedMeta: UnsubMeta;
   unsubscribed: UnsubRow[];
+  unsubscribedMeta: UnsubMeta;
 };

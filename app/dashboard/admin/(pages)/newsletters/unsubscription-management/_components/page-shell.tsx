@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { AxiosError } from "axios";
 import type { UnsubPageData, UnsubTabKey } from "../_lib/unsubscription-management-types";
 
 import HeaderBar from "./header-bar";
@@ -14,28 +15,74 @@ import ActionDock from "./action-dock";
 import type { UnsubscriptionDetails } from "../_lib/details-user-types";
 import UnsubscriptionDetailsModal from "./details-user/unsubscription-details-modal";
 import { getMockUnsubscriptionDetails } from "../_lib/details-user-mock-data";
+import {
+  confirmUnsubscription,
+  getUnsubscribeRequests,
+  getUnsubscriptionDetail,
+} from "@/service/admin/newsletter/general-newsletter/subscribes/unsubscription-management.service";
+import type {
+  ConfirmUnsubscriptionErrorResponseDto,
+  ConfirmUnsubscriptionSuccessModalDto,
+  UnsubscribeRequestsListResponseDto,
+} from "@/types/admin/newsletter/general-newsletter/subscribes/unsubscription-management.types";
 
 import ProcessBulkModal from "./process/process-bulk-modal";
 import type { BulkBreakdownItem } from "./process/process-bulk-modal";
 
 import UnsubscriptionConfirmedModal, {
-  type UnsubConfirmedPayload,
+  type UnsubConfirmedModalData,
 } from "./unsubscription-confirmed-modal";
 
 export default function PageShell({ data }: { data: UnsubPageData }) {
   const [tab, setTab] = useState<UnsubTabKey>("requested");
-  const rows = tab === "requested" ? data.requested : data.unsubscribed;
+  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([]);
+  const [requestedRows, setRequestedRows] = useState(data.requested);
+  const [requestedMeta, setRequestedMeta] = useState(data.requestedMeta);
+  const [unsubscribedRows, setUnsubscribedRows] = useState(data.unsubscribed);
+  const [unsubscribedMeta, setUnsubscribedMeta] = useState(data.unsubscribedMeta);
+
+  const rows = tab === "requested" ? requestedRows : unsubscribedRows;
+  const total = tab === "requested" ? requestedMeta.total : unsubscribedMeta.total;
+  const totalLabel = tab === "requested" ? "pending requests" : "unsubscribed requests";
 
   // ── Details modal
   const [open, setOpen] = useState(false);
   const [details, setDetails] = useState<UnsubscriptionDetails | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
-  const openDetailsById = (id: string) => {
+  const refetchRows = async () => {
+    const [requestedResponse, unsubscribedResponse] = await Promise.all([
+      getUnsubscribeRequests({ tab: "requested", page: 1, limit: 10 }),
+      getUnsubscribeRequests({ tab: "unsubscribed", page: 1, limit: 10 }),
+    ]);
+
+    const requestedData: UnsubscribeRequestsListResponseDto = requestedResponse;
+    const unsubscribedData: UnsubscribeRequestsListResponseDto = unsubscribedResponse;
+
+    setRequestedRows(requestedData.items);
+    setRequestedMeta(requestedData.meta);
+    setUnsubscribedRows(unsubscribedData.items);
+    setUnsubscribedMeta(unsubscribedData.meta);
+
+    const requestedIdSet = new Set(requestedData.items.map((item) => item.id));
+    setSelectedRowIds((prev) => prev.filter((id) => requestedIdSet.has(id)));
+  };
+
+  const openDetailsById = async (id: string) => {
     const row = rows.find((r) => r.id === id);
     if (!row) return;
 
-    setDetails(getMockUnsubscriptionDetails(id));
-    setOpen(true);
+    try {
+      setConfirmError(null);
+      const response = await getUnsubscriptionDetail(id);
+      setDetails(response);
+    } catch (error) {
+      console.error("Failed to load unsubscription details:", error);
+      setDetails(getMockUnsubscriptionDetails(id));
+    } finally {
+      setOpen(true);
+    }
   };
 
   // ── Bulk modal
@@ -43,25 +90,65 @@ export default function PageShell({ data }: { data: UnsubPageData }) {
   const [removePermanently, setRemovePermanently] = useState(true);
   const [sendEmails, setSendEmails] = useState(false);
 
-  const totalSelected = 14;
-
-  const breakdown: BulkBreakdownItem[] = useMemo(
-    () => [
-      { id: "b1", label: "General Newsletter", count: 10 },
-      { id: "b2", label: "Course Updates", count: 4 },
-    ],
-    []
+  const selectedPendingRows = useMemo(
+    () => requestedRows.filter((row) => selectedRowIds.includes(row.id)),
+    [requestedRows, selectedRowIds],
   );
+
+  const totalSelected = selectedPendingRows.length;
+
+  const breakdown: BulkBreakdownItem[] = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    selectedPendingRows.forEach((row) => {
+      const existing = counts.get(row.sourceSegment) ?? 0;
+      counts.set(row.sourceSegment, existing + 1);
+    });
+
+    return Array.from(counts.entries()).map(([label, count]) => ({
+      id: label,
+      label,
+      count,
+    }));
+  }, [selectedPendingRows]);
 
   // ── Success modal
   const [successOpen, setSuccessOpen] = useState(false);
-  const [successData, setSuccessData] = useState<UnsubConfirmedPayload | null>(
-    null
-  );
+  const [successData, setSuccessData] = useState<UnsubConfirmedModalData | null>(null);
 
-  const openSuccess = (payload: UnsubConfirmedPayload) => {
+  const openSuccess = (payload: ConfirmUnsubscriptionSuccessModalDto) => {
     setSuccessData(payload);
     setSuccessOpen(true);
+  };
+
+  const onConfirm = async (id: string) => {
+    if (isConfirming) return;
+
+    try {
+      setIsConfirming(true);
+      setConfirmError(null);
+
+      const response = await confirmUnsubscription(id, {
+        reason: "Unsubscribed by request",
+        sendConfirmationEmail: true,
+      });
+
+      await refetchRows();
+      setOpen(false);
+      openSuccess(response.successModal);
+    } catch (error) {
+      const axiosError = error as AxiosError<ConfirmUnsubscriptionErrorResponseDto>;
+      setConfirmError(
+        axiosError.response?.data?.message || "Failed to confirm unsubscription",
+      );
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
+  const onCloseDetails = () => {
+    setConfirmError(null);
+    setOpen(false);
   };
 
   return (
@@ -72,34 +159,35 @@ export default function PageShell({ data }: { data: UnsubPageData }) {
       <RequestsTabs
         value={tab}
         onChange={setTab}
-        requestedCount={data.requested.length}
+        requestedCount={requestedRows.length}
       />
 
       <SearchFilterRow />
 
-      <RequestsTable rows={rows} onOpenDetails={openDetailsById} />
+      <RequestsTable
+        rows={rows}
+        onOpenDetails={openDetailsById}
+        selectedRowIds={selectedRowIds}
+        onSelectedRowIdsChange={setSelectedRowIds}
+      />
 
-      <PaginationRow />
+      <PaginationRow total={total} label={totalLabel} />
 
-      <ActionDock onProcessSelected={() => setBulkOpen(true)} />
+      <ActionDock
+        onProcessSelected={() => setBulkOpen(true)}
+        selectedCount={totalSelected}
+        disableProcess={tab !== "requested" || totalSelected === 0}
+      />
 
       {/* Details modal */}
       <UnsubscriptionDetailsModal
         open={open}
         data={details}
-        onClose={() => setOpen(false)}
-        onDismiss={() => setOpen(false)}
-        onConfirm={() => {
-          // close details modal and open success modal
-          setOpen(false);
-
-          openSuccess({
-            subscriber: details?.subscriberName ?? "Subscriber",
-            email: details?.subscriberEmail ?? "subscriber@email.com",
-            statusLabel:
-              "Removed from " + (details?.requestInfo?.sourceLabel ?? "List"),
-          });
-        }}
+        onClose={onCloseDetails}
+        onDismiss={onCloseDetails}
+        onConfirm={onConfirm}
+        isConfirming={isConfirming}
+        confirmError={confirmError}
       />
 
       {/* Bulk modal */}
@@ -116,9 +204,12 @@ export default function PageShell({ data }: { data: UnsubPageData }) {
           setBulkOpen(false);
 
           openSuccess({
-            subscriber: `${totalSelected} Subscribers`,
-            email: "Bulk action",
-            statusLabel: `Removed from selected lists`,
+            title: "Unsubscription Confirmed",
+            payload: {
+              subscriberEmail: `${totalSelected} selected subscribers`,
+              statusLabel: "Removed from selected lists",
+            },
+            ctaLabel: "Done",
           });
         }}
       />

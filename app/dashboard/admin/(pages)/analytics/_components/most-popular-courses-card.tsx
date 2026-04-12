@@ -1,15 +1,5 @@
 import Link from "next/link";
-
-const rows = [
-    {
-        course: "Advanced Airway Management",
-        enrolled: 54,
-        completion: 72,
-        status: "TRENDING",
-    },
-    { course: "Emergency Intubation Tech", enrolled: 42, completion: 58, status: "STABLE" },
-    { course: "Pediatric Airway Essentials", enrolled: 31, completion: 44, status: "HIGH DEMAND" },
-];
+import type { PopularCourseTableItem } from "@/types/admin/analytics.types";
 
 function StatusPill({ label }: { label: string }) {
     const style =
@@ -26,7 +16,23 @@ function StatusPill({ label }: { label: string }) {
     );
 }
 
-export default function MostPopularCoursesCard() {
+function completionToPercent(completion: string) {
+    const parsed = Number.parseInt(completion.replace("%", ""), 10);
+    if (!Number.isFinite(parsed)) return 0;
+    return Math.max(0, Math.min(100, parsed));
+}
+
+export default function MostPopularCoursesCard({
+    rows,
+    startDate,
+    endDate,
+}: {
+    rows: PopularCourseTableItem[];
+    startDate: string;
+    endDate: string;
+}) {
+    const viewAllHref = `/dashboard/admin/analytics/most-popular-courses?startDate=${startDate}&endDate=${endDate}&page=1&limit=10`;
+
     return (
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
@@ -35,7 +41,7 @@ export default function MostPopularCoursesCard() {
                 </h2>
 
                 <Link
-                    href="/analytics/most-popular-courses"
+                    href={viewAllHref}
                     className="text-xs font-semibold text-[var(--primary)] hover:underline"
                 >
                     View All
@@ -55,21 +61,21 @@ export default function MostPopularCoursesCard() {
 
                     <tbody className="divide-y divide-slate-200">
                         {rows.map((r) => (
-                            <tr key={r.course} className="text-slate-700">
+                            <tr key={`${r.courseName}-${r.instructorDetails.id ?? "na"}`} className="text-slate-700">
                                 <td className="px-3 py-3 font-medium text-slate-900">
-                                    {r.course}
+                                    {r.courseName}
                                 </td>
-                                <td className="px-3 py-3">{r.enrolled}</td>
+                                <td className="px-3 py-3">{r.enrolled.toLocaleString()}</td>
                                 <td className="px-3 py-3">
                                     <div className="flex items-center gap-3">
                                         <div className="h-2 w-[120px] rounded-full bg-slate-100">
                                             <div
                                                 className="h-2 rounded-full bg-[var(--primary)]"
-                                                style={{ width: `${r.completion}%` }}
+                                                style={{ width: `${completionToPercent(r.completion)}%` }}
                                             />
                                         </div>
                                         <span className="text-[11px] font-semibold text-slate-600">
-                                            {r.completion}%
+                                            {r.completion}
                                         </span>
                                     </div>
                                 </td>
@@ -78,6 +84,13 @@ export default function MostPopularCoursesCard() {
                                 </td>
                             </tr>
                         ))}
+                        {rows.length === 0 ? (
+                            <tr>
+                                <td colSpan={4} className="px-3 py-6 text-center text-xs text-slate-500">
+                                    No course analytics available for the selected period.
+                                </td>
+                            </tr>
+                        ) : null}
                     </tbody>
                 </table>
             </div>

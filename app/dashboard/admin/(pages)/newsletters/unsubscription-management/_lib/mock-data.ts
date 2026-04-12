@@ -1,60 +1,104 @@
 import type { UnsubPageData } from "./unsubscription-management-types";
 
 export function getMockUnsubPageData(): UnsubPageData {
+  // Replaced by backend response in `page.tsx`:
+  // - metrics
+  // - requested + requestedMeta
+  // - unsubscribed + unsubscribedMeta
+  // Kept as a minimal fallback shape for API failure scenarios.
+  /*
   return {
     metrics: {
       pendingRequests: 14,
-      pendingSubLabel: "Requires manual review",
       totalUnsubscribed: 1245,
-      totalUnsubscribedSubLabel: "Active global blocklist",
       avgResponseTimeLabel: "2h",
-      avgResponseTimeSubLabel: "Optimization: On target",
     },
 
     requested: [
       {
         id: "r1",
-        subscriberName: "Dr. Sarah Chen",
-        subscriberEmail: "s.chen@medical-center.org",
-        initials: "SC",
-        requestDateLabel: "Oct 26, 2026",
-        source: { id: "s1", label: "General Newsletter", tone: "slate" },
+        subscriberIdentity: {
+          fullName: "Dr. Sarah Chen",
+          email: "s.chen@medical-center.org",
+          avatarInitials: "SC",
+        },
+        requestDate: "2026-10-26T10:00:00Z",
+        sourceSegment: "General Newsletter",
         feedback: "Too many emails recently...",
-        status: "pending",
+        status: "PENDING",
       },
       {
         id: "r2",
-        subscriberName: "Mark Foster, RN",
-        subscriberEmail: "m.foster@clinical.net",
-        initials: "MF",
-        requestDateLabel: "Oct 26, 2026",
-        source: { id: "s2", label: "Course: Pediatric Airway", tone: "teal" },
+        subscriberIdentity: {
+          fullName: "Mark Foster, RN",
+          email: "m.foster@clinical.net",
+          avatarInitials: "MF",
+        },
+        requestDate: "2026-10-26T10:00:00Z",
+        sourceSegment: "Course: Pediatric Airway",
         feedback: "Completed course, no longer needed.",
-        status: "pending",
+        status: "PENDING",
       },
     ],
+
+    requestedMeta: {
+      page: 1,
+      limit: 10,
+      total: 14,
+    },
 
     unsubscribed: [
       {
         id: "u1",
-        subscriberName: "Andrea Low",
-        subscriberEmail: "a.low@tai.edu",
-        initials: "AL",
-        requestDateLabel: "Oct 14, 2026",
-        source: { id: "s3", label: "General Newsletter", tone: "slate" },
+        subscriberIdentity: {
+          fullName: "Andrea Low",
+          email: "a.low@tai.edu",
+          avatarInitials: "AL",
+        },
+        requestDate: "2026-10-14T10:00:00Z",
+        sourceSegment: "General Newsletter",
         feedback: "No longer interested.",
-        status: "processed",
+        status: "UNSUBSCRIBED",
       },
       {
         id: "u2",
-        subscriberName: "Jason Hunt",
-        subscriberEmail: "j.hunt@clinics.org",
-        initials: "JH",
-        requestDateLabel: "Oct 12, 2026",
-        source: { id: "s4", label: "Airway Updates", tone: "teal" },
+        subscriberIdentity: {
+          fullName: "Jason Hunt",
+          email: "j.hunt@clinics.org",
+          avatarInitials: "JH",
+        },
+        requestDate: "2026-10-12T10:00:00Z",
+        sourceSegment: "Airway Updates",
         feedback: "Inbox overload.",
-        status: "processed",
+        status: "UNSUBSCRIBED",
       },
     ],
+
+    unsubscribedMeta: {
+      page: 1,
+      limit: 10,
+      total: 1245,
+    },
+  };
+  */
+
+  return {
+    metrics: {
+      pendingRequests: 0,
+      totalUnsubscribed: 0,
+      avgResponseTimeLabel: "-",
+    },
+    requested: [],
+    requestedMeta: {
+      page: 1,
+      limit: 10,
+      total: 0,
+    },
+    unsubscribed: [],
+    unsubscribedMeta: {
+      page: 1,
+      limit: 10,
+      total: 0,
+    },
   };
 }

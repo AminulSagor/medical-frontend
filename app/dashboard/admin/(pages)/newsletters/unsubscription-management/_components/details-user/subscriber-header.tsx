@@ -12,7 +12,7 @@ export default function SubscriberHeader({ data }: { data: UnsubscriptionDetails
         {/* dummy logo-like */}
         <div className="grid h-full w-full place-items-center">
           <span className="text-[34px] font-black text-[#d9b36a]">
-            {data.initials ?? "SC"}
+            {data.subscriber.avatarInitials ?? "SC"}
           </span>
         </div>
       </div>
@@ -21,18 +21,18 @@ export default function SubscriberHeader({ data }: { data: UnsubscriptionDetails
       <div className="min-w-0">
         <div className="flex items-center gap-3">
           <p className="text-[22px] font-bold text-slate-900">
-            {data.subscriberName}
+            {data.subscriber.fullName}
           </p>
 
-          {data.roleTag ? (
+          {data.subscriber.clinicalRole ? (
             <span className="inline-flex items-center rounded-full bg-teal-50 px-3 py-1 text-[10px] font-bold tracking-wide text-teal-700 ring-1 ring-teal-100">
-              {data.roleTag}
+              {data.subscriber.clinicalRole}
             </span>
           ) : null}
         </div>
 
         <p className="mt-1 text-sm text-slate-500">
-          {data.subscriberEmail}
+          {data.subscriber.email}
         </p>
       </div>
     </div>

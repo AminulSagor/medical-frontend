@@ -7,10 +7,15 @@ function cn(...p: Array<string | false | undefined>) {
 }
 
 export type UnsubConfirmedPayload = {
-  subscriber: string;
-  email: string;
-  statusLabel: string; // "Removed from General Newsletter"
+  title: string;
+  payload: {
+    subscriberEmail: string;
+    statusLabel: string;
+  };
+  ctaLabel: string;
 };
+
+export type UnsubConfirmedModalData = UnsubConfirmedPayload;
 
 export default function UnsubscriptionConfirmedModal({
   open,
@@ -42,7 +47,7 @@ export default function UnsubscriptionConfirmedModal({
             </div>
 
             <h2 className="mt-5 text-[18px] font-bold text-slate-900">
-              Unsubscription Confirmed
+              {data.title}
             </h2>
 
             {/* details box */}
@@ -52,7 +57,7 @@ export default function UnsubscriptionConfirmedModal({
                   SUBSCRIBER
                 </p>
                 <p className="text-sm font-semibold text-slate-800 text-right">
-                  {data.subscriber}
+                  {data.payload.subscriberEmail}
                 </p>
               </div>
               <div className="h-px bg-slate-200/60" />
@@ -61,7 +66,7 @@ export default function UnsubscriptionConfirmedModal({
                   EMAIL
                 </p>
                 <p className="text-sm font-semibold text-slate-700 text-right">
-                  {data.email}
+                  {data.payload.subscriberEmail}
                 </p>
               </div>
               <div className="h-px bg-slate-200/60" />
@@ -70,7 +75,7 @@ export default function UnsubscriptionConfirmedModal({
                   STATUS
                 </p>
                 <p className="text-sm font-bold text-teal-600 text-right">
-                  {data.statusLabel}
+                  {data.payload.statusLabel}
                 </p>
               </div>
             </div>
@@ -90,7 +95,7 @@ export default function UnsubscriptionConfirmedModal({
                 "hover:bg-teal-600"
               )}
             >
-              Done
+              {data.ctaLabel}
             </button>
           </div>
         </div>

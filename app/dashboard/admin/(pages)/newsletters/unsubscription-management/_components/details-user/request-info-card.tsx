@@ -1,6 +1,17 @@
 import { CalendarDays, ClipboardList } from "lucide-react";
 import type { UnsubscriptionDetails } from "../../_lib/details-user-types";
 
+function formatDateLabel(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
 export default function RequestInfoCard({ data }: { data: UnsubscriptionDetails }) {
   return (
     <section className="rounded-2xl bg-white p-6 ring-1 ring-slate-200/60 shadow-sm">
@@ -15,7 +26,7 @@ export default function RequestInfoCard({ data }: { data: UnsubscriptionDetails 
             DATE
           </p>
           <p className="mt-1 text-sm font-semibold text-slate-900">
-            {data.requestInfo.dateLabel}
+            {formatDateLabel(data.request.createdAt)}
           </p>
         </div>
 
@@ -24,7 +35,7 @@ export default function RequestInfoCard({ data }: { data: UnsubscriptionDetails 
             SOURCE
           </p>
           <p className="mt-1 text-sm font-semibold text-slate-900">
-            {data.requestInfo.sourceLabel}
+            {data.request.source}
           </p>
         </div>
       </div>
@@ -35,7 +46,7 @@ export default function RequestInfoCard({ data }: { data: UnsubscriptionDetails 
         </p>
 
         <div className="mt-3 rounded-2xl bg-slate-50 p-5 text-sm italic leading-6 text-slate-600 ring-1 ring-slate-200/70">
-          “{data.requestInfo.feedback}”
+          “{data.request.feedback ?? "No feedback provided."}”
         </div>
       </div>
     </section>

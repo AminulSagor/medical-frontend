@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Mail, Users, GraduationCap, UserMinus } from "lucide-react";
 
 function CardShell({
@@ -61,12 +62,12 @@ export default function NewsletterMetrics() {
                 <p className="mt-2 text-2xl font-semibold text-slate-900">{pendingUnsubs}</p>
 
                 <div className="mt-4 flex justify-end">
-                    <button
-                        type="button"
+                    <Link
+                        href="/dashboard/admin/newsletters/unsubscription-management"
                         className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary-50)] px-4 py-2 text-xs font-semibold text-[var(--primary)] hover:bg-slate-100"
                     >
                         Manage <span aria-hidden>→</span>
-                    </button>
+                    </Link>
                 </div>
             </CardShell>
         </div>
