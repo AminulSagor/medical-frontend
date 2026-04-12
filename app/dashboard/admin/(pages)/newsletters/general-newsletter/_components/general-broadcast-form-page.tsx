@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import CreateBroadcastHeader from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_components/create-broadcast-header";
 import CreateBroadcastContentSection from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_components/create-broadcast-content-section";
 import CreateBroadcastDeliverySection from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_components/create-broadcast-delivery-section";
@@ -29,6 +30,7 @@ import type {
 } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-create.types";
 import type { GetGeneralBroadcastResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
 import BroadcastEditPageShell from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_components/BroadcastEditPageShell";
+import BroadcastScheduledSuccessDialog from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_components/broadcast-scheduled-success-dialog";
 
 type Props = {
   mode: "create" | "edit";
@@ -51,11 +53,14 @@ const initialForm: CreateBroadcastFormState = {
 };
 
 export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
+  const router = useRouter();
+
   const [form, setForm] = useState<CreateBroadcastFormState>(initialForm);
   const [errors, setErrors] = useState<CreateBroadcastFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoadingInitial, setIsLoadingInitial] = useState(mode === "edit");
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
 
   const isCustomMessage = useMemo(
     () => form.contentType === "CUSTOM_MESSAGE",
@@ -143,6 +148,7 @@ export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
     }
 
     setErrors(nextErrors);
+
     return Object.keys(nextErrors).length === 0;
   };
 
@@ -298,7 +304,7 @@ export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
 
         await generalBroadcastUpdateService.scheduleBroadcast(broadcastId);
 
-        setSuccessMessage("Broadcast updated successfully.");
+        setIsSuccessDialogOpen(true);
       }
     } catch (error) {
       console.error("Failed to save broadcast", error);
@@ -321,7 +327,7 @@ export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
       />
 
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-7 px-4 py-8 sm:px-6 lg:px-8">
-        {successMessage ? (
+        {mode === "create" && successMessage ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
             {successMessage}
           </div>
@@ -341,6 +347,20 @@ export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
           onChange={updateForm}
         />
       </div>
+
+      <BroadcastScheduledSuccessDialog
+        open={isSuccessDialogOpen}
+        onOpenChange={setIsSuccessDialogOpen}
+        onReturnToDashboard={() =>
+          router.push("/dashboard/admin/newsletters/general-newsletter")
+        }
+        recipientCount={2450}
+        scheduledDateText="Nov 22, 2026 at 09:00 AM"
+        articleTitle={
+          form.selectedArticle?.title ||
+          "New Clinical Insights: Pediatric Airway Management"
+        }
+      />
     </div>
   );
 }

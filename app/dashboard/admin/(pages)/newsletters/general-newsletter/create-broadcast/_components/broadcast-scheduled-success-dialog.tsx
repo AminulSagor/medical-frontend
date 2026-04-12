@@ -1,7 +1,7 @@
 "use client";
 
+import Dialog from "@/components/dialogs/dialog";
 import { Check, FileText } from "lucide-react";
-import Dialog from "@/components/dialog/dialog";
 
 type Props = {
   open: boolean;
