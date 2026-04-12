@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { PublicProduct } from "@/types/public/product/public-product.types";
 import Button from "@/components/buttons/button";
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/app/public/context/cart-context";
 import { ShoppingCart } from "lucide-react";
+import { addToCart } from "@/service/user/add-to-cart.service";
 
 interface Props {
   product: PublicProduct;
@@ -28,14 +30,21 @@ function Badge({ text }: { text: string }) {
 
 export default function ProductCard({ product }: Props) {
   const { addItem } = useCart();
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-  const isOut = product.isInStock === false;
+  const hasValidStockQuantity =
+    typeof product.stockQuantity === "number" &&
+    !Number.isNaN(product.stockQuantity);
+
+  const isOut = hasValidStockQuantity ? product.stockQuantity <= 0 : false;
 
   const stockLabel = (() => {
-    if (!product.isInStock) return "Out of stock";
+    if (hasValidStockQuantity && product.stockQuantity <= 0) {
+      return "Out of stock";
+    }
 
     if (
-      typeof product.stockQuantity === "number" &&
+      hasValidStockQuantity &&
       product.stockQuantity > 0 &&
       product.stockQuantity <= 10
     ) {
@@ -62,6 +71,27 @@ export default function ProductCard({ product }: Props) {
       product,
     });
   }
+
+  const handleAddToCart = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+
+    if (isAddingToCart) return;
+
+    try {
+      setIsAddingToCart(true);
+
+      await addToCart({
+        productId: product.id,
+        quantity: 1,
+      });
+
+      addItem(product.id, 1);
+    } catch (error) {
+      console.error("Failed to add product to cart", error);
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
 
   return (
     <div className="group rounded-xl md:rounded-2xl border border-light-slate/10 bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col">
@@ -131,7 +161,8 @@ export default function ProductCard({ product }: Props) {
               {money(product.offerPrice || product.actualPrice)}
             </div>
 
-            {product.offerPrice && product.actualPrice !== product.offerPrice ? (
+            {product.offerPrice &&
+            product.actualPrice !== product.offerPrice ? (
               <div className="text-xs md:text-sm text-light-slate line-through">
                 {money(product.actualPrice)}
               </div>
@@ -157,14 +188,12 @@ export default function ProductCard({ product }: Props) {
           </Button>
         ) : (
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              addItem(product.id, 1);
-            }}
-            className="w-full rounded-lg bg-primary hover:bg-primary/90 px-4 py-2.5 md:py-3 text-xs md:text-sm font-semibold text-white transition flex items-center justify-center gap-2"
+            onClick={handleAddToCart}
+            disabled={isAddingToCart}
+            className="w-full rounded-lg bg-primary hover:bg-primary/90 px-4 py-2.5 md:py-3 text-xs md:text-sm font-semibold text-white transition flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-70"
           >
             <ShoppingCart size={16} />
-            Add to Cart
+            {isAddingToCart ? "Adding..." : "Add to Cart"}
           </button>
         )}
       </div>
