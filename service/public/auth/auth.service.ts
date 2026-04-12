@@ -15,10 +15,12 @@ import type {
 export const registerUser = async (
   data: RegisterRequest,
 ): Promise<RegisterResponse> => {
+   console.log("📤 REGISTER REQUEST:", data);
   const response = await serviceClient.post<RegisterResponse>(
     `/auth/register`,
     data,
   );
+     console.log("📥 REGISTER RESPONSE:", response.data);
   return response.data;
 };
 

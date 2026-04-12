@@ -5,6 +5,7 @@ import {
   ProductFiltersResponse,
   ProductDetailResponse,
 } from "@/types/public/product/public-product.types";
+import { Console } from "console";
 
 /**
  * Fetches products from the public products API.
@@ -22,11 +23,13 @@ export const getPublicProducts = async (
     "/public/products",
     { params },
   );
-  
+
   // Handle both wrapped and unwrapped responses
   let data = response.data;
   const responseData = ('data' in data && data.data) ? data.data : data;
-  
+
+
+
   // Transform API response to match frontend types
   if (responseData && 'items' in responseData) {
     const items = (responseData.items as any[]).map((item: any) => ({
@@ -36,7 +39,8 @@ export const getPublicProducts = async (
       categoryId: item.categoryId || (item.category ? [item.category] : []),
       tags: item.tags || [],
       sku: item.sku || '',
-      stockQuantity: item.stockQuantity ?? 0,
+      stockQuantity: item.stockQuantity ?? null,
+      isInStock: !!item.inStock,
       lowStockAlert: item.lowStockAlert || 0,
       isActive: item.isActive !== false,
       backorder: item.backorder || false,
@@ -44,25 +48,28 @@ export const getPublicProducts = async (
       updatedAt: item.updatedAt || new Date().toISOString(),
       clinicalDescription: item.clinicalDescription || item.description || null,
       bulkPriceTiers: item.bulkPriceTiers || [],
-      
+
       // Map title -> name
       name: item.title || item.name || 'Unnamed Product',
-      
+
       // Map photo -> thumbnail and images
       thumbnail: item.photo || '/photos/store_product.png',
       images: item.photo ? [item.photo] : ['/photos/store_product.png'],
-      
+
       // Provide default prices if missing
       actualPrice: item.actualPrice || item.price || '0.00',
       offerPrice: item.offerPrice || item.discountedPrice || item.actualPrice || item.price || '0.00',
     }));
-    
+
+
+
+
     return {
       ...responseData,
       items,
     } as PublicProductsResponse;
   }
-  
+
   return responseData as PublicProductsResponse;
 };
 
