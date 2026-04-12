@@ -10,4 +10,17 @@ export const generalBroadcastGetService = {
     );
     return response.data;
   },
+
+  async cancelBroadcast(broadcastId: string, reason: string): Promise<void> {
+    await serviceClient.post(
+      `/admin/newsletters/general/broadcasts/${broadcastId}/cancel`,
+      { reason },
+    );
+  },
+
+  async deleteBroadcast(broadcastId: string): Promise<void> {
+    await serviceClient.delete(
+      `/admin/newsletters/general/broadcasts/${broadcastId}`,
+    );
+  },
 };

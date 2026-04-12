@@ -1,45 +1,91 @@
 "use client";
 
-import React, { useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowLeft, Pencil, XCircle } from "lucide-react";
-
 import { useRouter } from "next/navigation";
-import { ScheduledBroadcastHeaderData } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/types/scheduled-broadcast-view.type";
+
 import {
   BroadcastCancelledSuccessDialog,
   CancelScheduledBroadcastDialog,
 } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_components/cancel-scheduled-broadcast-dialogs";
+import {
+  formatBroadcastStatus,
+  formatDateOnly,
+} from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_utils/scheduled-broadcast-view.utils";
+import { generalBroadcastGetService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.service";
+import type { GetGeneralBroadcastResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
 
 type Props = {
-  data: ScheduledBroadcastHeaderData;
+  data: GetGeneralBroadcastResponse;
+  onCancelled?: () => Promise<void> | void;
 };
 
-function statusStyles(status: ScheduledBroadcastHeaderData["status"]) {
-  if (status === "scheduled") {
+function statusStyles(status: GetGeneralBroadcastResponse["status"]) {
+  if (status === "SCHEDULED") {
     return "border-[#b7efe9] bg-[#e8fbf8] text-[#14b8ad]";
   }
-  if (status === "sent") {
+
+  if (status === "SENT") {
     return "border-[#c8f0d8] bg-[#eefcf4] text-[#12b76a]";
   }
+
+  if (status === "CANCELLED") {
+    return "border-rose-200 bg-rose-50 text-rose-500";
+  }
+
   return "border-slate-200 bg-slate-100 text-slate-500";
 }
 
-export default function ScheduledBroadcastViewHeader({ data }: Props) {
+export default function ScheduledBroadcastViewHeader({
+  data,
+  onCancelled,
+}: Props) {
+  const router = useRouter();
+
   const [openCancelConfirm, setOpenCancelConfirm] = useState(false);
   const [openCancelSuccess, setOpenCancelSuccess] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
-  async function handleConfirmCancel() {
-    //  call your cancel API here
-    // await cancelScheduledBroadcast(data.broadcastId);
+  const statusLabel = formatBroadcastStatus(data.status);
 
-    setOpenCancelSuccess(true);
+  const subtitle =
+    data.internalName ||
+    `${data.contentType === "CUSTOM_MESSAGE" ? "Custom message" : "Article link"} broadcast`;
+
+  const scheduledDateLabel = useMemo(() => {
+    return formatDateOnly(data.scheduledAt);
+  }, [data.scheduledAt]);
+
+  const editHref = `/dashboard/admin/newsletters/general-newsletter/cadence-broadcast-edit/${data.id}`;
+
+  async function handleConfirmCancel(reason: string) {
+    try {
+      setIsCancelling(true);
+      await generalBroadcastGetService.cancelBroadcast(data.id, reason);
+
+      // Close the cancel confirmation dialog first
+      setOpenCancelConfirm(false);
+
+      // Wait for the dialog to close animation/state to settle
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Then open the success dialog
+      setOpenCancelSuccess(true);
+
+      // Call onCancelled callback if provided
+      if (onCancelled) {
+        await onCancelled();
+      }
+    } catch (error) {
+      console.error("Failed to cancel broadcast:", error);
+    } finally {
+      setIsCancelling(false);
+    }
   }
 
   function handleReturnToQueue() {
-    // router.push("/newsletters/broadcasts/general-newsletter");
+    router.back();
   }
-
-  const router = useRouter();
 
   return (
     <>
@@ -58,7 +104,7 @@ export default function ScheduledBroadcastViewHeader({ data }: Props) {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="truncate text-[18px] font-semibold text-slate-800 md:text-[20px]">
-                  {data.title}
+                  {data.subjectLine}
                 </h1>
 
                 <span
@@ -66,31 +112,36 @@ export default function ScheduledBroadcastViewHeader({ data }: Props) {
                     data.status,
                   )}`}
                 >
-                  {data.status}
+                  {statusLabel}
                 </span>
               </div>
 
-              <p className="truncate text-sm text-slate-400">{data.subtitle}</p>
+              <p className="truncate text-sm text-slate-400">{subtitle}</p>
             </div>
           </div>
 
           <div className="flex shrink-0 items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setOpenCancelConfirm(true)}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-5 text-sm font-semibold text-rose-500 hover:bg-rose-50"
-            >
-              <XCircle size={15} />
-              Cancel Schedule
-            </button>
+            {data.actionsAllowed.cancel && data.status === "SCHEDULED" && (
+              <button
+                type="button"
+                onClick={() => setOpenCancelConfirm(true)}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-5 text-sm font-semibold text-rose-500 hover:bg-rose-50"
+              >
+                <XCircle size={15} />
+                Cancel Schedule
+              </button>
+            )}
 
-            <button
-              type="button"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#14b8ad] px-5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(20,184,173,0.22)] hover:opacity-95"
-            >
-              <Pencil size={15} />
-              Edit Broadcast
-            </button>
+            {data.actionsAllowed.edit && (
+              <button
+                type="button"
+                onClick={() => router.push(editHref)}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#14b8ad] px-5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(20,184,173,0.22)] hover:opacity-95"
+              >
+                <Pencil size={15} />
+                Edit Broadcast
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -98,18 +149,19 @@ export default function ScheduledBroadcastViewHeader({ data }: Props) {
       <CancelScheduledBroadcastDialog
         open={openCancelConfirm}
         onOpenChange={setOpenCancelConfirm}
-        recipientCount={2450}
-        scheduledDateLabel={"Nov 22, 2026"}
-        articleTitle={data.title}
+        recipientCount={data.estimatedRecipientsCount}
+        scheduledDateLabel={scheduledDateLabel}
+        articleTitle={data.subjectLine}
         onConfirmCancel={handleConfirmCancel}
         onKeepScheduled={() => {}}
+        isSubmitting={isCancelling}
       />
 
       <BroadcastCancelledSuccessDialog
         open={openCancelSuccess}
         onOpenChange={setOpenCancelSuccess}
-        scheduledDateLabel={"Nov 22, 2026"}
-        articleTitle={data.title}
+        scheduledDateLabel={scheduledDateLabel}
+        articleTitle={data.subjectLine}
         onReturnToQueue={handleReturnToQueue}
       />
     </>

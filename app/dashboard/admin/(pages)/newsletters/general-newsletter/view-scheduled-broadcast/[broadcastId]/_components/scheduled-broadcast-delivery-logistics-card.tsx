@@ -1,10 +1,16 @@
 import React from "react";
 import { CalendarDays, Clock3 } from "lucide-react";
-import { DeliveryLogisticsData } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/types/scheduled-broadcast-view.type";
+
 import ScheduledBroadcastSectionShell from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_components/scheduled-broadcast-section-shell";
+import {
+  formatDateOnly,
+  formatFrequencyType,
+  formatTimeOnly,
+} from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_utils/scheduled-broadcast-view.utils";
+import type { GetGeneralBroadcastResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
 
 type Props = {
-  data: DeliveryLogisticsData;
+  data: GetGeneralBroadcastResponse;
 };
 
 function Label({ children }: { children: React.ReactNode }) {
@@ -54,10 +60,10 @@ export default function ScheduledBroadcastDeliveryLogisticsCard({
 
               <div>
                 <p className="text-[15px] font-semibold text-slate-800">
-                  {data.selectedCadenceLabel}
+                  {formatFrequencyType(data.frequencyType)}
                 </p>
                 <p className="text-sm text-slate-500">
-                  {data.selectedCadenceSubLabel}
+                  {data.cadenceAnchorLabel || "No cadence anchor available"}
                 </p>
               </div>
             </div>
@@ -65,10 +71,10 @@ export default function ScheduledBroadcastDeliveryLogisticsCard({
         </div>
 
         <div>
-          <Label>Available Cadence Dates</Label>
+          <Label>Available Cadence Date</Label>
           <ReadonlyField
             icon={<CalendarDays size={16} />}
-            value={data.availableCadenceDate}
+            value={formatDateOnly(data.scheduledAt)}
           />
         </div>
 
@@ -76,10 +82,12 @@ export default function ScheduledBroadcastDeliveryLogisticsCard({
           <Label>Scheduled Time</Label>
           <ReadonlyField
             icon={<Clock3 size={16} />}
-            value={data.scheduledTime}
+            value={formatTimeOnly(data.scheduledAt)}
             muted
           />
-          <p className="mt-2 text-[11px] text-slate-400">{data.timeHint}</p>
+          <p className="mt-2 text-[11px] text-slate-400">
+            {data.timezone || "Timezone not available"}
+          </p>
         </div>
       </div>
     </ScheduledBroadcastSectionShell>

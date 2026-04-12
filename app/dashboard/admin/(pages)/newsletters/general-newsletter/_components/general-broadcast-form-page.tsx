@@ -28,6 +28,7 @@ import type {
   UploadedBroadcastAttachment,
 } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-create.types";
 import type { GetGeneralBroadcastResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
+import BroadcastEditPageShell from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_components/BroadcastEditPageShell";
 
 type Props = {
   mode: "create" | "edit";
@@ -307,13 +308,7 @@ export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
   };
 
   if (isLoadingInitial) {
-    return (
-      <div className="min-h-screen bg-[#f8fafc] p-10">
-        <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 bg-white px-6 py-8 text-sm font-medium text-slate-600 shadow-sm">
-          Loading broadcast...
-        </div>
-      </div>
-    );
+    return <BroadcastEditPageShell />;
   }
 
   return (
@@ -325,7 +320,7 @@ export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
         isSubmitting={isSubmitting}
       />
 
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-7 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-7 px-4 py-8 sm:px-6 lg:px-8">
         {successMessage ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
             {successMessage}
