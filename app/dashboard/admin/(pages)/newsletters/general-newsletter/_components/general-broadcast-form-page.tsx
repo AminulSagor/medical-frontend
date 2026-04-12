@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CreateBroadcastHeader from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_components/create-broadcast-header";
 import CreateBroadcastContentSection from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_components/create-broadcast-content-section";
 import CreateBroadcastDeliverySection from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_components/create-broadcast-delivery-section";
+import { mapBroadcastResponseToForm } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_utils/general-broadcast-form.mapper";
 import {
   DEFAULT_CUSTOM_MESSAGE_HTML,
   DEFAULT_CUSTOM_MESSAGE_TEXT,
@@ -14,6 +15,8 @@ import {
   zonedDateAndTimeToUtcIso,
 } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_utils/create-broadcast-schedule.utils";
 import { generalBroadcastCreateService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-create.service";
+import { generalBroadcastGetService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.service";
+import { generalBroadcastUpdateService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-update.service";
 import {
   getUploadUrl,
   uploadFileToSignedUrl,
@@ -24,6 +27,12 @@ import type {
   CreateGeneralBroadcastPayload,
   UploadedBroadcastAttachment,
 } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-create.types";
+import type { GetGeneralBroadcastResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
+
+type Props = {
+  mode: "create" | "edit";
+  broadcastId?: string;
+};
 
 const initialForm: CreateBroadcastFormState = {
   contentType: "ARTICLE_LINK",
@@ -40,11 +49,12 @@ const initialForm: CreateBroadcastFormState = {
   attachments: [],
 };
 
-export default function CreateBroadcastPage() {
+export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
   const [form, setForm] = useState<CreateBroadcastFormState>(initialForm);
   const [errors, setErrors] = useState<CreateBroadcastFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [isLoadingInitial, setIsLoadingInitial] = useState(mode === "edit");
 
   const isCustomMessage = useMemo(
     () => form.contentType === "CUSTOM_MESSAGE",
@@ -69,6 +79,27 @@ export default function CreateBroadcastPage() {
         : {}),
     }));
   };
+
+  useEffect(() => {
+    if (mode !== "edit" || !broadcastId) return;
+
+    const loadData = async () => {
+      try {
+        setIsLoadingInitial(true);
+
+        const data: GetGeneralBroadcastResponse =
+          await generalBroadcastGetService.getBroadcastById(broadcastId);
+
+        setForm(mapBroadcastResponseToForm(data));
+      } catch (error) {
+        console.error("Failed to load broadcast", error);
+      } finally {
+        setIsLoadingInitial(false);
+      }
+    };
+
+    loadData();
+  }, [mode, broadcastId]);
 
   const handleDiscard = () => {
     setForm(initialForm);
@@ -114,7 +145,7 @@ export default function CreateBroadcastPage() {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const buildCreatePayload = (): CreateGeneralBroadcastPayload => {
+  const buildPayload = (): CreateGeneralBroadcastPayload => {
     if (form.contentType === "ARTICLE_LINK" && form.selectedArticle) {
       return {
         contentType: "ARTICLE_LINK",
@@ -163,6 +194,7 @@ export default function CreateBroadcastPage() {
         mimeType: file.type || "application/octet-stream",
         fileSizeBytes: file.size,
         readUrl: uploadMeta.readUrl,
+        isExisting: false,
       });
     }
 
@@ -187,41 +219,86 @@ export default function CreateBroadcastPage() {
     try {
       setIsSubmitting(true);
 
-      const createPayload = buildCreatePayload();
-      console.log("createPayload", createPayload);
-      const createResponse =
-        await generalBroadcastCreateService.createBroadcastDraft(createPayload);
+      const payload = buildPayload();
 
-      const broadcastId = createResponse.id;
+      if (mode === "create") {
+        const createResponse =
+          await generalBroadcastCreateService.createBroadcastDraft(payload);
 
-      if (form.attachments.length) {
-        await Promise.all(
-          form.attachments.map((attachment) =>
-            generalBroadcastCreateService.addAttachment(broadcastId, {
-              fileKey: attachment.fileKey,
-              fileName: attachment.fileName,
-              mimeType: attachment.mimeType,
-              fileSizeBytes: attachment.fileSizeBytes,
-            }),
-          ),
+        const id = createResponse.id;
+
+        const newAttachments = form.attachments.filter(
+          (attachment) => !attachment.isExisting,
         );
+
+        if (newAttachments.length) {
+          await Promise.all(
+            newAttachments.map((attachment) =>
+              generalBroadcastCreateService.addAttachment(id, {
+                fileKey: attachment.fileKey,
+                fileName: attachment.fileName,
+                mimeType: attachment.mimeType,
+                fileSizeBytes: attachment.fileSizeBytes,
+              }),
+            ),
+          );
+        }
+
+        const scheduledAtUtc = zonedDateAndTimeToUtcIso(
+          form.cadenceDate,
+          form.scheduledTime,
+          BROADCAST_TIMEZONE,
+        );
+
+        await generalBroadcastCreateService.updateScheduleSettings(id, {
+          frequencyType: form.frequency,
+          scheduledAtUtc,
+          timezone: BROADCAST_TIMEZONE,
+        });
+
+        setSuccessMessage(
+          "Broadcast draft, attachments, and schedule saved successfully.",
+        );
+        return;
       }
 
-      const scheduledAtUtc = zonedDateAndTimeToUtcIso(
-        form.cadenceDate,
-        form.scheduledTime,
-        BROADCAST_TIMEZONE,
-      );
+      if (mode === "edit" && broadcastId) {
+        const newAttachments = form.attachments.filter(
+          (attachment) => !attachment.isExisting,
+        );
 
-      await generalBroadcastCreateService.updateScheduleSettings(broadcastId, {
-        frequencyType: form.frequency,
-        scheduledAtUtc,
-        timezone: BROADCAST_TIMEZONE,
-      });
+        if (newAttachments.length) {
+          await Promise.all(
+            newAttachments.map((attachment) =>
+              generalBroadcastUpdateService.addAttachment(broadcastId, {
+                fileKey: attachment.fileKey,
+                fileName: attachment.fileName,
+                mimeType: attachment.mimeType,
+                fileSizeBytes: attachment.fileSizeBytes,
+              }),
+            ),
+          );
+        }
 
-      setSuccessMessage(
-        "Broadcast draft, attachments, and schedule saved successfully.",
-      );
+        const scheduledAtUtc = zonedDateAndTimeToUtcIso(
+          form.cadenceDate,
+          form.scheduledTime,
+          BROADCAST_TIMEZONE,
+        );
+
+        await generalBroadcastUpdateService.updateScheduleSettings(
+          broadcastId,
+          {
+            frequencyType: form.frequency,
+            scheduledAtUtc,
+            timezone: BROADCAST_TIMEZONE,
+          },
+        );
+
+        await generalBroadcastUpdateService.scheduleBroadcast(broadcastId);
+
+        setSuccessMessage("Broadcast updated successfully.");
+      }
     } catch (error) {
       console.error("Failed to save broadcast", error);
     } finally {
@@ -229,9 +306,20 @@ export default function CreateBroadcastPage() {
     }
   };
 
+  if (isLoadingInitial) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] p-10">
+        <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 bg-white px-6 py-8 text-sm font-medium text-slate-600 shadow-sm">
+          Loading broadcast...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f8fafc]">
       <CreateBroadcastHeader
+        mode={mode}
         onDiscard={handleDiscard}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}

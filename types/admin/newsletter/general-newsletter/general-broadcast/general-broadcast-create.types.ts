@@ -83,12 +83,14 @@ export type UpdateGeneralBroadcastScheduleResponse = {
 };
 
 export type UploadedBroadcastAttachment = {
-  file: File;
+  file?: File;
   fileKey: string;
   fileName: string;
   mimeType: string;
   fileSizeBytes: number;
   readUrl?: string;
+  id?: string;
+  isExisting?: boolean;
 };
 
 export type CreateBroadcastFormState = {

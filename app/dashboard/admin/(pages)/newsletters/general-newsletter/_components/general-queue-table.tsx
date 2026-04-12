@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Eye, GripVertical, Pencil, Trash2 } from "lucide-react";
 import GeneralDataPagination from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_components/general-data-pagination";
 import { PaginationState } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/types/general-newsletter-data.type";
@@ -102,15 +103,29 @@ function StatusBadge({ label, code }: { label: string; code: string }) {
 }
 
 function ActionButtons({ item }: { item: GeneralBroadcastWorkspaceItem }) {
+  const editHref = `/dashboard/admin/newsletters/general-newsletter/cadence-broadcast-edit/${item.id}`;
+
   return (
     <div className="flex items-center gap-3 text-slate-400">
-      <button
-        type="button"
-        disabled={!item.actions?.edit}
-        className="hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        <Pencil size={15} />
-      </button>
+      {item.actions?.edit ? (
+        <Link
+          href={editHref}
+          className="hover:text-slate-600"
+          aria-label="Edit broadcast"
+          title="Edit broadcast"
+        >
+          <Pencil size={15} />
+        </Link>
+      ) : (
+        <button
+          type="button"
+          disabled
+          className="disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Pencil size={15} />
+        </button>
+      )}
+
       <button
         type="button"
         disabled={!item.actions?.view}
@@ -118,6 +133,7 @@ function ActionButtons({ item }: { item: GeneralBroadcastWorkspaceItem }) {
       >
         <Eye size={15} />
       </button>
+
       <button
         type="button"
         disabled={!item.actions?.cancel}
