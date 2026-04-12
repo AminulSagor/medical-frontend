@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
 
 import type { ComposeBroadcastInput } from "../_lib/compose-schema";
 import type {
@@ -21,15 +22,44 @@ import PushToggleRow from "./push-toggle-row";
 import SendBar from "./send-bar";
 import ComposeFormProvider from "./compose-form-provider";
 import { mapBroadcastDetailsToComposeDefaults } from "../_utils/compose-broadcast.mapper";
-import { test } from "@/app/dashboard/admin/(pages)/newsletters/course-announcements/[id]/test/test";
+import BroadcastAnnouncementHeader from "@/app/dashboard/admin/(pages)/newsletters/course-announcements/[id]/_components/broadcast-announcement-header";
+import ComposeShellLoading from "./compose-shell-loading";
 
 type ComposeShellProps = {
   id: string;
 };
 
+function getReadableErrorMessage(error: unknown) {
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status;
+
+    if (status === 404) {
+      return "Broadcast details were not found. Please check the broadcast ID or try again.";
+    }
+
+    if (status === 403) {
+      return "You do not have permission to view this broadcast.";
+    }
+
+    if (status === 401) {
+      return "Your session has expired. Please sign in again.";
+    }
+
+    if (status && status >= 500) {
+      return "Something went wrong on the server. Please try again shortly.";
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return "Failed to load broadcast details.";
+}
+
 export default function ComposeShell({ id }: ComposeShellProps) {
   const [data, setData] = useState<CourseAnnouncementBroadcastDetails | null>(
-    test,
+    null,
   );
   const [recipientsData, setRecipientsData] = useState<
     CourseAnnouncementBroadcastRecipientItem[]
@@ -45,27 +75,22 @@ export default function ComposeShell({ id }: ComposeShellProps) {
         setIsLoading(true);
         setError(null);
 
-        // const [detailsResponse, recipientsResponse] = await Promise.all([
-        //   getCourseAnnouncementBroadcastDetails(id),
-        //   getCourseAnnouncementBroadcastRecipients(id, {
-        //     page: 1,
-        //     limit: 50,
-        //   }),
-        // ]);
+        const [detailsResponse, recipientsResponse] = await Promise.all([
+          getCourseAnnouncementBroadcastDetails(id),
+          getCourseAnnouncementBroadcastRecipients(id, {
+            page: 1,
+            limit: 50,
+          }),
+        ]);
 
-        // if (!isMounted) return;
+        if (!isMounted) return;
 
-        // // setData(detailsResponse);
-
-        // setRecipientsData(recipientsResponse.items ?? []);
+        setData(detailsResponse);
+        setRecipientsData(recipientsResponse.items ?? []);
       } catch (err) {
         if (!isMounted) return;
 
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to load broadcast details.",
-        );
+        setError(getReadableErrorMessage(err));
       } finally {
         if (!isMounted) return;
         setIsLoading(false);
@@ -111,19 +136,54 @@ export default function ComposeShell({ id }: ComposeShellProps) {
   }, [data]);
 
   if (isLoading) {
-    return <div className="p-4 text-sm text-slate-500">Loading...</div>;
+    return <ComposeShellLoading />;
   }
 
   if (error) {
-    return <div className="p-4 text-sm text-red-500">{error}</div>;
+    return (
+      <div className="space-y-6">
+        <BroadcastAnnouncementHeader
+          title="Broadcast Announcement"
+          subtitle="Authoritative clinical communication"
+        />
+
+        <div className="rounded-[24px] border border-red-200 bg-red-50 px-5 py-6">
+          <h3 className="text-sm font-semibold text-red-700">
+            Unable to load this broadcast
+          </h3>
+          <p className="mt-2 text-sm text-red-600">{error}</p>
+        </div>
+      </div>
+    );
   }
 
   if (!data || !defaults) {
-    return <div className="p-4 text-sm text-slate-500">No data found.</div>;
+    return (
+      <div className="space-y-6">
+        <BroadcastAnnouncementHeader
+          title="Broadcast Announcement"
+          subtitle="Authoritative clinical communication"
+        />
+
+        <div className="rounded-[24px] border border-slate-200 bg-white px-5 py-6">
+          <h3 className="text-sm font-semibold text-slate-900">
+            No data found
+          </h3>
+          <p className="mt-2 text-sm text-slate-500">
+            We could not find broadcast details for this item.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
+      <BroadcastAnnouncementHeader
+        title="Broadcast Announcement"
+        subtitle={`Authoritative clinical communication for Cohort: ${cohort.name}`}
+      />
+
       <CohortPillBar cohort={cohort} />
 
       <ComposeFormProvider defaultValues={defaults}>
