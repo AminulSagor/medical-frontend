@@ -27,12 +27,9 @@ type Props = {
 };
 
 type CadenceFormValues = {
-  timezone: string;
-  weeklyEnabled: boolean;
   weeklyCycleStartDate: string;
   weeklyReleaseDay: GeneralBroadcastCadenceReleaseDay;
   weeklyReleaseTime: string;
-  monthlyEnabled: boolean;
   monthlyCycleStartDate: string;
   monthlyDayOfMonth: number;
   monthlyReleaseTime: string;
@@ -43,7 +40,6 @@ type InputFieldProps = {
   type?: "text" | "date" | "time" | "number";
   value: string | number;
   onChange: (value: string) => void;
-  disabled?: boolean;
   min?: number;
   max?: number;
 };
@@ -53,14 +49,11 @@ type SelectFieldProps<T extends string> = {
   value: T;
   onChange: (value: T) => void;
   options: Array<{ label: string; value: T }>;
-  disabled?: boolean;
 };
 
 type CadenceCardProps = {
   mode: "weekly" | "monthly";
   title: string;
-  enabled: boolean;
-  onToggleEnabled: (checked: boolean) => void;
   children: React.ReactNode;
 };
 
@@ -83,12 +76,9 @@ function cx(...parts: Array<string | false | null | undefined>) {
 
 function getDefaultFormValues(): CadenceFormValues {
   return {
-    timezone: "America/Chicago",
-    weeklyEnabled: true,
     weeklyCycleStartDate: "",
     weeklyReleaseDay: "MONDAY",
     weeklyReleaseTime: "09:00",
-    monthlyEnabled: true,
     monthlyCycleStartDate: "",
     monthlyDayOfMonth: 1,
     monthlyReleaseTime: "10:00",
@@ -109,12 +99,9 @@ function mapCadenceToFormValues(
   data: GeneralBroadcastCadence,
 ): CadenceFormValues {
   return {
-    timezone: data.timezone ?? "America/Chicago",
-    weeklyEnabled: data.weeklyEnabled,
     weeklyCycleStartDate: data.weeklyCycleStartDate ?? "",
     weeklyReleaseDay: data.weeklyReleaseDay ?? "MONDAY",
     weeklyReleaseTime: toTimeInputValue(data.weeklyReleaseTime),
-    monthlyEnabled: data.monthlyEnabled,
     monthlyCycleStartDate: data.monthlyCycleStartDate ?? "",
     monthlyDayOfMonth: data.monthlyDayOfMonth ?? 1,
     monthlyReleaseTime: toTimeInputValue(data.monthlyReleaseTime),
@@ -125,65 +112,47 @@ function buildCadencePayload(
   values: CadenceFormValues,
 ): GeneralBroadcastCadenceRecalculationPayload {
   const payload: GeneralBroadcastCadenceRecalculationPayload = {
-    timezone: values.timezone.trim(),
-    weeklyEnabled: values.weeklyEnabled,
-    monthlyEnabled: values.monthlyEnabled,
+    timezone: "America/Chicago", // default timezone
+    weeklyEnabled: true,
+    monthlyEnabled: true,
+    weeklyCycleStartDate: values.weeklyCycleStartDate,
+    weeklyReleaseDay: values.weeklyReleaseDay,
+    weeklyReleaseTime: toApiTimeValue(values.weeklyReleaseTime),
+    monthlyCycleStartDate: values.monthlyCycleStartDate,
+    monthlyDayOfMonth: Number(values.monthlyDayOfMonth),
+    monthlyReleaseTime: toApiTimeValue(values.monthlyReleaseTime),
   };
-
-  if (values.weeklyEnabled) {
-    payload.weeklyCycleStartDate = values.weeklyCycleStartDate;
-    payload.weeklyReleaseDay = values.weeklyReleaseDay;
-    payload.weeklyReleaseTime = toApiTimeValue(values.weeklyReleaseTime);
-  }
-
-  if (values.monthlyEnabled) {
-    payload.monthlyCycleStartDate = values.monthlyCycleStartDate;
-    payload.monthlyDayOfMonth = Number(values.monthlyDayOfMonth);
-    payload.monthlyReleaseTime = toApiTimeValue(values.monthlyReleaseTime);
-  }
 
   return payload;
 }
 
 function validateCadenceForm(values: CadenceFormValues): string | null {
-  if (!values.timezone.trim()) {
-    return "Timezone is required.";
+  if (!values.weeklyCycleStartDate) {
+    return "Weekly cycle start date is required.";
   }
 
-  if (!values.weeklyEnabled && !values.monthlyEnabled) {
-    return "Enable at least one cadence before continuing.";
+  if (!values.weeklyReleaseDay) {
+    return "Weekly release day is required.";
   }
 
-  if (values.weeklyEnabled) {
-    if (!values.weeklyCycleStartDate) {
-      return "Weekly cycle start date is required.";
-    }
-
-    if (!values.weeklyReleaseDay) {
-      return "Weekly release day is required.";
-    }
-
-    if (!values.weeklyReleaseTime) {
-      return "Weekly release time is required.";
-    }
+  if (!values.weeklyReleaseTime) {
+    return "Weekly release time is required.";
   }
 
-  if (values.monthlyEnabled) {
-    if (!values.monthlyCycleStartDate) {
-      return "Monthly cycle start date is required.";
-    }
+  if (!values.monthlyCycleStartDate) {
+    return "Monthly cycle start date is required.";
+  }
 
-    if (!values.monthlyDayOfMonth || values.monthlyDayOfMonth < 1) {
-      return "Monthly day of month must be between 1 and 31.";
-    }
+  if (!values.monthlyDayOfMonth || values.monthlyDayOfMonth < 1) {
+    return "Monthly day of month must be between 1 and 31.";
+  }
 
-    if (values.monthlyDayOfMonth > 31) {
-      return "Monthly day of month must be between 1 and 31.";
-    }
+  if (values.monthlyDayOfMonth > 31) {
+    return "Monthly day of month must be between 1 and 31.";
+  }
 
-    if (!values.monthlyReleaseTime) {
-      return "Monthly release time is required.";
-    }
+  if (!values.monthlyReleaseTime) {
+    return "Monthly release time is required.";
   }
 
   return null;
@@ -211,17 +180,9 @@ function InputField({
   type = "text",
   value,
   onChange,
-  disabled = false,
   min,
   max,
 }: InputFieldProps) {
-  const icon =
-    type === "date" ? (
-      <CalendarDays size={16} />
-    ) : type === "time" ? (
-      <Clock3 size={16} />
-    ) : null;
-
   return (
     <FieldWrapper label={label}>
       <div className="relative">
@@ -230,35 +191,42 @@ function InputField({
           value={value}
           min={min}
           max={max}
-          disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
-          className="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 pr-10 text-[15px] font-medium text-slate-700 outline-none transition focus:border-teal-400 focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+          className={cx(
+            "flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-[15px] font-medium text-slate-700 outline-none transition focus:border-teal-400 focus:bg-white",
+            // Hide browser's native date/time picker icons
+            (type === "date" || type === "time") &&
+              "[&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3",
+            "pr-10",
+          )}
         />
-        {icon ? (
+        {type === "date" && (
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-            {icon}
+            <CalendarDays size={16} />
           </span>
-        ) : null}
+        )}
+        {type === "time" && (
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+            <Clock3 size={16} />
+          </span>
+        )}
       </div>
     </FieldWrapper>
   );
 }
-
 function SelectField<T extends string>({
   label,
   value,
   onChange,
   options,
-  disabled = false,
 }: SelectFieldProps<T>) {
   return (
     <FieldWrapper label={label}>
       <div className="relative">
         <select
           value={value}
-          disabled={disabled}
           onChange={(event) => onChange(event.target.value as T)}
-          className="flex h-11 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 pr-10 text-[15px] font-medium text-slate-700 outline-none transition focus:border-teal-400 focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+          className="flex h-11 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 pr-10 text-[15px] font-medium text-slate-700 outline-none transition focus:border-teal-400 focus:bg-white"
         >
           {options.map((option) => (
             <option key={option.value} value={option.value}>
@@ -275,40 +243,7 @@ function SelectField<T extends string>({
   );
 }
 
-function Toggle({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={cx(
-        "relative inline-flex h-6 w-11 items-center rounded-full transition",
-        checked ? "bg-teal-500" : "bg-slate-300",
-      )}
-      aria-pressed={checked}
-    >
-      <span
-        className={cx(
-          "inline-block h-5 w-5 transform rounded-full bg-white transition",
-          checked ? "translate-x-5" : "translate-x-1",
-        )}
-      />
-    </button>
-  );
-}
-
-function CadenceConfigCard({
-  mode,
-  title,
-  enabled,
-  onToggleEnabled,
-  children,
-}: CadenceCardProps) {
+function CadenceConfigCard({ mode, title, children }: CadenceCardProps) {
   const isWeekly = mode === "weekly";
 
   return (
@@ -328,13 +263,9 @@ function CadenceConfigCard({
             <h4 className="text-[15px] font-semibold text-slate-800">
               {title}
             </h4>
-            <p className="mt-1 text-xs text-slate-400">
-              {enabled ? "Enabled" : "Disabled"}
-            </p>
+            <p className="mt-1 text-xs text-slate-400">Enabled</p>
           </div>
         </div>
-
-        <Toggle checked={enabled} onChange={onToggleEnabled} />
       </div>
 
       <div className="space-y-4">{children}</div>
@@ -579,21 +510,8 @@ export default function BroadcastCadenceSettingsDialog({
             </div>
           ) : (
             <div className="space-y-6">
-              <InputField
-                label="Timezone"
-                value={formValues.timezone}
-                onChange={(value) => updateFormValue("timezone", value)}
-              />
-
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <CadenceConfigCard
-                  mode="weekly"
-                  title="Sequence Rhythm"
-                  enabled={formValues.weeklyEnabled}
-                  onToggleEnabled={(checked) =>
-                    updateFormValue("weeklyEnabled", checked)
-                  }
-                >
+                <CadenceConfigCard mode="weekly" title="Sequence Rhythm">
                   <InputField
                     label="Cycle Start Date"
                     type="date"
@@ -601,7 +519,6 @@ export default function BroadcastCadenceSettingsDialog({
                     onChange={(value) =>
                       updateFormValue("weeklyCycleStartDate", value)
                     }
-                    disabled={!formValues.weeklyEnabled}
                   />
 
                   <SelectField
@@ -611,7 +528,6 @@ export default function BroadcastCadenceSettingsDialog({
                       updateFormValue("weeklyReleaseDay", value)
                     }
                     options={RELEASE_DAY_OPTIONS}
-                    disabled={!formValues.weeklyEnabled}
                   />
 
                   <InputField
@@ -621,18 +537,10 @@ export default function BroadcastCadenceSettingsDialog({
                     onChange={(value) =>
                       updateFormValue("weeklyReleaseTime", value)
                     }
-                    disabled={!formValues.weeklyEnabled}
                   />
                 </CadenceConfigCard>
 
-                <CadenceConfigCard
-                  mode="monthly"
-                  title="Standard Rhythm"
-                  enabled={formValues.monthlyEnabled}
-                  onToggleEnabled={(checked) =>
-                    updateFormValue("monthlyEnabled", checked)
-                  }
-                >
+                <CadenceConfigCard mode="monthly" title="Standard Rhythm">
                   <InputField
                     label="Cycle Start Date"
                     type="date"
@@ -640,7 +548,6 @@ export default function BroadcastCadenceSettingsDialog({
                     onChange={(value) =>
                       updateFormValue("monthlyCycleStartDate", value)
                     }
-                    disabled={!formValues.monthlyEnabled}
                   />
 
                   <SelectField
@@ -650,7 +557,6 @@ export default function BroadcastCadenceSettingsDialog({
                       updateFormValue("monthlyDayOfMonth", Number(value))
                     }
                     options={monthlyDayOptions}
-                    disabled={!formValues.monthlyEnabled}
                   />
 
                   <InputField
@@ -660,7 +566,6 @@ export default function BroadcastCadenceSettingsDialog({
                     onChange={(value) =>
                       updateFormValue("monthlyReleaseTime", value)
                     }
-                    disabled={!formValues.monthlyEnabled}
                   />
                 </CadenceConfigCard>
               </div>
