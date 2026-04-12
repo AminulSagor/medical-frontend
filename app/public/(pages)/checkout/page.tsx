@@ -1,26 +1,42 @@
+"use client";
+
+import { useState } from "react";
 import CheckOutHeader from "@/app/public/(pages)/checkout/_components/checkout-header";
 import OrderReviewCard from "@/app/public/(pages)/checkout/_components/order-review-card";
 import PaymentMethodCard from "@/app/public/(pages)/checkout/_components/payment-method-card";
 import ShippingAddressCard from "@/app/public/(pages)/checkout/_components/shipping-address-card";
+import type { UpdateShippingAddressPayload } from "@/app/public/types/shipping-address.types";
 
-const page = () => {
+const Page = () => {
+  const [shippingAddress, setShippingAddress] =
+    useState<UpdateShippingAddressPayload>({
+      fullName: "",
+      addressLine1: "",
+      addressLine2: "",
+      city: "",
+      state: "",
+      zipCode: "",
+    });
+
   return (
-    <div className="max-w-7xl mx-auto mt-24 space-y-4 py-10">
+    <div className="mx-auto mt-24 max-w-7xl space-y-4 py-10">
       <CheckOutHeader />
+
       <div className="grid grid-cols-3 gap-8">
-        {/* LEFT SIDE */}
         <div className="col-span-2 space-y-8">
-          <ShippingAddressCard />
+          <ShippingAddressCard
+            shippingAddress={shippingAddress}
+            setShippingAddress={setShippingAddress}
+          />
           <PaymentMethodCard />
         </div>
 
-        {/* RIGHT SIDE */}
         <div>
-          <OrderReviewCard />
+          <OrderReviewCard shippingAddress={shippingAddress} />
         </div>
       </div>
     </div>
   );
 };
 
-export default page;
+export default Page;

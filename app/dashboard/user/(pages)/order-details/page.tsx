@@ -1,75 +1,146 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import OrderDetailsHeader from "./_components/order-details-header";
 import ShipmentItemsCard from "./_components/shipment-items-card";
 import OrderSummaryCard from "./_components/order-summary-card";
+import { getUserOrderDetails } from "@/service/user/order-details.service";
+import type { UserOrderDetailsData } from "@/types/user/order/order-details.types";
+
+type StepKey = "Ordered" | "Processing" | "Shipped" | "Delivered";
+
+function money(value: string | number | null | undefined) {
+  const parsed =
+    typeof value === "number" ? value : Number.parseFloat(value ?? "0");
+
+  if (Number.isNaN(parsed)) return "$0.00";
+
+  return `$${parsed.toFixed(2)}`;
+}
+
+function mapActiveStep(value?: string): StepKey {
+  const normalized = value?.toLowerCase();
+
+  if (normalized === "ordered") return "Ordered";
+  if (normalized === "processing") return "Processing";
+  if (normalized === "shipped") return "Shipped";
+  if (normalized === "delivered") return "Delivered";
+
+  return "Ordered";
+}
+
+function buildMeta(attributes: Record<string, string> | null) {
+  if (!attributes) return [];
+
+  return Object.entries(attributes).map(
+    ([key, value]) =>
+      `${key.charAt(0).toUpperCase() + key.slice(1)}: ${String(value)}`,
+  );
+}
 
 export default function OrderDetailsPage() {
-    const items = [
-        {
-            title: "Disposable Laryngoscope Blades (Box of 20)",
-            sku: "DLB-9920-B",
-            price: "$120.00",
-            qty: 1,
-            meta: ["Size: Mac 3", "Packaging: Sterile"],
-            imageSrc: "/photos/image.png",
-        },
-        {
-            title: "Fiber Optic Laryngoscope Handle",
-            sku: "FOL-8829-X",
-            price: "$145.00",
-            qty: 1,
-            meta: ["Size: Adult Standard", "Material: Stainless Steel"],
-            imageSrc: "/photos/image.png",
-        },
-        {
-            title: "Adult Airway Reference Card",
-            sku: "ARC-2244-C",
-            price: "$24.50",
-            qty: 1,
-            meta: ["Format: Laminated Pocket-sized", "Edition: 2026 Guidelines"],
-            imageSrc: "/photos/image.png",
-        },
-        {
-            title: "Adult Airway Reference Card",
-            sku: "ARC-2244-C",
-            price: "$24.50",
-            qty: 1,
-            meta: ["Format: Laminated Pocket-sized", "Edition: 2026 Guidelines"],
-            imageSrc: "/photos/image.png",
-        },
-    ];
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("id");
 
-    return (
-        <main className="mx-auto w-full max-w-6xl px-4 py-6">
-            <OrderDetailsHeader
-                backHref="/order-history"
-                orderNo="ORD-8829"
-                placedOn="October 24, 2026"
-                statusLabel="Order Received"
-                carrier="Not Assigned"
-                trackingNo="—"
-                etaLabel="Pending Shipment"
-                activeStep="Ordered"
-            />
+  const [orderDetails, setOrderDetails] = useState<UserOrderDetailsData | null>(
+    null,
+  );
 
-            {/* Items + Summary */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px] items-start">
-                <ShipmentItemsCard items={items} orderNoBadge="Order No: #ORD-8829" />
+  useEffect(() => {
+    if (!orderId) return;
 
-                <OrderSummaryCard
-                    shipTo={{
-                        name: "Dr. Sarah Thompson",
-                        lines: ["4221 Medical Center Dr,", "Suite 100", "Seattle, WA 98105"],
-                    }}
-                    payment={{ label: "Visa ending in 4242" }}
-                    totals={{
-                        subtotalLabel: "Subtotal (3 items)",
-                        subtotal: "$289.50",
-                        shipping: "$12.00",
-                        tax: "$18.45",
-                        grandTotal: "$319.95",
-                    }}
-                />
-            </div>
-        </main>
-    );
+    const fetchOrderDetails = async () => {
+      try {
+        const data = await getUserOrderDetails(orderId);
+        setOrderDetails(data);
+      } catch (error) {
+        console.error("Failed to load order details", error);
+      }
+    };
+
+    fetchOrderDetails();
+  }, [orderId]);
+
+  const items = useMemo(
+    () =>
+      (orderDetails?.items || []).map((item) => ({
+        title: item.name,
+        sku: item.sku,
+        price: money(item.price),
+        qty: item.quantity,
+        meta: buildMeta(item.attributes),
+        imageSrc: item.imageUrl || "/photos/image.png",
+      })),
+    [orderDetails],
+  );
+
+  const currentTimelineStep =
+    orderDetails?.timeline.steps?.[orderDetails.timeline.currentStepIndex];
+
+  const handleDownloadInvoice = () => {
+    const url = orderDetails?.actions.downloadInvoice;
+    if (!url) return;
+
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleTrackPackage = () => {
+    const url = orderDetails?.actions.trackPackage;
+    if (!url) return;
+
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <main className="mx-auto w-full max-w-6xl px-4 py-6">
+      <OrderDetailsHeader
+        backHref="/order-history"
+        orderNo={orderDetails?.orderNumber}
+        placedOn={orderDetails?.placedDate}
+        statusLabel={orderDetails?.shipmentStatus.statusLabel}
+        carrier={orderDetails?.shipmentStatus.carrier}
+        trackingNo={orderDetails?.shipmentStatus.trackingNumber}
+        etaLabel={orderDetails?.shipmentStatus.estimatedDelivery}
+        activeStep={mapActiveStep(
+          currentTimelineStep?.label || currentTimelineStep?.key,
+        )}
+        onDownloadInvoice={handleDownloadInvoice}
+        onTrackPackage={handleTrackPackage}
+      />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px] items-start">
+        <ShipmentItemsCard
+          items={items}
+          orderNoBadge={`Order No: #${orderDetails?.orderNumber || "—"}`}
+        />
+
+        <OrderSummaryCard
+          shipTo={{
+            name: orderDetails?.shipping.fullName || "—",
+            lines: [
+              orderDetails?.shipping.addressLine1 || "—",
+              orderDetails?.shipping.addressLine2 || "",
+              orderDetails?.shipping.cityStateZip || "",
+            ].filter(Boolean),
+          }}
+          payment={{
+            label:
+              orderDetails?.payment.brand && orderDetails?.payment.last4
+                ? `${orderDetails.payment.brand} ending in ${orderDetails.payment.last4}`
+                : "Card payment",
+          }}
+          totals={{
+            subtotalLabel: `Subtotal (${orderDetails?.items.length || 0} item${
+              (orderDetails?.items.length || 0) !== 1 ? "s" : ""
+            })`,
+            subtotal: money(orderDetails?.payment.subtotal),
+            shipping: money(orderDetails?.payment.shipping),
+            tax: money(orderDetails?.payment.tax),
+            grandTotal: money(orderDetails?.payment.grandTotal),
+          }}
+        />
+      </div>
+    </main>
+  );
 }
