@@ -118,7 +118,6 @@ export default function CreateBroadcastPage() {
     if (form.contentType === "ARTICLE_LINK" && form.selectedArticle) {
       return {
         contentType: "ARTICLE_LINK",
-        sourceRefId: form.selectedArticle.sourceRefId,
         subjectLine: form.subjectLine.trim(),
         preheaderText: form.preHeader.trim(),
         audienceMode: form.targetAudience,

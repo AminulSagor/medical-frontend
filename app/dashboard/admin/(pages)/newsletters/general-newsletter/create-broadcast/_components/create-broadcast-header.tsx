@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeft, SendHorizonal } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 type Props = {
   onDiscard: () => void;
@@ -13,11 +14,13 @@ export default function CreateBroadcastHeader({
   onSubmit,
   isSubmitting = false,
 }: Props) {
+  const router = useRouter();
   return (
     <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <button
+            onClick={() => router.back()}
             type="button"
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50"
           >
@@ -26,7 +29,7 @@ export default function CreateBroadcastHeader({
 
           <div className="min-w-0">
             <h1 className="truncate text-sm font-semibold text-slate-800 sm:text-base">
-              Cadence-Based Broadcast Editor
+              Create Cadence-Based Broadcast
             </h1>
             <p className="text-xs text-slate-500">
               Manage administrative newsletter scheduling

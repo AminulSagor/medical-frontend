@@ -1,6 +1,6 @@
 export type BroadcastContentType = "ARTICLE_LINK" | "CUSTOM_MESSAGE";
 export type BroadcastFrequency = "WEEKLY" | "MONTHLY";
-export type BroadcastAudienceMode = "ALL_SUBSCRIBERS";
+export type BroadcastAudienceMode = "ALL_SUBSCRIBERS" | "SEGMENTS" | "MIXED";
 export type BroadcastArticleSourceType = "BLOG_POST";
 
 export type GeneralBroadcastArticleSourceItem = {
@@ -38,7 +38,6 @@ export type CreateGeneralBroadcastCustomContentPayload = {
 export type CreateGeneralBroadcastPayload =
   | {
       contentType: "ARTICLE_LINK";
-      sourceRefId: string;
       subjectLine: string;
       preheaderText: string;
       audienceMode: BroadcastAudienceMode;
