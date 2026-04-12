@@ -112,13 +112,14 @@ export default function TransmissionReportPage() {
         isLoading={isReportLoading}
       />
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_360px]">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_360px] items-start">
         <EngagementOverTimeCard
           engagement={reportData?.engagementOverTime ?? null}
           isLoading={isReportLoading}
         />
 
         <TopPerformingLinksCard
+          broadcastId={broadcastId}
           links={reportData?.topPerformingLinks ?? []}
           isLoading={isReportLoading}
         />
