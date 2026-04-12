@@ -20,6 +20,7 @@ type Props = {
   items: GeneralBroadcastWorkspaceItem[];
   pagination: PaginationState;
   onPageChange: (page: number) => void;
+  onRefresh: () => Promise<void>; // Add this prop
 };
 
 function cx(...parts: Array<string | false | null | undefined>) {
@@ -60,7 +61,13 @@ function DraftBadge({ label }: { label: string }) {
   );
 }
 
-function ActionButtons({ item }: { item: GeneralBroadcastWorkspaceItem }) {
+function ActionButtons({
+  item,
+  onRefresh,
+}: {
+  item: GeneralBroadcastWorkspaceItem;
+  onRefresh: () => Promise<void>;
+}) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -77,9 +84,12 @@ function ActionButtons({ item }: { item: GeneralBroadcastWorkspaceItem }) {
     try {
       setIsDeleting(true);
       await generalBroadcastGetService.deleteBroadcast(item.id);
-      router.refresh();
+
+      // Refresh the data after successful deletion
+      await onRefresh();
     } catch (error) {
       console.error("Failed to delete broadcast:", error);
+      alert("Failed to delete broadcast. Please try again.");
     } finally {
       setIsDeleting(false);
     }
@@ -143,6 +153,7 @@ export default function GeneralDraftsTable({
   items,
   pagination,
   onPageChange,
+  onRefresh,
 }: Props) {
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
@@ -222,7 +233,7 @@ export default function GeneralDraftsTable({
                     </td>
 
                     <td className="px-4 py-5">
-                      <ActionButtons item={item} />
+                      <ActionButtons item={item} onRefresh={onRefresh} />
                     </td>
                   </tr>
                 );

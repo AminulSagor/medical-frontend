@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Eye, GripVertical, Pencil, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import GeneralDataPagination from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_components/general-data-pagination";
 import { PaginationState } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/types/general-newsletter-data.type";
 import {
@@ -21,6 +20,7 @@ type Props = {
   items: GeneralBroadcastWorkspaceItem[];
   pagination: PaginationState;
   onPageChange: (page: number) => void;
+  onRefresh: () => Promise<void>;
 };
 
 function cx(...parts: Array<string | false | null | undefined>) {
@@ -104,8 +104,13 @@ function StatusBadge({ label, code }: { label: string; code: string }) {
   );
 }
 
-function ActionButtons({ item }: { item: GeneralBroadcastWorkspaceItem }) {
-  const router = useRouter();
+function ActionButtons({
+  item,
+  onRefresh,
+}: {
+  item: GeneralBroadcastWorkspaceItem;
+  onRefresh: () => Promise<void>;
+}) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const editHref = `/dashboard/admin/newsletters/general-newsletter/cadence-broadcast-edit/${item.id}`;
@@ -121,7 +126,7 @@ function ActionButtons({ item }: { item: GeneralBroadcastWorkspaceItem }) {
     try {
       setIsDeleting(true);
       await generalBroadcastGetService.deleteBroadcast(item.id);
-      router.refresh();
+      await onRefresh();
     } catch (error) {
       console.error("Failed to delete broadcast:", error);
     } finally {
@@ -187,6 +192,7 @@ export default function GeneralQueueTable({
   items,
   pagination,
   onPageChange,
+  onRefresh,
 }: Props) {
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
@@ -299,7 +305,7 @@ export default function GeneralQueueTable({
                     </td>
 
                     <td className="px-4 py-5">
-                      <ActionButtons item={item} />
+                      <ActionButtons item={item} onRefresh={onRefresh} />
                     </td>
                   </tr>
                 );

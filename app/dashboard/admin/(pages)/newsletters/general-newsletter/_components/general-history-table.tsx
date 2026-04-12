@@ -15,6 +15,7 @@ type Props = {
   items: GeneralBroadcastWorkspaceItem[];
   pagination: PaginationState;
   onPageChange: (page: number) => void;
+  onRefresh: () => Promise<void>;
 };
 
 function cx(...parts: Array<string | false | null | undefined>) {
@@ -72,8 +73,8 @@ function EngagementBar({
 }
 
 function ActionButtons({ item }: { item: GeneralBroadcastWorkspaceItem }) {
-  const reportHref = `/dashboard/admin/newsletters/general-newsletter/history-report/${item.id}`;
-
+  // const reportHref = `/dashboard/admin/newsletters/general-newsletter/history-report/${item.id}`;
+  const reportHref = "#";
   return (
     <div className="flex items-center gap-4 text-slate-400">
       {item.actions?.view ? (
@@ -108,7 +109,10 @@ export default function GeneralHistoryTable({
   items,
   pagination,
   onPageChange,
+  onRefresh,
 }: Props) {
+  void onRefresh;
+
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
       <div className="overflow-x-auto">

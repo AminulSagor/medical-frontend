@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import GeneralDataChildTabs from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_components/general-data-child-tabs";
 import GeneralDataParentTabs from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_components/general-data-parent-tabs";
 import GeneralDataToolbar from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_components/general-data-toolbar";
@@ -42,10 +42,35 @@ export default function GeneralNewsLetterDataSection() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Reset page when parent tab or cadence tab changes
   useEffect(() => {
     setPage(1);
   }, [parentTab, cadenceTab]);
 
+  // Fetch workspace data
+  const fetchWorkspaceData = useCallback(
+    async (currentPage: number) => {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      try {
+        const response =
+          await generalBroadcastWorkspaceService.getGeneralBroadcastWorkspaceList(
+            buildWorkspaceListParams(parentTab, cadenceTab, currentPage),
+          );
+        setWorkspace(response);
+      } catch (error) {
+        setWorkspace(null);
+        setErrorMessage("Failed to load general broadcast workspace.");
+        console.error("Error fetching workspace:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [parentTab, cadenceTab],
+  );
+
+  // Load workspace when dependencies change
   useEffect(() => {
     let active = true;
 
@@ -65,6 +90,7 @@ export default function GeneralNewsLetterDataSection() {
         if (!active) return;
         setWorkspace(null);
         setErrorMessage("Failed to load general broadcast workspace.");
+        console.error("Error loading workspace:", error);
       } finally {
         if (active) {
           setIsLoading(false);
@@ -78,6 +104,11 @@ export default function GeneralNewsLetterDataSection() {
       active = false;
     };
   }, [parentTab, cadenceTab, page]);
+
+  // Refresh function for child components
+  const handleRefresh = useCallback(async () => {
+    await fetchWorkspaceData(page);
+  }, [fetchWorkspaceData, page]);
 
   const filteredItems = useMemo(() => {
     if (!workspace) return [];
@@ -188,6 +219,7 @@ export default function GeneralNewsLetterDataSection() {
                     items={filteredItems}
                     pagination={pagination}
                     onPageChange={setPage}
+                    onRefresh={handleRefresh}
                   />
                 )}
               </>
@@ -221,6 +253,7 @@ export default function GeneralNewsLetterDataSection() {
                     items={filteredItems}
                     pagination={pagination}
                     onPageChange={setPage}
+                    onRefresh={handleRefresh}
                   />
                 )}
               </>
@@ -255,6 +288,7 @@ export default function GeneralNewsLetterDataSection() {
                     items={filteredItems}
                     pagination={pagination}
                     onPageChange={setPage}
+                    onRefresh={handleRefresh}
                   />
                 )}
               </>
