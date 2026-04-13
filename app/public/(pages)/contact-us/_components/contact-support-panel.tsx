@@ -41,12 +41,16 @@ type Props = {
 
   mapImageUrl?: string;
   mapOpenHref?: string;
+
+  initialInquiryType?: ContactUsInquiryType;
+  initialMessage?: string;
 };
 
 export default function ContactSupportPanel({
   onSubmit,
   inquiryOptions = [
     { value: "general_inquiry", label: "General Inquiry" },
+    { value: "order_inquiry", label: "Order Inquiry" },
     { value: "enrollment_programs", label: "Enrollment & Programs" },
     { value: "group_bookings", label: "Group Bookings" },
     { value: "technical_support", label: "Technical Support" },
@@ -65,17 +69,30 @@ export default function ContactSupportPanel({
   },
   mapImageUrl,
   mapOpenHref,
+  initialInquiryType,
+  initialMessage,
 }: Props) {
+  const defaultInquiryType =
+    initialInquiryType ?? inquiryOptions[0]?.value ?? "general_inquiry";
+  const defaultMessage = initialMessage ?? "";
+
   const [fullName, setFullName] = React.useState("");
   const [email, setEmail] = React.useState("");
-  const [inquiryType, setInquiryType] = React.useState<ContactUsInquiryType>(
-    inquiryOptions[0]?.value ?? "general_inquiry",
-  );
-  const [message, setMessage] = React.useState("");
+  const [inquiryType, setInquiryType] =
+    React.useState<ContactUsInquiryType>(defaultInquiryType);
+  const [message, setMessage] = React.useState(defaultMessage);
   const [sentOpen, setSentOpen] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const router = useRouter();
+
+  React.useEffect(() => {
+    setInquiryType(defaultInquiryType);
+  }, [defaultInquiryType]);
+
+  React.useEffect(() => {
+    setMessage(defaultMessage);
+  }, [defaultMessage]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -103,8 +120,8 @@ export default function ContactSupportPanel({
       setSentOpen(true);
       setFullName("");
       setEmail("");
-      setInquiryType(inquiryOptions[0]?.value ?? "general_inquiry");
-      setMessage("");
+      setInquiryType(defaultInquiryType);
+      setMessage(defaultMessage);
     } catch (error) {
       setSubmitError(getSubmitErrorMessage(error));
     } finally {
@@ -177,14 +194,13 @@ export default function ContactSupportPanel({
               </Field>
 
               {submitError ? (
-                <p className="text-sm font-medium text-red-500">{submitError}</p>
+                <p className="text-sm font-medium text-red-500">
+                  {submitError}
+                </p>
               ) : null}
 
               <div className="pt-2">
-                <Button
-                  type="submit"
-                  className="rounded-2xl px-8 py-3"
-                >
+                <Button type="submit" className="rounded-2xl px-8 py-3">
                   {isSubmitting ? "Sending..." : "Send Message"}
                   <span className="text-white/90">➔</span>
                 </Button>

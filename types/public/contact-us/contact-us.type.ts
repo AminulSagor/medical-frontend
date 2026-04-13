@@ -2,7 +2,8 @@ export type ContactUsInquiryType =
   | "general_inquiry"
   | "enrollment_programs"
   | "group_bookings"
-  | "technical_support";
+  | "technical_support"
+  | "order_inquiry";
 
 export type SendContactUsPayload = {
   fullName: string;
@@ -13,4 +14,5 @@ export type SendContactUsPayload = {
 
 export type SendContactUsResponse = {
   message: string;
+  data?: unknown;
 };

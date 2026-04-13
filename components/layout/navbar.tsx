@@ -1,4 +1,3 @@
-// app/(user)/(not-register)/public/_components/navbar.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -88,7 +87,6 @@ export default function Navbar() {
                 : "py-2 md:py-3 shadow-sm",
             ].join(" ")}
           >
-            {/* Mobile: Hamburger menu */}
             {isPublicRoute && (
               <button
                 type="button"
@@ -105,12 +103,10 @@ export default function Navbar() {
               </button>
             )}
 
-            {/* Desktop: Logo */}
             <div className={`hidden lg:block ${isAuthRoute ? "" : ""}`}>
               <NavbarLogo />
             </div>
 
-            {/* Mobile: Centered Logo or Search */}
             <div className="flex-1 flex justify-center lg:hidden">
               {!isSearchOpen ? (
                 <div className="lg:hidden">
@@ -123,12 +119,10 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Desktop: Search */}
             <div className="hidden lg:flex flex-1">
               <NavbarSearch value={q} onChange={setQ} />
             </div>
 
-            {/* Mobile: Search Icon */}
             <button
               type="button"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -147,27 +141,26 @@ export default function Navbar() {
               )}
             </button>
 
-            {/* Desktop: Navigation */}
             <nav
               className="hidden items-center gap-7 lg:flex"
               aria-label="Primary"
             >
-              {links.map((l) => {
-                const active = isActivePath(pathname, l.href);
+              {links.map((link) => {
+                const active = isActivePath(pathname, link.href);
 
                 return (
                   <Link
-                    key={l.href}
-                    href={l.href}
+                    key={link.href}
+                    href={link.href}
                     className={[
                       "group relative flex items-center gap-2 text-sm font-semibold",
                       active ? "text-primary" : "text-light-slate",
                       "hover:text-black transition-colors",
                     ].join(" ")}
                   >
-                    <span>{l.label}</span>
+                    <span>{link.label}</span>
 
-                    {l.showDot && (
+                    {link.showDot && (
                       <span
                         className="absolute top-0 -right-3 h-2 w-2 rounded-full bg-primary"
                         aria-hidden="true"
@@ -188,7 +181,6 @@ export default function Navbar() {
               })}
             </nav>
 
-            {/* Desktop: Cart (hidden on auth routes) */}
             {!isAuthRoute && (
               <button
                 type="button"
@@ -213,7 +205,6 @@ export default function Navbar() {
               </button>
             )}
 
-            {/* Desktop: Account Access */}
             <div className="hidden md:block">
               <AccountAccessDropdown />
             </div>
@@ -234,7 +225,7 @@ export default function Navbar() {
             setMobileSidebar(false);
             setCartSidebar(true);
           }}
-          cartCount={2}
+          cartCount={totalItems}
           hideCart={isAuthRoute}
         />
       )}
@@ -259,7 +250,6 @@ function AccountAccessDropdown() {
     path === "/settings" ||
     path.startsWith("/dashboard/");
 
-  // Show outlined sign-in button for unauthorized users
   if (!isAuthenticated) {
     return (
       <Link
@@ -276,7 +266,6 @@ function AccountAccessDropdown() {
     );
   }
 
-  // Show avatar dropdown for authenticated users
   return (
     <div className="relative hidden md:block">
       <div className="group relative">
