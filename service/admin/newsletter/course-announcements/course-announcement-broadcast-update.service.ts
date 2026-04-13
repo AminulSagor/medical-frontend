@@ -16,3 +16,26 @@ export async function updateCourseAnnouncementBroadcastPrioritySubject(
 
   return response.data;
 }
+
+export interface SetCourseAnnouncementRecipientsPayload {
+  recipientMode: "SELECTED" | "ALL";
+  recipientIds: string[];
+}
+
+export async function setCourseAnnouncementBroadcastRecipients(
+  id: string,
+  payload: SetCourseAnnouncementRecipientsPayload,
+): Promise<void> {
+  await serviceClient.post(
+    `/admin/newsletters/course-announcements/broadcasts/${id}/recipients`,
+    payload,
+  );
+}
+
+export async function sendCourseAnnouncementBroadcast(
+  id: string,
+): Promise<void> {
+  await serviceClient.post(
+    `/admin/newsletters/course-announcements/broadcasts/${id}/send`,
+  );
+}

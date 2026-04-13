@@ -71,14 +71,14 @@ export default function GeneralDataToolbar({
           ) : null}
 
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
-            <span>Sort By:</span>
+            {/* <span>Sort By:</span>
             <button
               type="button"
               className="inline-flex items-center gap-2 text-[12px] font-semibold tracking-normal text-slate-600"
             >
               <span>{sortBy}</span>
               <ChevronDown size={14} className="text-slate-400" />
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
@@ -104,15 +104,15 @@ export default function GeneralDataToolbar({
             onMouseEnter={openNow}
             onMouseLeave={closeSoon}
           >
-            <button
+            {/* <button
               type="button"
               className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-600 shadow-sm"
             >
               <Funnel size={16} className="text-slate-500" />
               {actionLabel}
-            </button>
+            </button> */}
 
-            {openFilter ? (
+            {/* {openFilter ? (
               <div className="absolute right-0 top-[calc(100%+12px)] z-50">
                 <FilterOptionsPopover
                   value={filters}
@@ -121,7 +121,7 @@ export default function GeneralDataToolbar({
                   onRequestClose={() => setOpenFilter(false)}
                 />
               </div>
-            ) : null}
+            ) : null} */}
           </div>
         </div>
       </div>

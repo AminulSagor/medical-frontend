@@ -1,11 +1,16 @@
 import ScheduledBroadcastSectionShell from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_components/scheduled-broadcast-section-shell";
-import { AudienceTargetItem } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/types/scheduled-broadcast-view.type";
+import { getAudienceItems } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_utils/scheduled-broadcast-view.utils";
+import type { BroadcastAudience } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
 
 type Props = {
-  items: AudienceTargetItem[];
+  audience: BroadcastAudience;
 };
 
-export default function ScheduledBroadcastAudienceTargetCard({ items }: Props) {
+export default function ScheduledBroadcastAudienceTargetCard({
+  audience,
+}: Props) {
+  const items = getAudienceItems(audience);
+
   return (
     <ScheduledBroadcastSectionShell title="Audience & Target">
       <div className="flex flex-wrap gap-2">

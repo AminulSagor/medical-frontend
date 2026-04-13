@@ -2,203 +2,19 @@
 
 import { Filter, Upload } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-type Row = {
-  id: string;
-  status: "Sent";
-  type: "Class Update" | "Marketing";
-  subject: string;
-  audience: string;
-  openRate: number; // %
-  sentDate: string;
-};
+import { getRecentGeneralTransmissions } from "@/service/admin/newsletter/dashboard/recent-transmissions.service";
+import type {
+  RecentGeneralTransmissionItem,
+  RecentGeneralTransmissionsResponse,
+} from "@/types/admin/newsletter/dashboard/recent-transmissions.types";
 
-const ROWS: Row[] = [
-  {
-    id: "r1",
-    status: "Sent",
-    type: "Class Update",
-    subject: "Important: March 12th Airway Workshop Location Change...",
-    audience: "Target cohorts",
-    openRate: 98,
-    sentDate: "Oct 25, 2026",
-  },
-  {
-    id: "r2",
-    status: "Sent",
-    type: "Marketing",
-    subject: "New Research: Pediatric Airway Management",
-    audience: "All Subscribers",
-    openRate: 45,
-    sentDate: "Oct 24, 2026",
-  },
-  {
-    id: "r3",
-    status: "Sent",
-    type: "Class Update",
-    subject: "Updated Schedule: Emergency Airway Bootcamp",
-    audience: "Target cohorts",
-    openRate: 88,
-    sentDate: "Oct 22, 2026",
-  },
-  {
-    id: "r4",
-    status: "Sent",
-    type: "Marketing",
-    subject: "Clinical Tips: Difficult Airway Management",
-    audience: "All Subscribers",
-    openRate: 67,
-    sentDate: "Oct 20, 2026",
-  },
-  {
-    id: "r5",
-    status: "Sent",
-    type: "Class Update",
-    subject: "Faculty Announcement: New Pediatric Specialist",
-    audience: "Target cohorts",
-    openRate: 72,
-    sentDate: "Oct 18, 2026",
-  },
-  {
-    id: "r6",
-    status: "Sent",
-    type: "Marketing",
-    subject: "Limited Seats: Advanced Airway Workshop",
-    audience: "All Subscribers",
-    openRate: 55,
-    sentDate: "Oct 16, 2026",
-  },
-  {
-    id: "r7",
-    status: "Sent",
-    type: "Class Update",
-    subject: "Workshop Materials Now Available",
-    audience: "Target cohorts",
-    openRate: 91,
-    sentDate: "Oct 14, 2026",
-  },
-  {
-    id: "r8",
-    status: "Sent",
-    type: "Marketing",
-    subject: "New Article: Video Laryngoscopy Guide",
-    audience: "All Subscribers",
-    openRate: 39,
-    sentDate: "Oct 12, 2026",
-  },
-  {
-    id: "r9",
-    status: "Sent",
-    type: "Class Update",
-    subject: "Simulation Lab Update for October",
-    audience: "Target cohorts",
-    openRate: 83,
-    sentDate: "Oct 10, 2026",
-  },
-  {
-    id: "r10",
-    status: "Sent",
-    type: "Marketing",
-    subject: "Case Study: Airway Complication Review",
-    audience: "All Subscribers",
-    openRate: 61,
-    sentDate: "Oct 8, 2026",
-  },
-  {
-    id: "r11",
-    status: "Sent",
-    type: "Class Update",
-    subject: "New Faculty Added to Airway Institute",
-    audience: "Target cohorts",
-    openRate: 87,
-    sentDate: "Oct 7, 2026",
-  },
-  {
-    id: "r12",
-    status: "Sent",
-    type: "Marketing",
-    subject: "Top 5 Airway Tools Every Clinician Should Know",
-    audience: "All Subscribers",
-    openRate: 64,
-    sentDate: "Oct 6, 2026",
-  },
-  {
-    id: "r13",
-    status: "Sent",
-    type: "Class Update",
-    subject: "Airway Skills Workshop Agenda Update",
-    audience: "Target cohorts",
-    openRate: 79,
-    sentDate: "Oct 5, 2026",
-  },
-  {
-    id: "r14",
-    status: "Sent",
-    type: "Marketing",
-    subject: "Clinical Research Update: Pediatric Airway",
-    audience: "All Subscribers",
-    openRate: 52,
-    sentDate: "Oct 4, 2026",
-  },
-  {
-    id: "r15",
-    status: "Sent",
-    type: "Class Update",
-    subject: "New Simulation Cases Available",
-    audience: "Target cohorts",
-    openRate: 93,
-    sentDate: "Oct 3, 2026",
-  },
-  {
-    id: "r16",
-    status: "Sent",
-    type: "Marketing",
-    subject: "Newsletter Special: Difficult Airway Strategies",
-    audience: "All Subscribers",
-    openRate: 48,
-    sentDate: "Oct 2, 2026",
-  },
-  {
-    id: "r17",
-    status: "Sent",
-    type: "Class Update",
-    subject: "Workshop Reminder: Airway Bootcamp Tomorrow",
-    audience: "Target cohorts",
-    openRate: 95,
-    sentDate: "Oct 1, 2026",
-  },
-  {
-    id: "r18",
-    status: "Sent",
-    type: "Marketing",
-    subject: "Latest Publication: Emergency Airway Management",
-    audience: "All Subscribers",
-    openRate: 58,
-    sentDate: "Sep 30, 2026",
-  },
-  {
-    id: "r19",
-    status: "Sent",
-    type: "Class Update",
-    subject: "Course Enrollment Update for Fall Session",
-    audience: "Target cohorts",
-    openRate: 81,
-    sentDate: "Sep 28, 2026",
-  },
-  {
-    id: "r20",
-    status: "Sent",
-    type: "Marketing",
-    subject: "Airway Institute Monthly Highlights",
-    audience: "All Subscribers",
-    openRate: 63,
-    sentDate: "Sep 27, 2026",
-  },
-];
+type StatusFilter = "ALL" | "SENT" | "CANCELLED" | "DRAFT" | "SCHEDULED";
 
 function Progress({ value }: { value: number }) {
   const v = Math.max(0, Math.min(100, value));
+
   return (
     <div className="flex items-center gap-3">
       <div className="h-2 w-[120px] rounded-full bg-slate-100">
@@ -212,16 +28,99 @@ function Progress({ value }: { value: number }) {
   );
 }
 
+function getStatusDotClass(status: string) {
+  switch (status.toUpperCase()) {
+    case "SENT":
+      return "bg-emerald-500";
+    case "CANCELLED":
+      return "bg-red-500";
+    case "SCHEDULED":
+      return "bg-amber-500";
+    case "DRAFT":
+      return "bg-slate-400";
+    default:
+      return "bg-slate-400";
+  }
+}
+
+function getTypeLabel(contentType: string) {
+  switch (contentType) {
+    case "CUSTOM_MESSAGE":
+      return "Custom Message";
+    case "ARTICLE_LINK":
+      return "Article Link";
+    default:
+      return contentType
+        .toLowerCase()
+        .split("_")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
+  }
+}
+
+function formatSentDate(sentAt: string | null) {
+  if (!sentAt) return "—";
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(sentAt));
+}
+
 export default function TransmissionTable() {
-  const PAGE_SIZE = 5;
-  const [page, setPage] = useState(1);
-  const total = ROWS.length;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const startIndex = (page - 1) * PAGE_SIZE;
-  const endIndexExclusive = Math.min(startIndex + PAGE_SIZE, total);
-  const pageRows = ROWS.slice(startIndex, endIndexExclusive);
-  const showingFrom = total === 0 ? 0 : startIndex + 1;
-  const showingTo = endIndexExclusive;
+  const [data, setData] = useState<RecentGeneralTransmissionsResponse | null>(
+    null,
+  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadRecentTransmissions = async () => {
+      try {
+        setIsLoading(true);
+
+        const response = await getRecentGeneralTransmissions({
+          page: 1,
+          limit: 5,
+        });
+
+        if (!isMounted) return;
+        setData(response);
+      } catch (error) {
+        console.error("Failed to load recent transmissions", error);
+
+        if (!isMounted) return;
+        setData(null);
+      } finally {
+        if (!isMounted) return;
+        setIsLoading(false);
+      }
+    };
+
+    loadRecentTransmissions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const filteredRows = useMemo(() => {
+    const items = data?.items ?? [];
+
+    if (statusFilter === "ALL") {
+      return items.slice(0, 5);
+    }
+
+    return items
+      .filter((item) => item.status.toUpperCase() === statusFilter)
+      .slice(0, 5);
+  }, [data?.items, statusFilter]);
+
+  const totalCount = data?.meta.total ?? 0;
+  const showingCount = filteredRows.length;
 
   return (
     <div className="mt-7">
@@ -236,12 +135,27 @@ export default function TransmissionTable() {
         </div>
 
         <div className="flex items-center gap-2">
+          <select
+            value={statusFilter}
+            onChange={(event) =>
+              setStatusFilter(event.target.value as StatusFilter)
+            }
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 outline-none ring-0"
+          >
+            <option value="ALL">All Status</option>
+            <option value="SENT">Sent</option>
+            <option value="CANCELLED">Cancelled</option>
+            <option value="DRAFT">Draft</option>
+            <option value="SCHEDULED">Scheduled</option>
+          </select>
+
           <button
             type="button"
             className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
           >
             <Filter size={14} /> Filter
           </button>
+
           <button
             type="button"
             className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
@@ -265,104 +179,108 @@ export default function TransmissionTable() {
           </thead>
 
           <tbody>
-            {pageRows.map((r, idx) => (
-              <tr
-                key={r.id}
-                className={[
-                  "border-t border-slate-100",
-                  idx === 0 ? "bg-white" : "bg-white",
-                ].join(" ")}
-              >
-                <td className="px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                    <div>
-                      <p className="text-xs font-semibold text-slate-900">
-                        {r.status}
-                      </p>
-                      <span className="mt-1 inline-flex rounded-full bg-[var(--primary-50)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--primary)]">
-                        {r.type}
-                      </span>
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, index) => (
+                <tr key={index} className="border-t border-slate-100">
+                  <td className="px-5 py-4">
+                    <div className="h-10 w-28 animate-pulse rounded-lg bg-slate-100" />
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="h-4 w-72 animate-pulse rounded bg-slate-100" />
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="h-4 w-24 animate-pulse rounded bg-slate-100" />
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="h-4 w-36 animate-pulse rounded bg-slate-100" />
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="h-4 w-20 animate-pulse rounded bg-slate-100" />
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <div className="ml-auto h-4 w-20 animate-pulse rounded bg-slate-100" />
+                  </td>
+                </tr>
+              ))
+            ) : filteredRows.length > 0 ? (
+              filteredRows.map((row: RecentGeneralTransmissionItem) => (
+                <tr key={row.id} className="border-t border-slate-100 bg-white">
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`h-2 w-2 rounded-full ${getStatusDotClass(row.status)}`}
+                      />
+                      <div>
+                        <p className="text-xs font-semibold text-slate-900">
+                          {row.status}
+                        </p>
+                        <span className="mt-1 inline-flex rounded-full bg-[var(--primary-50)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--primary)]">
+                          {getTypeLabel(row.contentType)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </td>
+                  </td>
 
-                <td className="px-5 py-4">
-                  <p className="max-w-[420px] truncate text-xs font-semibold text-slate-900">
-                    {r.subject}
+                  <td className="px-5 py-4">
+                    <p className="max-w-[420px] truncate text-xs font-semibold text-slate-900">
+                      {row.subjectLine}
+                    </p>
+                  </td>
+
+                  <td className="px-5 py-4">
+                    <p className="text-xs text-slate-600">
+                      {row.audienceLabel}
+                    </p>
+                  </td>
+
+                  <td className="px-5 py-4">
+                    <Progress value={row.openRatePercent} />
+                  </td>
+
+                  <td className="px-5 py-4">
+                    <p className="text-xs text-slate-600">
+                      {formatSentDate(row.sentAt)}
+                    </p>
+                  </td>
+
+                  <td className="px-5 py-4 text-right">
+                    <Link
+                      href={`/dashboard/admin/newsletters/transmission-history/${row.id}`}
+                      className="text-xs font-semibold text-[var(--primary)] hover:underline"
+                    >
+                      View Report
+                    </Link>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr className="border-t border-slate-100">
+                <td colSpan={6} className="px-5 py-10 text-center">
+                  <p className="text-sm font-medium text-slate-700">
+                    No transmissions found
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Try changing the filter to see other transmission records.
                   </p>
                 </td>
-
-                <td className="px-5 py-4">
-                  <p className="text-xs text-slate-600">{r.audience}</p>
-                </td>
-
-                <td className="px-5 py-4">
-                  <Progress value={r.openRate} />
-                </td>
-
-                <td className="px-5 py-4">
-                  <p className="text-xs text-slate-600">{r.sentDate}</p>
-                </td>
-
-                <td className="px-5 py-4 text-right">
-                  <button
-                    type="button"
-                    className="text-xs font-semibold text-[var(--primary)] hover:underline"
-                  >
-                    View Report
-                  </button>
-                </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
 
         <div className="flex items-center justify-between gap-3 px-5 py-4">
           <p className="text-xs text-slate-500">
-            Showing {showingFrom} to {showingTo} of {total} results
+            Showing {showingCount} of {totalCount} results
           </p>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className={[
-                "rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold",
-                page <= 1
-                  ? "cursor-not-allowed opacity-50"
-                  : "text-slate-600 hover:bg-slate-50",
-              ].join(" ")}
-            >
-              Previous
-            </button>
-
-            <button
-              type="button"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className={[
-                "rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold",
-                page >= totalPages
-                  ? "cursor-not-allowed opacity-50"
-                  : "text-slate-900 hover:bg-slate-50",
-              ].join(" ")}
-            >
-              Next
-            </button>
-          </div>
         </div>
       </div>
 
       <div className="mt-6 flex justify-center">
-        <Link href={"/newsletters/transmission-history"}>
-          <button
-            type="button"
-            className="inline-flex items-center justify-center rounded-xl border border-[var(--primary)] bg-white px-5 py-2 text-xs font-semibold text-[var(--primary)] hover:bg-[var(--primary-50)]"
-          >
-            View All Transmission History <span className="ml-2">→</span>
-          </button>
+        <Link
+          href="/dashboard/admin/newsletters/transmission-history"
+          className="inline-flex items-center justify-center rounded-xl border border-[var(--primary)] bg-white px-5 py-2 text-xs font-semibold text-[var(--primary)] hover:bg-[var(--primary-50)]"
+        >
+          View All Transmission History <span className="ml-2">→</span>
         </Link>
       </div>
     </div>

@@ -2,35 +2,34 @@
 
 import { CalendarDays, Check, Users } from "lucide-react";
 import { useMemo, useState } from "react";
-import { DEFAULT_COHORTS } from "../_utils/create-blog-post.constants";
-import {
-  cx,
-  getCohortToneClasses,
-  toggleStringItem,
-} from "../_utils/create-blog-post.helpers";
+
+import { cx, toggleStringItem } from "../_utils/create-blog-post.helpers";
+import type { BlogCourseCohort } from "@/types/admin/blogs/blog-distribution.types";
 
 type CohortsModalProps = {
+  cohorts: BlogCourseCohort[];
+  isSubmitting?: boolean;
   onBack: () => void;
   onClose: () => void;
-  onProceed: () => void;
+  onProceed: (cohortIds: string[]) => void;
 };
 
 export default function CohortsModal({
+  cohorts,
+  isSubmitting = false,
   onBack,
   onClose,
   onProceed,
 }: CohortsModalProps) {
-  const [selectedIds, setSelectedIds] = useState<string[]>([
-    DEFAULT_COHORTS[0]?.id ?? "",
-  ]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const selectedCount = selectedIds.length;
 
   const totalStudents = useMemo(() => {
-    return DEFAULT_COHORTS.filter((cohort) =>
-      selectedIds.includes(cohort.id),
-    ).reduce((sum, cohort) => sum + cohort.students, 0);
-  }, [selectedIds]);
+    return cohorts
+      .filter((cohort) => selectedIds.includes(cohort.id))
+      .reduce((sum, cohort) => sum + cohort.students, 0);
+  }, [cohorts, selectedIds]);
 
   return (
     <div className="fixed inset-0 z-[95] flex items-center justify-center px-4">
@@ -50,32 +49,24 @@ export default function CohortsModal({
         </p>
 
         <div className="mt-5 space-y-3">
-          {DEFAULT_COHORTS.map((cohort) => {
+          {cohorts.map((cohort) => {
             const active = selectedIds.includes(cohort.id);
-            const tone = getCohortToneClasses(cohort.tone);
 
             return (
               <button
                 key={cohort.id}
                 type="button"
                 onClick={() =>
-                  setSelectedIds((prev) =>
-                    toggleStringItem(prev, cohort.id),
-                  )
+                  setSelectedIds((prev) => toggleStringItem(prev, cohort.id))
                 }
                 className={cx(
                   "w-full rounded-xl border p-4 text-left transition",
                   "border-slate-200 bg-white hover:bg-slate-50",
-                  active && tone.active,
+                  active && "border-cyan-200 ring-2 ring-cyan-100",
                 )}
               >
                 <div className="flex items-start gap-3">
-                  <div
-                    className={cx(
-                      "grid h-11 w-11 place-items-center rounded-lg",
-                      tone.iconWrap,
-                    )}
-                  >
+                  <div className="grid h-11 w-11 place-items-center rounded-lg bg-slate-50 text-slate-700">
                     <Users size={18} />
                   </div>
 
@@ -85,12 +76,7 @@ export default function CohortsModal({
                         {cohort.name}
                       </p>
 
-                      <span
-                        className={cx(
-                          "inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold",
-                          tone.badge,
-                        )}
-                      >
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
                         Active Cohort
                       </span>
                     </div>
@@ -111,7 +97,9 @@ export default function CohortsModal({
                   <span
                     className={cx(
                       "mt-1 grid h-5 w-5 place-items-center rounded-full border",
-                      active ? "border-[var(--primary)] bg-white" : "border-slate-300",
+                      active
+                        ? "border-[var(--primary)] bg-white"
+                        : "border-slate-300",
                     )}
                   >
                     {active ? (
@@ -150,23 +138,24 @@ export default function CohortsModal({
           <button
             type="button"
             onClick={onBack}
-            className="h-10 w-[110px] rounded-md border border-slate-200 bg-white text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+            disabled={isSubmitting}
+            className="h-10 w-[110px] rounded-md border border-slate-200 bg-white text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Back
           </button>
 
           <button
             type="button"
-            disabled={selectedIds.length === 0}
-            onClick={onProceed}
+            disabled={selectedIds.length === 0 || isSubmitting}
+            onClick={() => onProceed(selectedIds)}
             className={cx(
               "h-10 rounded-md px-5 text-xs font-semibold text-white transition",
-              selectedIds.length === 0
+              selectedIds.length === 0 || isSubmitting
                 ? "cursor-not-allowed bg-slate-200 text-slate-500"
                 : "bg-[var(--primary)] hover:bg-[var(--primary-hover)]",
             )}
           >
-            Proceed to Broadcast
+            {isSubmitting ? "Broadcasting..." : "Proceed to Broadcast"}
           </button>
         </div>
       </div>

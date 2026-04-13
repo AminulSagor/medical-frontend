@@ -7,9 +7,9 @@ import OrderDetailsShippingDispatch from "./order-details-shipping-dispatch";
 import OrderDetailsCustomerProfile from "./order-details-customer-profile";
 import OrderDetailsEventTimeline from "./order-details-event-timeline";
 import OrderDetailsCriticalActions from "./order-details-critical-actions";
+import OrderDetailsLoadingShell from "./order-details-loading-shell";
 import { mapOrderDetailsToViewModel } from "../_utils/order-details.mapper";
 import { AdminOrderDetailsResponse } from "@/types/admin/orders/order-details.types";
-import { test } from "@/app/dashboard/admin/(pages)/orders-and-sales/[id]/_components/test";
 import { getAdminOrderDetails } from "@/service/admin/orders/order-details.service";
 
 type PaymentStatus = "paid" | "unpaid";
@@ -97,7 +97,6 @@ export default function OrderDetailsClient({ id }: { id: string }) {
         setHasError(false);
 
         const response = await getAdminOrderDetails(id);
-        // const response = test;
 
         if (!isMounted) {
           return;
@@ -136,7 +135,7 @@ export default function OrderDetailsClient({ id }: { id: string }) {
   }, [orderDetails]);
 
   if (isLoading) {
-    return <EmptyState message="Loading order details..." />;
+    return <OrderDetailsLoadingShell />;
   }
 
   if (hasError || !order) {

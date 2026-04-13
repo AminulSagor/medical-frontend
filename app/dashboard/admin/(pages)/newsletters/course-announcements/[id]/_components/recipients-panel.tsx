@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Search, Users, ChevronDown, ChevronUp } from "lucide-react";
+import { useFormContext } from "react-hook-form";
+
 import type { Recipient } from "../_lib/compose-types";
+import type { ComposeBroadcastInput } from "../_lib/compose-schema";
 import RecipientsList from "./recipients-list";
 
 const INITIAL_VISIBLE = 6;
@@ -11,22 +14,23 @@ type RecipientsPanelProps = {
   recipients: Recipient[];
 };
 
-function buildSelectedState(recipients: Recipient[]): Record<string, boolean> {
-  return Object.fromEntries(
-    recipients.map((recipient) => [recipient.id, true]),
-  );
-}
-
 export default function RecipientsPanel({ recipients }: RecipientsPanelProps) {
+  const { watch, setValue } = useFormContext<ComposeBroadcastInput>();
+
   const [q, setQ] = useState("");
   const [expanded, setExpanded] = useState(false);
-  const [selected, setSelected] = useState<Record<string, boolean>>(
-    buildSelectedState(recipients),
-  );
 
-  useEffect(() => {
-    setSelected(buildSelectedState(recipients));
-  }, [recipients]);
+  const recipientIds = watch("recipientIds") ?? [];
+
+  const selected = useMemo<Record<string, boolean>>(() => {
+    const selectedIds = new Set(recipientIds);
+    return Object.fromEntries(
+      recipients.map((recipient) => [
+        recipient.id,
+        selectedIds.has(recipient.id),
+      ]),
+    );
+  }, [recipientIds, recipients]);
 
   const filtered = useMemo(() => {
     const search = q.trim().toLowerCase();
@@ -36,41 +40,50 @@ export default function RecipientsPanel({ recipients }: RecipientsPanelProps) {
     return recipients.filter((recipient) => {
       const name = recipient.name?.toLowerCase() ?? "";
       const email = recipient.email?.toLowerCase() ?? "";
-
       return name.includes(search) || email.includes(search);
     });
   }, [q, recipients]);
 
   const visibleRecipients = useMemo(() => {
-    if (expanded) return filtered;
-    return filtered.slice(0, INITIAL_VISIBLE);
+    return expanded ? filtered : filtered.slice(0, INITIAL_VISIBLE);
   }, [expanded, filtered]);
 
   const allSelected =
     filtered.length > 0 &&
     filtered.every((recipient) => selected[recipient.id]);
 
-  const selectedCount = useMemo(() => {
-    return recipients.filter((recipient) => selected[recipient.id]).length;
-  }, [recipients, selected]);
+  const selectedCount = recipientIds.length;
 
   const toggleAll = () => {
-    setSelected((prev) => {
-      const next = { ...prev };
+    const filteredIds = filtered.map((recipient) => recipient.id);
 
-      filtered.forEach((recipient) => {
-        next[recipient.id] = !allSelected;
-      });
+    if (allSelected) {
+      setValue(
+        "recipientIds",
+        recipientIds.filter((id) => !filteredIds.includes(id)),
+        { shouldValidate: true, shouldDirty: true },
+      );
+      return;
+    }
 
-      return next;
+    const nextIds = Array.from(new Set([...recipientIds, ...filteredIds]));
+    setValue("recipientIds", nextIds, {
+      shouldValidate: true,
+      shouldDirty: true,
     });
   };
 
   const handleToggleRecipient = (id: string) => {
-    setSelected((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+    const exists = recipientIds.includes(id);
+
+    const nextIds = exists
+      ? recipientIds.filter((item) => item !== id)
+      : [...recipientIds, id];
+
+    setValue("recipientIds", nextIds, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
   };
 
   return (

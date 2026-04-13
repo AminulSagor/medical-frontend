@@ -1,5 +1,5 @@
-import CreateBroadcastPage from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_components/create-broadcast-page";
+import GeneralBroadcastFormPage from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_components/general-broadcast-form-page";
 
 export default function Page() {
-  return <CreateBroadcastPage />;
+  return <GeneralBroadcastFormPage mode="create" />;
 }

@@ -1,20 +1,34 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import {
   CalendarDays,
   EllipsisVertical,
   Save,
   TriangleAlert,
 } from "lucide-react";
+
 import CreateBlogPostEditor from "../helper/create-blog-post-editor";
 import CreateBlogPostPreview from "../helper/create-blog-post-preview";
 import CreateBlogPostSettingsSidebar from "../helper/create-blog-post-settings-sidebar";
 import DraftSavedModal from "../modals/draft-saved-modal";
 import LiveNowModal from "../modals/live-now-modal";
 import PublishScheduledModal from "../modals/publish-scheduled-modal";
+import ShareDistributionModal from "../modals/share-distribution-modal";
+import NewsletterQueueModal from "../modals/newsletter-queue-modal";
+import CohortsModal from "../modals/cohorts-modal";
+import AddedToNewsletterSuccessModal from "../modals/added-to-newsletter-success-modal";
+
 import { BLOG_MANAGEMENT_PATH } from "../_utils/create-blog-post.constants";
 import { useCreateBlogPost } from "@/app/dashboard/admin/(pages)/blogs/create/_utils/use-create-blog-post";
 import { useBlogPreviewStore } from "@/store/blog-preview.store";
+import { blogDistributionService } from "@/service/admin/blogs/blog-distribution.service";
+
+import type {
+  BlogNewsletterFrequencyType,
+  GetBlogDistributionOptionsResponse,
+} from "@/types/admin/blogs/blog-distribution.types";
+import type { DistributionChannel } from "../_utils/create-blog-post.types";
 
 export default function CreateBlogPostPage() {
   const {
@@ -98,6 +112,50 @@ export default function CreateBlogPostPage() {
 
   const setDraftPreview = useBlogPreviewStore((state) => state.setDraftPreview);
 
+  const [isShareDistributionModalOpen, setIsShareDistributionModalOpen] =
+    useState(false);
+  const [isNewsletterQueueModalOpen, setIsNewsletterQueueModalOpen] =
+    useState(false);
+  const [isCohortsModalOpen, setIsCohortsModalOpen] = useState(false);
+  const [isAddedToNewsletterModalOpen, setIsAddedToNewsletterModalOpen] =
+    useState(false);
+
+  const [distributionOptions, setDistributionOptions] =
+    useState<GetBlogDistributionOptionsResponse | null>(null);
+  const [isLoadingDistributionOptions, setIsLoadingDistributionOptions] =
+    useState(false);
+  const [isDistributionSubmitting, setIsDistributionSubmitting] =
+    useState(false);
+
+  const [lastNewsletterFrequency, setLastNewsletterFrequency] =
+    useState<BlogNewsletterFrequencyType>("MONTHLY");
+
+  const createdBlogId =
+    createdBlogModalData &&
+    typeof createdBlogModalData === "object" &&
+    "id" in createdBlogModalData
+      ? String(createdBlogModalData.id)
+      : "";
+
+  const newsletterName = useMemo(() => {
+    return lastNewsletterFrequency === "WEEKLY"
+      ? "Weekly Clinical Digest"
+      : "Monthly Clinical Digest";
+  }, [lastNewsletterFrequency]);
+
+  const queuePosition = useMemo(() => {
+    if (!distributionOptions) {
+      return 1;
+    }
+
+    const queueInfo =
+      lastNewsletterFrequency === "WEEKLY"
+        ? distributionOptions.newsletterQueueDetails.weekly
+        : distributionOptions.newsletterQueueDetails.monthly;
+
+    return queueInfo.articlesInQueue + 1;
+  }, [distributionOptions, lastNewsletterFrequency]);
+
   const handlePreview = () => {
     if (
       !title.trim() ||
@@ -171,6 +229,146 @@ export default function CreateBlogPostPage() {
     });
 
     router.push("/dashboard/admin/blogs/preview?source=draft");
+  };
+
+  const ensureDistributionOptions = async () => {
+    if (!createdBlogId) {
+      return null;
+    }
+
+    if (distributionOptions) {
+      return distributionOptions;
+    }
+
+    setIsLoadingDistributionOptions(true);
+
+    try {
+      const response =
+        await blogDistributionService.getDistributionOptions(createdBlogId);
+
+      setDistributionOptions(response);
+
+      return response;
+    } finally {
+      setIsLoadingDistributionOptions(false);
+    }
+  };
+
+  const handleOpenShareDistribution = async () => {
+    handleShareArticle();
+
+    const options = await ensureDistributionOptions();
+
+    if (!options) {
+      return;
+    }
+
+    setIsShareDistributionModalOpen(true);
+  };
+
+  const handleCloseShareDistribution = () => {
+    setIsShareDistributionModalOpen(false);
+  };
+
+  const handleProceedDistribution = async (channel: DistributionChannel) => {
+    if (!createdBlogId) {
+      return;
+    }
+
+    if (channel === "email_blast") {
+      setIsDistributionSubmitting(true);
+
+      try {
+        await blogDistributionService.distributeBlast(createdBlogId, {
+          sendAdminCopy: true,
+        });
+
+        setIsShareDistributionModalOpen(false);
+      } finally {
+        setIsDistributionSubmitting(false);
+      }
+
+      return;
+    }
+
+    if (channel === "newsletter") {
+      await ensureDistributionOptions();
+      setIsShareDistributionModalOpen(false);
+      setIsNewsletterQueueModalOpen(true);
+      return;
+    }
+
+    if (channel === "trainees") {
+      await ensureDistributionOptions();
+      setIsShareDistributionModalOpen(false);
+      setIsCohortsModalOpen(true);
+    }
+  };
+
+  const handleCloseNewsletterQueueModal = () => {
+    setIsNewsletterQueueModalOpen(false);
+  };
+
+  const handleBackToDistributionFromNewsletter = () => {
+    setIsNewsletterQueueModalOpen(false);
+    setIsShareDistributionModalOpen(true);
+  };
+
+  const handleConfirmNewsletterQueue = async (
+    frequencyType: BlogNewsletterFrequencyType,
+  ) => {
+    if (!createdBlogId) {
+      return;
+    }
+
+    setIsDistributionSubmitting(true);
+
+    try {
+      await blogDistributionService.distributeNewsletter(createdBlogId, {
+        frequencyType,
+      });
+
+      setLastNewsletterFrequency(frequencyType);
+      setIsNewsletterQueueModalOpen(false);
+      setIsAddedToNewsletterModalOpen(true);
+    } finally {
+      setIsDistributionSubmitting(false);
+    }
+  };
+
+  const handleCloseCohortsModal = () => {
+    setIsCohortsModalOpen(false);
+  };
+
+  const handleBackToDistributionFromCohorts = () => {
+    setIsCohortsModalOpen(false);
+    setIsShareDistributionModalOpen(true);
+  };
+
+  const handleProceedCohortsBroadcast = async (cohortIds: string[]) => {
+    if (!createdBlogId || cohortIds.length === 0) {
+      return;
+    }
+
+    setIsDistributionSubmitting(true);
+
+    try {
+      await blogDistributionService.distributeCohorts(createdBlogId, {
+        cohortIds,
+      });
+
+      setIsCohortsModalOpen(false);
+    } finally {
+      setIsDistributionSubmitting(false);
+    }
+  };
+
+  const handleCloseAddedToNewsletterModal = () => {
+    setIsAddedToNewsletterModalOpen(false);
+  };
+
+  const handleGoToNewsletterManager = () => {
+    router.push("/dashboard/admin/newsletters/general-newsletter");
   };
 
   return (
@@ -391,8 +589,49 @@ export default function CreateBlogPostPage() {
           readTime={createdBlogModalData.readTime}
           onClose={handleDoneAfterPublish}
           onViewLive={handleViewLiveArticle}
-          onShare={handleShareArticle}
+          onShare={handleOpenShareDistribution}
           onDone={handleDoneAfterPublish}
+        />
+      ) : null}
+
+      {isShareDistributionModalOpen ? (
+        <ShareDistributionModal
+          options={distributionOptions}
+          isLoadingOptions={
+            isLoadingDistributionOptions || isDistributionSubmitting
+          }
+          onClose={handleCloseShareDistribution}
+          onProceed={handleProceedDistribution}
+        />
+      ) : null}
+
+      {isNewsletterQueueModalOpen && distributionOptions ? (
+        <NewsletterQueueModal
+          options={distributionOptions}
+          isSubmitting={isDistributionSubmitting}
+          onBack={handleBackToDistributionFromNewsletter}
+          onClose={handleCloseNewsletterQueueModal}
+          onConfirm={handleConfirmNewsletterQueue}
+        />
+      ) : null}
+
+      {isCohortsModalOpen && distributionOptions ? (
+        <CohortsModal
+          cohorts={distributionOptions.courseCohorts}
+          isSubmitting={isDistributionSubmitting}
+          onBack={handleBackToDistributionFromCohorts}
+          onClose={handleCloseCohortsModal}
+          onProceed={handleProceedCohortsBroadcast}
+        />
+      ) : null}
+
+      {isAddedToNewsletterModalOpen && createdBlogModalData ? (
+        <AddedToNewsletterSuccessModal
+          articleTitle={createdBlogModalData.title}
+          newsletterName={newsletterName}
+          queuePosition={queuePosition}
+          onGoToNewsletterManager={handleGoToNewsletterManager}
+          onDone={handleCloseAddedToNewsletterModal}
         />
       ) : null}
     </div>

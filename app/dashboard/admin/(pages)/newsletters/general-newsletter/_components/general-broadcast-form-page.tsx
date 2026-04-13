@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import CreateBroadcastHeader from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_components/create-broadcast-header";
 import CreateBroadcastContentSection from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_components/create-broadcast-content-section";
 import CreateBroadcastDeliverySection from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_components/create-broadcast-delivery-section";
+import { mapBroadcastResponseToForm } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_utils/general-broadcast-form.mapper";
 import {
   DEFAULT_CUSTOM_MESSAGE_HTML,
   DEFAULT_CUSTOM_MESSAGE_TEXT,
@@ -14,6 +16,8 @@ import {
   zonedDateAndTimeToUtcIso,
 } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_utils/create-broadcast-schedule.utils";
 import { generalBroadcastCreateService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-create.service";
+import { generalBroadcastGetService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.service";
+import { generalBroadcastUpdateService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-update.service";
 import {
   getUploadUrl,
   uploadFileToSignedUrl,
@@ -24,6 +28,14 @@ import type {
   CreateGeneralBroadcastPayload,
   UploadedBroadcastAttachment,
 } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-create.types";
+import type { GetGeneralBroadcastResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
+import BroadcastEditPageShell from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_components/BroadcastEditPageShell";
+import BroadcastScheduledSuccessDialog from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_components/broadcast-scheduled-success-dialog";
+
+type Props = {
+  mode: "create" | "edit";
+  broadcastId?: string;
+};
 
 const initialForm: CreateBroadcastFormState = {
   contentType: "ARTICLE_LINK",
@@ -40,11 +52,15 @@ const initialForm: CreateBroadcastFormState = {
   attachments: [],
 };
 
-export default function CreateBroadcastPage() {
+export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
+  const router = useRouter();
+
   const [form, setForm] = useState<CreateBroadcastFormState>(initialForm);
   const [errors, setErrors] = useState<CreateBroadcastFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [isLoadingInitial, setIsLoadingInitial] = useState(mode === "edit");
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
 
   const isCustomMessage = useMemo(
     () => form.contentType === "CUSTOM_MESSAGE",
@@ -69,6 +85,27 @@ export default function CreateBroadcastPage() {
         : {}),
     }));
   };
+
+  useEffect(() => {
+    if (mode !== "edit" || !broadcastId) return;
+
+    const loadData = async () => {
+      try {
+        setIsLoadingInitial(true);
+
+        const data: GetGeneralBroadcastResponse =
+          await generalBroadcastGetService.getBroadcastById(broadcastId);
+
+        setForm(mapBroadcastResponseToForm(data));
+      } catch (error) {
+        console.error("Failed to load broadcast", error);
+      } finally {
+        setIsLoadingInitial(false);
+      }
+    };
+
+    loadData();
+  }, [mode, broadcastId]);
 
   const handleDiscard = () => {
     setForm(initialForm);
@@ -111,14 +148,14 @@ export default function CreateBroadcastPage() {
     }
 
     setErrors(nextErrors);
+
     return Object.keys(nextErrors).length === 0;
   };
 
-  const buildCreatePayload = (): CreateGeneralBroadcastPayload => {
+  const buildPayload = (): CreateGeneralBroadcastPayload => {
     if (form.contentType === "ARTICLE_LINK" && form.selectedArticle) {
       return {
         contentType: "ARTICLE_LINK",
-        sourceRefId: form.selectedArticle.sourceRefId,
         subjectLine: form.subjectLine.trim(),
         preheaderText: form.preHeader.trim(),
         audienceMode: form.targetAudience,
@@ -164,6 +201,7 @@ export default function CreateBroadcastPage() {
         mimeType: file.type || "application/octet-stream",
         fileSizeBytes: file.size,
         readUrl: uploadMeta.readUrl,
+        isExisting: false,
       });
     }
 
@@ -188,41 +226,86 @@ export default function CreateBroadcastPage() {
     try {
       setIsSubmitting(true);
 
-      const createPayload = buildCreatePayload();
-      console.log("createPayload", createPayload);
-      const createResponse =
-        await generalBroadcastCreateService.createBroadcastDraft(createPayload);
+      const payload = buildPayload();
 
-      const broadcastId = createResponse.id;
+      if (mode === "create") {
+        const createResponse =
+          await generalBroadcastCreateService.createBroadcastDraft(payload);
 
-      if (form.attachments.length) {
-        await Promise.all(
-          form.attachments.map((attachment) =>
-            generalBroadcastCreateService.addAttachment(broadcastId, {
-              fileKey: attachment.fileKey,
-              fileName: attachment.fileName,
-              mimeType: attachment.mimeType,
-              fileSizeBytes: attachment.fileSizeBytes,
-            }),
-          ),
+        const id = createResponse.id;
+
+        const newAttachments = form.attachments.filter(
+          (attachment) => !attachment.isExisting,
         );
+
+        if (newAttachments.length) {
+          await Promise.all(
+            newAttachments.map((attachment) =>
+              generalBroadcastCreateService.addAttachment(id, {
+                fileKey: attachment.fileKey,
+                fileName: attachment.fileName,
+                mimeType: attachment.mimeType,
+                fileSizeBytes: attachment.fileSizeBytes,
+              }),
+            ),
+          );
+        }
+
+        const scheduledAtUtc = zonedDateAndTimeToUtcIso(
+          form.cadenceDate,
+          form.scheduledTime,
+          BROADCAST_TIMEZONE,
+        );
+
+        await generalBroadcastCreateService.updateScheduleSettings(id, {
+          frequencyType: form.frequency,
+          scheduledAtUtc,
+          timezone: BROADCAST_TIMEZONE,
+        });
+
+        setSuccessMessage(
+          "Broadcast draft, attachments, and schedule saved successfully.",
+        );
+        return;
       }
 
-      const scheduledAtUtc = zonedDateAndTimeToUtcIso(
-        form.cadenceDate,
-        form.scheduledTime,
-        BROADCAST_TIMEZONE,
-      );
+      if (mode === "edit" && broadcastId) {
+        const newAttachments = form.attachments.filter(
+          (attachment) => !attachment.isExisting,
+        );
 
-      await generalBroadcastCreateService.updateScheduleSettings(broadcastId, {
-        frequencyType: form.frequency,
-        scheduledAtUtc,
-        timezone: BROADCAST_TIMEZONE,
-      });
+        if (newAttachments.length) {
+          await Promise.all(
+            newAttachments.map((attachment) =>
+              generalBroadcastUpdateService.addAttachment(broadcastId, {
+                fileKey: attachment.fileKey,
+                fileName: attachment.fileName,
+                mimeType: attachment.mimeType,
+                fileSizeBytes: attachment.fileSizeBytes,
+              }),
+            ),
+          );
+        }
 
-      setSuccessMessage(
-        "Broadcast draft, attachments, and schedule saved successfully.",
-      );
+        const scheduledAtUtc = zonedDateAndTimeToUtcIso(
+          form.cadenceDate,
+          form.scheduledTime,
+          BROADCAST_TIMEZONE,
+        );
+
+        await generalBroadcastUpdateService.updateScheduleSettings(
+          broadcastId,
+          {
+            frequencyType: form.frequency,
+            scheduledAtUtc,
+            timezone: BROADCAST_TIMEZONE,
+          },
+        );
+
+        await generalBroadcastUpdateService.scheduleBroadcast(broadcastId);
+
+        setIsSuccessDialogOpen(true);
+      }
     } catch (error) {
       console.error("Failed to save broadcast", error);
     } finally {
@@ -230,16 +313,21 @@ export default function CreateBroadcastPage() {
     }
   };
 
+  if (isLoadingInitial) {
+    return <BroadcastEditPageShell />;
+  }
+
   return (
     <div className="min-h-screen bg-[#f8fafc]">
       <CreateBroadcastHeader
+        mode={mode}
         onDiscard={handleDiscard}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
       />
 
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-7 px-4 py-8 sm:px-6 lg:px-8">
-        {successMessage ? (
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-7 px-4 py-8 sm:px-6 lg:px-8">
+        {mode === "create" && successMessage ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
             {successMessage}
           </div>
@@ -259,6 +347,20 @@ export default function CreateBroadcastPage() {
           onChange={updateForm}
         />
       </div>
+
+      <BroadcastScheduledSuccessDialog
+        open={isSuccessDialogOpen}
+        onOpenChange={setIsSuccessDialogOpen}
+        onReturnToDashboard={() =>
+          router.push("/dashboard/admin/newsletters/general-newsletter")
+        }
+        recipientCount={2450}
+        scheduledDateText="Nov 22, 2026 at 09:00 AM"
+        articleTitle={
+          form.selectedArticle?.title ||
+          "New Clinical Insights: Pediatric Airway Management"
+        }
+      />
     </div>
   );
 }

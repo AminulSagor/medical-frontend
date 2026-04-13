@@ -103,3 +103,9 @@ export function buildScheduledPublishDateFromInputs(
 
   return new Date(`${date}T${time}:00`).toISOString();
 }
+
+export const toggleStringItem = (items: string[], value: string): string[] => {
+  return items.includes(value)
+    ? items.filter((item) => item !== value)
+    : [...items, value];
+};

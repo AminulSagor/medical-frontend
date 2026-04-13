@@ -1,100 +1,156 @@
-import { TransmissionMetricCard } from "@/app/dashboard/admin/(pages)/newsletters/transmission-history/types/transmission-history.type";
+import type { TransmissionHistoryCards } from "@/types/admin/newsletter/dashboard/transmission-history.types";
 
 function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
-function accentStyles(accent?: TransmissionMetricCard["accent"]) {
+function formatPercent(value: number) {
+  return `${value}%`;
+}
+
+function formatDecimalPercent(value: number) {
+  return `${value}%`;
+}
+
+function accentStyles(accent: "teal" | "indigo" | "rose") {
   if (accent === "teal") {
     return {
       glow: "bg-[#e8fbf8]",
       icon: "text-[#14b8ad]",
     };
   }
+
   if (accent === "indigo") {
     return {
       glow: "bg-[#eef2ff]",
       icon: "text-[#6366f1]",
     };
   }
+
   return {
     glow: "bg-[#fff1f2]",
     icon: "text-[#fb7185]",
   };
 }
 
-function Delta({
-  tone,
+function MetricCard({
   label,
+  value,
+  accent,
+  deltaLabel,
+  noteLabel,
+  icon,
 }: {
-  tone?: TransmissionMetricCard["deltaTone"];
-  label?: string;
+  label: string;
+  value: string;
+  accent: "teal" | "indigo" | "rose";
+  deltaLabel?: string;
+  noteLabel?: string;
+  icon: string;
 }) {
-  if (!label) return null;
+  const a = accentStyles(accent);
 
-  const cls =
-    tone === "up"
-      ? "text-[#14b8ad]"
-      : tone === "down"
-        ? "text-rose-500"
-        : "text-slate-400";
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_12px_40px_rgba(15,23,42,0.05)]">
+      <div
+        className={cx(
+          "pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full blur-2xl",
+          a.glow,
+        )}
+      />
 
-  return <span className={cx("text-xs font-semibold", cls)}>{label}</span>;
+      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+        {label}
+      </p>
+
+      <div className="mt-2 flex items-end gap-3">
+        <p className="text-[30px] font-semibold leading-none text-slate-900">
+          {value}
+        </p>
+
+        {deltaLabel ? (
+          <span className="text-xs font-semibold text-[#14b8ad]">
+            {deltaLabel}
+          </span>
+        ) : null}
+
+        {noteLabel ? (
+          <span
+            className={cx(
+              "pb-[2px] text-xs font-semibold",
+              accent === "rose" ? "text-rose-500" : "text-[#6366f1]",
+            )}
+          >
+            {noteLabel}
+          </span>
+        ) : null}
+      </div>
+
+      <div className="absolute right-5 top-6">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-100 bg-white">
+          <span className={cx("text-[18px] font-bold", a.icon)}>{icon}</span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-export default function TransmissionMetrics({
-  items,
-}: {
-  items: TransmissionMetricCard[];
-}) {
+function MetricCardSkeleton() {
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_12px_40px_rgba(15,23,42,0.05)]">
+      <div className="h-3 w-20 animate-pulse rounded bg-slate-100" />
+      <div className="mt-4 h-8 w-28 animate-pulse rounded bg-slate-100" />
+    </div>
+  );
+}
+
+type Props = {
+  cards: TransmissionHistoryCards | null;
+  isLoading: boolean;
+};
+
+export default function TransmissionMetrics({ cards, isLoading }: Props) {
+  if (isLoading) {
+    return (
+      <section className="px-4 md:px-6">
+        <div className="mx-auto w-full">
+          <div className="grid gap-4 md:grid-cols-3">
+            <MetricCardSkeleton />
+            <MetricCardSkeleton />
+            <MetricCardSkeleton />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="px-4 md:px-6">
       <div className="mx-auto w-full">
         <div className="grid gap-4 md:grid-cols-3">
-          {items.map((m) => {
-            const a = accentStyles(m.accent);
-            return (
-              <div
-                key={m.key}
-                className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_12px_40px_rgba(15,23,42,0.05)]"
-              >
-                <div
-                  className={cx(
-                    "pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full blur-2xl",
-                    a.glow,
-                  )}
-                />
+          <MetricCard
+            label="Total Sent"
+            value={`${cards?.totalSent.value ?? 0}`}
+            accent="teal"
+            deltaLabel={`${cards?.totalSent.growthRatePercent ?? 0}%`}
+            icon="➤"
+          />
 
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                  {m.label}
-                </p>
+          <MetricCard
+            label="Avg. Open Rate"
+            value={formatPercent(cards?.avgOpenRatePercent ?? 0)}
+            accent="indigo"
+            noteLabel="Industry Leading"
+            icon="✉"
+          />
 
-                <div className="mt-2 flex items-end gap-3">
-                  <p className="text-[30px] font-semibold leading-none text-slate-900">
-                    {m.value}
-                  </p>
-                  <Delta tone={m.deltaTone} label={m.deltaLabel} />
-                  {m.noteLabel ? (
-                    <span className="pb-[2px] text-xs font-semibold text-slate-500">
-                      {m.noteLabel}
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="absolute right-5 top-6">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-100 bg-white">
-                    <span className={cx("text-[18px] font-bold", a.icon)}>
-                      {m.key === "totalSent"
-                        ? "➤"
-                        : m.key === "avgOpenRate"
-                          ? "✉"
-                          : "!"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          <MetricCard
+            label="Bounces"
+            value={formatDecimalPercent(cards?.bounceRatePercent ?? 0)}
+            accent="rose"
+            noteLabel="Low Risk"
+            icon="!"
+          />
         </div>
       </div>
     </section>

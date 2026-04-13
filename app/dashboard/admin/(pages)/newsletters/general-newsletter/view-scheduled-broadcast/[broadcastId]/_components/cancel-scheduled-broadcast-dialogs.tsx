@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { AlertTriangle, Check } from "lucide-react";
 import Dialog from "@/components/dialogs/dialog";
 
@@ -18,7 +18,7 @@ function ArticleCard({ title }: ArticleCardProps) {
 
         <div className="min-w-0">
           <p className="text-[10px] font-semibold tracking-wider text-slate-400">
-            ARTICLE TITLE
+            BROADCAST
           </p>
           <p className="mt-1 truncate text-sm font-semibold text-slate-900">
             {title}
@@ -32,15 +32,18 @@ function ArticleCard({ title }: ArticleCardProps) {
 function PrimaryDangerButton({
   children,
   onClick,
+  disabled,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="h-11 w-full rounded-xl bg-red-500 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 active:scale-[0.99]"
+      disabled={disabled}
+      className="h-11 w-full rounded-xl bg-red-500 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
     >
       {children}
     </button>
@@ -68,15 +71,18 @@ function PrimarySuccessButton({
 function SecondaryButton({
   children,
   onClick,
+  disabled,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="h-11 w-full rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-[0.99]"
+      disabled={disabled}
+      className="h-11 w-full rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
     >
       {children}
     </button>
@@ -86,13 +92,12 @@ function SecondaryButton({
 export type CancelScheduledBroadcastDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-
   recipientCount: number;
-  scheduledDateLabel: string; // e.g. "Nov 22, 2026"
+  scheduledDateLabel: string;
   articleTitle: string;
-
-  onConfirmCancel: () => void;
+  onConfirmCancel: (reason: string) => Promise<void> | void;
   onKeepScheduled?: () => void;
+  isSubmitting?: boolean;
 };
 
 export function CancelScheduledBroadcastDialog({
@@ -103,12 +108,19 @@ export function CancelScheduledBroadcastDialog({
   articleTitle,
   onConfirmCancel,
   onKeepScheduled,
+  isSubmitting = false,
 }: CancelScheduledBroadcastDialogProps) {
+  const [reason, setReason] = useState("Content update needed");
+
+  const handleConfirm = async () => {
+    await onConfirmCancel(reason.trim() || "Content update needed");
+  };
+
   return (
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      size="sm"
+      size="md"
       hideClose
       className="rounded-[28px] border border-slate-200 shadow-[0_24px_60px_rgba(15,23,42,0.18)]"
     >
@@ -136,17 +148,31 @@ export function CancelScheduledBroadcastDialog({
 
         <ArticleCard title={articleTitle} />
 
-        <div className="mt-5 w-full space-y-3">
-          <PrimaryDangerButton
-            onClick={() => {
-              onConfirmCancel();
-              onOpenChange(false);
-            }}
+        <div className="mt-5 w-full text-left">
+          <label
+            htmlFor="cancel-broadcast-reason"
+            className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400"
           >
-            Yes, Cancel Schedule
+            Cancellation Reason
+          </label>
+          <textarea
+            id="cancel-broadcast-reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={4}
+            disabled={isSubmitting}
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:border-slate-300 disabled:cursor-not-allowed disabled:bg-slate-50"
+            placeholder="Enter cancellation reason"
+          />
+        </div>
+
+        <div className="mt-5 w-full space-y-3">
+          <PrimaryDangerButton onClick={handleConfirm} disabled={isSubmitting}>
+            {isSubmitting ? "Cancelling..." : "Yes, Cancel Schedule"}
           </PrimaryDangerButton>
 
           <SecondaryButton
+            disabled={isSubmitting}
             onClick={() => {
               onKeepScheduled?.();
               onOpenChange(false);
@@ -163,10 +189,8 @@ export function CancelScheduledBroadcastDialog({
 export type BroadcastCancelledSuccessDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-
-  scheduledDateLabel: string; // e.g. "Nov 22, 2026"
+  scheduledDateLabel: string;
   articleTitle: string;
-
   onReturnToQueue: () => void;
 };
 

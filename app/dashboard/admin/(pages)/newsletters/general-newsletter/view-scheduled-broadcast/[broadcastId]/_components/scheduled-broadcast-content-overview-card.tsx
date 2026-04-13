@@ -1,8 +1,8 @@
 import ScheduledBroadcastSectionShell from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_components/scheduled-broadcast-section-shell";
-import { ContentOverviewData } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/types/scheduled-broadcast-view.type";
+import type { GetGeneralBroadcastResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
 
 type Props = {
-  data: ContentOverviewData;
+  data: GetGeneralBroadcastResponse;
 };
 
 function FieldBlock({
@@ -34,8 +34,12 @@ export default function ScheduledBroadcastContentOverviewCard({ data }: Props) {
   return (
     <ScheduledBroadcastSectionShell title="Content Overview">
       <div className="space-y-5">
-        <FieldBlock label="Subject Line" value={data.subjectLine} />
-        <FieldBlock label="Pre-Header" value={data.preHeader} italic />
+        <FieldBlock label="Subject Line" value={data.subjectLine || "-"} />
+        <FieldBlock
+          label="Pre-Header"
+          value={data.preheaderText || "-"}
+          italic
+        />
       </div>
     </ScheduledBroadcastSectionShell>
   );

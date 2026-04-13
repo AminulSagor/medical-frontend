@@ -1,11 +1,21 @@
 "use client";
 
-import { CalendarDays, Clock3, ShieldCheck, UserRound } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  CalendarDays,
+  Clock3,
+  Loader2,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 import { BROADCAST_TIMEZONE } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_utils/create-broadcast-schedule.utils";
+import { generalBroadcastCadenceService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-cadence.service";
 import type {
   CreateBroadcastFormErrors,
   CreateBroadcastFormState,
 } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-create.types";
+import type { GeneralBroadcastCadenceAvailableSlotsResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-cadence.types";
+import { generalBroadcastAvailableSlotsService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-available-slots.service";
 
 type Props = {
   form: CreateBroadcastFormState;
@@ -16,11 +26,103 @@ type Props = {
   ) => void;
 };
 
+type AvailableSlot =
+  GeneralBroadcastCadenceAvailableSlotsResponse["items"][number];
+
+const getDateFromIso = (value: string) => value.slice(0, 10);
+const getTimeFromIso = (value: string) => value.slice(11, 16);
+
 export default function CreateBroadcastDeliverySection({
   form,
   errors,
   onChange,
 }: Props) {
+  const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotsError, setSlotsError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    const loadAvailableSlots = async () => {
+      setSlotsLoading(true);
+      setSlotsError("");
+
+      try {
+        const response =
+          await generalBroadcastAvailableSlotsService.getSlotsByFrequency(
+            form.frequency,
+          );
+
+        if (!active) return;
+
+        const nextSlots = response.items ?? [];
+        setAvailableSlots(nextSlots);
+
+        const hasSelectedSlot = nextSlots.some((slot) => {
+          return (
+            slot.isAvailable &&
+            getDateFromIso(slot.scheduledAtLocalIso) === form.cadenceDate &&
+            getTimeFromIso(slot.scheduledAtLocalIso) === form.scheduledTime
+          );
+        });
+
+        if (!hasSelectedSlot) {
+          onChange("cadenceDate", "");
+          onChange("scheduledTime", "");
+        }
+      } catch {
+        if (!active) return;
+
+        setAvailableSlots([]);
+        setSlotsError("Failed to load available cadence dates.");
+        onChange("cadenceDate", "");
+        onChange("scheduledTime", "");
+      } finally {
+        if (active) {
+          setSlotsLoading(false);
+        }
+      }
+    };
+
+    loadAvailableSlots();
+
+    return () => {
+      active = false;
+    };
+  }, [form.frequency]);
+
+  const availableOnlySlots = useMemo(
+    () => availableSlots.filter((slot) => slot.isAvailable),
+    [availableSlots],
+  );
+
+  const selectedSlotValue = useMemo(() => {
+    const matchedSlot = availableOnlySlots.find((slot) => {
+      return (
+        getDateFromIso(slot.scheduledAtLocalIso) === form.cadenceDate &&
+        getTimeFromIso(slot.scheduledAtLocalIso) === form.scheduledTime
+      );
+    });
+
+    return matchedSlot?.scheduledAtLocalIso ?? "";
+  }, [availableOnlySlots, form.cadenceDate, form.scheduledTime]);
+
+  const handleSlotChange = (value: string) => {
+    const selectedSlot = availableOnlySlots.find(
+      (slot) => slot.scheduledAtLocalIso === value,
+    );
+
+    if (!selectedSlot) {
+      onChange("cadenceDate", "");
+      onChange("scheduledTime", "");
+      return;
+    }
+
+    onChange("cadenceDate", getDateFromIso(selectedSlot.scheduledAtLocalIso));
+    onChange("scheduledTime", getTimeFromIso(selectedSlot.scheduledAtLocalIso));
+  };
+
   return (
     <section className="rounded-[28px] bg-white p-5 shadow-sm sm:p-7">
       <div className="mb-5">
@@ -54,7 +156,7 @@ export default function CreateBroadcastDeliverySection({
         <div className="space-y-5">
           <div>
             <label className="mb-2 block text-xs font-semibold text-slate-600">
-              Schedule Date
+              Available Cadence Dates
             </label>
 
             <div className="relative">
@@ -62,16 +164,45 @@ export default function CreateBroadcastDeliverySection({
                 size={16}
                 className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
               />
-              <input
-                type="date"
-                value={form.cadenceDate}
-                onChange={(e) => onChange("cadenceDate", e.target.value)}
-                className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 outline-none transition focus:border-[#18c3b2]"
-              />
+
+              <select
+                value={selectedSlotValue}
+                onChange={(e) => handleSlotChange(e.target.value)}
+                disabled={slotsLoading}
+                className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-11 pr-10 text-sm text-slate-700 outline-none transition focus:border-[#18c3b2] disabled:cursor-not-allowed disabled:bg-slate-50"
+              >
+                <option value="">
+                  {slotsLoading
+                    ? "Loading available slots..."
+                    : "Select available cadence date"}
+                </option>
+
+                {availableOnlySlots.map((slot) => (
+                  <option
+                    key={slot.scheduledAtUtc}
+                    value={slot.scheduledAtLocalIso}
+                  >
+                    {slot.scheduledAtLocalLabel}
+                  </option>
+                ))}
+              </select>
+
+              {slotsLoading ? (
+                <Loader2
+                  size={16}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-slate-400"
+                />
+              ) : null}
             </div>
 
             {errors.cadenceDate ? (
               <p className="mt-2 text-xs text-red-500">{errors.cadenceDate}</p>
+            ) : slotsError ? (
+              <p className="mt-2 text-xs text-red-500">{slotsError}</p>
+            ) : availableOnlySlots.length === 0 && !slotsLoading ? (
+              <p className="mt-2 text-xs text-slate-400">
+                No available cadence slots found for this frequency.
+              </p>
             ) : null}
           </div>
 
@@ -88,8 +219,8 @@ export default function CreateBroadcastDeliverySection({
               <input
                 type="time"
                 value={form.scheduledTime}
-                onChange={(e) => onChange("scheduledTime", e.target.value)}
-                className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-medium text-slate-600 outline-none transition focus:border-[#18c3b2]"
+                readOnly
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm font-medium text-slate-600 outline-none"
               />
             </div>
 
@@ -113,19 +244,18 @@ export default function CreateBroadcastDeliverySection({
           <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
             <div className="mb-3 flex items-center gap-2 text-slate-700">
               <UserRound size={16} className="text-slate-400" />
-              <span className="text-sm font-medium">Subscribers</span>
+              <span className="text-sm font-medium">All Subscribers</span>
             </div>
 
-            <label className="flex cursor-pointer items-center gap-3 rounded-xl px-1 py-1.5 text-sm text-slate-600">
-              <input
-                type="radio"
-                name="audience"
-                checked={form.targetAudience === "ALL_SUBSCRIBERS"}
-                onChange={() => onChange("targetAudience", "ALL_SUBSCRIBERS")}
-                className="h-4 w-4 border-slate-300 text-[#18c3b2] focus:ring-[#18c3b2]"
-              />
-              <span>All Subscribers</span>
-            </label>
+            <div className="rounded-xl bg-slate-50 px-3 py-3">
+              <p className="text-sm font-medium text-slate-700">
+                All Subscribers
+              </p>
+              <p className="mt-1 text-xs text-slate-400">
+                This broadcast will always be sent to all newsletter
+                subscribers.
+              </p>
+            </div>
           </div>
 
           {errors.targetAudience ? (

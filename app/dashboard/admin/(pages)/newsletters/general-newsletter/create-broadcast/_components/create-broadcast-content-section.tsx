@@ -18,6 +18,7 @@ import {
   applyEditorCommand,
   htmlToPlainText,
   normalizeEditorHtml,
+  sanitizeBroadcastHtml,
 } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_utils/create-broadcast-editor.utils";
 import { generalBroadcastCreateService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-create.service";
 import type {
@@ -47,6 +48,7 @@ export default function CreateBroadcastContentSection({
   const isCustomMessage = form.contentType === "CUSTOM_MESSAGE";
   const editorRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
 
   const [articleOptions, setArticleOptions] = useState<
     GeneralBroadcastArticleSourceItem[]
@@ -88,8 +90,11 @@ export default function CreateBroadcastContentSection({
   useEffect(() => {
     if (!isCustomMessage || !editorRef.current) return;
 
-    if (editorRef.current.innerHTML !== form.messageBodyHtml) {
-      editorRef.current.innerHTML = form.messageBodyHtml;
+    const sanitizedHtml = sanitizeBroadcastHtml(form.messageBodyHtml || "");
+
+    // Only update DOM if content differs to avoid cursor jumps
+    if (editorRef.current.innerHTML !== sanitizedHtml) {
+      editorRef.current.innerHTML = sanitizedHtml;
     }
   }, [form.messageBodyHtml, isCustomMessage]);
 
@@ -105,9 +110,16 @@ export default function CreateBroadcastContentSection({
   }, [form.attachments]);
 
   const syncEditorValue = () => {
-    const html = normalizeEditorHtml(editorRef.current?.innerHTML || "");
-    onChange("messageBodyHtml", html);
-    onChange("messageBodyText", htmlToPlainText(html));
+    if (!editorRef.current) return;
+
+    const rawHtml = editorRef.current.innerHTML || "";
+    const sanitizedHtml = normalizeEditorHtml(rawHtml);
+
+    // Only update if content actually changed to avoid infinite loops
+    if (form.messageBodyHtml !== sanitizedHtml) {
+      onChange("messageBodyHtml", sanitizedHtml);
+      onChange("messageBodyText", htmlToPlainText(sanitizedHtml));
+    }
   };
 
   const handleToolbarCommand = (command: string) => {
@@ -120,14 +132,56 @@ export default function CreateBroadcastContentSection({
     const url = window.prompt("Enter link URL");
     if (!url) return;
 
-    editorRef.current?.focus();
-    applyEditorCommand("createLink", url);
-    syncEditorValue();
+    const textarea = document.querySelector(
+      "#message-body-textarea",
+    ) as HTMLTextAreaElement;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      const selectedText = text.substring(start, end);
+      const before = text.substring(0, start);
+      const after = text.substring(end);
+      const linkText = selectedText || "link text";
+      const linkMarkdown = `[${linkText}](${url.trim()})`;
+      textarea.value = before + linkMarkdown + after;
+      onChange("messageBodyText", textarea.value);
+      onChange("messageBodyHtml", textarea.value);
+      textarea.focus();
+      textarea.setSelectionRange(
+        start + linkMarkdown.length,
+        start + linkMarkdown.length,
+      );
+    }
   };
 
   const handleInsertTag = () => {
+    const textarea = document.querySelector(
+      "#message-body-textarea",
+    ) as HTMLTextAreaElement;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      const before = text.substring(0, start);
+      const after = text.substring(end);
+      const tag = "{{Student_Name}}";
+      textarea.value = before + tag + after;
+      onChange("messageBodyText", textarea.value);
+      onChange("messageBodyHtml", textarea.value);
+      textarea.focus();
+      textarea.setSelectionRange(start + tag.length, start + tag.length);
+    }
+  };
+
+  const handleEditorPaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    event.preventDefault();
+
+    const pastedText = event.clipboardData.getData("text/plain");
+    if (!pastedText) return;
+
     editorRef.current?.focus();
-    applyEditorCommand("insertText", "{{Student_Name}}");
+    applyEditorCommand("insertText", pastedText);
     syncEditorValue();
   };
 
@@ -244,7 +298,7 @@ export default function CreateBroadcastContentSection({
                 </p>
               ) : form.selectedArticle ? (
                 <p className="mt-2 text-xs text-emerald-600">
-                  Selected sourceRefId: {form.selectedArticle.sourceRefId}
+                  {form.selectedArticle.title}
                 </p>
               ) : null}
             </div>
@@ -314,44 +368,124 @@ export default function CreateBroadcastContentSection({
 
           <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
             <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 px-4 py-4">
-              <EditorTool
-                icon={<Bold size={15} />}
-                onClick={() => handleToolbarCommand("bold")}
-              />
-              <EditorTool
-                icon={<Italic size={15} />}
-                onClick={() => handleToolbarCommand("italic")}
-              />
+              <button
+                type="button"
+                onClick={() => {
+                  const textarea = document.querySelector(
+                    "#message-body-textarea",
+                  ) as HTMLTextAreaElement;
+                  if (textarea) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const text = textarea.value;
+                    const before = text.substring(0, start);
+                    const after = text.substring(end);
+                    textarea.value = before + "**bold**" + after;
+                    onChange("messageBodyText", textarea.value);
+                    onChange("messageBodyHtml", textarea.value);
+                    textarea.focus();
+                    textarea.setSelectionRange(start + 7, start + 7);
+                  }
+                }}
+                className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
+              >
+                <Bold size={15} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const textarea = document.querySelector(
+                    "#message-body-textarea",
+                  ) as HTMLTextAreaElement;
+                  if (textarea) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const text = textarea.value;
+                    const before = text.substring(0, start);
+                    const after = text.substring(end);
+                    textarea.value = before + "*italic*" + after;
+                    onChange("messageBodyText", textarea.value);
+                    onChange("messageBodyHtml", textarea.value);
+                    textarea.focus();
+                    textarea.setSelectionRange(start + 8, start + 8);
+                  }
+                }}
+                className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
+              >
+                <Italic size={15} />
+              </button>
+
               <div className="mx-1 h-5 w-px bg-slate-200" />
-              <EditorTool
-                icon={<List size={15} />}
-                onClick={() => handleToolbarCommand("insertUnorderedList")}
-              />
-              <EditorTool
-                icon={<ListOrdered size={15} />}
-                onClick={() => handleToolbarCommand("insertOrderedList")}
-              />
+
+              <button
+                type="button"
+                onClick={() => {
+                  const textarea = document.querySelector(
+                    "#message-body-textarea",
+                  ) as HTMLTextAreaElement;
+                  if (textarea) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const text = textarea.value;
+                    const before = text.substring(0, start);
+                    const after = text.substring(end);
+                    textarea.value = before + "\n- item\n- item\n" + after;
+                    onChange("messageBodyText", textarea.value);
+                    onChange("messageBodyHtml", textarea.value);
+                  }
+                }}
+                className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
+              >
+                <List size={15} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const textarea = document.querySelector(
+                    "#message-body-textarea",
+                  ) as HTMLTextAreaElement;
+                  if (textarea) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const text = textarea.value;
+                    const before = text.substring(0, start);
+                    const after = text.substring(end);
+                    textarea.value = before + "\n1. item\n2. item\n" + after;
+                    onChange("messageBodyText", textarea.value);
+                    onChange("messageBodyHtml", textarea.value);
+                  }
+                }}
+                className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
+              >
+                <ListOrdered size={15} />
+              </button>
+
               <div className="mx-1 h-5 w-px bg-slate-200" />
-              <EditorTool
-                icon={<Link2 size={15} />}
+
+              <button
+                type="button"
                 onClick={handleInsertLink}
-              />
-              <EditorTool
-                icon={<Paperclip size={15} />}
-                onClick={() => fileInputRef.current?.click()}
-              />
+                className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
+              >
+                <Link2 size={15} />
+              </button>
 
               <div className="ml-auto rounded-md bg-[#eafbf8] px-2.5 py-1 text-xs font-semibold text-[#14b8a6]">
                 {`{{Student_Name}}`} Tag
               </div>
             </div>
 
-            <div
-              ref={editorRef}
-              contentEditable
-              suppressContentEditableWarning
-              onInput={syncEditorValue}
-              className="min-h-[300px] px-5 py-6 text-sm leading-8 text-slate-600 outline-none"
+            <textarea
+              id="message-body-textarea"
+              value={form.messageBodyText || ""}
+              onChange={(e) => {
+                onChange("messageBodyText", e.target.value);
+                onChange("messageBodyHtml", e.target.value);
+              }}
+              placeholder="Write your message here..."
+              className="min-h-[300px] w-full px-5 py-6 text-sm leading-8 text-slate-600 outline-none resize-y focus:ring-0"
             />
           </div>
 
@@ -468,19 +602,25 @@ function SelectableCard({
         />
       ) : null}
 
-      <div
-        className={[
-          "mb-5 flex h-14 w-14 items-center justify-center rounded-2xl",
-          selected
-            ? "bg-[#dff8f4] text-[#18c3b2]"
-            : "bg-slate-50 text-slate-400",
-        ].join(" ")}
-      >
-        {icon}
+      <div className="flex w-full items-center justify-center">
+        <div
+          className={[
+            "mb-5 flex h-14 w-14 items-center justify-center rounded-2xl",
+            selected
+              ? "bg-[#dff8f4] text-[#18c3b2]"
+              : "bg-slate-50 text-slate-400",
+          ].join(" ")}
+        >
+          {icon}
+        </div>
       </div>
 
-      <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
-      <p className="mt-3 text-xs leading-6 text-slate-500">{description}</p>
+      <h3 className="text-center text-sm font-semibold text-slate-800">
+        {title}
+      </h3>
+      <p className="mt-3 text-center text-xs leading-6 text-slate-500">
+        {description}
+      </p>
     </button>
   );
 }

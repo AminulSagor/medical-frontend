@@ -1,7 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import Link from "next/link";
 import { Eye, Pencil, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import GeneralDataPagination from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_components/general-data-pagination";
 import { PaginationState } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/types/general-newsletter-data.type";
 import {
@@ -12,11 +14,13 @@ import {
   formatTimeLabel,
 } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_utils/general-broadcast-workspace.utils";
 import { GeneralBroadcastWorkspaceItem } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-workspace.types";
+import { generalBroadcastGetService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.service";
 
 type Props = {
   items: GeneralBroadcastWorkspaceItem[];
   pagination: PaginationState;
   onPageChange: (page: number) => void;
+  onRefresh: () => Promise<void>; // Add this prop
 };
 
 function cx(...parts: Array<string | false | null | undefined>) {
@@ -57,27 +61,87 @@ function DraftBadge({ label }: { label: string }) {
   );
 }
 
-function ActionButtons({ item }: { item: GeneralBroadcastWorkspaceItem }) {
+function ActionButtons({
+  item,
+  onRefresh,
+}: {
+  item: GeneralBroadcastWorkspaceItem;
+  onRefresh: () => Promise<void>;
+}) {
+  const router = useRouter();
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const editHref = `/dashboard/admin/newsletters/general-newsletter/cadence-broadcast-edit/${item.id}`;
+  const viewHref = `/dashboard/admin/newsletters/general-newsletter/view-scheduled-broadcast/${item.id}`;
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this broadcast?",
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      await generalBroadcastGetService.deleteBroadcast(item.id);
+
+      // Refresh the data after successful deletion
+      await onRefresh();
+    } catch (error) {
+      console.error("Failed to delete broadcast:", error);
+      alert("Failed to delete broadcast. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="flex items-center gap-3 text-slate-400">
+      {item.actions?.edit ? (
+        <Link
+          href={editHref}
+          className="hover:text-slate-600"
+          aria-label="Edit draft"
+          title="Edit draft"
+        >
+          <Pencil size={15} />
+        </Link>
+      ) : (
+        <button
+          type="button"
+          disabled
+          className="disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Pencil size={15} />
+        </button>
+      )}
+
+      {item.actions?.view ? (
+        <Link
+          href={viewHref}
+          className="hover:text-slate-600"
+          aria-label="View broadcast"
+          title="View broadcast"
+        >
+          <Eye size={15} />
+        </Link>
+      ) : (
+        <button
+          type="button"
+          disabled
+          className="disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Eye size={15} />
+        </button>
+      )}
+
       <button
         type="button"
-        disabled={!item.actions?.edit}
-        className="hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        <Pencil size={15} />
-      </button>
-      <button
-        type="button"
-        disabled={!item.actions?.view}
-        className="hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        <Eye size={15} />
-      </button>
-      <button
-        type="button"
-        disabled={!item.actions?.delete}
-        className="hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+        onClick={handleDelete}
+        disabled={!item.actions?.delete || isDeleting}
+        className="hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
+        aria-label="Delete broadcast"
+        title="Delete broadcast"
       >
         <Trash2 size={15} />
       </button>
@@ -89,6 +153,7 @@ export default function GeneralDraftsTable({
   items,
   pagination,
   onPageChange,
+  onRefresh,
 }: Props) {
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
@@ -168,7 +233,7 @@ export default function GeneralDraftsTable({
                     </td>
 
                     <td className="px-4 py-5">
-                      <ActionButtons item={item} />
+                      <ActionButtons item={item} onRefresh={onRefresh} />
                     </td>
                   </tr>
                 );

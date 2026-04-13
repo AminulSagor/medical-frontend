@@ -81,7 +81,7 @@ export default function BlogsHeader({ onCreate }: BlogsHeaderProps) {
           Create New Post
         </PrimaryButton>
 
-        <GhostButton leftIcon={<Download size={16} />}>Export</GhostButton>
+        {/* <GhostButton leftIcon={<Download size={16} />}>Export</GhostButton> */}
       </div>
     </div>
   );

@@ -450,7 +450,7 @@ export default function OrdersTable({
                         >
                           <Eye size={16} />
                         </Link>
-                        <button
+                        {/* <button
                           className="grid h-8 w-8 place-items-center rounded-md text-slate-600 hover:bg-slate-100 cursor-pointer"
                           aria-label="Docs"
                         >
@@ -461,7 +461,7 @@ export default function OrdersTable({
                           aria-label="More"
                         >
                           <MoreHorizontal size={16} />
-                        </button>
+                        </button> */}
                       </div>
                     </td>
                   </tr>

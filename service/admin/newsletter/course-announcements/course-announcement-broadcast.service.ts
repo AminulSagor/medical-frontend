@@ -36,3 +36,56 @@ export async function getCourseAnnouncementBroadcastRecipients(
 
   return response.data;
 }
+
+type UpsertCourseAnnouncementDraftResponse = {
+  message: string;
+  id: string;
+  subjectLine: string;
+};
+
+export async function upsertCourseAnnouncementDraft(
+  cohortId: string,
+): Promise<UpsertCourseAnnouncementDraftResponse> {
+  const response =
+    await serviceClient.post<UpsertCourseAnnouncementDraftResponse>(
+      `/admin/newsletters/course-announcements/cohorts/${cohortId}/broadcasts`,
+    );
+
+  return response.data;
+}
+
+export interface AddCourseAnnouncementAttachmentPayload {
+  fileKey: string;
+  fileName: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  sortOrder: number;
+}
+
+export interface AddCourseAnnouncementAttachmentResponse {
+  message: string;
+  id: string;
+  fileName: string;
+}
+
+export async function addCourseAnnouncementAttachment(
+  id: string,
+  payload: AddCourseAnnouncementAttachmentPayload,
+): Promise<AddCourseAnnouncementAttachmentResponse> {
+  const response =
+    await serviceClient.post<AddCourseAnnouncementAttachmentResponse>(
+      `/admin/newsletters/course-announcements/broadcasts/${id}/attachments`,
+      payload,
+    );
+
+  return response.data;
+}
+
+export async function removeCourseAnnouncementAttachment(
+  id: string,
+  attachmentId: string,
+): Promise<void> {
+  await serviceClient.delete(
+    `/admin/newsletters/course-announcements/broadcasts/${id}/attachments/${attachmentId}`,
+  );
+}

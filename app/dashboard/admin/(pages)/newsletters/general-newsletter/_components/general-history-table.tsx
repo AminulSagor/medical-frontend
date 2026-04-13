@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Copy, Eye } from "lucide-react";
 import GeneralDataPagination from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_components/general-data-pagination";
 import { PaginationState } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/types/general-newsletter-data.type";
@@ -14,6 +15,7 @@ type Props = {
   items: GeneralBroadcastWorkspaceItem[];
   pagination: PaginationState;
   onPageChange: (page: number) => void;
+  onRefresh: () => Promise<void>;
 };
 
 function cx(...parts: Array<string | false | null | undefined>) {
@@ -70,11 +72,47 @@ function EngagementBar({
   );
 }
 
+function ActionButtons({ item }: { item: GeneralBroadcastWorkspaceItem }) {
+  // const reportHref = `/dashboard/admin/newsletters/general-newsletter/history-report/${item.id}`;
+  const reportHref = "#";
+  return (
+    <div className="flex items-center gap-4 text-slate-400">
+      {item.actions?.view ? (
+        <Link
+          href={reportHref}
+          className="inline-flex items-center gap-1.5 hover:text-slate-600"
+          aria-label="View report"
+          title="View report"
+        >
+          <Eye size={15} />
+          <span className="text-xs font-semibold">Report</span>
+        </Link>
+      ) : (
+        <button
+          type="button"
+          disabled
+          className="inline-flex items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Eye size={15} />
+          <span className="text-xs font-semibold">Report</span>
+        </button>
+      )}
+
+      <button type="button" className="hover:text-slate-600">
+        <Copy size={15} />
+      </button>
+    </div>
+  );
+}
+
 export default function GeneralHistoryTable({
   items,
   pagination,
   onPageChange,
+  onRefresh,
 }: Props) {
+  void onRefresh;
+
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
       <div className="overflow-x-auto">
@@ -162,18 +200,7 @@ export default function GeneralHistoryTable({
                   </td>
 
                   <td className="px-4 py-4">
-                    <div className="flex items-center gap-4 text-slate-400">
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1.5 hover:text-slate-600"
-                      >
-                        <Eye size={15} />
-                        <span className="text-xs font-semibold">Report</span>
-                      </button>
-                      <button type="button" className="hover:text-slate-600">
-                        <Copy size={15} />
-                      </button>
-                    </div>
+                    <ActionButtons item={item} />
                   </td>
                 </tr>
               ))

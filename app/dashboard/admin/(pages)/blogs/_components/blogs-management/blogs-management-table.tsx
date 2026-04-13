@@ -156,6 +156,20 @@ export default function BlogsManagementTable({
     Math.ceil(effectiveFilteredCount / pageSize),
   );
 
+  const handleView = useCallback(
+    (blogPostId: string) => {
+      router.push(`/dashboard/admin/blogs/live/${blogPostId}`);
+    },
+    [router],
+  );
+
+  const handleEdit = useCallback(
+    (blogPostId: string) => {
+      router.push(`/dashboard/admin/blogs/edit/${blogPostId}`);
+    },
+    [router],
+  );
+
   const handleDelete = useCallback(
     async (blogPostId: string) => {
       if (deletingId) return;
@@ -212,7 +226,7 @@ export default function BlogsManagementTable({
             {visibleRows.length > 0 ? (
               visibleRows.map((r) => (
                 <tr key={r.id} className="border-t border-slate-200">
-                  <td className="pl-5 py-4">
+                  <td className="py-4 pl-5">
                     <div className="flex items-center gap-3">
                       <div className="relative h-10 w-14 overflow-hidden rounded-lg bg-slate-100 ring-1 ring-slate-200">
                         <img
@@ -243,25 +257,29 @@ export default function BlogsManagementTable({
 
                   <td className="py-4 text-xs text-slate-500">{r.dateLabel}</td>
 
-                  <td className="py-4 text-sm font-semibold text-slate-900 text-center pr-4">
+                  <td className="py-4 pr-4 text-center text-sm font-semibold text-slate-900">
                     {typeof r.views === "number"
                       ? r.views.toLocaleString()
                       : "—"}
                   </td>
 
-                  <td className="pr-5 py-4">
+                  <td className="py-4 pr-5">
                     <div className="flex items-center justify-end gap-2 text-slate-500">
-                      <IconAction label="Share">
+                      {/* <IconAction label="Share">
                         <Share2 size={16} />
-                      </IconAction>
-                      <IconAction label="View">
+                      </IconAction> */}
+
+                      <IconAction label="View" onClick={() => handleView(r.id)}>
                         <Eye size={16} />
                       </IconAction>
-                      <IconAction label="Edit">
+
+                      <IconAction label="Edit" onClick={() => handleEdit(r.id)}>
                         <Pencil size={16} />
                       </IconAction>
+
                       <IconAction
                         label="Delete"
+                        danger
                         onClick={() => handleDelete(r.id)}
                       >
                         <Trash2 size={16} />
