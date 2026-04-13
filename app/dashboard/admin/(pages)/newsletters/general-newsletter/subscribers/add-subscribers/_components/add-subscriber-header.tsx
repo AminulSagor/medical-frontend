@@ -11,13 +11,13 @@ export default function AddSubscriberHeader({
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="flex items-start gap-3">
-        <Link
-          href="/newsletters?tab=subscribers"
+        <button
+          onClick={onDiscard}
           className="mt-1 grid h-9 w-9 place-items-center rounded-full bg-white shadow-sm ring-1 ring-slate-200/60 hover:bg-slate-50"
           aria-label="Back"
         >
           <ArrowLeft size={18} className="text-slate-600" />
-        </Link>
+        </button>
 
         <div>
           <h1 className="text-[20px] font-extrabold leading-[28px] text-slate-900">
