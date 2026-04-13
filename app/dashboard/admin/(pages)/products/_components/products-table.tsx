@@ -21,10 +21,8 @@ export type ProductRow = {
     status: ProductStatus;
     stockTone: StockTone;
     imageUrl?: string;
-
-    // ✅ for analytics table (view-all)
-    rank?: number;          // #1, #2...
-    trendPct?: number | null; // +12.4, -2.4, null => show "—"
+    rank?: number;
+    trendPct?: number | null;
 };
 
 function statusPill(status: ProductStatus) {
@@ -42,7 +40,6 @@ function stockBar(stock: number | null) {
 }
 
 function pageNumbers(page: number, totalPages: number) {
-    // compact: 1 ... (page-1) page (page+1) ... total
     if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
 
     const nums: (number | "...")[] = [];
@@ -73,9 +70,9 @@ export default function ProductsTable({
     onPageChange,
 }: {
     rows: ProductRow[];
-    totalCount: number;     // ✅ filtered total
-    page: number;           // ✅ current page
-    pageSize: number;       // ✅ 4
+    totalCount: number;
+    page: number;
+    pageSize: number;
     totalPages: number;
     onPageChange: (p: number) => void;
 }) {
@@ -106,6 +103,10 @@ export default function ProductsTable({
         ].join(" ");
     }
 
+    const goToDetails = (id: string) => {
+        router.push(`/dashboard/admin/products/${id}`);
+    };
+
     return (
         <div className="w-full">
             <div className="w-full overflow-x-auto">
@@ -132,8 +133,12 @@ export default function ProductsTable({
                                 </td>
 
                                 <td className="px-2 py-4">
-                                    <div className="flex items-start gap-3">
-                                        <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-slate-50 ring-1 ring-slate-100">
+                                    <button
+                                        type="button"
+                                        onClick={() => goToDetails(r.id)}
+                                        className="flex items-start gap-3 text-left w-full rounded-lg hover:bg-slate-50 p-1 transition"
+                                    >
+                                        <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-slate-50 ring-1 ring-slate-100 shrink-0">
                                             {r.imageUrl ? (
                                                 <Image src={r.imageUrl} alt={r.name} fill className="object-cover" />
                                             ) : (
@@ -144,22 +149,29 @@ export default function ProductsTable({
                                         </div>
 
                                         <div className="min-w-0">
-                                            <p className="truncate text-sm font-semibold text-slate-900">{r.name}</p>
+                                            <p className="truncate text-sm font-semibold text-slate-900 hover:text-[var(--primary)]">
+                                                {r.name}
+                                            </p>
                                             <p className="truncate text-xs text-slate-500">{r.category}</p>
                                             <p className="truncate text-[11px] text-slate-400">SKU: {r.sku}</p>
                                         </div>
-                                    </div>
+                                    </button>
                                 </td>
 
                                 <td className="px-2 py-4 align-top">
                                     <div className="w-[160px]">
-                                        <p className="text-xs text-slate-700">{r.stock === null ? "—" : `${r.stock} in stock`}</p>
+                                        <p className="text-xs text-slate-700">
+                                            {r.stock === null ? "—" : `${r.stock} in stock`}
+                                        </p>
                                         <div className="mt-2 h-2 w-full rounded-full bg-slate-100">
                                             {(r.stock ?? 0) > 0 ? (
                                                 <div
                                                     className={["h-2 rounded-full", stockBar(r.stock)].join(" ")}
                                                     style={{
-                                                        width: `${Math.min(100, Math.max(8, ((r.stock as number) / 150) * 100))}%`,
+                                                        width: `${Math.min(
+                                                            100,
+                                                            Math.max(8, ((r.stock as number) / 150) * 100),
+                                                        )}%`,
                                                     }}
                                                 />
                                             ) : null}
@@ -169,7 +181,11 @@ export default function ProductsTable({
 
                                 <td className="px-2 py-4 align-top">
                                     <p className="text-sm font-semibold text-slate-900">
-                                        {r.price === null ? <span className="text-slate-400">Not set</span> : `$${r.price.toFixed(2)}`}
+                                        {r.price === null ? (
+                                            <span className="text-slate-400">Not set</span>
+                                        ) : (
+                                            `$${r.price.toFixed(2)}`
+                                        )}
                                     </p>
                                 </td>
 
@@ -185,14 +201,14 @@ export default function ProductsTable({
                                         <span className="text-slate-500">
                                             {r.sales === null ? "Created:" : "Updated:"}
                                         </span>{" "}
-                                        <span className="text-slate-900 font-medium">
-                                            {r.updatedLabel}
-                                        </span>
+                                        <span className="text-slate-900 font-medium">{r.updatedLabel}</span>
                                     </p>
                                 </td>
 
                                 <td className="px-2 py-4 align-top">
-                                    <span className={statusPill(r.status)}>{r.status === "active" ? "Active" : "Draft"}</span>
+                                    <span className={statusPill(r.status)}>
+                                        {r.status === "active" ? "Active" : "Draft"}
+                                    </span>
                                 </td>
 
                                 <td className="px-5 py-4 align-top">
@@ -212,7 +228,7 @@ export default function ProductsTable({
 
                                         <button
                                             type="button"
-                                            onClick={() => router.push(`/products/edit/${r.id}`)}
+                                            onClick={() => router.push(`/dashboard/admin/products/edit/${r.id}`)}
                                             className="grid h-8 w-8 place-items-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                                             aria-label="Edit"
                                         >
@@ -254,7 +270,6 @@ export default function ProductsTable({
                 </table>
             </div>
 
-            {/* footer */}
             <div className="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between">
                 <p className="text-xs text-slate-500">{showingLabel}</p>
 
@@ -284,12 +299,12 @@ export default function ProductsTable({
                                     "px-3 py-2",
                                     n === page
                                         ? "text-[var(--primary)] ring-1 ring-[var(--primary)]/20 bg-[var(--primary)]/10"
-                                        : "text-slate-600 hover:bg-slate-50"
+                                        : "text-slate-600 hover:bg-slate-50",
                                 ].join(" ")}
                             >
                                 {n}
                             </button>
-                        )
+                        ),
                     )}
 
                     <button

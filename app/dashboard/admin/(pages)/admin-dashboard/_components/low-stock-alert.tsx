@@ -1,21 +1,26 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 
-const ITEMS = [
-    { name: "Adult Airway Card", left: "2 units left" },
-    { name: "Pediatric Manikin Kit", left: "1 unit left" },
-    { name: "Intubation Trainer", left: "3 units left" },
-];
+import type { DashboardLowStockAlert } from "@/types/admin/dashboard.types";
+import { mapAdminDashboardRoute } from "../_utils/dashboard-route";
 
-export default function LowStockAlert() {
+export default function LowStockAlert({
+    lowStockAlerts,
+}: {
+    lowStockAlerts: DashboardLowStockAlert[];
+}) {
+    const router = useRouter();
+    const manageRoute = lowStockAlerts[0]?.manageInventoryRoute;
+
     return (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            {/* red top border */}
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="h-1 w-full bg-rose-500" />
 
             <div className="p-5">
-                {/* header */}
                 <div className="flex items-start gap-3">
-                    <div className="grid h-10 w-10 place-items-center rounded-full bg-rose-50 ring-1 ring-rose-100 text-rose-600">
+                    <div className="grid h-10 w-10 place-items-center rounded-full bg-rose-50 text-rose-600 ring-1 ring-rose-100">
                         <AlertTriangle size={18} />
                     </div>
 
@@ -25,26 +30,38 @@ export default function LowStockAlert() {
                     </div>
                 </div>
 
-                {/* items */}
                 <div className="mt-4 space-y-3">
-                    {ITEMS.map((it) => (
-                        <div
-                            key={it.name}
-                            className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-4 py-3"
-                        >
-                            <p className="text-sm font-medium text-slate-700">{it.name}</p>
-
-                            <span className="rounded-md bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">
-                                {it.left}
-                            </span>
+                    {lowStockAlerts.length === 0 ? (
+                        <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                            No low stock alerts.
                         </div>
-                    ))}
+                    ) : (
+                        lowStockAlerts.map((item) => (
+                            <div
+                                key={item.productId}
+                                className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-4 py-3"
+                            >
+                                <p className="text-sm font-medium text-slate-700">
+                                    {item.productName}
+                                </p>
+
+                                <span className="rounded-md bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">
+                                    {item.unitsLeft} units left
+                                </span>
+                            </div>
+                        ))
+                    )}
                 </div>
 
-                {/* footer link */}
                 <button
                     type="button"
-                    className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary)] hover:opacity-90"
+                    onClick={() => {
+                        if (manageRoute) {
+                            router.push(mapAdminDashboardRoute(manageRoute));
+                        }
+                    }}
+                    disabled={!manageRoute}
+                    className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     Manage Inventory <span aria-hidden>›</span>
                 </button>

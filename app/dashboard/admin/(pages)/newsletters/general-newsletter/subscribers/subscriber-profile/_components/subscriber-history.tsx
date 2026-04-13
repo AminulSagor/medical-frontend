@@ -40,8 +40,14 @@ function TabButton({
 
 export default function SubscriberHistory({
   data,
+  newsletterCanLoadMore = false,
+  isNewsletterLoadingMore = false,
+  onLoadMoreNewsletters,
 }: {
   data: SubscriberProfile;
+  newsletterCanLoadMore?: boolean;
+  isNewsletterLoadingMore?: boolean;
+  onLoadMoreNewsletters?: () => void;
 }) {
   const [tab, setTab] = useState<TabKey>("orders");
 
@@ -80,7 +86,12 @@ export default function SubscriberHistory({
         {tab === "orders" ? (
           <OrdersTable rows={data.orders} />
         ) : (
-          <NewslettersTable rows={data.newsletters} />
+          <NewslettersTable
+            rows={data.newsletters}
+            canLoadMore={newsletterCanLoadMore}
+            isLoadingMore={isNewsletterLoadingMore}
+            onLoadMore={onLoadMoreNewsletters}
+          />
         )}
       </div>
     </section>

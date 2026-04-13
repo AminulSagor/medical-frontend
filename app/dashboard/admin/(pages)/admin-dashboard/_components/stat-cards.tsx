@@ -1,4 +1,19 @@
-import { DollarSign, Users, GraduationCap, ShoppingBag } from "lucide-react";
+import {
+    DollarSign,
+    Users,
+    GraduationCap,
+    ShoppingBag,
+} from "lucide-react";
+
+import type { DashboardKpis } from "@/types/admin/dashboard.types";
+
+function formatValue(value: number, currency?: string) {
+    if (currency) {
+        return `${currency}${value.toLocaleString()}`;
+    }
+
+    return value.toLocaleString();
+}
 
 function Card({
     title,
@@ -12,13 +27,13 @@ function Card({
     value: string;
     sub: string;
     icon: React.ElementType;
-    badge: string;
-    badgeTone: "green" | "red";
+    badge?: string;
+    badgeTone?: "green" | "red";
 }) {
     const tone =
-        badgeTone === "green"
-            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
-            : "bg-rose-50 text-rose-700 ring-1 ring-rose-100";
+        badgeTone === "red"
+            ? "bg-rose-50 text-rose-700 ring-1 ring-rose-100"
+            : "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100";
 
     return (
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -30,9 +45,14 @@ function Card({
                 </div>
 
                 <div className="flex flex-col items-end gap-2">
-                    <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${tone}`}>
-                        {badge}
-                    </span>
+                    {badge ? (
+                        <span
+                            className={`rounded-full px-2 py-1 text-[11px] font-semibold ${tone}`}
+                        >
+                            {badge}
+                        </span>
+                    ) : null}
+
                     <div className="grid h-9 w-9 place-items-center rounded-md bg-slate-50 text-slate-600 ring-1 ring-slate-100">
                         <Icon size={16} />
                     </div>
@@ -42,40 +62,48 @@ function Card({
     );
 }
 
-export default function StatCards() {
+export default function StatCards({ kpis }: { kpis: DashboardKpis }) {
     return (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <Card
                 title="Total Revenue"
-                value="$124,500"
-                sub="vs last month"
+                value={formatValue(kpis.totalRevenue.value, kpis.totalRevenue.currency)}
+                sub={kpis.totalRevenue.subtext}
                 icon={DollarSign}
-                badge="+ 12%"
-                badgeTone="green"
+                badge={kpis.totalRevenue.changePercent}
+                badgeTone={
+                    kpis.totalRevenue.changeDirection === "down" ? "red" : "green"
+                }
             />
             <Card
                 title="Active Students"
-                value="842"
-                sub="Currently enrolled"
+                value={formatValue(kpis.activeStudents.value)}
+                sub={kpis.activeStudents.subtext}
                 icon={Users}
-                badge="+ 5%"
-                badgeTone="green"
+                badge={kpis.activeStudents.changePercent}
+                badgeTone={
+                    kpis.activeStudents.changeDirection === "down" ? "red" : "green"
+                }
             />
             <Card
                 title="Course Completions"
-                value="315"
-                sub="This quarter"
+                value={formatValue(kpis.courseCompletions.value)}
+                sub={kpis.courseCompletions.subtext}
                 icon={GraduationCap}
-                badge="+ 8%"
-                badgeTone="green"
+                badge={kpis.courseCompletions.changePercent}
+                badgeTone={
+                    kpis.courseCompletions.changeDirection === "down" ? "red" : "green"
+                }
             />
             <Card
                 title="Product Sales"
-                value="1,204"
-                sub="Units sold"
+                value={formatValue(kpis.productSales.value)}
+                sub={kpis.productSales.subtext}
                 icon={ShoppingBag}
-                badge="- 2%"
-                badgeTone="red"
+                badge={kpis.productSales.changePercent}
+                badgeTone={
+                    kpis.productSales.changeDirection === "down" ? "red" : "green"
+                }
             />
         </div>
     );

@@ -1,7 +1,11 @@
 export type SubscriberStatus = "subscribed" | "unsubscribed";
 
 export type SubscriberStatCard = {
-  key: "engagementRate" | "totalReceived" | "courseAttendance" | "lifetimeValue";
+  key:
+  | "engagementRate"
+  | "totalReceived"
+  | "courseAttendance"
+  | "lifetimeValue";
   label: string;
   value: string;
   subLabel: string;
@@ -16,12 +20,14 @@ export type SubscriberContact = {
 export type SubscriberProfessionalInfo = {
   institution: string;
   acquisitionLabel: string;
-  acquisitionTag: string; // e.g. "POPUP"
-  joinedDateLabel: string; // e.g. "Jan 22, 2026"
+  acquisitionTag: string;
+  joinedDateLabel: string;
 };
 
 export type SubscriberAdminNote = {
+  id: string;
   note: string;
+  createdAt?: string;
 };
 
 export type SubscriberProfile = {
@@ -34,7 +40,9 @@ export type SubscriberProfile = {
 
   contact: SubscriberContact;
   professionalInfo: SubscriberProfessionalInfo;
+
   adminNote: SubscriberAdminNote;
+  adminNotes: SubscriberAdminNote[];
 
   stats: SubscriberStatCard[];
 
@@ -43,18 +51,26 @@ export type SubscriberProfile = {
 };
 
 export type SubscriberOrderRow = {
-  id: string; // #ORD-2024-001
-  dateLabel: string; // Oct 12, 2026
+  id: string;
+  dateLabel: string;
   itemTitle: string;
   type: "product" | "course";
-  totalLabel: string; // $84.00
+  totalLabel: string;
   paymentStatus: "paid" | "unpaid";
 };
 
 export type SubscriberNewsletterRow = {
+  id: string;
   title: string;
   sentDateLabel: string;
   status: "delivered" | "bounced" | "queued";
   opened: boolean;
   clicked: boolean;
+};
+
+export type SubscriberProfileEditableFields = {
+  fullName: string;
+  clinicalRole: string;
+  phone: string;
+  institution: string;
 };

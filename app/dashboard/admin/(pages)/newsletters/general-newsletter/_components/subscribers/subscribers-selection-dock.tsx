@@ -2,22 +2,20 @@
 
 import { Download, Trash2, X } from "lucide-react";
 
-function cn(...p: Array<string | false | undefined>) {
-  return p.filter(Boolean).join(" ");
-}
-
 export default function SubscribersSelectionDock({
   open,
   selectedCount,
   onExport,
   onDelete,
   onClear,
+  isDeleting = false,
 }: {
   open: boolean;
   selectedCount: number;
   onExport: () => void;
   onDelete: () => void;
   onClear: () => void;
+  isDeleting?: boolean;
 }) {
   if (!open) return null;
 
@@ -45,10 +43,11 @@ export default function SubscribersSelectionDock({
         <button
           type="button"
           onClick={onDelete}
-          className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-rose-400 hover:bg-white/10"
+          disabled={isDeleting}
+          className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-rose-400 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Trash2 size={16} />
-          Delete
+          {isDeleting ? "Deleting..." : "Delete"}
         </button>
 
         <button

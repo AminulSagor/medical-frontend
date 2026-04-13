@@ -24,8 +24,8 @@ function MetricCard({
     pill?.tone === "red"
       ? "bg-rose-50 text-rose-600"
       : pill?.tone === "teal"
-      ? "bg-teal-50 text-teal-700"
-      : "bg-slate-50 text-slate-600";
+        ? "bg-teal-50 text-teal-700"
+        : "bg-slate-50 text-slate-600";
 
   return (
     <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/60">
@@ -39,13 +39,17 @@ function MetricCard({
       </div>
 
       <div className="mt-3 flex items-end gap-3">
-        {/* +142 style */}
         <p className="text-[24px] font-extrabold leading-8 text-slate-900">
           {value}
         </p>
 
         {pill ? (
-          <span className={cn("rounded-full px-3 py-1 text-[10px] font-bold", pillCls)}>
+          <span
+            className={cn(
+              "rounded-full px-3 py-1 text-[10px] font-bold",
+              pillCls,
+            )}
+          >
             {pill.label}
           </span>
         ) : null}
@@ -61,12 +65,16 @@ function MetricCard({
   );
 }
 
-export default function SubscribersMetrics({ summary }: { summary: SubscribersSummary }) {
+export default function SubscribersMetrics({
+  summary,
+}: {
+  summary: SubscribersSummary;
+}) {
   return (
     <>
       <MetricCard
         title="NET GROWTH"
-        value={`+${summary.netGrowth}`}
+        value={`${summary.netGrowth}`}
         icon={<TrendingUp size={16} />}
         pill={{ label: summary.netGrowthLabel, tone: "teal" }}
         subLeft={summary.netGrowthDeltaLabel}

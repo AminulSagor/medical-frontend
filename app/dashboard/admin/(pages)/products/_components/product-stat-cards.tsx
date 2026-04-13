@@ -1,9 +1,17 @@
-import React from "react";
-import { Package, DollarSign, ShoppingCart, AlertTriangle, TrendingUp } from "lucide-react";
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
+import {
+    Package,
+    DollarSign,
+    ShoppingCart,
+    AlertTriangle,
+    TrendingUp,
+} from "lucide-react";
+import { getProductsList } from "@/service/admin/product.service";
+import type { AdminProductListItem } from "@/types/admin/product.types";
 
 function splitHint(hint: string) {
-    // expects like: "▲ +12% vs. last month"
-    // returns { delta:"+12%", rest:"vs. last month" } (best-effort)
     const cleaned = hint.replace("▲", "").trim();
     const m = cleaned.match(/^([+\-]?\d+%)(.*)$/);
     if (!m) return { delta: null as string | null, rest: hint };
@@ -62,11 +70,7 @@ function StatCard({
                         ) : null}
 
                         <span
-                            className={
-                                tone === "red"
-                                    ? "text-red-600"
-                                    : "text-slate-500"
-                            }
+                            className={tone === "red" ? "text-red-600" : "text-slate-500"}
                         >
                             {delta ? rest : hint}
                         </span>
@@ -86,33 +90,95 @@ function StatCard({
     );
 }
 
+function formatCurrency(value: number) {
+    return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 2,
+    }).format(value);
+}
+
+function calculateInventoryValue(items: AdminProductListItem[]) {
+    return items.reduce((sum, item) => {
+        const price = Number(item.offerPrice || item.actualPrice || 0);
+        const stock = Number(item.stockQuantity || 0);
+        return sum + price * stock;
+    }, 0);
+}
+
 export default function ProductStatCards() {
+    const [loading, setLoading] = useState(true);
+    const [totalProducts, setTotalProducts] = useState(0);
+    const [inventoryValue, setInventoryValue] = useState(0);
+    const [outOfStock, setOutOfStock] = useState(0);
+    const [lowStock, setLowStock] = useState(0);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                setLoading(true);
+
+                const response = await getProductsList({
+                    page: 1,
+                    limit: 100,
+                    tab: "all",
+                    category: "All",
+                });
+
+                setTotalProducts(response.tabsCount?.all ?? response.meta.total ?? 0);
+                setOutOfStock(response.tabsCount?.out_of_stock ?? 0);
+                setLowStock(response.tabsCount?.low_stock ?? 0);
+                setInventoryValue(calculateInventoryValue(response.items ?? []));
+            } catch (error) {
+                console.error("Failed to load product stats:", error);
+                setTotalProducts(0);
+                setInventoryValue(0);
+                setOutOfStock(0);
+                setLowStock(0);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStats();
+    }, []);
+
+    const stats = useMemo(
+        () => ({
+            totalProducts: loading ? "—" : totalProducts.toLocaleString(),
+            inventoryValue: loading ? "—" : formatCurrency(inventoryValue),
+            outOfStock: loading ? "—" : outOfStock.toLocaleString(),
+            lowStock: loading ? "—" : lowStock.toLocaleString(),
+        }),
+        [inventoryValue, loading, lowStock, outOfStock, totalProducts],
+    );
+
     return (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard
                 label="Total Products"
-                value="1,234"
-                hint="▲ +12% vs. last month"
+                value={stats.totalProducts}
+                hint="From product inventory"
                 Icon={Package}
                 tone="primary"
             />
             <StatCard
                 label="Inventory Value"
-                value="$84,200"
-                hint="Total valuation"
+                value={stats.inventoryValue}
+                hint="Based on price × stock"
                 Icon={DollarSign}
                 tone="primary"
             />
             <StatCard
                 label="Out of Stock"
-                value="12"
+                value={stats.outOfStock}
                 hint="Action required"
                 Icon={ShoppingCart}
                 tone="red"
             />
             <StatCard
                 label="Low Stock Alerts"
-                value="28"
+                value={stats.lowStock}
                 hint="Restock recommended"
                 Icon={AlertTriangle}
                 tone="orange"

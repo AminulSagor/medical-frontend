@@ -1,23 +1,19 @@
-import Image from "next/image";
 import Link from "next/link";
 import Card from "@/components/cards/card";
 import { BlogPost } from "@/types/public/blogs/blog-type";
+import BlogSafeImage from "./blog-safe-image";
 
 export default function BigFeatureCard({ post }: { post: BlogPost }) {
   return (
-    <Card className="p-0 overflow-hidden rounded-[26px]" shape="soft">
+    <Card className="overflow-hidden rounded-[26px] p-0" shape="soft">
       <Link href={post.href} className="block">
         <div className="relative h-[280px] w-full overflow-hidden rounded-t-[26px]">
-          <Image
+          <BlogSafeImage
             src={post.coverImageSrc}
             alt={post.coverImageAlt}
-            fill
-            sizes="(max-width: 768px) 100vw, 760px"
-            className="object-cover"
-            style={{ objectPosition: "75% 20%" }}
+            className="h-full w-full object-cover"
           />
 
-          {/* category pill */}
           <div className="absolute left-4 top-4">
             <span className="inline-flex items-center rounded-full bg-white/90 px-4 py-1.5 text-[12px] font-semibold text-[#1E293B] shadow-sm">
               {post.category}
@@ -25,8 +21,8 @@ export default function BigFeatureCard({ post }: { post: BlogPost }) {
           </div>
         </div>
 
-        <div className="px-7 pt-7 pb-6 bg-white">
-          <h3 className="font-serif text-[34px] leading-[1.08] font-bold text-black">
+        <div className="bg-white px-7 pb-6 pt-7">
+          <h3 className="font-serif text-[34px] font-bold leading-[1.08] text-black">
             {post.title}
           </h3>
 
@@ -36,17 +32,14 @@ export default function BigFeatureCard({ post }: { post: BlogPost }) {
 
           <div className="mt-6 h-px w-full bg-light-slate/10" />
 
-          {/* footer row */}
           <div className="mt-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               {post.author?.avatarSrc ? (
                 <div className="relative h-8 w-8 overflow-hidden rounded-full border border-light-slate/15">
-                  <Image
+                  <BlogSafeImage
                     src={post.author.avatarSrc}
                     alt={post.author.name}
-                    fill
-                    sizes="32px"
-                    className="object-cover"
+                    className="h-full w-full object-cover"
                   />
                 </div>
               ) : (
