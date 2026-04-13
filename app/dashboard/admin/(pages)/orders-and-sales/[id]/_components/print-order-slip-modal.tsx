@@ -50,6 +50,7 @@ export default function PrintOrderSlipModal({
   orderId,
   onClose,
 }: PrintOrderSlipModalProps) {
+  console.log("orderidssssss", orderId);
   const [labelFormat, setLabelFormat] = useState<AdminOrderLabelFormat>("4x6");
   const [orientation, setOrientation] =
     useState<AdminOrderLabelOrientation>("portrait");
