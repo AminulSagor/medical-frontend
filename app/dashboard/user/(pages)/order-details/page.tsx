@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import OrderDetailsHeader from "./_components/order-details-header";
 import ShipmentItemsCard from "./_components/shipment-items-card";
 import OrderSummaryCard from "./_components/order-summary-card";
+import NeedHelpCard from "./_components/need-help-card";
 import { getUserOrderDetails } from "@/service/user/order-details.service";
+import { reorderBackendCart } from "@/service/public/cart-server.service";
+import { useCart } from "@/app/public/context/cart-context";
 import type { UserOrderDetailsData } from "@/types/user/order/order-details.types";
 
 type StepKey = "Ordered" | "Processing" | "Shipped" | "Delivered";
@@ -22,10 +25,21 @@ function money(value: string | number | null | undefined) {
 function mapActiveStep(value?: string): StepKey {
   const normalized = value?.toLowerCase();
 
-  if (normalized === "ordered") return "Ordered";
-  if (normalized === "processing") return "Processing";
-  if (normalized === "shipped") return "Shipped";
-  if (normalized === "delivered") return "Delivered";
+  if (normalized === "ordered" || normalized === "unfulfilled") {
+    return "Ordered";
+  }
+
+  if (normalized === "processing") {
+    return "Processing";
+  }
+
+  if (normalized === "shipped") {
+    return "Shipped";
+  }
+
+  if (normalized === "delivered" || normalized === "received") {
+    return "Delivered";
+  }
 
   return "Ordered";
 }
@@ -40,8 +54,10 @@ function buildMeta(attributes: Record<string, string> | null) {
 }
 
 export default function OrderDetailsPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("id");
+  const { syncItems } = useCart();
 
   const [orderDetails, setOrderDetails] = useState<UserOrderDetailsData | null>(
     null,
@@ -78,68 +94,146 @@ export default function OrderDetailsPage() {
   const currentTimelineStep =
     orderDetails?.timeline.steps?.[orderDetails.timeline.currentStepIndex];
 
-  const handleDownloadInvoice = () => {
-    const url = orderDetails?.actions.downloadInvoice;
-    if (!url) return;
+  const activeStep = mapActiveStep(
+    currentTimelineStep?.label || currentTimelineStep?.key,
+  );
 
-    window.open(url, "_blank", "noopener,noreferrer");
+  const timelineSteps = useMemo(() => {
+    return (orderDetails?.timeline.steps || []).map((step) => ({
+      key: mapActiveStep(step.key || step.label),
+      date: step.date,
+    }));
+  }, [orderDetails]);
+
+  // const handleDownloadInvoice = async () => {
+  //   if (!orderDetails?.id) return;
+
+  //   try {
+  //     const response = await fetch(
+  //       `/dashboard/user/order-invoice/${orderDetails.id}/invoice`,
+  //       {
+  //         method: "GET",
+  //       },
+  //     );
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to download invoice");
+  //     }
+
+  //     const blob = await response.blob();
+  //     const url = window.URL.createObjectURL(blob);
+
+  //     const anchor = document.createElement("a");
+  //     anchor.href = url;
+  //     anchor.download = `invoice-${orderDetails.orderNumber || orderDetails.id}.pdf`;
+  //     document.body.appendChild(anchor);
+  //     anchor.click();
+  //     document.body.removeChild(anchor);
+
+  //     window.URL.revokeObjectURL(url);
+  //   } catch (error) {
+  //     console.error("Invoice download failed", error);
+  //   }
+  // };
+
+  const handleDownloadInvoice = () => {
+    if (!orderDetails?.id) return;
+
+    const invoiceUrl = `/dashboard/user/order-invoice/${orderDetails.id}/invoice`;
+    const anchor = document.createElement("a");
+    anchor.href = invoiceUrl;
+    anchor.download = `invoice-${orderDetails.orderNumber || orderDetails.id}.pdf`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
   };
 
-  const handleTrackPackage = () => {
-    const url = orderDetails?.actions.trackPackage;
-    if (!url) return;
+  const handleReorder = async () => {
+    if (!orderDetails?.id) return;
 
-    window.open(url, "_blank", "noopener,noreferrer");
+    try {
+      const data = await reorderBackendCart({
+        orderId: orderDetails.id,
+      });
+
+      syncItems(
+        data.items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+      );
+
+      router.push("/public/cart");
+    } catch (error) {
+      console.error("Failed to reorder cart", error);
+    }
+  };
+
+  const handleContactSupport = () => {
+    const orderNo = orderDetails?.orderNumber;
+
+    if (!orderNo) {
+      router.push("/public/contact-us");
+      return;
+    }
+
+    router.push(
+      `/public/contact-us?source=order_details&orderNo=${encodeURIComponent(orderNo)}`,
+    );
   };
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6">
       <OrderDetailsHeader
-        backHref="/order-history"
+        backHref="/dashboard/user/order-history"
         orderNo={orderDetails?.orderNumber}
         placedOn={orderDetails?.placedDate}
         statusLabel={orderDetails?.shipmentStatus.statusLabel}
         carrier={orderDetails?.shipmentStatus.carrier}
         trackingNo={orderDetails?.shipmentStatus.trackingNumber}
         etaLabel={orderDetails?.shipmentStatus.estimatedDelivery}
-        activeStep={mapActiveStep(
-          currentTimelineStep?.label || currentTimelineStep?.key,
-        )}
+        activeStep={activeStep}
+        timelineSteps={timelineSteps}
+        showReorder={activeStep === "Delivered"}
         onDownloadInvoice={handleDownloadInvoice}
-        onTrackPackage={handleTrackPackage}
+        onReorder={handleReorder}
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px] items-start">
+      <div className="grid grid-cols-1 gap-6 items-start lg:grid-cols-[1fr_360px]">
         <ShipmentItemsCard
           items={items}
           orderNoBadge={`Order No: #${orderDetails?.orderNumber || "—"}`}
         />
 
-        <OrderSummaryCard
-          shipTo={{
-            name: orderDetails?.shipping.fullName || "—",
-            lines: [
-              orderDetails?.shipping.addressLine1 || "—",
-              orderDetails?.shipping.addressLine2 || "",
-              orderDetails?.shipping.cityStateZip || "",
-            ].filter(Boolean),
-          }}
-          payment={{
-            label:
-              orderDetails?.payment.brand && orderDetails?.payment.last4
-                ? `${orderDetails.payment.brand} ending in ${orderDetails.payment.last4}`
-                : "Card payment",
-          }}
-          totals={{
-            subtotalLabel: `Subtotal (${orderDetails?.items.length || 0} item${
-              (orderDetails?.items.length || 0) !== 1 ? "s" : ""
-            })`,
-            subtotal: money(orderDetails?.payment.subtotal),
-            shipping: money(orderDetails?.payment.shipping),
-            tax: money(orderDetails?.payment.tax),
-            grandTotal: money(orderDetails?.payment.grandTotal),
-          }}
-        />
+        <div className="space-y-6">
+          <OrderSummaryCard
+            shipTo={{
+              name: orderDetails?.shipping.fullName || "—",
+              lines: [
+                orderDetails?.shipping.addressLine1 || "—",
+                orderDetails?.shipping.addressLine2 || "",
+                orderDetails?.shipping.cityStateZip || "",
+              ].filter(Boolean),
+            }}
+            payment={{
+              label:
+                orderDetails?.payment.brand && orderDetails?.payment.last4
+                  ? `${orderDetails.payment.brand} ending in ${orderDetails.payment.last4}`
+                  : "Card payment",
+            }}
+            totals={{
+              subtotalLabel: `Subtotal (${orderDetails?.items.length || 0} item${
+                (orderDetails?.items.length || 0) !== 1 ? "s" : ""
+              })`,
+              subtotal: money(orderDetails?.payment.subtotal),
+              shipping: money(orderDetails?.payment.shipping),
+              tax: money(orderDetails?.payment.tax),
+              grandTotal: money(orderDetails?.payment.grandTotal),
+            }}
+          />
+
+          <NeedHelpCard onContactSupport={handleContactSupport} />
+        </div>
       </div>
     </main>
   );

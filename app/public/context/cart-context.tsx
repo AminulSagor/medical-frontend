@@ -8,12 +8,16 @@ import React, {
   useState,
 } from "react";
 import type { CartItem } from "@/types/public/cart/cart.types";
+import { getToken } from "@/utils/token/cookie_utils";
+import {
+  addToBackendCart,
+  getCartList,
+} from "@/service/public/cart-server.service";
 
-/* ─── Shape ─────────────────────────────────── */
 interface CartContextValue {
   items: CartItem[];
   totalItems: number;
-  addItem: (productId: string, quantity?: number) => void;
+  addItem: (productId: string, quantity?: number) => Promise<void>;
   removeItem: (productId: string) => void;
   updateQty: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -21,87 +25,182 @@ interface CartContextValue {
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
-
 const STORAGE_KEY = "shafa_cart";
 
-/* ─── Provider ──────────────────────────────── */
+function mapItemsToCartState(
+  items: { productId: string; quantity: number }[],
+): CartItem[] {
+  return items.map((item) => ({
+    productId: item.productId,
+    quantity: item.quantity,
+  }));
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
-  // Hydrate from localStorage on first mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setItems(JSON.parse(stored));
-    } catch {
-      // ignore parse errors
-    }
-  }, []);
+  const syncItems = useCallback(
+    (newItems: { productId: string; quantity: number }[]) => {
+      setItems((prev) => {
+        if (prev.length !== newItems.length) {
+          return mapItemsToCartState(newItems);
+        }
 
-  // Persist to localStorage on every change
+        const sortedPrev = [...prev].sort((a, b) =>
+          a.productId.localeCompare(b.productId),
+        );
+        const sortedNew = [...newItems].sort((a, b) =>
+          a.productId.localeCompare(b.productId),
+        );
+
+        const isDifferent = sortedPrev.some(
+          (item, index) =>
+            item.productId !== sortedNew[index].productId ||
+            item.quantity !== sortedNew[index].quantity,
+        );
+
+        return isDifferent ? mapItemsToCartState(newItems) : prev;
+      });
+    },
+    [],
+  );
+
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    const initializeCart = async () => {
+      const token = getToken();
+
+      if (token) {
+        try {
+          const data = await getCartList();
+          syncItems(
+            data.items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+            })),
+          );
+          return;
+        } catch (error) {
+          console.error("Failed to load backend cart", error);
+          setItems([]);
+          return;
+        }
+      }
+
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          setItems(JSON.parse(stored));
+        }
+      } catch {
+        setItems([]);
+      }
+    };
+
+    initializeCart();
+  }, [syncItems]);
+
+  useEffect(() => {
+    if (getToken()) return;
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch {
+      //
+    }
   }, [items]);
 
-  const addItem = useCallback((productId: string, quantity = 1) => {
-    setItems((prev) => {
-      const existing = prev.find((i) => i.productId === productId);
-      if (existing) {
-        return prev.map((i) =>
-          i.productId === productId
-            ? { ...i, quantity: i.quantity + quantity }
-            : i,
-        );
+  const addItem = useCallback(
+    async (productId: string, quantity = 1) => {
+      const token = getToken();
+
+      if (token) {
+        try {
+          const data = await addToBackendCart({
+            productId,
+            quantity,
+          });
+
+          syncItems(
+            data.items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+            })),
+          );
+          return;
+        } catch (error) {
+          console.error("Failed to add item to backend cart", error);
+        }
       }
-      return [...prev, { productId, quantity }];
-    });
-  }, []);
+
+      setItems((prev) => {
+        const existing = prev.find((item) => item.productId === productId);
+
+        if (existing) {
+          return prev.map((item) =>
+            item.productId === productId
+              ? { ...item, quantity: item.quantity + quantity }
+              : item,
+          );
+        }
+
+        return [...prev, { productId, quantity }];
+      });
+    },
+    [syncItems],
+  );
 
   const removeItem = useCallback((productId: string) => {
-    setItems((prev) => prev.filter((i) => i.productId !== productId));
+    setItems((prev) => prev.filter((item) => item.productId !== productId));
   }, []);
 
   const updateQty = useCallback((productId: string, quantity: number) => {
     if (quantity <= 0) {
-      setItems((prev) => prev.filter((i) => i.productId !== productId));
+      setItems((prev) => prev.filter((item) => item.productId !== productId));
       return;
     }
+
     setItems((prev) =>
-      prev.map((i) => (i.productId === productId ? { ...i, quantity } : i)),
+      prev.map((item) =>
+        item.productId === productId ? { ...item, quantity } : item,
+      ),
     );
   }, []);
 
-  const clearCart = useCallback(() => setItems([]), []);
+  const clearCart = useCallback(() => {
+    setItems([]);
 
-  const syncItems = useCallback((newItems: { productId: string; quantity: number }[]) => {
-    setItems((prev) => {
-      // Deep compare to prevent infinite loops if they are essentially the same
-      if (prev.length !== newItems.length) return newItems;
-      const sortedPrev = [...prev].sort((a, b) => a.productId.localeCompare(b.productId));
-      const sortedNew = [...newItems].sort((a, b) => a.productId.localeCompare(b.productId));
-      
-      const isDifferent = sortedPrev.some((p, i) => 
-        p.productId !== sortedNew[i].productId || p.quantity !== sortedNew[i].quantity
-      );
-      
-      return isDifferent ? newItems : prev;
-    });
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      //
+    }
   }, []);
 
-  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <CartContext.Provider
-      value={{ items, totalItems, addItem, removeItem, updateQty, clearCart, syncItems }}
+      value={{
+        items,
+        totalItems,
+        addItem,
+        removeItem,
+        updateQty,
+        clearCart,
+        syncItems,
+      }}
     >
       {children}
     </CartContext.Provider>
   );
 }
 
-/* ─── Hook ──────────────────────────────────── */
 export function useCart(): CartContextValue {
   const ctx = useContext(CartContext);
-  if (!ctx) throw new Error("useCart must be used inside <CartProvider>");
+
+  if (!ctx) {
+    throw new Error("useCart must be used inside <CartProvider>");
+  }
+
   return ctx;
 }

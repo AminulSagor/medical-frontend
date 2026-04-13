@@ -7,6 +7,8 @@ import PastOrdersTable from "./_components/past-orders-table";
 import { getUserOrderHistory } from "@/service/user/order-history.service";
 import { getUserOrderMetrics } from "@/service/user/order-metrics.service";
 import type {
+  OrderHistoryDuration,
+  OrderHistoryStatus,
   UserOrderHistoryItem,
   UserOrderHistoryResponse,
   UserOrderMetricsResponse,
@@ -30,11 +32,26 @@ function getTrendDirection(trend: string): "up" | "down" | "flat" {
   return "flat";
 }
 
-function mapStatus(status: string): "Processing" | "Shipped" | "Delivered" {
+function mapStatus(
+  status: string,
+): "Ordered" | "Processing" | "Shipped" | "Delivered" {
   const normalized = status.toLowerCase();
 
-  if (normalized === "shipped") return "Shipped";
-  if (normalized === "delivered") return "Delivered";
+  if (normalized === "unfulfilled" || normalized === "ordered") {
+    return "Ordered";
+  }
+
+  if (normalized === "processing") {
+    return "Processing";
+  }
+
+  if (normalized === "shipped") {
+    return "Shipped";
+  }
+
+  if (normalized === "received" || normalized === "delivered") {
+    return "Delivered";
+  }
 
   return "Processing";
 }
@@ -65,10 +82,23 @@ function buildItemsBadge(order: UserOrderHistoryItem) {
 
 export default function OrderHistoryPage() {
   const [page, setPage] = useState(1);
+  const [duration, setDuration] = useState<OrderHistoryDuration>("3_months");
+  const [status, setStatus] = useState<OrderHistoryStatus | "">("");
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
   const [historyResponse, setHistoryResponse] =
     useState<UserOrderHistoryResponse | null>(null);
   const [metricsResponse, setMetricsResponse] =
     useState<UserOrderMetricsResponse | null>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, 400);
+
+    return () => window.clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -89,7 +119,11 @@ export default function OrderHistoryPage() {
         const data = await getUserOrderHistory({
           page,
           limit: 10,
+          duration,
+          status: status || undefined,
+          search: debouncedSearch || undefined,
         });
+
         setHistoryResponse(data);
       } catch (error) {
         console.error("Failed to load order history", error);
@@ -97,7 +131,7 @@ export default function OrderHistoryPage() {
     };
 
     fetchOrderHistory();
-  }, [page]);
+  }, [page, duration, status, debouncedSearch]);
 
   const metricsItems = useMemo(() => {
     const metrics = metricsResponse?.data;
@@ -170,10 +204,16 @@ export default function OrderHistoryPage() {
         itemsBadge: buildItemsBadge(order),
         viewHref: `/dashboard/user/order-details?id=${order.id}`,
         copyValue: order.orderNumber,
-        reorderHref: `/public/cart?reorderFrom=${order.id}`,
+        reorderOrderId: order.id,
+        reorderHref: "/public/cart",
       })),
     [historyResponse],
   );
+
+  const total =
+    historyResponse?.meta?.total ?? historyResponse?.data.length ?? 0;
+  const totalPages = historyResponse?.meta?.totalPages ?? 1;
+  const currentPage = historyResponse?.meta?.page ?? 1;
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6 -mt-6">
@@ -185,12 +225,37 @@ export default function OrderHistoryPage() {
       </div>
 
       <MetricsCards items={metricsItems} />
+
       <PastOrdersTable
         items={tableItems}
-        page={historyResponse?.meta.page ?? 1}
-        total={historyResponse?.meta.total ?? 0}
-        totalPages={historyResponse?.meta.totalPages ?? 1}
-        onPageChange={setPage}
+        page={currentPage}
+        total={total}
+        totalPages={totalPages}
+        duration={duration}
+        status={status}
+        searchText={search}
+        onSearchChange={(value) => {
+          setSearch(value);
+          setPage(1);
+        }}
+        onStatusChange={(value) => {
+          setStatus(value);
+          setPage(1);
+        }}
+        onDurationChange={(value) => {
+          setDuration(value);
+          setPage(1);
+        }}
+        onPageChange={(nextPage) => {
+          setPage(nextPage);
+        }}
+        onResetFilters={() => {
+          setSearch("");
+          setDebouncedSearch("");
+          setStatus("");
+          setDuration("3_months");
+          setPage(1);
+        }}
       />
     </main>
   );

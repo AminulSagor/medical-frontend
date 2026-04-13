@@ -1,18 +1,26 @@
-export interface UserOrderHistoryLeadItem {
+export type OrderHistoryDuration = "3_months" | "6_months" | "1_year";
+
+export type OrderHistoryStatus =
+  | "unfulfilled"
+  | "processing"
+  | "shipped"
+  | "received";
+
+export type UserOrderHistoryLeadItem = {
   title: string;
   sku: string;
   imageUrl: string | null;
   extraItemsText: string | null;
   badgeText: string | null;
-}
+};
 
-export interface UserOrderHistoryActions {
+export type UserOrderHistoryActions = {
   view: string;
   invoice: string;
   reorder: string;
-}
+};
 
-export interface UserOrderHistoryItem {
+export type UserOrderHistoryItem = {
   id: string;
   orderNumber: string;
   dateOrdered: string;
@@ -21,39 +29,42 @@ export interface UserOrderHistoryItem {
   totalItemsCount: number;
   leadItem: UserOrderHistoryLeadItem;
   actions: UserOrderHistoryActions;
-}
+};
 
-export interface UserOrderHistoryMeta {
+export type UserOrderHistoryMeta = {
   total: number;
   page: number;
   limit: number;
   totalPages: number;
-}
+};
 
-export interface UserOrderHistoryResponse {
+export type UserOrderHistoryResponse = {
   message: string;
   data: UserOrderHistoryItem[];
   meta: UserOrderHistoryMeta;
-}
+};
 
-export interface GetUserOrderHistoryParams {
+export type GetUserOrderHistoryParams = {
   page?: number;
   limit?: number;
-}
+  duration?: OrderHistoryDuration;
+  status?: OrderHistoryStatus;
+  search?: string;
+};
 
-export interface UserOrderMetricValue<T = number | string> {
-  value: T;
+export type UserOrderMetricValue = {
+  value: number | string;
   trend: string;
-}
+};
 
-export interface UserOrderMetricsData {
-  activeDeliveries: UserOrderMetricValue<number>;
-  orderedThisMonth: UserOrderMetricValue<number>;
-  orderValueMonth: UserOrderMetricValue<string>;
-  totalOrderedValue: UserOrderMetricValue<string>;
-}
+export type UserOrderMetricsData = {
+  activeDeliveries: UserOrderMetricValue;
+  orderedThisMonth: UserOrderMetricValue;
+  orderValueMonth: UserOrderMetricValue;
+  totalOrderedValue: UserOrderMetricValue;
+};
 
-export interface UserOrderMetricsResponse {
+export type UserOrderMetricsResponse = {
   message: string;
   data: UserOrderMetricsData;
-}
+};

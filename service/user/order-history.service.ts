@@ -7,13 +7,32 @@ import type {
 export const getUserOrderHistory = async (
   params: GetUserOrderHistoryParams = {},
 ): Promise<UserOrderHistoryResponse> => {
+  const queryParams: Record<string, string | number> = {};
+
+  if (typeof params.page === "number") {
+    queryParams.page = params.page;
+  }
+
+  if (typeof params.limit === "number") {
+    queryParams.limit = params.limit;
+  }
+
+  if (params.duration) {
+    queryParams.duration = params.duration;
+  }
+
+  if (params.status) {
+    queryParams.status = params.status;
+  }
+
+  if (params.search?.trim()) {
+    queryParams.search = params.search.trim();
+  }
+
   const response = await serviceClient.get<UserOrderHistoryResponse>(
     "/users/private/orders",
     {
-      params: {
-        page: params.page ?? 1,
-        limit: params.limit ?? 10,
-      },
+      params: queryParams,
     },
   );
 
