@@ -38,7 +38,7 @@ function TypeBadge({ label }: { label: string }) {
   return (
     <span
       className={cx(
-        "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]",
+        "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] w-34",
         getTypeBadgeClass(label),
       )}
     >
@@ -337,7 +337,7 @@ export default function TransmissionDetailsTable({
                               </Link>
                             ) : null}
 
-                            {item.actions.viewReport ? (
+                            {/* {item.actions.viewReport ? (
                               <button
                                 type="button"
                                 className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:bg-white hover:text-slate-600"
@@ -345,7 +345,7 @@ export default function TransmissionDetailsTable({
                               >
                                 <Copy size={16} />
                               </button>
-                            ) : null}
+                            ) : null} */}
                           </div>
                         </td>
                       </tr>
