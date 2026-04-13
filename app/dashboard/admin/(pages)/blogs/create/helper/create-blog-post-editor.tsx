@@ -61,7 +61,7 @@ export default function CreateBlogPostEditor({
         {/* Toolbar */}
         <div className="mb-8 flex justify-center">
           <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-md shadow-slate-200/60">
-            <CreateBlogPostToolbar />
+            {/* <CreateBlogPostToolbar /> */}
           </div>
         </div>
 

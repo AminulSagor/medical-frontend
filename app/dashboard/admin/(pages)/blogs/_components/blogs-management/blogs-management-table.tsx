@@ -265,9 +265,9 @@ export default function BlogsManagementTable({
 
                   <td className="py-4 pr-5">
                     <div className="flex items-center justify-end gap-2 text-slate-500">
-                      <IconAction label="Share">
+                      {/* <IconAction label="Share">
                         <Share2 size={16} />
-                      </IconAction>
+                      </IconAction> */}
 
                       <IconAction label="View" onClick={() => handleView(r.id)}>
                         <Eye size={16} />
