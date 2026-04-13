@@ -40,7 +40,7 @@ export default function SubscriberProfilePage() {
 
   return (
     <div>
-      <SubscriberProfileHeader data={data} />
+      <SubscriberProfileHeader data={data} onEdit={() => { }} />
 
       <div className="py-6">
         <SubscriberStatsOverview data={data} />
@@ -48,7 +48,7 @@ export default function SubscriberProfilePage() {
         <main className="py-6">
           <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
             <aside className="lg:sticky lg:top-6 lg:self-start">
-              <SubscriberProfileCard data={data} />
+              <SubscriberProfileCard data={data} onAddNote={() => { }} />
             </aside>
 
             <section>
@@ -61,6 +61,8 @@ export default function SubscriberProfilePage() {
   );
 }
 
-function mapSubscriberMetricsToStats(metrics: SubscriberMetricsResponse): import("@/app/dashboard/admin/(pages)/newsletters/general-newsletter/subscribers/subscriber-profile/types/subscriber-profile.type").SubscriberStatCard[] {
+function mapSubscriberMetricsToStats(
+  metrics: SubscriberMetricsResponse,
+): import("@/app/dashboard/admin/(pages)/newsletters/general-newsletter/subscribers/subscriber-profile/types/subscriber-profile.type").SubscriberStatCard[] {
   throw new Error("Function not implemented.");
 }

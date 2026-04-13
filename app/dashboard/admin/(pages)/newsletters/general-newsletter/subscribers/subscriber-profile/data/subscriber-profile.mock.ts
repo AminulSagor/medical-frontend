@@ -77,6 +77,7 @@ export const subscriberProfileMock: SubscriberProfile = {
 
   newsletters: [
     {
+      id: "newsletter_1",
       title: "Weekly Clinical Update #42",
       sentDateLabel: "Oct 28, 2026",
       status: "delivered",
