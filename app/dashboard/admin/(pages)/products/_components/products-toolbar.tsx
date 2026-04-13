@@ -25,7 +25,7 @@ export default function ProductsToolbar({
             {/* Add Product Button */}
             <button
                 type="button"
-                onClick={() => router.push("/products/add")}
+                onClick={() => router.push("/dashboard/admin/products/add")}
                 className="inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[var(--primary-hover)] active:scale-[0.98]"
             >
                 <Plus size={16} />

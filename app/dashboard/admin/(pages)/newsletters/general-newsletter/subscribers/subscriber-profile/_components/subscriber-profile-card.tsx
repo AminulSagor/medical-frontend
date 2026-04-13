@@ -1,6 +1,9 @@
+"use client";
+
 import React from "react";
 import { Mail, Phone } from "lucide-react";
 import { SubscriberProfile } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/subscribers/subscriber-profile/types/subscriber-profile.type";
+
 function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
@@ -15,8 +18,10 @@ function Pill({ children }: { children: React.ReactNode }) {
 
 export default function SubscriberProfileCard({
   data,
+  onAddNote,
 }: {
   data: SubscriberProfile;
+  onAddNote: () => void;
 }) {
   return (
     <div className="space-y-4">
@@ -98,12 +103,20 @@ export default function SubscriberProfileCard({
           <p className="text-sm font-semibold text-slate-800">Admin Notes</p>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm font-medium text-slate-700">
-          {data.adminNote.note}
+        <div className="mt-4 space-y-3">
+          {data.adminNotes.map((note) => (
+            <div
+              key={note.id}
+              className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm font-medium text-slate-700"
+            >
+              {note.note}
+            </div>
+          ))}
         </div>
 
         <button
           type="button"
+          onClick={onAddNote}
           className="mt-4 text-sm font-semibold text-[#14b8ad] hover:opacity-80"
         >
           + Add Internal Note

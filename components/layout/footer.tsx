@@ -4,11 +4,13 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Mail, Globe, Share2, PlusSquare } from "lucide-react";
 import { motion } from "motion/react";
+import { AxiosError } from "axios";
 import {
   FOOTER_BOTTOM,
   FOOTER_INSTITUTE,
   FOOTER_PROGRAMS,
 } from "@/app/public/data/footer.data";
+import { subscribeToNewsletter } from "@/service/public/newsletter.service";
 
 function FooterColTitle({ children }: { children: React.ReactNode }) {
   return <h3 className="text-sm font-extrabold text-black">{children}</h3>;
@@ -30,13 +32,58 @@ function FooterLinkItem({ href, label }: { href: string; label: string }) {
   );
 }
 
+interface ApiErrorResponse {
+  message?: string;
+}
+
 export default function Footer() {
   const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    console.log("subscribe:", email);
-    setEmail("");
+
+    const trimmedEmail = email.trim();
+
+    setSuccessMessage("");
+    setErrorMessage("");
+
+    if (!trimmedEmail) {
+      setErrorMessage("Please enter your email address.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(trimmedEmail)) {
+      setErrorMessage("Please enter a valid email address.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const response = await subscribeToNewsletter({
+        email: trimmedEmail,
+        source: "FOOTER",
+      });
+
+      setSuccessMessage(
+        response.message || "Successfully subscribed to the newsletter.",
+      );
+      setEmail("");
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiErrorResponse>;
+
+      setErrorMessage(
+        axiosError.response?.data?.message ||
+        "Failed to subscribe. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const containerVariants = {
@@ -157,15 +204,24 @@ export default function Footer() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false, amount: 0.5 }}
                 transition={{ duration: 0.45, ease: "easeOut" }}
+                type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (successMessage) setSuccessMessage("");
+                  if (errorMessage) setErrorMessage("");
+                }}
                 placeholder="Enter your email"
+                disabled={isSubmitting}
                 className={[
                   "h-12 w-full rounded-full",
-                  "border border-light-slate/25 bg-white",
-                  "px-5 text-sm text-black placeholder:text-light-slate",
-                  "outline-none transition",
+                  "border bg-white px-5 text-sm text-black",
+                  "placeholder:text-light-slate outline-none transition",
                   "focus:border-primary/40 focus:ring-2 focus:ring-primary/10",
+                  errorMessage
+                    ? "border-red-300"
+                    : "border-light-slate/25",
+                  isSubmitting ? "cursor-not-allowed opacity-70" : "",
                 ].join(" ")}
               />
 
@@ -174,13 +230,22 @@ export default function Footer() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false, amount: 0.5 }}
                 transition={{ duration: 0.5, delay: 0.05, ease: "easeOut" }}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.99 }}
+                whileHover={{ y: isSubmitting ? 0 : -2 }}
+                whileTap={{ scale: isSubmitting ? 1 : 0.99 }}
                 type="submit"
-                className="h-12 w-full rounded-full bg-primary text-sm font-semibold text-white transition hover:opacity-90"
+                disabled={isSubmitting}
+                className="h-12 w-full rounded-full bg-primary text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Subscribe
+                {isSubmitting ? "Subscribing..." : "Subscribe"}
               </motion.button>
+
+              {successMessage ? (
+                <p className="px-1 text-sm text-green-600">{successMessage}</p>
+              ) : null}
+
+              {errorMessage ? (
+                <p className="px-1 text-sm text-red-600">{errorMessage}</p>
+              ) : null}
             </form>
           </motion.div>
         </motion.div>

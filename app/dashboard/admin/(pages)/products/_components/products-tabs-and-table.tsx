@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import ProductsTable, { ProductRow } from "./products-table";
 import ProductsTableToolbar from "./products-table-toolbar";
 import { getProductsList } from "@/service/admin/product.service";
-import { AdminProductListItem } from "@/types/admin/product.types";
+import type {
+    AdminProductListItem,
+    AdminProductsTabsCount,
+} from "@/types/admin/product.types";
 
 type TabKey = "all" | "active" | "outOfStock" | "lowStock" | "drafts";
 
@@ -15,7 +18,6 @@ export type ExportMeta = {
 
 const PAGE_SIZE = 4;
 
-// Helper function to format date labels
 function formatDateLabel(dateString: string): string {
     const date = new Date(dateString);
     const now = new Date();
@@ -34,7 +36,6 @@ function formatDateLabel(dateString: string): string {
     });
 }
 
-// Helper function to transform API product to ProductRow
 function transformProductToRow(product: AdminProductListItem): ProductRow {
     const stock = product.stockQuantity;
     let stockTone: ProductRow["stockTone"] = "good";
@@ -44,21 +45,19 @@ function transformProductToRow(product: AdminProductListItem): ProductRow {
     return {
         id: product.id,
         name: product.name,
-        category: "Product", // API doesn't include category name
+        category: "Product",
         sku: product.sku,
-        stock: stock,
+        stock,
         price: parseFloat(product.offerPrice || product.actualPrice),
-        sales: null, // API doesn't include sales data
+        sales: null,
         updatedLabel: formatDateLabel(product.updatedAt || product.createdAt),
         status: product.isActive ? "active" : "draft",
-        stockTone: stockTone,
-        imageUrl: product.images?.[0], // Use first image if available
+        stockTone,
+        imageUrl: product.images?.[0],
     };
 }
 
-// Export seed for other components that depend on it
 export const PRODUCTS_SEED: ProductRow[] = [];
-
 
 function pillClass(active: boolean) {
     return [
@@ -78,6 +77,13 @@ function tabLabel(tab: TabKey) {
     return "Drafts";
 }
 
+const DEFAULT_TABS_COUNT: AdminProductsTabsCount = {
+    all: 0,
+    active: 0,
+    out_of_stock: 0,
+    low_stock: 0,
+};
+
 export default function ProductsTabsAndTable({
     onTabChange,
     onExportMetaChange,
@@ -90,76 +96,64 @@ export default function ProductsTabsAndTable({
     const [category, setCategory] = useState("All");
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [, setError] = useState<string | null>(null);
     const [products, setProducts] = useState<AdminProductListItem[]>([]);
     const [totalCount, setTotalCount] = useState(0);
+    const [tabsCount, setTabsCount] =
+        useState<AdminProductsTabsCount>(DEFAULT_TABS_COUNT);
 
-    // Fetch products from API
     useEffect(() => {
         const fetchProducts = async () => {
             try {
                 setLoading(true);
                 setError(null);
+
                 const response = await getProductsList({
                     page: 1,
-                    limit: 100, // Fetch more for client-side filtering
+                    limit: 100,
                     search: query.trim() || undefined,
+                    category,
+                    tab:
+                        tab === "outOfStock"
+                            ? "out_of_stock"
+                            : tab === "lowStock"
+                                ? "low_stock"
+                                : tab === "drafts"
+                                    ? "draft"
+                                    : tab,
                 });
-                setProducts(response.products);
-                setTotalCount(response.total);
+
+                setProducts(response.items);
+                setTotalCount(response.meta.total);
+                setTabsCount(response.tabsCount ?? DEFAULT_TABS_COUNT);
             } catch (err) {
                 console.error("Failed to fetch products:", err);
                 setError("Failed to load products");
                 setProducts([]);
                 setTotalCount(0);
+                setTabsCount(DEFAULT_TABS_COUNT);
             } finally {
                 setLoading(false);
             }
         };
 
-        const timer = setTimeout(fetchProducts, 300); // Debounce
+        const timer = setTimeout(fetchProducts, 300);
         return () => clearTimeout(timer);
-    }, [query]);
+    }, [query, category, tab]);
 
-    // ✅ report selected tab
     useEffect(() => {
         onTabChange?.(tab);
     }, [tab, onTabChange]);
 
-    // reset pagination when filters change
     useEffect(() => {
         setPage(1);
     }, [tab, query, category]);
 
-    // Transform products to rows
     const allRows = useMemo(() => products.map(transformProductToRow), [products]);
-
-    const counts = useMemo(() => {
-        const all = allRows.length;
-        const active = allRows.filter((r) => r.status === "active").length;
-        const outOfStock = allRows.filter((r) => r.stock === 0).length;
-        const lowStock = allRows.filter(
-            (r) => (r.stock ?? 999999) > 0 && (r.stock ?? 999999) <= 50
-        ).length;
-        const drafts = allRows.filter((r) => r.status === "draft").length;
-        return { all, active, outOfStock, lowStock, drafts };
-    }, [allRows]);
 
     const filtered = useMemo(() => {
         let rows = [...allRows];
 
-        // tab filter
-        rows = rows.filter((r) => {
-            if (tab === "all") return true;
-            if (tab === "active") return r.status === "active";
-            if (tab === "drafts") return r.status === "draft";
-            if (tab === "outOfStock") return r.stock === 0;
-            if (tab === "lowStock")
-                return (r.stock ?? 999999) > 0 && (r.stock ?? 999999) <= 50;
-            return true;
-        });
-
-        // search filter (additional client-side search)
         const q = query.trim().toLowerCase();
         if (q) {
             rows = rows.filter((r) => {
@@ -171,81 +165,65 @@ export default function ProductsTabsAndTable({
             });
         }
 
-        // category filter
         if (category !== "All") {
             rows = rows.filter((r) => r.category === category);
         }
 
         return rows;
-    }, [allRows, tab, query, category]);
+    }, [allRows, query, category]);
 
-    // ✅ build exact "Filter Applied" label (tab + optional category + optional search)
     const filterLabel = useMemo(() => {
         const parts: string[] = [];
 
-        // base tab
         parts.push(tabLabel(tab));
 
-        // category only if not All
         if (category !== "All") parts.push(`Category: ${category}`);
 
-        // query only if exists
         const q = query.trim();
         if (q) parts.push(`Search: "${q}"`);
 
-        // if only tab => return tab label, else join nicely
         return parts.join(" • ");
     }, [tab, category, query]);
 
-    // ✅ report export meta based on TAB PILL numbers (2nd screenshot)
     useEffect(() => {
         if (!onExportMetaChange) return;
 
         const totalRecords =
             tab === "all"
-                ? counts.all
+                ? tabsCount.all
                 : tab === "active"
-                    ? counts.active
+                    ? tabsCount.active
                     : tab === "outOfStock"
-                        ? counts.outOfStock
+                        ? tabsCount.out_of_stock
                         : tab === "lowStock"
-                            ? counts.lowStock
-                            : counts.drafts;
+                            ? tabsCount.low_stock
+                            : 0;
 
         onExportMetaChange({
             totalRecords,
-            filterLabel, // ✅
+            filterLabel,
         });
-    }, [tab, counts, filterLabel, onExportMetaChange]);
+    }, [tab, tabsCount, filterLabel, onExportMetaChange]);
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
     const safePage = Math.min(page, totalPages);
     const start = (safePage - 1) * PAGE_SIZE;
     const pageRows = filtered.slice(start, start + PAGE_SIZE);
 
-    if (error) {
-        return (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-                <p className="text-red-800">{error}</p>
-            </div>
-        );
-    }
-
     return (
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            {/* Tabs */}
             <div className="flex flex-wrap items-center gap-6 border-b border-slate-100 px-5">
                 <button className={pillClass(tab === "all")} onClick={() => setTab("all")}>
                     All Products{" "}
                     <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-[11px]">
-                        {counts.all}
+                        {tabsCount.all}
                     </span>
                 </button>
 
                 <button className={pillClass(tab === "active")} onClick={() => setTab("active")}>
                     Active{" "}
                     <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-[11px]">
-                        {counts.active}
+                        {tabsCount.active}
                     </span>
                 </button>
 
@@ -255,26 +233,25 @@ export default function ProductsTabsAndTable({
                 >
                     Out of Stock{" "}
                     <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[11px] text-red-600 ring-1 ring-red-100">
-                        {counts.outOfStock}
+                        {tabsCount.out_of_stock}
                     </span>
                 </button>
 
                 <button className={pillClass(tab === "lowStock")} onClick={() => setTab("lowStock")}>
                     Low Stock{" "}
                     <span className="ml-2 rounded-full bg-orange-50 px-2 py-0.5 text-[11px] text-orange-700 ring-1 ring-orange-100">
-                        {counts.lowStock}
+                        {tabsCount.low_stock}
                     </span>
                 </button>
 
                 <button className={pillClass(tab === "drafts")} onClick={() => setTab("drafts")}>
                     Drafts{" "}
                     <span className="ml-2 rounded-full bg-yellow-50 px-2 py-0.5 text-[11px] text-yellow-700 ring-1 ring-yellow-100">
-                        {counts.drafts}
+                        0
                     </span>
                 </button>
             </div>
 
-            {/* Search + category */}
             <ProductsTableToolbar
                 query={query}
                 onQueryChange={setQuery}
@@ -282,10 +259,9 @@ export default function ProductsTabsAndTable({
                 onCategoryChange={setCategory}
             />
 
-            {/* Table */}
             <ProductsTable
                 rows={loading ? [] : pageRows}
-                totalCount={filtered.length} // ✅ count after filters
+                totalCount={loading ? 0 : totalCount}
                 page={safePage}
                 pageSize={PAGE_SIZE}
                 totalPages={totalPages}

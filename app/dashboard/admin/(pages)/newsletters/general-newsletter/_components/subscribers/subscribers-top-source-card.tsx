@@ -4,7 +4,6 @@ function cn(...p: Array<string | false | undefined>) {
   return p.filter(Boolean).join(" ");
 }
 
-/** Donut exactly 48x48 */
 function Donut48() {
   return (
     <svg
@@ -14,7 +13,6 @@ function Donut48() {
       aria-hidden="true"
       className="shrink-0"
     >
-      {/* base ring */}
       <circle
         cx="24"
         cy="24"
@@ -24,12 +22,11 @@ function Donut48() {
         strokeWidth="6"
       />
 
-      {/* small colored ticks */}
       {[
-        { rot: -90, color: "rgba(20,184,166,1)" }, // teal
-        { rot: -64, color: "rgba(99,102,241,1)" }, // indigo
-        { rot: -38, color: "rgba(245,158,11,1)" }, // amber
-        { rot: -12, color: "rgba(15,23,42,1)" }, // slate
+        { rot: -90, color: "rgba(20,184,166,1)" },
+        { rot: -64, color: "rgba(99,102,241,1)" },
+        { rot: -38, color: "rgba(245,158,11,1)" },
+        { rot: -12, color: "rgba(15,23,42,1)" },
         { rot: 168, color: "rgba(20,184,166,1)" },
         { rot: 194, color: "rgba(99,102,241,1)" },
         { rot: 220, color: "rgba(245,158,11,1)" },
@@ -49,13 +46,11 @@ function Donut48() {
         />
       ))}
 
-      {/* inner hole */}
       <circle cx="24" cy="24" r="13" fill="white" />
     </svg>
   );
 }
 
-/** Figma legend text */
 function LegendItem({
   label,
   tone,
@@ -67,10 +62,10 @@ function LegendItem({
     tone === "teal"
       ? "bg-teal-500"
       : tone === "indigo"
-      ? "bg-indigo-500"
-      : tone === "amber"
-      ? "bg-amber-400"
-      : "bg-slate-900";
+        ? "bg-indigo-500"
+        : tone === "amber"
+          ? "bg-amber-400"
+          : "bg-slate-900";
 
   return (
     <div className="flex items-center gap-[6px]">
@@ -85,6 +80,20 @@ function LegendItem({
   );
 }
 
+const toneMap: Record<string, "teal" | "indigo" | "amber" | "slate"> = {
+  FOOTER: "teal",
+  POPUP: "indigo",
+  CHECKOUT: "amber",
+  WEBINAR: "slate",
+};
+
+const labelMap: Record<string, string> = {
+  FOOTER: "Footer",
+  POPUP: "Popup",
+  CHECKOUT: "Checkout",
+  WEBINAR: "Webinar",
+};
+
 export default function SubscribersTopSourceCard({
   summary,
 }: {
@@ -95,7 +104,7 @@ export default function SubscribersTopSourceCard({
       className={cn(
         "rounded-2xl bg-white p-4",
         "shadow-sm",
-        "ring-1 ring-slate-200/60"
+        "ring-1 ring-slate-200/60",
       )}
       style={{
         width: 300,
@@ -109,12 +118,14 @@ export default function SubscribersTopSourceCard({
       <div className="mt-3 flex items-center gap-6">
         <Donut48 />
 
-        {/* compact legend like figma */}
         <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-          <LegendItem label="Footer" tone="teal" />
-          <LegendItem label="Webinar" tone="slate" />
-          <LegendItem label="Popup" tone="indigo" />
-          <LegendItem label="Checkout" tone="amber" />
+          {summary.topSource.map((item) => (
+            <LegendItem
+              key={item.source}
+              label={labelMap[item.source] ?? item.source}
+              tone={toneMap[item.source] ?? "slate"}
+            />
+          ))}
         </div>
       </div>
     </div>

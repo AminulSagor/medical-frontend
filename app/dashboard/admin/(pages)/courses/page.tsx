@@ -8,49 +8,50 @@ import CoursesTable from "./_components/courses-table";
 import type { CourseItem, CourseTabKey } from "./_components/courses.types";
 import { useRouter } from "next/navigation";
 import { listWorkshops } from "@/service/admin/workshop.service";
-import type { Workshop } from "@/types/admin/workshop.types";
+import type { WorkshopListItem } from "@/types/admin/workshop.types";
 
 const PAGE_SIZE = 4;
 
-function mapWorkshopToCourseItem(w: Workshop): CourseItem {
-    const firstDay = w.days?.[0];
-    const firstSeg = firstDay?.segments?.[0];
-    const lastSeg = firstDay?.segments?.[(firstDay?.segments?.length ?? 1) - 1];
+function formatDateLabel(value: string) {
+    const date = new Date(value);
 
-    const dateLabel = firstDay?.date
-        ? new Date(firstDay.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-        : "—";
+    if (Number.isNaN(date.getTime())) return "—";
 
-    const timeLabel =
-        firstSeg?.startTime && lastSeg?.endTime
-            ? `${firstSeg.startTime} - ${lastSeg.endTime}`
-            : "—";
+    return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+}
 
-    const lead = w.faculty?.[0];
-    const instructorName = lead
-        ? `${lead.firstName} ${lead.lastName}`
-        : "—";
+function formatTimeLabel(value: string) {
+    const date = new Date(value);
 
-    const now = new Date();
-    const workshopDate = firstDay?.date ? new Date(firstDay.date) : null;
+    if (Number.isNaN(date.getTime())) return "—";
 
+    return date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+}
+
+function mapWorkshopToCourseItem(w: WorkshopListItem): CourseItem {
     let status: CourseItem["status"];
+
     if (w.status === "draft") {
         status = "drafts";
-    } else if (workshopDate && workshopDate < now) {
-        status = "past";
     } else {
         status = "upcoming";
     }
 
     return {
         id: w.id,
-        dateLabel,
-        timeLabel,
+        dateLabel: formatDateLabel(w.createdAt),
+        timeLabel: formatTimeLabel(w.createdAt),
         title: w.title,
         tags: [w.deliveryMode === "online" ? "Online" : "Workshop"],
-        instructorName,
-        instructorAvatarUrl: lead?.imageUrl || undefined,
+        instructorName: "Not available",
+        instructorAvatarUrl: undefined,
         capacityUsed: 0,
         capacityTotal: w.capacity,
         refundRequests: 0,
@@ -72,13 +73,14 @@ export default function CoursesPage() {
 
     useEffect(() => {
         setLoading(true);
-        listWorkshops({ limit: 50, sortBy: "createdAt", sortOrder: "desc" })
-            .then((res: any) => {
-                const items = Array.isArray(res) ? res : (res?.items ?? res?.data ?? []);
-                setAll(items.map(mapWorkshopToCourseItem));
+
+        listWorkshops({ page: 1, limit: 10, sortBy: "createdAt", sortOrder: "desc" })
+            .then((res) => {
+                setAll(res.data.map(mapWorkshopToCourseItem));
             })
             .catch((err) => {
                 console.error("Failed to load workshops:", err);
+                setAll([]);
             })
             .finally(() => setLoading(false));
     }, []);
@@ -104,7 +106,7 @@ export default function CoursesPage() {
 
         return all
             .filter((c) =>
-                tab === "refund_requests" ? c.refundRequests > 0 : c.status === tab
+                tab === "refund_requests" ? c.refundRequests > 0 : c.status === tab,
             )
             .filter((c) => (onlyRefunds ? c.refundRequests > 0 : true))
             .filter((c) => {
@@ -144,12 +146,12 @@ export default function CoursesPage() {
         .reduce(
             (sum, c) =>
                 sum + Math.max(0, (c.capacityTotal ?? 0) - (c.capacityUsed ?? 0)),
-            0
+            0,
         );
 
     const refundPending = all.reduce(
         (sum, c) => sum + (c.refundRequests ?? 0),
-        0
+        0,
     );
 
     function buildRowQuery(id: string) {
@@ -175,7 +177,7 @@ export default function CoursesPage() {
         <div className="space-y-5">
             <CoursesHeader
                 onExport={() => console.log("Export")}
-                onSchedule={() => router.push("/courses/create")}
+                onSchedule={() => router.push("/dashboard/admin/courses/create")}
             />
 
             <CourseStatsRow
@@ -198,11 +200,13 @@ export default function CoursesPage() {
                     onOnlyRefundsChange={setOnlyRefunds}
                     onToggleActive={(id, next) => {
                         setAll((prev) =>
-                            prev.map((c) => (c.id === id ? { ...c, isActive: next } : c))
+                            prev.map((c) => (c.id === id ? { ...c, isActive: next } : c)),
                         );
                     }}
                     onView={(id) =>
-                        router.push(`/courses/${encodeURIComponent(id)}${buildRowQuery(id)}`)
+                        router.push(
+                            `/dashboard/admin/courses/${encodeURIComponent(id)}${buildRowQuery(id)}`,
+                        )
                     }
                     onEdit={(id) => console.log("edit", id)}
                     onDelete={(id) => console.log("delete", id)}
