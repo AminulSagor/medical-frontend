@@ -11,6 +11,7 @@ import type {
 import {
   getCourseAnnouncementBroadcastDetails,
   getCourseAnnouncementBroadcastRecipients,
+  upsertCourseAnnouncementDraft,
 } from "@/service/admin/newsletter/course-announcements/course-announcement-broadcast.service";
 
 import CohortPillBar from "./cohort-pill-bar";
@@ -24,9 +25,13 @@ import ComposeFormProvider from "./compose-form-provider";
 import { mapBroadcastDetailsToComposeDefaults } from "../_utils/compose-broadcast.mapper";
 import BroadcastAnnouncementHeader from "@/app/dashboard/admin/(pages)/newsletters/course-announcements/[id]/_components/broadcast-announcement-header";
 import ComposeShellLoading from "./compose-shell-loading";
+import {
+  sendCourseAnnouncementBroadcast,
+  setCourseAnnouncementBroadcastRecipients,
+} from "@/service/admin/newsletter/course-announcements/course-announcement-broadcast-update.service";
 
 type ComposeShellProps = {
-  id: string;
+  id: string; // this is cohort id
 };
 
 function getReadableErrorMessage(error: unknown) {
@@ -58,6 +63,7 @@ function getReadableErrorMessage(error: unknown) {
 }
 
 export default function ComposeShell({ id }: ComposeShellProps) {
+  const [broadcastId, setBroadcastId] = useState<string | null>(null);
   const [data, setData] = useState<CourseAnnouncementBroadcastDetails | null>(
     null,
   );
@@ -75,9 +81,16 @@ export default function ComposeShell({ id }: ComposeShellProps) {
         setIsLoading(true);
         setError(null);
 
+        const upsertResponse = await upsertCourseAnnouncementDraft(id);
+        const resolvedBroadcastId = upsertResponse.id;
+
+        if (!isMounted) return;
+
+        setBroadcastId(resolvedBroadcastId);
+
         const [detailsResponse, recipientsResponse] = await Promise.all([
-          getCourseAnnouncementBroadcastDetails(id),
-          getCourseAnnouncementBroadcastRecipients(id, {
+          getCourseAnnouncementBroadcastDetails(resolvedBroadcastId),
+          getCourseAnnouncementBroadcastRecipients(resolvedBroadcastId, {
             page: 1,
             limit: 50,
           }),
@@ -89,7 +102,6 @@ export default function ComposeShell({ id }: ComposeShellProps) {
         setRecipientsData(recipientsResponse.items ?? []);
       } catch (err) {
         if (!isMounted) return;
-
         setError(getReadableErrorMessage(err));
       } finally {
         if (!isMounted) return;
@@ -97,7 +109,7 @@ export default function ComposeShell({ id }: ComposeShellProps) {
       }
     };
 
-    fetchData();
+    void fetchData();
 
     return () => {
       isMounted = false;
@@ -157,7 +169,7 @@ export default function ComposeShell({ id }: ComposeShellProps) {
     );
   }
 
-  if (!data || !defaults) {
+  if (!data || !defaults || !broadcastId) {
     return (
       <div className="space-y-6">
         <BroadcastAnnouncementHeader
@@ -189,13 +201,22 @@ export default function ComposeShell({ id }: ComposeShellProps) {
       <ComposeFormProvider defaultValues={defaults}>
         <RecipientsPanel recipients={recipients} />
         <PrioritySubjectPanel
-          id={id}
+          id={broadcastId}
           canEdit={data.actionsAllowed?.edit ?? false}
         />
         <MessageContentPanel />
-        <AttachmentsPanel />
+        <AttachmentsPanel broadcastId={broadcastId} />
         <PushToggleRow />
-        <SendBar />
+        <SendBar
+          onSend={async (values) => {
+            await setCourseAnnouncementBroadcastRecipients(broadcastId, {
+              recipientMode: "SELECTED",
+              recipientIds: values.recipientIds,
+            });
+
+            await sendCourseAnnouncementBroadcast(broadcastId);
+          }}
+        />
       </ComposeFormProvider>
     </div>
   );

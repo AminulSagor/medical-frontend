@@ -15,7 +15,7 @@ export default function CourseToolbar({
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <CourseSearch value={query} onChange={onQueryChange} />
-      <CourseFilterButton onClick={onFilterClick} />
+      {/* <CourseFilterButton onClick={onFilterClick} /> */}
     </div>
   );
 }
