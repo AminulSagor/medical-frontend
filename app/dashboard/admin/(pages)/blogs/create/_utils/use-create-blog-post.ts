@@ -561,26 +561,8 @@ export function useCreateBlogPost() {
     );
   };
 
-  const handleShareArticle = async () => {
-    if (!createdBlogModalData) return;
-
-    const shareUrl = `${window.location.origin}/blog/${createdBlogModalData.id}`;
-    const shareData = {
-      title: createdBlogModalData.title,
-      text: createdBlogModalData.title,
-      url: shareUrl,
-    };
-
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        return;
-      }
-
-      await navigator.clipboard.writeText(shareUrl);
-    } catch (error) {
-      console.error("Failed to share article:", error);
-    }
+  const handleShareArticle = () => {
+    if (!createdBlogModalData?.id) return;
   };
 
   const handleDoneAfterPublish = () => {
