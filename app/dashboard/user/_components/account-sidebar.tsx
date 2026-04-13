@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { logoutUser } from "@/utils/logout.utils";
+import { getUserProfile } from "@/service/user/profile.service";
 
 type NavKey = "dashboard" | "courses" | "orders" | "settings";
 
@@ -35,6 +36,39 @@ type Props = {
   /** optional: initial state for mobile drawer */
   defaultOpen?: boolean;
 };
+
+type SidebarUser = NonNullable<Props["user"]>;
+
+const FALLBACK_USER: SidebarUser = {
+  name: "User",
+  subtitle: "--",
+};
+
+function mapProfileToSidebarUser(profile: {
+  firstName?: string | null;
+  lastName?: string | null;
+  institutionOrHospital?: string | null;
+  role?: string | null;
+  title?: string | null;
+  emailAddress?: string | null;
+  profilePicture?: string | null;
+}): SidebarUser {
+  const fullName = [profile.firstName, profile.lastName]
+    .filter((value) => typeof value === "string" && value.trim().length > 0)
+    .join(" ")
+    .trim();
+
+  return {
+    name: fullName || FALLBACK_USER.name,
+    subtitle:
+      profile.institutionOrHospital?.trim() ||
+      profile.role?.trim() ||
+      profile.title?.trim() ||
+      profile.emailAddress?.trim() ||
+      FALLBACK_USER.subtitle,
+    avatarUrl: profile.profilePicture?.trim() || undefined,
+  };
+}
 
 const NAV: Array<{
   key: NavKey;
@@ -81,12 +115,10 @@ export default function AccountSidebarCard({
   onSignOut,
   className,
   defaultOpen = false,
-  user = {
-    name: "Dr. Sarah Thompson",
-    subtitle: "Texas Airway Institute",
-  },
+  user = FALLBACK_USER,
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
+  const [sidebarUser, setSidebarUser] = useState<SidebarUser>(user);
 
   const closeDrawer = () => setOpen(false);
 
@@ -98,6 +130,32 @@ export default function AccountSidebarCard({
       document.body.style.overflow = prev;
     };
   }, [open]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadUserProfile = async () => {
+      try {
+        const response = await getUserProfile();
+
+        if (!isMounted) return;
+
+        setSidebarUser(mapProfileToSidebarUser(response.data));
+      } catch (error) {
+        console.error("Failed to load sidebar profile", error);
+      }
+    };
+
+    loadUserProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    setSidebarUser(user);
+  }, [user]);
 
   const renderNavItem = (
     item: (typeof NAV)[number],
@@ -179,10 +237,10 @@ export default function AccountSidebarCard({
       <div className="px-4 pt-5">
         <div className="flex flex-col items-center gap-2 text-center">
           <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200">
-            {user.avatarUrl ? (
+            {sidebarUser.avatarUrl ? (
               <Image
-                src={user.avatarUrl}
-                alt={user.name}
+                src={sidebarUser.avatarUrl}
+                alt={sidebarUser.name}
                 fill
                 className="object-cover"
                 sizes="44px"
@@ -190,18 +248,18 @@ export default function AccountSidebarCard({
               />
             ) : (
               <div className="grid h-full w-full place-items-center text-xs font-semibold text-slate-600">
-                {initials(user.name)}
+                {initials(sidebarUser.name)}
               </div>
             )}
           </div>
 
           <div className="w-full max-w-[220px]">
             <div className="truncate text-[14px] font-semibold leading-5 text-slate-900">
-              {user.name}
+              {sidebarUser.name}
             </div>
-            {user.subtitle ? (
+            {sidebarUser.subtitle ? (
               <div className="truncate text-[12px] leading-4 text-slate-500">
-                {user.subtitle}
+                {sidebarUser.subtitle}
               </div>
             ) : null}
           </div>
@@ -234,9 +292,12 @@ export default function AccountSidebarCard({
             "focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100",
           )}
         >
-          <button className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700">
+          <span
+            className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700"
+            aria-hidden="true"
+          >
             <LogOut className="h-[18px] w-[18px]" />
-          </button>
+          </span>
           <span className="text-[14px] font-medium text-slate-900">
             Sign out
           </span>

@@ -1,60 +1,244 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
 import type {
+  ActiveCourseItem,
+  BrowseCourseItem,
+  CompletedCourseItem,
+  CourseListMeta,
+  CourseSortBy,
+  CourseStats,
+  CourseSummaryResponse,
   CourseTabKey,
   CourseToolbarState,
+  CourseTypeFilter,
 } from "@/types/user/course/course-type";
-import {
-  getActiveCoursesSeed,
-  getCourseStatsSeed,
-  getCompletedCoursesSeed,
-  getBrowseCoursesSeed,
-} from "@/utils/course/course-data-util";
-import { filterActiveCourses } from "@/utils/course/course-search-util";
+import { getMyCourses, getMyCoursesSummary } from "@/service/user/course.service";
+
+const DEFAULT_META: CourseListMeta = {
+  total: 0,
+  page: 1,
+  limit: 10,
+  totalPages: 0,
+};
+
+function useDebouncedValue<T>(value: T, delay = 300) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+function matchesCourseType(value: string, courseType: CourseTypeFilter) {
+  if (courseType === "all") return true;
+
+  const normalizedValue = value.toLowerCase();
+
+  if (courseType === "online") {
+    return normalizedValue.includes("online");
+  }
+
+  return (
+    normalizedValue.includes("in-person") ||
+    normalizedValue.includes("in person") ||
+    normalizedValue.includes("lab")
+  );
+}
 
 export function useCourseController() {
   const [activeTab, setActiveTab] = useState<CourseTabKey>("active");
   const [search, setSearch] = useState("");
-  const [courseType, setCourseType] = useState("all");
-  const [sortBy, setSortBy] = useState("recent");
+  const [courseType, setCourseType] = useState<CourseTypeFilter>("all");
+  const [sortBy, setSortBy] = useState<CourseSortBy>("createdAt");
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
-  const stats = useMemo(() => getCourseStatsSeed(), []);
+  const [summary, setSummary] = useState<CourseSummaryResponse | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
 
-  // active seed (later API)
-  const rawActiveCourses = useMemo(() => getActiveCoursesSeed(), []);
+  const [listLoading, setListLoading] = useState(true);
+  const [listError, setListError] = useState<string | null>(null);
 
-  // ✅ filtered
-  const activeCourses = useMemo(() => {
-    return filterActiveCourses(rawActiveCourses, search);
-  }, [rawActiveCourses, search]);
+  const [activeCourses, setActiveCourses] = useState<ActiveCourseItem[]>([]);
+  const [completedCourses, setCompletedCourses] = useState<CompletedCourseItem[]>(
+    [],
+  );
+  const [browseCourses, setBrowseCourses] = useState<BrowseCourseItem[]>([]);
 
-  // completed seed (later API)
-  const completedCourses = useMemo(() => getCompletedCoursesSeed(), []);
+  const [activeMeta, setActiveMeta] = useState<CourseListMeta>(DEFAULT_META);
+  const [completedMeta, setCompletedMeta] =
+    useState<CourseListMeta>(DEFAULT_META);
+  const [browseMeta, setBrowseMeta] = useState<CourseListMeta>(DEFAULT_META);
 
-  // browse seed (later API)
-  const browseCourses = useMemo(() => getBrowseCoursesSeed(), []);
+  const debouncedSearch = useDebouncedValue(search);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, debouncedSearch, sortBy]);
+
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        setSummaryLoading(true);
+        setSummaryError(null);
+
+        const response = await getMyCoursesSummary();
+        setSummary(response);
+      } catch (error) {
+        console.error("Failed to fetch course summary:", error);
+        setSummaryError("Failed to load course summary.");
+      } finally {
+        setSummaryLoading(false);
+      }
+    };
+
+    fetchSummary();
+  }, []);
+
+  useEffect(() => {
+    let isSubscribed = true;
+
+    const fetchCourses = async () => {
+      try {
+        setListLoading(true);
+        setListError(null);
+
+        if (activeTab === "active") {
+          const response = await getMyCourses({
+            tab: "active",
+            page,
+            limit,
+            sortBy,
+            search: debouncedSearch || undefined,
+          });
+
+          if (!isSubscribed) return;
+          setActiveCourses(response.items);
+          setActiveMeta(response.meta);
+          return;
+        }
+
+        if (activeTab === "completed") {
+          const response = await getMyCourses({
+            tab: "completed",
+            page,
+            limit,
+            sortBy,
+            search: debouncedSearch || undefined,
+          });
+
+          if (!isSubscribed) return;
+          setCompletedCourses(response.items);
+          setCompletedMeta(response.meta);
+          return;
+        }
+
+        const response = await getMyCourses({
+          tab: "browse",
+          page,
+          limit,
+          sortBy,
+          search: debouncedSearch || undefined,
+        });
+
+        if (!isSubscribed) return;
+        setBrowseCourses(response.items);
+        setBrowseMeta(response.meta);
+      } catch (error) {
+        console.error(`Failed to fetch ${activeTab} courses:`, error);
+
+        if (!isSubscribed) return;
+        setListError("Failed to load courses. Please try again later.");
+      } finally {
+        if (isSubscribed) {
+          setListLoading(false);
+        }
+      }
+    };
+
+    fetchCourses();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [activeTab, page, limit, sortBy, debouncedSearch]);
+
+  const stats = useMemo<CourseStats>(
+    () => ({
+      totalCmeCredits: String(summary?.totalCmeCredits.value ?? "0.0"),
+      totalCmeDeltaText: summary?.totalCmeCredits.trend ?? "",
+      inProgressCount: Number(summary?.coursesInProgress.value ?? 0),
+      nextLiveSessionText:
+        summary?.nextLiveSession.value ?? "No upcoming sessions",
+    }),
+    [summary],
+  );
+
+  const filteredActiveCourses = useMemo(
+    () =>
+      activeCourses.filter((item) =>
+        matchesCourseType(`${item.deliveryMethod} ${item.tag}`, courseType),
+      ),
+    [activeCourses, courseType],
+  );
+
+  const filteredCompletedCourses = useMemo(
+    () =>
+      completedCourses.filter((item) =>
+        matchesCourseType(`${item.tag} ${item.location}`, courseType),
+      ),
+    [completedCourses, courseType],
+  );
+
+  const filteredBrowseCourses = useMemo(
+    () =>
+      browseCourses.filter((item) =>
+        matchesCourseType(`${item.tag} ${item.title}`, courseType),
+      ),
+    [browseCourses, courseType],
+  );
+
+  const currentMeta = useMemo(() => {
+    if (activeTab === "active") return activeMeta;
+    if (activeTab === "completed") return completedMeta;
+    return browseMeta;
+  }, [activeMeta, activeTab, browseMeta, completedMeta]);
 
   const toolbarState: CourseToolbarState = {
     activeTab,
     search,
     courseType,
     sortBy,
+    page,
+    limit,
   };
 
   return {
     toolbarState,
-
     setActiveTab,
     setSearch,
     setCourseType,
     setSortBy,
+    setPage,
 
     stats,
-    activeCourses,
+    activeCourses: filteredActiveCourses,
+    completedCourses: filteredCompletedCourses,
+    browseCourses: filteredBrowseCourses,
+    currentMeta,
 
-    // ✅ new
-    completedCourses,
-    browseCourses,
+    isSummaryLoading: summaryLoading,
+    isListLoading: listLoading,
+    summaryError,
+    listError,
   };
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IdCard, Lock, CreditCard } from "lucide-react";
+import { IdCard, Lock } from "lucide-react";
 import type { SettingsSectionKey } from "@/types/user/account-settings/account-settings-type";
 
 function cx(...v: Array<string | false | null | undefined>) {
@@ -11,22 +11,17 @@ const NAV: Array<{
   label: string;
   icon: React.ReactNode;
 }> = [
-    {
-      key: "public-profile",
-      label: "Public Profile",
-      icon: <IdCard className="h-5 w-5" />,
-    },
-    {
-      key: "security-password",
-      label: "Security & Password",
-      icon: <Lock className="h-5 w-5" />,
-    },
-    {
-      key: "payment-methods",
-      label: "Payment Methods",
-      icon: <CreditCard className="h-5 w-5" />,
-    },
-  ];
+  {
+    key: "public-profile",
+    label: "Public Profile",
+    icon: <IdCard className="h-5 w-5" />,
+  },
+  {
+    key: "security-password",
+    label: "Security & Password",
+    icon: <Lock className="h-5 w-5" />,
+  },
+];
 
 export default function SettingsLeftNav({
   active,

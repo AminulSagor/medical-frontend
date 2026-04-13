@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { AxiosError } from "axios";
 import { Eye, EyeOff, Lock, CheckCircle2, Circle } from "lucide-react";
-import { securityPasswordSchema } from "@/schema/account-settings/security-password-schema";
 import type {
   SecurityPasswordDraft,
   SecurityPasswordPayload,
@@ -24,8 +23,37 @@ const EMPTY: SecurityPasswordDraft = {
 function hasUppercase(v: string) {
   return /[A-Z]/.test(v);
 }
+
 function hasNumberOrSymbol(v: string) {
   return /[0-9\W_]/.test(v);
+}
+
+function validateDraft(next: SecurityPasswordDraft) {
+  const errors: Record<string, string> = {};
+
+  if (!next.currentPassword.trim()) {
+    errors.currentPassword = "Current password is required";
+  }
+
+  if (!next.newPassword.trim()) {
+    errors.newPassword = "New password is required";
+  } else {
+    if (next.newPassword.length < 8) {
+      errors.newPassword = "Password must be at least 8 characters";
+    } else if (!hasUppercase(next.newPassword)) {
+      errors.newPassword = "Password must include an uppercase letter";
+    } else if (!hasNumberOrSymbol(next.newPassword)) {
+      errors.newPassword = "Password must include a number or symbol";
+    }
+  }
+
+  if (!next.confirmNewPassword.trim()) {
+    errors.confirmNewPassword = "Please confirm your new password";
+  } else if (next.confirmNewPassword !== next.newPassword) {
+    errors.confirmNewPassword = "Confirm password does not match";
+  }
+
+  return errors;
 }
 
 function Field({
@@ -73,7 +101,7 @@ function Field({
           className="h-full w-full bg-transparent text-[13px] text-slate-900 outline-none placeholder:text-slate-400"
         />
 
-        {showToggle && (
+        {showToggle ? (
           <button
             type="button"
             onClick={onToggle}
@@ -86,10 +114,10 @@ function Field({
               <EyeOff className="h-4 w-4" />
             )}
           </button>
-        )}
+        ) : null}
       </div>
 
-      {error && <div className="mt-1 text-[11px] text-rose-600">{error}</div>}
+      {error ? <div className="mt-1 text-[11px] text-rose-600">{error}</div> : null}
     </div>
   );
 }
@@ -120,22 +148,8 @@ export default function SecurityPasswordFormClient() {
     value: SecurityPasswordDraft[K],
   ) {
     setForm((p) => ({ ...p, [key]: value }));
-  }
-
-  function validateDraft(next: SecurityPasswordDraft) {
-    const res = securityPasswordSchema.safeParse(next);
-    if (res.success) {
-      setErrors({});
-      return { ok: true as const, data: res.data };
-    }
-
-    const map: Record<string, string> = {};
-    for (const issue of res.error.issues) {
-      const k = issue.path?.[0];
-      if (typeof k === "string" && !map[k]) map[k] = issue.message;
-    }
-    setErrors(map);
-    return { ok: false as const, data: null };
+    setApiError("");
+    setApiSuccess("");
   }
 
   function onCancel() {
@@ -150,12 +164,17 @@ export default function SecurityPasswordFormClient() {
     setApiError("");
     setApiSuccess("");
 
-    const res = validateDraft(form);
-    if (!res.ok) return;
+    const nextErrors = validateDraft(form);
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+
+    setErrors({});
 
     const payload: SecurityPasswordPayload = {
-      currentPassword: res.data.currentPassword,
-      newPassword: res.data.newPassword,
+      currentPassword: form.currentPassword,
+      newPassword: form.newPassword,
     };
 
     try {
@@ -263,31 +282,29 @@ export default function SecurityPasswordFormClient() {
               ) : (
                 <Circle className="h-4 w-4 text-slate-300" />
               )}
-              <span>At least one number or symbol</span>
+              <span>At least one number or special character</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-10 border-t border-slate-200 pt-5">
-        <div className="flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="h-10 rounded-xl px-4 text-[12px] font-semibold text-slate-500 hover:text-slate-700"
-          >
-            Cancel
-          </button>
+      <div className="mt-6 flex items-center justify-end gap-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="h-10 rounded-xl px-4 text-[12px] font-semibold text-slate-500 hover:text-slate-700"
+        >
+          Cancel
+        </button>
 
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={isSaving}
-            className="h-10 rounded-xl bg-sky-500 px-5 text-[12px] font-extrabold text-white shadow-[0_10px_18px_rgba(14,165,233,0.25)] hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {isSaving ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={isSaving}
+          className="h-10 rounded-xl bg-sky-500 px-5 text-[12px] font-extrabold text-white shadow-[0_10px_18px_rgba(14,165,233,0.25)] hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {isSaving ? "Updating..." : "Update Password"}
+        </button>
       </div>
     </div>
   );
