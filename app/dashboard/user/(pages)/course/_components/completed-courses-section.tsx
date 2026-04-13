@@ -1,17 +1,17 @@
 "use client";
 
 import CompletedCourseCard from "./completed-course-card";
-import type { CompletedCourseCard as CompletedCourseCardType } from "@/types/user/course/course-type";
+import type { CompletedCourseItem } from "@/types/user/course/course-type";
 
 export default function CompletedCoursesSection({
   items,
 }: {
-  items: CompletedCourseCardType[];
+  items: CompletedCourseItem[];
 }) {
   return (
     <section className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
-      {items.map((c, idx) => (
-        <CompletedCourseCard key={idx} {...c} />
+      {items.map((course) => (
+        <CompletedCourseCard key={course.enrollmentId} {...course} />
       ))}
     </section>
   );

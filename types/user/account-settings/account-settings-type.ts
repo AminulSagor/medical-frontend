@@ -1,16 +1,20 @@
-// types/settings/account-settings-type.ts
-import type {
-  AccountProfileOutput,
-  AccountProfileInput,
-} from "@/schema/account-settings/account-settings-schema";
+export type SettingsSectionKey = "public-profile" | "security-password";
 
-export type SettingsSectionKey =
-  | "public-profile"
-  | "security-password"
-  | "payment-methods";
+export type AccountProfile = {
+  section: "public-profile";
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  title: string;
+  role: string;
+  institution: string;
+  npiNumber: string;
+  avatarUrl: string;
+  avatarInitials: string;
+};
 
-export type AccountProfile = AccountProfileOutput;
-export type AccountProfileDraft = AccountProfileInput;
+export type AccountProfileDraft = AccountProfile;
 
 export type RoleOption = {
   value: string;
@@ -20,5 +24,5 @@ export type RoleOption = {
 export type AccountSettingsPageModel = {
   activeSection: SettingsSectionKey;
   profile: AccountProfile;
-  roleOptions: RoleOption[];
+  roleOptions?: RoleOption[];
 };

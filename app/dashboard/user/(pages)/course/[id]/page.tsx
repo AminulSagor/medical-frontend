@@ -22,7 +22,7 @@ export default async function Page({
         {/* Back */}
         <div className="mb-4 flex items-center gap-2 text-sm text-slate-500">
           <Link
-            href="/course"
+            href="/dashboard/user/course"
             className="inline-flex items-center gap-2 hover:text-slate-700"
           >
             <span className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 bg-white">

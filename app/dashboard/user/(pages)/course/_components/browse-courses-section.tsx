@@ -2,37 +2,32 @@
 
 import BrowseFeaturedBanner from "./browse-featured-banner";
 import BrowseCourseCard from "./browse-course-card";
-import type { BrowseCoursesModel } from "@/types/user/course/course-type";
+import type { BrowseCourseItem } from "@/types/user/course/course-type";
 
 export default function BrowseCoursesSection({
-  model,
+  items,
 }: {
-  model: BrowseCoursesModel;
+  items: BrowseCourseItem[];
 }) {
+  const featuredCourse = items[0] ?? null;
+
   return (
     <section className="mt-6 space-y-6">
-      {/* Featured */}
-      <BrowseFeaturedBanner {...model.featured} />
+      {featuredCourse ? <BrowseFeaturedBanner course={featuredCourse} /> : null}
 
-      {/* Explore row */}
       <div className="flex items-center justify-between">
         <h3 className="text-[12px] font-extrabold text-slate-900">
           Explore New Courses
         </h3>
 
-        <button
-          type="button"
-          className="text-[10px] font-semibold text-sky-600 hover:text-sky-700"
-          onClick={() => console.log("View all categories")}
-        >
-          View All Categories →
-        </button>
+        <span className="text-[10px] font-semibold text-slate-500">
+          {items.length} course{items.length === 1 ? "" : "s"}
+        </span>
       </div>
 
-      {/* Cards */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-        {model.items.map((c, idx) => (
-          <BrowseCourseCard key={idx} {...c} />
+        {items.map((course) => (
+          <BrowseCourseCard key={course.id} {...course} />
         ))}
       </div>
     </section>

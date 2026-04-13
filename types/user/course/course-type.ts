@@ -1,84 +1,132 @@
-// types/course.ts
-
 export type CourseTabKey = "active" | "completed" | "browse";
 
-export type CourseToolbarState = {
+export type CourseTypeFilter = "all" | "in_person" | "online";
+
+export type CourseSortBy = "startDate" | "endDate" | "completedDate" | "createdAt" | "title";
+
+export interface CourseToolbarState {
   activeTab: CourseTabKey;
   search: string;
-  courseType: string;
-  sortBy: string;
-};
+  courseType: CourseTypeFilter;
+  sortBy: CourseSortBy;
+  page: number;
+  limit: number;
+}
 
-export type CourseStats = {
-  totalCmeCredits: number | string;
-  totalCmeDeltaText?: string; // e.g. "+2.5"
-  inProgressCount: number | string;
-  nextLiveSessionText: string; // e.g. "Mar 15, 10:00 AM"
-};
+export interface CourseStats {
+  totalCmeCredits: string;
+  totalCmeDeltaText?: string;
+  inProgressCount: number;
+  nextLiveSessionText: string;
+}
 
-export type InPersonCourseCard = {
-  badge: string;
-  title: string;
-  dateLabel: string;
-  locationLabel: string;
-  bookedForLabel: string;
-  bookingFeeLabel: string;
-  imageSrc: string;
-  onAddToCalendar?: () => void;
-  onViewSyllabus?: () => void;
-};
+export interface CourseSummaryMetric {
+  value: string | number;
+  trend?: string;
+}
 
-export type OnlineCourseCard = {
-  badge: string;
-  title: string;
-  infoTitle: string;
-  infoText: string;
-  bookedForLabel: string;
-  bookingFeeLabel: string;
-  progressLabel: string;
-  imageSrc: string;
-  onJoinLive?: () => void;
-};
+export interface CourseSummaryResponse {
+  totalCmeCredits: CourseSummaryMetric;
+  coursesInProgress: {
+    value: number;
+  };
+  nextLiveSession: {
+    value: string;
+  };
+}
 
-// ✅ IMPORTANT: allow null so search can hide cards safely
-export type ActiveCoursesSectionModel = {
-  inPerson: InPersonCourseCard | null;
-  online: OnlineCourseCard | null;
-};
-export type CompletedCourseCard = {
-  cmeCreditsLabel: string; // e.g. "4.0 CME CREDITS"
-  title: string;
-  completedOnText: string; // e.g. "Completed on Dec 20, 2023"
-  imageSrc: string;
-  onViewDetails?: () => void;
-};
-export type BrowseFeaturedCourse = {
-  badge: string; // e.g. "FEATURED COURSE"
-  title: string; // e.g. "Advanced Trauma Life Support"
-  description: string;
-  imageSrc: string;
+export interface CourseAction {
+  label: string;
+  route: string;
+}
 
-  primaryActionLabel: string; // e.g. "Enroll Now - $750"
-  secondaryActionLabel: string; // e.g. "View Syllabus"
+export interface CourseActions {
+  primary: CourseAction | null;
+  secondary?: CourseAction | null;
+}
 
-  onPrimaryAction?: () => void;
-  onSecondaryAction?: () => void;
-};
+export interface CourseListMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
-export type BrowseCourseCardItem = {
-  badge: string; // e.g. "ON-CAMPUS" / "IN-PERSON"
+export interface CourseInstructor {
+  name: string;
+  role: string;
+  avatarUrl: string | null;
+}
+
+export interface ActiveCourseItem {
+  enrollmentId: string;
+  courseId: string;
+  tag: string;
   title: string;
   description: string;
-  imageSrc: string;
+  instructor: CourseInstructor;
+  deliveryMethod: string;
+  location: string;
+  date: string;
+  timeLabel: string;
+  coverImageUrl?: string | null;
+  actions: CourseActions;
+}
 
-  priceLabel: string; // e.g. "$295.00"
-  creditsLabel: string; // e.g. "4.0 CME CREDITS"
+export interface CompletedCourseItem {
+  enrollmentId: string;
+  courseId: string;
+  isCompleted: boolean;
+  coverImageUrl: string | null;
+  tag: string;
+  title: string;
+  startDate: string;
+  completedDate: string;
+  location: string;
+  groupSizeText: string;
+  bookingFee: string;
+  progress: string;
+  cmeCreditsBadge: string;
+  nextSessionBanner: string | null;
+  actions: CourseActions;
+}
 
-  ctaLabel: string; // e.g. "View Details" / "Enroll Now"
-  onCta?: () => void;
-};
+export interface BrowseCourseItem {
+  id: string;
+  tag: string;
+  coverImageUrl: string | null;
+  title: string;
+  description: string;
+  price?: string | null;
+  cmeCredits: number;
+  actions: CourseActions;
+}
 
-export type BrowseCoursesModel = {
-  featured: BrowseFeaturedCourse;
-  items: BrowseCourseCardItem[];
-};
+export interface ActiveCoursesResponse {
+  items: ActiveCourseItem[];
+  meta: CourseListMeta;
+}
+
+export interface CompletedCoursesResponse {
+  items: CompletedCourseItem[];
+  meta: CourseListMeta;
+}
+
+export interface BrowseCoursesResponse {
+  items: BrowseCourseItem[];
+  meta: CourseListMeta;
+}
+
+export interface CourseListResponseByTab {
+  active: ActiveCoursesResponse;
+  completed: CompletedCoursesResponse;
+  browse: BrowseCoursesResponse;
+}
+
+export interface GetMyCoursesQueryDto<T extends CourseTabKey = CourseTabKey> {
+  tab: T;
+  page?: number;
+  limit?: number;
+  sortBy?: CourseSortBy | string;
+  search?: string;
+}

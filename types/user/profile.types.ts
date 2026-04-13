@@ -16,14 +16,14 @@ export interface GetUserProfileResponse {
 }
 
 export interface UpdateUserProfilePayload {
-    profilePicture: string | null;
+    profilePicture: string;
     firstName: string;
     lastName: string;
-    phoneNumber: string | null;
-    title: string | null;
-    role: string | null;
-    institutionOrHospital: string | null;
-    npiNumber: string | null;
+    phoneNumber: string;
+    title: string;
+    role: string;
+    institutionOrHospital: string;
+    npiNumber: string;
 }
 
 export interface UpdateUserProfileResponse {

@@ -2,7 +2,6 @@ import type { AccountSettingsPageModel } from "@/types/user/account-settings/acc
 import SettingsLeftNav from "./settings-left-nav";
 import PublicProfilePanel from "./public-profile-panel";
 import SecurityPasswordPanel from "./security-password-panel";
-import PaymentMethodsPanel from "./payment-method-panel";
 
 export default function SettingsCardShell({
   model,
@@ -12,14 +11,11 @@ export default function SettingsCardShell({
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.06)]">
       <div className="grid grid-cols-1 md:grid-cols-[240px_1fr]">
-        {/* LEFT SIDEBAR */}
         <aside className="flex flex-col border-b border-slate-200 bg-slate-50/30 md:border-b-0 md:border-r">
-          {/* Top nav area */}
           <div className="flex-1">
             <SettingsLeftNav active={model.activeSection} />
           </div>
 
-          {/* Bottom Sign Out */}
           <div className="border-t border-slate-200 px-4 py-4">
             <button
               type="button"
@@ -31,18 +27,11 @@ export default function SettingsCardShell({
           </div>
         </aside>
 
-        {/* RIGHT CONTENT */}
         <div className="p-6">
-          {model.activeSection === "public-profile" ? (
-            <PublicProfilePanel profile={model.profile} />
-          ) : model.activeSection === "security-password" ? (
+          {model.activeSection === "security-password" ? (
             <SecurityPasswordPanel />
-          ) : model.activeSection === "payment-methods" ? (
-            <PaymentMethodsPanel />
           ) : (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-[12px] text-slate-600">
-              This section UI will be added later.
-            </div>
+            <PublicProfilePanel profile={model.profile} />
           )}
         </div>
       </div>

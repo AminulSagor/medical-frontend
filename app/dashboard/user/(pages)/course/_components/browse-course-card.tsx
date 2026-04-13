@@ -1,20 +1,30 @@
 "use client";
 
-import Image from "next/image";
-import type { BrowseCourseCardItem } from "@/types/user/course/course-type";
 import { useRouter } from "next/navigation";
+import type { BrowseCourseItem } from "@/types/user/course/course-type";
+
+function openRoute(route: string, router: ReturnType<typeof useRouter>) {
+  if (!route) return;
+
+  if (/^https?:\/\//i.test(route)) {
+    window.open(route, "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  router.push(route);
+}
 
 export default function BrowseCourseCard({
-  badge,
+  tag,
   title,
   description,
-  imageSrc,
-  priceLabel,
-  creditsLabel,
-  ctaLabel,
-  onCta,
-}: BrowseCourseCardItem) {
+  coverImageUrl,
+  price,
+  cmeCredits,
+  actions,
+}: BrowseCourseItem) {
   const router = useRouter();
+
   return (
     <div
       className={[
@@ -22,12 +32,20 @@ export default function BrowseCourseCard({
         "shadow-[0_6px_16px_rgba(15,23,42,0.06)]",
       ].join(" ")}
     >
-      <div className="relative h-[120px] w-full">
-        <Image src={imageSrc} alt={title} fill className="object-cover" />
+      <div className="relative h-[120px] w-full overflow-hidden bg-gradient-to-r from-sky-700 via-slate-800 to-emerald-700">
+        {coverImageUrl ? (
+          <img
+            src={coverImageUrl}
+            alt={title}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : null}
+
+        <div className="absolute inset-0 bg-slate-950/25" />
 
         <div className="absolute left-3 top-3">
           <span className="inline-flex items-center rounded-full bg-emerald-600 px-3 py-1 text-[9px] font-bold tracking-wide text-white">
-            {badge}
+            {tag}
           </span>
         </div>
       </div>
@@ -43,25 +61,27 @@ export default function BrowseCourseCard({
 
         <div className="mt-3 flex items-center justify-between">
           <div className="text-[12px] font-extrabold text-slate-900">
-            {priceLabel}
+            {price ? `$${price}` : "Price unavailable"}
           </div>
 
           <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[9px] font-bold text-slate-600">
-            {creditsLabel}
+            {cmeCredits} CME CREDITS
           </span>
         </div>
 
-        <button
-          type="button"
-          onClick={() => router.push(`/course/online`)}
-          className={[
-            "mt-3 h-9 w-full rounded-md bg-sky-600",
-            "text-[11px] font-semibold text-white",
-            "hover:bg-sky-700 active:scale-[0.99]",
-          ].join(" ")}
-        >
-          {ctaLabel}
-        </button>
+        {actions.primary ? (
+          <button
+            type="button"
+            onClick={() => openRoute(actions.primary!.route, router)}
+            className={[
+              "mt-3 h-9 w-full rounded-md bg-sky-600",
+              "text-[11px] font-semibold text-white",
+              "hover:bg-sky-700 active:scale-[0.99]",
+            ].join(" ")}
+          >
+            {actions.primary.label}
+          </button>
+        ) : null}
       </div>
     </div>
   );

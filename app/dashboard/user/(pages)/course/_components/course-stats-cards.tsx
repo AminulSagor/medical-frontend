@@ -1,10 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Award, BookOpen, Video } from "lucide-react";
+import { Award, BookOpen, Loader2, Video } from "lucide-react";
 import type { CourseStats } from "@/types/user/course/course-type";
 
-type Props = CourseStats;
+type Props = CourseStats & {
+  isLoading?: boolean;
+};
 
 function StatCard({
   label,
@@ -46,35 +48,50 @@ function StatCard({
   );
 }
 
+function LoadingValue() {
+  return <Loader2 className="h-4 w-4 animate-spin text-sky-600" />;
+}
+
 export default function CourseStatsCards({
   totalCmeCredits,
-  totalCmeDeltaText = "+2.5",
+  totalCmeDeltaText = "",
   inProgressCount,
   nextLiveSessionText,
+  isLoading = false,
 }: Props) {
   return (
     <section className="mt-6 flex flex-col gap-4 md:flex-row">
       <StatCard
         label="Total CME Credits"
         value={
-          <span className="text-[20px] font-semibold leading-6 text-sky-600">
-            {totalCmeCredits}
-          </span>
+          isLoading ? (
+            <LoadingValue />
+          ) : (
+            <span className="text-[20px] font-semibold leading-6 text-sky-600">
+              {totalCmeCredits}
+            </span>
+          )
         }
         rightIcon={<Award className="h-4 w-4" />}
         footer={
-          <span className="text-[11px] font-semibold leading-4 text-emerald-700">
-            {totalCmeDeltaText}
-          </span>
+          !isLoading && totalCmeDeltaText ? (
+            <span className="text-[11px] font-semibold leading-4 text-emerald-700">
+              {totalCmeDeltaText}
+            </span>
+          ) : undefined
         }
       />
 
       <StatCard
         label="Courses In-Progress"
         value={
-          <span className="text-[20px] font-semibold leading-6 text-sky-600">
-            {inProgressCount}
-          </span>
+          isLoading ? (
+            <LoadingValue />
+          ) : (
+            <span className="text-[20px] font-semibold leading-6 text-sky-600">
+              {inProgressCount}
+            </span>
+          )
         }
         rightIcon={<BookOpen className="h-4 w-4" />}
       />
@@ -82,9 +99,13 @@ export default function CourseStatsCards({
       <StatCard
         label="Next Live Session"
         value={
-          <span className="text-[13px] font-semibold leading-5 text-sky-600">
-            {nextLiveSessionText}
-          </span>
+          isLoading ? (
+            <LoadingValue />
+          ) : (
+            <span className="text-[13px] font-semibold leading-5 text-sky-600">
+              {nextLiveSessionText}
+            </span>
+          )
         }
         rightIcon={<Video className="h-4 w-4" />}
       />
