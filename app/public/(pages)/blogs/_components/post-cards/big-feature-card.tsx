@@ -1,18 +1,17 @@
 import Link from "next/link";
 import Card from "@/components/cards/card";
 import { BlogPost } from "@/types/public/blogs/blog-type";
-import FallbackNetworkImage from "../fallback-network-image";
+import BlogSafeImage from "./blog-safe-image";
 
 export default function BigFeatureCard({ post }: { post: BlogPost }) {
   return (
     <Card className="overflow-hidden rounded-[26px] p-0" shape="soft">
       <Link href={post.href} className="block">
         <div className="relative h-[280px] w-full overflow-hidden rounded-t-[26px]">
-          <FallbackNetworkImage
+          <BlogSafeImage
             src={post.coverImageSrc}
             alt={post.coverImageAlt}
-            className="object-cover"
-            style={{ objectPosition: "75% 20%" }}
+            className="h-full w-full object-cover"
           />
 
           <div className="absolute left-4 top-4">
@@ -23,7 +22,7 @@ export default function BigFeatureCard({ post }: { post: BlogPost }) {
         </div>
 
         <div className="bg-white px-7 pb-6 pt-7">
-          <h3 className="font-serif text-[34px] leading-[1.08] font-bold text-black">
+          <h3 className="font-serif text-[34px] font-bold leading-[1.08] text-black">
             {post.title}
           </h3>
 
@@ -37,11 +36,10 @@ export default function BigFeatureCard({ post }: { post: BlogPost }) {
             <div className="flex items-center gap-3">
               {post.author?.avatarSrc ? (
                 <div className="relative h-8 w-8 overflow-hidden rounded-full border border-light-slate/15">
-                  <FallbackNetworkImage
+                  <BlogSafeImage
                     src={post.author.avatarSrc}
                     alt={post.author.name}
-                    className="object-cover"
-                    iconSize={14}
+                    className="h-full w-full object-cover"
                   />
                 </div>
               ) : (

@@ -1,18 +1,17 @@
 import Link from "next/link";
 import Card from "@/components/cards/card";
 import { BlogPost } from "@/types/public/blogs/blog-type";
-import FallbackNetworkImage from "../fallback-network-image";
+import BlogSafeImage from "./blog-safe-image";
 
 export default function ListPostRow({ post }: { post: BlogPost }) {
   return (
     <Card className="overflow-hidden rounded-[22px] p-0" shape="soft">
       <Link href={post.href} className="grid gap-0 md:grid-cols-[240px_1fr]">
         <div className="relative h-[200px] w-full overflow-hidden rounded-l-[22px] md:h-[190px] md:w-[240px]">
-          <FallbackNetworkImage
+          <BlogSafeImage
             src={post.coverImageSrc}
             alt={post.coverImageAlt}
-            className="object-cover"
-            style={{ objectPosition: "50% 20%" }}
+            className="h-full w-full object-cover"
           />
         </div>
 
@@ -27,7 +26,7 @@ export default function ListPostRow({ post }: { post: BlogPost }) {
             </span>
           </div>
 
-          <h3 className="mt-2 font-serif text-[22px] leading-[1.2] font-bold text-black md:text-[24px]">
+          <h3 className="mt-2 font-serif text-[22px] font-bold leading-[1.2] text-black md:text-[24px]">
             {post.title}
           </h3>
 
@@ -38,11 +37,10 @@ export default function ListPostRow({ post }: { post: BlogPost }) {
           <div className="mt-5 flex items-center gap-3 text-sm">
             {post.author?.avatarSrc ? (
               <div className="relative h-8 w-8 overflow-hidden rounded-full border border-light-slate/15">
-                <FallbackNetworkImage
+                <BlogSafeImage
                   src={post.author.avatarSrc}
                   alt={post.author.name}
-                  className="object-cover"
-                  iconSize={14}
+                  className="h-full w-full object-cover"
                 />
               </div>
             ) : (

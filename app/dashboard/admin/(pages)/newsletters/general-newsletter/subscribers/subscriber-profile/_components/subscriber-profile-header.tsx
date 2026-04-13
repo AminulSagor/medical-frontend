@@ -2,7 +2,9 @@
 
 import React from "react";
 import { ArrowLeft, Mail, Pencil } from "lucide-react";
-import { SubscriberProfile } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/subscribers/subscriber-profile/types/subscriber-profile.type";
+import { useRouter } from "next/navigation";
+import type { SubscriberProfile } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/subscribers/subscriber-profile/types/subscriber-profile.type";
+
 function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
@@ -24,9 +26,13 @@ function StatusPill({ status }: { status: SubscriberProfile["status"] }) {
 
 export default function SubscriberProfileHeader({
   data,
+  onEdit,
 }: {
   data: SubscriberProfile;
+  onEdit: () => void;
 }) {
+  const router = useRouter();
+
   return (
     <header>
       <div>
@@ -34,6 +40,7 @@ export default function SubscriberProfileHeader({
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
+              onClick={() => router.back()}
               className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
               aria-label="Go back"
             >
@@ -65,6 +72,7 @@ export default function SubscriberProfileHeader({
 
             <button
               type="button"
+              onClick={onEdit}
               className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#0e8f86] px-4 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(20,184,173,0.18)] hover:opacity-95"
             >
               <Pencil size={16} />

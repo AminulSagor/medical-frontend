@@ -1,67 +1,73 @@
 // Admin Product Types
 
-// Category
 export interface ProductCategory {
   id: string;
   name: string;
   createdAt: string;
 }
 
-// Search result for "Frequently Bought Together"
 export interface ProductSearchResult {
   id: string;
   name: string;
   sku: string;
 }
 
-// Clinical Benefit
 export interface ClinicalBenefit {
   icon: string;
   title: string;
   description: string;
 }
 
-// Technical Specification
 export interface TechnicalSpecification {
   name: string;
   value: string;
 }
 
-// Bulk Price Tier
 export interface BulkPriceTier {
   minQty: number;
   price: string;
 }
 
-// Full Product (for GET /admin/products/:id)
-export interface AdminProduct {
-  id: string;
-  name: string;
-  clinicalDescription: string;
-  brand: string;
-  sku: string;
-  barcode: string;
-  categoryId: string[];
-  categories: ProductCategory[];
-  tags: string[];
-  actualPrice: string;
-  offerPrice: string;
-  bulkPriceTiers: BulkPriceTier[];
-  stockQuantity: number;
-  lowStockAlert: number;
-  backorder: boolean;
-  isActive: boolean;
+export interface AdminProductDetails {
+  productId: string;
   images: string[];
   frontendBadges: string[];
-  clinicalBenefits: ClinicalBenefit[];
-  technicalSpecifications: TechnicalSpecification[];
   frequentlyBoughtTogether: string[];
   bundleUpsells: string[];
+  clinicalBenefits: ClinicalBenefit[];
+  technicalSpecifications: TechnicalSpecification[];
   createdAt: string;
   updatedAt: string;
 }
 
-// Create Product Request
+export interface AdminProduct {
+  id: string;
+  name: string;
+  clinicalDescription: string;
+  brand?: string;
+  sku: string;
+  barcode?: string;
+  categoryId: string[];
+  categories?: ProductCategory[];
+  tags: string[];
+  actualPrice: string;
+  offerPrice?: string;
+  bulkPriceTiers: BulkPriceTier[];
+  stockQuantity: number;
+  lowStockAlert?: number;
+  backorder: boolean;
+  isActive: boolean;
+  images?: string[];
+  frontendBadges?: string[];
+  clinicalBenefits?: ClinicalBenefit[];
+  technicalSpecifications?: TechnicalSpecification[];
+  frequentlyBoughtTogether?: string[];
+  bundleUpsells?: string[];
+  details?: AdminProductDetails;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CreateProductRequest {
   name: string;
   clinicalDescription: string;
@@ -84,7 +90,6 @@ export interface CreateProductRequest {
   frequentlyBoughtTogether?: string[];
 }
 
-// Update Product Request (all fields optional)
 export interface UpdateProductRequest {
   name?: string;
   clinicalDescription?: string;
@@ -107,12 +112,10 @@ export interface UpdateProductRequest {
   frequentlyBoughtTogether?: string[];
 }
 
-// Create Category Request
 export interface CreateCategoryRequest {
   name: string;
 }
 
-// Product Tag
 export interface ProductTag {
   id: string;
   name: string;
@@ -120,39 +123,54 @@ export interface ProductTag {
   createdAt: string;
 }
 
-// Create Tag Request
 export interface CreateTagRequest {
   name: string;
 }
 
-// Product List Item (for GET /admin/products)
 export interface AdminProductListItem {
   id: string;
   name: string;
+  clinicalDescription?: string;
+  brand?: string;
   categoryId: string[];
-  sku: string;
-  stockQuantity: number;
-  isActive: boolean;
+  tags?: string[];
   actualPrice: string;
   offerPrice: string;
+  bulkPriceTiers?: BulkPriceTier[];
+  sku: string;
+  stockQuantity: number;
+  lowStockAlert?: number;
+  isActive: boolean;
+  backorder?: boolean;
   createdAt: string;
   updatedAt?: string;
   images?: string[];
 }
 
-// Products List Response
-export interface AdminProductsListResponse {
-  products: AdminProductListItem[];
-  total: number;
+export interface AdminProductsListMeta {
   page: number;
   limit: number;
+  total: number;
+  totalPages: number;
 }
 
-// Products List Params
+export interface AdminProductsTabsCount {
+  all: number;
+  active: number;
+  out_of_stock: number;
+  low_stock: number;
+}
+
+export interface AdminProductsListResponse {
+  items: AdminProductListItem[];
+  meta: AdminProductsListMeta;
+  tabsCount: AdminProductsTabsCount;
+}
+
 export interface AdminProductsListParams {
   page?: number;
   limit?: number;
   search?: string;
-  categoryId?: string;
-  status?: 'active' | 'draft' | 'all';
+  category?: string;
+  tab?: "all" | "active" | "out_of_stock" | "low_stock" | "draft";
 }

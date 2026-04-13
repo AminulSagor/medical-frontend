@@ -1,17 +1,17 @@
 import Link from "next/link";
 import Card from "@/components/cards/card";
 import { BlogPost } from "@/types/public/blogs/blog-type";
-import FallbackNetworkImage from "../fallback-network-image";
+import BlogSafeImage from "./blog-safe-image";
 
 export default function WideInterviewCard({ post }: { post: BlogPost }) {
   return (
     <Card className="overflow-hidden rounded-[26px] p-0" shape="soft">
       <Link href={post.href} className="grid md:grid-cols-[1.05fr_1fr]">
         <div className="relative h-[260px] w-full md:h-full">
-          <FallbackNetworkImage
+          <BlogSafeImage
             src={post.coverImageSrc}
             alt={post.coverImageAlt}
-            className="object-cover object-[85%_20%]"
+            className="h-full w-full object-cover object-[85%_20%]"
           />
         </div>
 
@@ -20,7 +20,7 @@ export default function WideInterviewCard({ post }: { post: BlogPost }) {
             {post.category}
           </span>
 
-          <h3 className="mt-6 font-serif text-[28px] leading-[1.15] font-bold text-black">
+          <h3 className="mt-6 font-serif text-[28px] font-bold leading-[1.15] text-black">
             {post.title}
           </h3>
 

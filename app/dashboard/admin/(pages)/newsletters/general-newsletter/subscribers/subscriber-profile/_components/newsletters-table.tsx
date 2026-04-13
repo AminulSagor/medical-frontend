@@ -16,18 +16,24 @@ function DeliveredPill({
       <span
         className={cx(
           "h-2 w-2 rounded-full",
-          status === "delivered" ? "bg-[#12b76a]" : "bg-slate-300",
+          status === "delivered"
+            ? "bg-[#12b76a]"
+            : status === "bounced"
+              ? "bg-rose-500"
+              : "bg-slate-300",
         )}
       />
       <span
         className={cx(
-          "inline-flex items-center rounded-lg border px-3 py-1 text-[11px] font-semibold",
+          "inline-flex items-center rounded-lg border px-3 py-1 text-[11px] font-semibold capitalize",
           status === "delivered"
             ? "border-[#c8f0d8] bg-[#eefcf4] text-[#0f7a4d]"
-            : "border-slate-200 bg-slate-50 text-slate-600",
+            : status === "bounced"
+              ? "border-rose-200 bg-rose-50 text-rose-600"
+              : "border-slate-200 bg-slate-50 text-slate-600",
         )}
       >
-        {status === "delivered" ? "Delivered" : status}
+        {status}
       </span>
     </span>
   );
@@ -57,8 +63,14 @@ function ActivityPill({
 
 export default function NewslettersTable({
   rows,
+  canLoadMore,
+  isLoadingMore,
+  onLoadMore,
 }: {
   rows: SubscriberNewsletterRow[];
+  canLoadMore?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white">
@@ -93,55 +105,70 @@ export default function NewslettersTable({
           </thead>
 
           <tbody className="divide-y divide-slate-100">
-            {rows.map((r) => (
-              <tr key={r.title}>
-                <td className="px-6 py-5">
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-xl bg-[#eefcfb]" />
-                    <p className="text-sm font-semibold text-slate-800">
-                      {r.title}
-                    </p>
-                  </div>
-                </td>
+            {rows.length ? (
+              rows.map((r) => (
+                <tr key={r.id}>
+                  <td className="px-6 py-5">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-xl bg-[#eefcfb]" />
+                      <p className="text-sm font-semibold text-slate-800">
+                        {r.title}
+                      </p>
+                    </div>
+                  </td>
 
-                <td className="px-6 py-5 text-sm font-medium text-slate-500">
-                  {r.sentDateLabel}
-                </td>
+                  <td className="px-6 py-5 text-sm font-medium text-slate-500">
+                    {r.sentDateLabel}
+                  </td>
 
-                <td className="px-6 py-5">
-                  <DeliveredPill status={r.status} />
-                </td>
+                  <td className="px-6 py-5">
+                    <DeliveredPill status={r.status} />
+                  </td>
 
-                <td className="px-6 py-5">
-                  <div className="flex items-center gap-3">
-                    <ActivityPill active={r.opened} label="opened" />
-                    <ActivityPill active={r.clicked} label="clicked" />
-                  </div>
-                </td>
+                  <td className="px-6 py-5">
+                    <div className="flex items-center gap-3">
+                      <ActivityPill active={r.opened} label="opened" />
+                      <ActivityPill active={r.clicked} label="clicked" />
+                    </div>
+                  </td>
 
-                <td className="px-6 py-5 text-right">
-                  <button
-                    type="button"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-                    aria-label="View newsletter"
-                  >
-                    <Eye size={16} />
-                  </button>
+                  <td className="px-6 py-5 text-right">
+                    <button
+                      type="button"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                      aria-label="View newsletter"
+                    >
+                      <Eye size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="px-6 py-10 text-center text-sm font-medium text-slate-500"
+                >
+                  No newsletter history found.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
 
-      <div className="flex items-center justify-center border-t border-slate-100 py-5">
-        <button
-          type="button"
-          className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 hover:text-slate-600"
-        >
-          Load more history
-        </button>
-      </div>
+      {canLoadMore ? (
+        <div className="flex items-center justify-center border-t border-slate-100 py-5">
+          <button
+            type="button"
+            onClick={onLoadMore}
+            disabled={isLoadingMore}
+            className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isLoadingMore ? "Loading..." : "Load more history"}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

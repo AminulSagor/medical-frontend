@@ -6,5 +6,6 @@ export default async function CourseDetailsPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = await params;
+
     return <CourseDetailsClient workshopId={id} />;
 }

@@ -1,4 +1,5 @@
 import { SubscriberProfile } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/subscribers/subscriber-profile/types/subscriber-profile.type";
+import type { SubscriberProfileResponse } from "@/types/admin/newsletter/general-newsletter/subscribes/subscriber-profile.types";
 
 export const subscriberProfileMock: SubscriberProfile = {
   id: "sub_001",
@@ -50,8 +51,18 @@ export const subscriberProfileMock: SubscriberProfile = {
   },
 
   adminNote: {
+    id: "note_1",
     note: `"Met at Houston conference, interested in pediatric simulation models for her clinic's new training wing."`,
+    createdAt: "2026-01-22T10:00:00.000Z",
   },
+
+  adminNotes: [
+    {
+      id: "note_1",
+      note: `"Met at Houston conference, interested in pediatric simulation models for her clinic's new training wing."`,
+      createdAt: "2026-01-22T10:00:00.000Z",
+    },
+  ],
 
   orders: [
     {
@@ -62,59 +73,120 @@ export const subscriberProfileMock: SubscriberProfile = {
       totalLabel: "$84.00",
       paymentStatus: "paid",
     },
-    {
-      id: "#ORD-2026-045",
-      dateLabel: "Sep 20, 2026",
-      itemTitle: "Advanced Airway Management",
-      type: "course",
-      totalLabel: "$450.00",
-      paymentStatus: "paid",
-    },
-    {
-      id: "#ORD-2026-033",
-      dateLabel: "Aug 15, 2026",
-      itemTitle: "Pediatric Intubation Set",
-      type: "product",
-      totalLabel: "$125.50",
-      paymentStatus: "paid",
-    },
   ],
 
   newsletters: [
     {
+      id: "newsletter_1",
       title: "Weekly Clinical Update #42",
       sentDateLabel: "Oct 28, 2026",
       status: "delivered",
       opened: true,
       clicked: false,
     },
-    {
-      title: "New Research: Pediatric Airway",
-      sentDateLabel: "Oct 24, 2026",
-      status: "delivered",
-      opened: true,
-      clicked: true,
-    },
-    {
-      title: "Upcoming Workshops: Spring 2027",
-      sentDateLabel: "Oct 15, 2026",
-      status: "delivered",
-      opened: true,
-      clicked: true,
-    },
-    {
-      title: "Exclusive Offer: Airway Kits",
-      sentDateLabel: "Oct 10, 2026",
-      status: "delivered",
-      opened: false,
-      clicked: false,
-    },
-    {
-      title: "Welcome to TAI Clinical Network",
-      sentDateLabel: "Sep 22, 2026",
-      status: "delivered",
-      opened: true,
-      clicked: true,
-    },
   ],
+};
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
+function mapStatus(status: string): SubscriberProfile["status"] {
+  if (status === "ACTIVE") return "subscribed";
+  return "unsubscribed";
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+
+  if (!parts.length) return "NA";
+
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+export const mapSubscriberProfileResponseToUi = (
+  response: SubscriberProfileResponse,
+): SubscriberProfile => {
+  const adminNotes = response.adminNotes.length
+    ? response.adminNotes.map((item) => ({
+      id: item.id,
+      note: item.note,
+      createdAt: item.createdAt,
+    }))
+    : [
+      {
+        id: "empty-note",
+        note: "No internal notes yet.",
+      },
+    ];
+
+  return {
+    id: response.profile.id,
+    breadcrumbLabel: "General Newsletter → Subscriber Profile",
+    name: response.profile.fullName,
+    roleLabel: response.profile.clinicalRole ?? "—",
+    initials: getInitials(response.profile.fullName),
+    status: mapStatus(response.profile.status),
+
+    contact: {
+      email: response.profile.email,
+      phone: response.profile.phone ?? "—",
+    },
+
+    professionalInfo: {
+      institution: response.profile.institution ?? "—",
+      acquisitionLabel: "Acquisition",
+      acquisitionTag: response.profile.acquisitionSource ?? "—",
+      joinedDateLabel: formatDate(response.profile.joinedDate),
+    },
+
+    adminNote: adminNotes[0],
+
+    adminNotes,
+
+    stats: [
+      {
+        key: "engagementRate",
+        label: "Engagement Rate",
+        value: `${response.cards.engagementRatePercent}%`,
+        subLabel: "",
+        variant: "teal",
+      },
+      {
+        key: "totalReceived",
+        label: "Total Received",
+        value: String(response.cards.totalReceived),
+        subLabel: "Campaign Emails",
+      },
+      {
+        key: "courseAttendance",
+        label: "Course Attendance",
+        value: String(response.cards.courseAttendanceCount),
+        subLabel: "Workshops Attended",
+      },
+      {
+        key: "lifetimeValue",
+        label: "Lifetime Value",
+        value: `$${response.cards.lifetimeValue.toFixed(2)}`,
+        subLabel: "Gear & Supply Purchases",
+        variant: "teal",
+      },
+    ],
+
+    orders: [],
+    newsletters: [],
+  };
 };

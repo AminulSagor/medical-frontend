@@ -1,22 +1,27 @@
 export type SubscriberSource = "FOOTER" | "POPUP" | "WEBINAR" | "CHECKOUT";
-export type SubscriberStatus = "ACTIVE" | "INACTIVE" | "BOUNCED";
+export type SubscriberStatus =
+  | "ACTIVE"
+  | "INACTIVE"
+  | "BOUNCED"
+  | "UNSUBSCRIBED"
+  | "SUPPRESSED";
 
 export type SubscribersSummary = {
-  netGrowth: number; // +142
-  netGrowthLabel: string; // "THIS WEEK"
-  netGrowthDeltaLabel: string; // "11.4% increase"
+  netGrowth: number;
+  netGrowthLabel: string;
+  netGrowthDeltaLabel: string;
 
-  avgEngagement: number; // 45.2
-  avgEngagementLeftLabel: string; // "OPEN RATE"
-  avgEngagementRightLabel: string; // "Active Audience"
+  avgEngagement: number;
+  avgEngagementLeftLabel: string;
+  avgEngagementRightLabel: string;
 
-  listHealthUnsubscribes: number; // 12
-  listHealthSubLabelLeft: string; // "UNSUBSCRIBES"
-  listHealthDeltaLabel: string; // "-2.4% vs Last Week"
+  listHealthUnsubscribes: number;
+  listHealthSubLabelLeft: string;
+  listHealthDeltaLabel: string;
 
   topSource: Array<{ source: SubscriberSource; percent: number }>;
 
-  totalSubscribers: number; // 2592
+  totalSubscribers: number;
 };
 
 export type SubscriberRow = {
@@ -30,7 +35,7 @@ export type SubscriberRow = {
   received: number;
   opened: number;
 
-  engagementRate: number; // 0..100
+  engagementRate: number;
   joinedDateLabel: string;
 
   status: SubscriberStatus;

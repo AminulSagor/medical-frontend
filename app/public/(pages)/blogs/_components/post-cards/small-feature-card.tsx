@@ -1,18 +1,17 @@
 import Link from "next/link";
 import Card from "@/components/cards/card";
 import { BlogPost } from "@/types/public/blogs/blog-type";
-import FallbackNetworkImage from "../fallback-network-image";
+import BlogSafeImage from "./blog-safe-image";
 
 export default function SmallPostCard({ post }: { post: BlogPost }) {
   return (
     <Card className="overflow-hidden rounded-[22px] p-0" shape="soft">
       <Link href={post.href} className="block">
         <div className="relative h-[170px] w-full overflow-hidden rounded-t-[22px]">
-          <FallbackNetworkImage
+          <BlogSafeImage
             src={post.coverImageSrc}
             alt={post.coverImageAlt}
-            className="object-cover"
-            style={{ objectPosition: "75% 20%" }}
+            className="h-full w-full object-cover"
           />
 
           <div className="absolute left-4 top-4">
@@ -23,7 +22,7 @@ export default function SmallPostCard({ post }: { post: BlogPost }) {
         </div>
 
         <div className="bg-white px-6 pb-5 pt-6">
-          <h3 className="font-serif text-[18px] leading-snug font-bold text-black">
+          <h3 className="font-serif text-[18px] font-bold leading-snug text-black">
             {post.title}
           </h3>
 
