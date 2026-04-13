@@ -1,5 +1,8 @@
 import React from "react";
-import { DollarSign, TrendingUp, Users, BarChart3 } from "lucide-react";
+import { DollarSign, TrendingUp } from "lucide-react";
+import type {
+    AdminAnalyticsSummaryResponse,
+} from "@/types/admin/analytics.types";
 
 function StatCard({
     title,
@@ -61,44 +64,39 @@ function StatCard({
     );
 }
 
-export default function StatCards() {
+function formatCurrency(n: number) {
+    return `$${Math.round(n).toLocaleString()}`;
+}
+
+function formatPercent(n: number) {
+    const withSign = n > 0 ? `+${n}` : `${n}`;
+    return `${withSign}%`;
+}
+
+export default function StatCards({
+    summary,
+}: {
+    summary: AdminAnalyticsSummaryResponse;
+}) {
     return (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <StatCard
                 title="Total Revenue"
-                value="$124,500"
-                sub="($80k Courses / $44k Store)"
-                footLeft="+15%"
-                footRight="vs last month"
+                value={formatCurrency(summary.totalRevenue.value)}
+                sub="Revenue in selected period"
+                footLeft={formatPercent(summary.totalRevenue.growthRatePercent)}
+                footRight="growth rate"
                 icon={DollarSign}
                 iconTone="cyan"
             />
             <StatCard
-                title="Net Profit"
-                value="$85,200"
-                sub="68.4% Profit Margin"
-                footLeft="+8%"
-                footRight="vs last month"
+                title="Total Students"
+                value={summary.totalStudents.value.toLocaleString()}
+                sub="Students in selected period"
+                footLeft={formatPercent(summary.totalStudents.growthRatePercent)}
+                footRight="growth rate"
                 icon={TrendingUp}
                 iconTone="indigo"
-            />
-            <StatCard
-                title="Conversion Rate"
-                value="3.2%"
-                sub="Average across all channels"
-                footLeft="+1.2%"
-                footRight="improvement"
-                icon={BarChart3}
-                iconTone="blue"
-            />
-            <StatCard
-                title="Total Students"
-                value="145"
-                sub="Newly enrolled this month"
-                footLeft="+5%"
-                footRight="cohort growth"
-                icon={Users}
-                iconTone="purple"
             />
         </div>
     );

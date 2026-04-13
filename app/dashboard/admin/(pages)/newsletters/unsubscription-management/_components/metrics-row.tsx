@@ -7,19 +7,19 @@ export default function MetricsRow({ metrics }: { metrics: UnsubMetric }) {
       <MetricCard
         label="PENDING REQUESTS"
         value={metrics.pendingRequests}
-        subLabel={metrics.pendingSubLabel}
+        subLabel="Requires manual review"
         iconTone="teal"
       />
       <MetricCard
         label="TOTAL UNSUBSCRIBED"
         value={metrics.totalUnsubscribed}
-        subLabel={metrics.totalUnsubscribedSubLabel}
+        subLabel="Active global blocklist"
         iconTone="teal"
       />
       <MetricCard
         label="AVG. RESPONSE TIME"
         value={metrics.avgResponseTimeLabel}
-        subLabel={metrics.avgResponseTimeSubLabel}
+        subLabel="Optimization: On target"
         iconTone="blue"
       />
     </div>

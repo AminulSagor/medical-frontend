@@ -1,11 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { UnsubRow } from "../_lib/unsubscription-management-types";
 import { Eye, Trash2, CheckCircle2 } from "lucide-react";
 
 function cn(...p: Array<string | false | undefined>) {
   return p.filter(Boolean).join(" ");
+}
+
+function formatDateLabel(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
+function getToneFromSource(label: string): "teal" | "slate" {
+  return /course|cohort|class/i.test(label) ? "teal" : "slate";
 }
 
 function Tag({ label, tone }: { label: string; tone?: "teal" | "slate" }) {
@@ -26,7 +41,7 @@ function Tag({ label, tone }: { label: string; tone?: "teal" | "slate" }) {
 }
 
 function StatusPill({ status }: { status: UnsubRow["status"] }) {
-  const isPending = status === "pending";
+  const isPending = status.toUpperCase() === "PENDING";
   return (
     <span
       className={cn(
@@ -44,24 +59,40 @@ function StatusPill({ status }: { status: UnsubRow["status"] }) {
 export default function RequestsTable({
   rows,
   onOpenDetails,
+  selectedRowIds,
+  onSelectedRowIdsChange,
 }: {
   rows: UnsubRow[];
   onOpenDetails?: (id: string) => void;
+  selectedRowIds: string[];
+  onSelectedRowIdsChange: (ids: string[]) => void;
 }) {
-  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const selectedMap = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    selectedRowIds.forEach((id) => {
+      map[id] = true;
+    });
+    return map;
+  }, [selectedRowIds]);
 
   const allSelected = useMemo(() => {
     if (rows.length === 0) return false;
-    return rows.every((r) => selected[r.id]);
-  }, [rows, selected]);
+    return rows.every((r) => selectedMap[r.id]);
+  }, [rows, selectedMap]);
 
   const toggleAll = () => {
-    setSelected((prev) => {
-      const next: Record<string, boolean> = { ...prev };
-      const should = !allSelected;
-      rows.forEach((r) => (next[r.id] = should));
-      return next;
+    const current = new Set(selectedRowIds);
+    const shouldSelectAll = !allSelected;
+
+    rows.forEach((row) => {
+      if (shouldSelectAll) {
+        current.add(row.id);
+      } else {
+        current.delete(row.id);
+      }
     });
+
+    onSelectedRowIdsChange(Array.from(current));
   };
 
   return (
@@ -84,7 +115,7 @@ export default function RequestsTable({
       </div>
 
       {rows.map((r, idx) => {
-        const checked = !!selected[r.id];
+        const checked = !!selectedMap[r.id];
 
         return (
           <div
@@ -99,9 +130,15 @@ export default function RequestsTable({
               <input
                 type="checkbox"
                 checked={checked}
-                onChange={() =>
-                  setSelected((p) => ({ ...p, [r.id]: !p[r.id] }))
-                }
+                onChange={() => {
+                  const current = new Set(selectedRowIds);
+                  if (current.has(r.id)) {
+                    current.delete(r.id);
+                  } else {
+                    current.add(r.id);
+                  }
+                  onSelectedRowIdsChange(Array.from(current));
+                }}
                 onClick={(e) => e.stopPropagation()}
                 className="h-4 w-4 accent-teal-500"
               />
@@ -110,25 +147,29 @@ export default function RequestsTable({
             {/* subscriber */}
             <div className="flex items-center gap-3">
               <div className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-xs font-bold text-slate-600 ring-1 ring-slate-200/60">
-                {r.initials ?? r.subscriberName.slice(0, 2).toUpperCase()}
+                {r.subscriberIdentity.avatarInitials ??
+                  r.subscriberIdentity.fullName.slice(0, 2).toUpperCase()}
               </div>
 
               <div className="min-w-0">
                 <p className="text-[14px] font-bold leading-[17.5px] text-slate-900">
-                  {r.subscriberName}
+                  {r.subscriberIdentity.fullName}
                 </p>
                 <p className="text-[10px] font-medium leading-[15px] text-slate-500 lowercase">
-                  {r.subscriberEmail.toLowerCase()}
+                  {r.subscriberIdentity.email.toLowerCase()}
                 </p>
               </div>
             </div>
 
             {/* date */}
-            <div className="text-sm text-slate-700">{r.requestDateLabel}</div>
+            <div className="text-sm text-slate-700">{formatDateLabel(r.requestDate)}</div>
 
             {/* source */}
             <div>
-              <Tag label={r.source.label} tone={r.source.tone} />
+              <Tag
+                label={r.sourceSegment}
+                tone={getToneFromSource(r.sourceSegment)}
+              />
             </div>
 
             {/* feedback */}

@@ -1,18 +1,29 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Download } from "lucide-react";
 
-type RangeKey = "last_7" | "last_30" | "this_year";
+export type AnalyticsRangeKey = "last_7" | "last_30" | "this_year";
 
-const ranges: Array<{ key: RangeKey; label: string }> = [
+const ranges: Array<{ key: AnalyticsRangeKey; label: string }> = [
     { key: "last_7", label: "Last 7 Days" },
     { key: "last_30", label: "Last 30 Days" },
     { key: "this_year", label: "This Year" },
 ];
 
 export default function AnalyticsToolbar() {
-    const [active, setActive] = useState<RangeKey>("last_30");
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    const active = (searchParams.get("range") as AnalyticsRangeKey) ?? "last_30";
+
+    function updateRange(next: AnalyticsRangeKey) {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("range", next);
+        router.replace(`${pathname}?${params.toString()}`);
+    }
 
     const activeLabel = useMemo(
         () => ranges.find((r) => r.key === active)?.label ?? "Last 30 Days",
@@ -29,7 +40,7 @@ export default function AnalyticsToolbar() {
                         <button
                             key={r.key}
                             type="button"
-                            onClick={() => setActive(r.key)}
+                            onClick={() => updateRange(r.key)}
                             className={[
                                 "rounded-md px-3 py-2 text-xs font-semibold transition",
                                 isActive

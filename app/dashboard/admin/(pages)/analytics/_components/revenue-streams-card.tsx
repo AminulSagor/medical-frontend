@@ -11,40 +11,11 @@ import {
     YAxis,
     Legend,
 } from "recharts";
+import type { RevenueOverviewPoint } from "@/types/admin/analytics.types";
 
 type RangeKey = "weekly" | "monthly" | "yearly";
 
-const weekly = [
-    { name: "Mon", tuition: 18000, product: 12000 },
-    { name: "Tue", tuition: 22000, product: 14000 },
-    { name: "Wed", tuition: 20000, product: 13000 },
-    { name: "Thu", tuition: 26000, product: 16000 },
-    { name: "Fri", tuition: 24000, product: 15000 },
-    { name: "Sat", tuition: 28000, product: 17000 },
-    { name: "Sun", tuition: 30000, product: 18500 },
-];
-
-const monthly = [
-    { name: "Jan", tuition: 42000, product: 24000 },
-    { name: "Feb", tuition: 46000, product: 26000 },
-    { name: "Mar", tuition: 44000, product: 25500 },
-    { name: "Apr", tuition: 52000, product: 30000 },
-    { name: "May", tuition: 49000, product: 28500 },
-    { name: "Jun", tuition: 56000, product: 32000 },
-    { name: "Jul", tuition: 60000, product: 35000 },
-    { name: "Aug", tuition: 58000, product: 34500 },
-    { name: "Sep", tuition: 64000, product: 37000 },
-    { name: "Oct", tuition: 62000, product: 36000 },
-    { name: "Nov", tuition: 70000, product: 41000 },
-    { name: "Dec", tuition: 76000, product: 44000 },
-];
-
-const yearly = [
-    { name: "2022", tuition: 420000, product: 240000 },
-    { name: "2023", tuition: 520000, product: 300000 },
-    { name: "2024", tuition: 610000, product: 355000 },
-    { name: "2025", tuition: 690000, product: 405000 },
-];
+type ChartPoint = { name: string; tuition: number; product: number };
 
 function formatMoney(v: number) {
     if (v >= 1000) return `$${Math.round(v / 1000)}k`;
@@ -84,14 +55,55 @@ function BottomLegend(props: any) {
     );
 }
 
-export default function RevenueStreamsCard() {
+export default function RevenueStreamsCard({
+    weeklySeries,
+    monthlySeries,
+    yearlySeries,
+}: {
+    weeklySeries: RevenueOverviewPoint[];
+    monthlySeries: RevenueOverviewPoint[];
+    yearlySeries: RevenueOverviewPoint[];
+}) {
     const [range, setRange] = useState<RangeKey>("monthly");
 
+    const dateFmt = useMemo(
+        () => ({
+            weekday: new Intl.DateTimeFormat("en-US", { weekday: "short" }),
+            monthDay: new Intl.DateTimeFormat("en-US", {
+                month: "short",
+                day: "numeric",
+            }),
+            month: new Intl.DateTimeFormat("en-US", { month: "short" }),
+        }),
+        []
+    );
+
+    const toChart = (points: RevenueOverviewPoint[], mode: RangeKey): ChartPoint[] => {
+        return points.map((p) => {
+            const d = new Date(p.date);
+            const name = Number.isNaN(d.getTime())
+                ? p.date
+                : mode === "weekly"
+                    ? dateFmt.weekday.format(d)
+                    : mode === "monthly"
+                        ? dateFmt.monthDay.format(d)
+                        : dateFmt.month.format(d);
+
+            return {
+                name,
+                tuition: p.courseRevenue,
+                product: p.productRevenue,
+            };
+        });
+    };
+
     const data = useMemo(() => {
-        if (range === "weekly") return weekly;
-        if (range === "yearly") return yearly;
-        return monthly;
-    }, [range]);
+        if (range === "weekly") return toChart(weeklySeries, "weekly");
+        if (range === "yearly") return toChart(yearlySeries, "yearly");
+        return toChart(monthlySeries, "monthly");
+    }, [range, weeklySeries, monthlySeries, yearlySeries]);
+
+    const hasData = data.length > 0;
 
     return (
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -146,8 +158,16 @@ export default function RevenueStreamsCard() {
 
             {/* Chart */}
             <div className="mt-4 h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={data} margin={{ top: 10, right: 12, left: -12, bottom: 0 }}>
+                {!hasData ? (
+                    <div className="grid h-full place-items-center rounded-lg border border-dashed border-slate-200 bg-slate-50/40 text-center">
+                        <div>
+                            <p className="text-sm font-semibold text-slate-700">No revenue data available</p>
+                            <p className="mt-1 text-xs text-slate-500">Try a different date range.</p>
+                        </div>
+                    </div>
+                ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={data} margin={{ top: 10, right: 12, left: -12, bottom: 0 }}>
                         <defs>
                             <linearGradient id="tuitionFill" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="0%" stopColor="#0f172a" stopOpacity={0.22} />
@@ -224,8 +244,9 @@ export default function RevenueStreamsCard() {
                             dot={{ r: 3, strokeWidth: 2, fill: "#ffffff" }}
                             activeDot={{ r: 4 }}
                         />
-                    </AreaChart>
-                </ResponsiveContainer>
+                        </AreaChart>
+                    </ResponsiveContainer>
+                )}
             </div>
         </div>
     );

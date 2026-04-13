@@ -42,3 +42,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+Medical Backend API.postman_collection (2).json
+
+Newsletter APIs (General + Course Announcements).postman_collection.json
