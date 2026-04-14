@@ -1,17 +1,24 @@
 export type GeneralBroadcastContentType =
   | "CUSTOM_MESSAGE"
+  | "ARTICLE_LINK"
   | "ARTICLE_DIGEST"
   | "CURATED_DIGEST"
   | string;
 
-export interface GeneralBroadcastWorkspaceQueueEfficiencyCard {
-  queuedCount: number;
-  coverageDays: number;
+export interface GeneralBroadcastWorkspaceBaseCard {
+  value: string;
+  trend: string;
+}
+
+export interface GeneralBroadcastWorkspaceQueueEfficiencyCard extends GeneralBroadcastWorkspaceBaseCard {
+  rawCount: number;
   draftCount: number;
 }
 
-export interface GeneralBroadcastWorkspaceEngagementPulseCard {
-  averageOpenRatePercent: number;
+export type GeneralBroadcastWorkspaceTotalSubscribersCard =
+  GeneralBroadcastWorkspaceBaseCard;
+
+export interface GeneralBroadcastWorkspaceEngagementPulseCard extends GeneralBroadcastWorkspaceBaseCard {
   bestOpenRatePercent: number;
 }
 
@@ -27,11 +34,17 @@ export interface GeneralBroadcastWorkspaceHistoricalPerformance {
 
 export interface GeneralBroadcastWorkspaceMetricsCards {
   queueEfficiency: GeneralBroadcastWorkspaceQueueEfficiencyCard;
+  totalSubscribers: GeneralBroadcastWorkspaceTotalSubscribersCard;
   engagementPulse: GeneralBroadcastWorkspaceEngagementPulseCard;
+}
+
+export interface GeneralBroadcastWorkspaceMetricsData {
+  cards: GeneralBroadcastWorkspaceMetricsCards;
   breakdownByContentType: GeneralBroadcastWorkspaceBreakdownByContentTypeItem[];
   historicalPerformance: GeneralBroadcastWorkspaceHistoricalPerformance;
 }
 
 export interface GeneralBroadcastWorkspaceMetricsResponse {
-  cards: GeneralBroadcastWorkspaceMetricsCards;
+  message: string;
+  data: GeneralBroadcastWorkspaceMetricsData;
 }
