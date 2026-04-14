@@ -54,12 +54,12 @@ export default function ScheduledBroadcastArticleLinkPreviewCard({
             {article.sourceExcerptSnapshot}
           </p>
 
-          <button
+          {/* <button
             type="button"
             className="mt-8 inline-flex h-11 items-center justify-center rounded-xl bg-[#14b8ad] px-6 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(20,184,173,0.22)]"
           >
             {article.ctaLabel || "Read Full Article"}
-          </button>
+          </button> */}
         </div>
       </div>
     </ScheduledBroadcastSectionShell>
