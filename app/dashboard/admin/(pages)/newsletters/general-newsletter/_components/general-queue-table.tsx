@@ -269,7 +269,7 @@ export default function GeneralQueueTable({
                       <FrequencyPill value={item.frequency} />
                     </td>
 
-                    <td className="px-4 py-5">
+                    <td className="px-4 py-5 w-44">
                       <TypePill
                         label={item.type.displayLabel}
                         variant={item.type.badgeVariant}
