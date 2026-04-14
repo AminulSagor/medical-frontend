@@ -15,7 +15,7 @@ import {
 import Card from "@/components/cards/card";
 import Button from "@/components/buttons/button";
 import Link from "next/link";
-import { getPaymentSessionStatus } from "@/service/user/payment-session-status.service";
+import { verifyWorkshopPayment } from "@/service/user/workshop-payment.service";
 import { createWorkshopReservation } from "@/service/user/create-workshop-reservation.service";
 
 type CheckoutContext = {
@@ -28,7 +28,7 @@ type CheckoutContext = {
 };
 
 type PageState =
-  | "polling"
+  | "verifying"
   | "creating_reservation"
   | "success"
   | "payment_pending"
@@ -39,7 +39,7 @@ function WorkshopCheckoutSuccessContent() {
   const router = useRouter();
   const sessionId = searchParams.get("session_id");
 
-  const [pageState, setPageState] = useState<PageState>("polling");
+  const [pageState, setPageState] = useState<PageState>("verifying");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [checkoutContext, setCheckoutContext] =
     useState<CheckoutContext | null>(null);
@@ -55,80 +55,95 @@ function WorkshopCheckoutSuccessContent() {
     }
 
     // Read checkout context from sessionStorage
+    let context: CheckoutContext | null = null;
     try {
       const raw = sessionStorage.getItem("workshop_checkout_context");
       if (raw) {
-        setCheckoutContext(JSON.parse(raw));
+        context = JSON.parse(raw);
+        setCheckoutContext(context);
       }
     } catch {
       console.warn("Could not read workshop checkout context from storage");
     }
 
+    if (!context?.orderSummaryId) {
+      setPageState("error");
+      setErrorMessage(
+        "Checkout session expired or was opened in a different tab. Please go back and try again.",
+      );
+      return;
+    }
+
     if (hasStartedRef.current) return;
     hasStartedRef.current = true;
 
-    resolvePaymentAndReserve();
+    resolvePaymentAndReserve(context);
   }, [sessionId]);
 
   const wait = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
-  const resolvePaymentAndReserve = async () => {
-    if (!sessionId) return;
+  const resolvePaymentAndReserve = async (context: CheckoutContext) => {
+    if (!sessionId || !context?.orderSummaryId) return;
 
     try {
-      setPageState("polling");
+      setPageState("verifying");
 
-      // Poll payment status until "paid" (max ~2 minutes)
-      let paymentStatus: any = null;
-      for (let attempt = 0; attempt < 60; attempt++) {
+      // Step 1: Verify payment with the workshop-specific endpoint
+      // This calls POST /workshops/checkout/payment-verify
+      // which checks with Stripe that payment_status === "paid"
+      // and marks the order summary as COMPLETED
+      let verified = false;
+      let lastError: any = null;
+
+      for (let attempt = 0; attempt < 15; attempt++) {
         try {
-          paymentStatus = await getPaymentSessionStatus(sessionId);
+          const result = await verifyWorkshopPayment({
+            orderSummaryId: context.orderSummaryId,
+            sessionId: sessionId,
+          });
 
-          if (paymentStatus.status === "paid") {
+          if (
+            result.paymentStatus === "paid" ||
+            result.status === "completed"
+          ) {
+            verified = true;
+            break;
+          }
+        } catch (err: any) {
+          lastError = err;
+          const apiMessage = err?.response?.data?.message || "";
+
+          // If already verified/completed, treat as success
+          if (
+            apiMessage.includes("already verified") ||
+            apiMessage.includes("already completed")
+          ) {
+            verified = true;
             break;
           }
 
-          if (
-            paymentStatus.status === "expired" ||
-            paymentStatus.status === "failed"
-          ) {
-            setPageState("error");
-            setErrorMessage(
-              "Payment session has expired or failed. Please try again.",
-            );
-            return;
+          // If the payment hasn't completed on Stripe yet, keep retrying
+          if (apiMessage.includes("Payment not completed")) {
+            console.log("Payment not yet completed on Stripe, retrying...");
+          } else {
+            console.warn("Verify error:", apiMessage);
           }
-        } catch (err) {
-          console.warn("Error polling payment status, retrying...", err);
         }
 
         await wait(2000);
       }
 
-      if (!paymentStatus || paymentStatus.status !== "paid") {
+      if (!verified) {
         setPageState("payment_pending");
         return;
       }
 
-      // Payment confirmed — now create reservation
+      // Step 2: Payment confirmed — create reservation
       setPageState("creating_reservation");
 
-      // Read context from sessionStorage
-      let context: CheckoutContext | null = null;
-      try {
-        const raw = sessionStorage.getItem("workshop_checkout_context");
-        if (raw) {
-          context = JSON.parse(raw);
-          setCheckoutContext(context);
-        }
-      } catch {
-        console.warn("Could not read checkout context");
-      }
-
-      if (!context?.workshopId || !context?.attendeeIds?.length) {
-        // Fallback: payment is confirmed but we can't create reservation
-        // This can happen if user refreshed the page
+      if (!context.workshopId || !context.attendeeIds?.length) {
+        // Payment verified but no context for reservation
         setPageState("success");
         return;
       }
@@ -147,42 +162,54 @@ function WorkshopCheckoutSuccessContent() {
         setPageState("success");
       } catch (resErr: any) {
         console.error("Reservation creation error:", resErr);
-        // Payment succeeded but reservation failed
-        // Still show success since payment went through
-        // The reservation may have already been created
+        const resMessage =
+          resErr?.response?.data?.message || resErr?.message || "";
+
+        // If reservation already exists, still show success
         if (
-          resErr?.message?.includes("already") ||
-          resErr?.response?.data?.message?.includes("already")
+          resMessage.includes("already") ||
+          resMessage.includes("duplicate")
         ) {
+          sessionStorage.removeItem("workshop_checkout_context");
           setPageState("success");
         } else {
+          // Payment succeeded but reservation failed
+          // Still show success — the user paid, support can sort out the reservation
+          sessionStorage.removeItem("workshop_checkout_context");
           setPageState("success");
-          // Don't block user — payment was successful
         }
       }
     } catch (err: any) {
       console.error("Payment resolution error:", err);
+      const apiMessage = err?.response?.data?.message;
       setPageState("error");
       setErrorMessage(
-        err.message || "Something went wrong. Please contact support.",
+        apiMessage ||
+          err.message ||
+          "Something went wrong. Please contact support.",
       );
     }
   };
 
   const handleRetry = () => {
+    const context = checkoutContext;
+    if (!context?.orderSummaryId) {
+      setPageState("error");
+      setErrorMessage("Session data is no longer available. Please contact support.");
+      return;
+    }
     hasStartedRef.current = false;
-    setPageState("polling");
+    setPageState("verifying");
     setErrorMessage(null);
-    resolvePaymentAndReserve();
+    resolvePaymentAndReserve(context);
   };
 
-  const workshopTitle =
-    checkoutContext?.workshopTitle || "Workshop";
+  const workshopTitle = checkoutContext?.workshopTitle || "Workshop";
   const numberOfAttendees = checkoutContext?.numberOfAttendees || 0;
   const totalPrice = checkoutContext?.totalPrice || "0.00";
 
-  // ─── POLLING STATE ────────────────────────────────────────
-  if (pageState === "polling") {
+  // ─── VERIFYING STATE ──────────────────────────────────────
+  if (pageState === "verifying") {
     return (
       <div className="min-h-screen bg-slate-50 px-4 py-10 mt-20">
         <Card className="mx-auto w-full max-w-[600px] p-8 shadow-md">
@@ -404,7 +431,7 @@ function WorkshopCheckoutSuccessContent() {
         </div>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link href="/dashboard/user/my-courses">
+          <Link href="/dashboard/user/course">
             <Button className="px-6">
               <BookOpen size={18} />
               Go to My Courses
