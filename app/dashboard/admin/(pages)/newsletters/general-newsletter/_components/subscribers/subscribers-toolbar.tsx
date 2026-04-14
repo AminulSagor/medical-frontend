@@ -52,15 +52,15 @@ export default function SubscribersToolbar({
           ) : null}
         </button>
 
-        <button
+        {/* <button
           type="button"
           className="inline-flex h-12 items-center gap-2 rounded-2xl bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200/60 hover:bg-slate-50"
         >
           <Download size={16} className="text-slate-500" />
           Export List
-        </button>
+        </button> */}
 
-        <button
+        {/* <button
           type="button"
           className="inline-flex h-12 items-center gap-2 rounded-2xl bg-teal-500 px-5 text-sm font-bold text-white shadow-sm hover:bg-teal-600"
           onClick={() =>
@@ -71,7 +71,7 @@ export default function SubscribersToolbar({
         >
           <UserPlus size={16} />
           Add Subscriber
-        </button>
+        </button> */}
       </div>
     </div>
   );
