@@ -74,14 +74,14 @@ export default function BlogsManagementTabs({
       </TabButton>
 
       <div className="ml-auto">
-        <button
+        {/* <button
           type="button"
           onClick={onViewPublicationCalendar}
           className="inline-flex items-center gap-2 rounded-md border border-cyan-100 bg-[var(--primary-50)] px-3 py-2 text-xs font-semibold text-[var(--primary-hover)] transition hover:bg-white"
         >
           <CalendarDays size={16} />
           View Publication Calendar
-        </button>
+        </button> */}
       </div>
     </div>
   );
