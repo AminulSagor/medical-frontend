@@ -1,25 +1,39 @@
 import { serviceClient } from "@/service/base/axios_client";
 import { createCheckoutSession, getCheckoutRedirectUrl } from "./checkout-session.service";
+import { getOrderSummary } from "./order-summary.service";
 
 export interface ProductPaymentPayload {
   productId: string;
   quantity: number;
   successUrl: string;
   cancelUrl: string;
+  shippingAddress?: {
+    fullName: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country?: string;
+  };
 }
 
 export const createProductCheckoutSession = async (
   payload: ProductPaymentPayload,
 ): Promise<string> => {
   try {
-    // Create order summary first (would normally call API)
-    const orderSummaryId = `product-${payload.productId}-${Date.now()}`;
-    
+    // Step 1: Create a real order summary via backend API
+    const summaryResponse = await getOrderSummary({
+      items: [{ productId: payload.productId, quantity: payload.quantity }],
+    });
+
+    // Step 2: Create Stripe checkout session with the real orderSummaryId
     const response = await createCheckoutSession({
       domainType: "product",
-      orderSummaryId: orderSummaryId,
+      orderSummaryId: summaryResponse.orderSummaryId,
       successUrl: payload.successUrl,
       cancelUrl: payload.cancelUrl,
+      shippingAddress: payload.shippingAddress,
     });
 
     const redirectUrl = getCheckoutRedirectUrl(response);
