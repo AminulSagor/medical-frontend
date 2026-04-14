@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 import {
   Plus,
@@ -14,8 +14,9 @@ import {
 import Card from "@/components/cards/card";
 import Button from "@/components/buttons/button";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createWorkshopCheckoutSession } from "@/service/user/workshop-payment.service";
+import { getPublicWorkshopById } from "@/service/public/workshop.service";
 
 type Attendee = {
   id: string;
@@ -45,6 +46,9 @@ function labelClass() {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const workshopId = searchParams.get('workshopId');
+  
   const [useProfile, setUseProfile] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([
     { id: uid(), fullName: "", role: "", npi: "", email: "" },
@@ -52,10 +56,31 @@ export default function CheckoutPage() {
   ]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [workshop, setWorkshop] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const seatPrice = 450;
+  const seatPrice = workshop?.price || 450;
   const qty = attendees.length;
   const total = useMemo(() => seatPrice * qty, [seatPrice, qty]);
+
+  useEffect(() => {
+    if (workshopId) {
+      fetchWorkshop();
+    }
+  }, [workshopId]);
+
+  const fetchWorkshop = async () => {
+    try {
+      setLoading(true);
+      const response = await getPublicWorkshopById(workshopId);
+      setWorkshop(response.data);
+    } catch (err) {
+      console.error('Failed to fetch workshop:', err);
+      setError('Failed to load workshop details');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const update = (id: string, key: keyof Attendee, value: string) => {
     setAttendees((prev) =>
@@ -86,14 +111,14 @@ export default function CheckoutPage() {
     setError(null);
 
     try {
-      // First create order summary (mock for now)
-      const mockOrderSummaryId = 'mock-order-summary-' + Date.now();
+      // Create order summary first (would normally call API)
+      const orderSummaryId = workshopId || 'mock-order-summary-' + Date.now();
       
       // Create checkout session
       const checkoutUrl = await createWorkshopCheckoutSession({
-        orderSummaryId: mockOrderSummaryId,
+        orderSummaryId: orderSummaryId,
         successUrl: `${window.location.origin}/public/enrollment-confirmation`,
-        cancelUrl: `${window.location.origin}/public/workshop-checkout`,
+        cancelUrl: `${window.location.origin}/public/workshop-checkout?workshopId=${workshopId}`,
       });
 
       // Redirect to Stripe checkout
@@ -104,6 +129,27 @@ export default function CheckoutPage() {
       setIsProcessing(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="pt-20">
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !workshop) {
+    return (
+      <div className="pt-20">
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
+          <p className="text-lg font-semibold text-red-500">{error}</p>
+          <Button onClick={() => router.back()}>Go Back</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pt-20">
