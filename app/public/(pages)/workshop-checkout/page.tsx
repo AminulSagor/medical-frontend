@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, Suspense } from "react";
 
 import {
   Plus,
@@ -44,7 +44,7 @@ function labelClass() {
   return "text-[11px] font-semibold tracking-wide text-slate-600 uppercase";
 }
 
-export default function CheckoutPage() {
+function CheckoutPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const workshopId = searchParams.get('workshopId');
@@ -70,6 +70,12 @@ export default function CheckoutPage() {
   }, [workshopId]);
 
   const fetchWorkshop = async () => {
+    if (!workshopId) {
+      setError('No workshop ID provided');
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       const response = await getPublicWorkshopById(workshopId);
@@ -441,5 +447,19 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="pt-20">
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      </div>
+    }>
+      <CheckoutPageContent />
+    </Suspense>
   );
 }
