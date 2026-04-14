@@ -73,8 +73,8 @@ function EngagementBar({
 }
 
 function ActionButtons({ item }: { item: GeneralBroadcastWorkspaceItem }) {
-  // const reportHref = `/dashboard/admin/newsletters/general-newsletter/history-report/${item.id}`;
-  const reportHref = "#";
+  const reportHref = `/dashboard/admin/newsletters/transmission-history/${item.id}`;
+  // const reportHref = "#";
   return (
     <div className="flex items-center gap-4 text-slate-400">
       {item.actions?.view ? (
@@ -98,9 +98,9 @@ function ActionButtons({ item }: { item: GeneralBroadcastWorkspaceItem }) {
         </button>
       )}
 
-      <button type="button" className="hover:text-slate-600">
+      {/* <button type="button" className="hover:text-slate-600">
         <Copy size={15} />
-      </button>
+      </button> */}
     </div>
   );
 }
@@ -137,9 +137,9 @@ export default function GeneralHistoryTable({
               <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
                 Status
               </th>
-              <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              {/* <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
                 Actions
-              </th>
+              </th> */}
             </tr>
           </thead>
 
@@ -199,9 +199,9 @@ export default function GeneralHistoryTable({
                     </span>
                   </td>
 
-                  <td className="px-4 py-4">
+                  {/* <td className="px-4 py-4">
                     <ActionButtons item={item} />
-                  </td>
+                  </td> */}
                 </tr>
               ))
             ) : (
