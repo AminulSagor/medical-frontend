@@ -17,6 +17,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createWorkshopCheckoutSession } from "@/service/user/workshop-payment.service";
 import { getPublicWorkshopById } from "@/service/public/workshop.service";
+import { createWorkshopOrderSummary } from "@/service/user/create-workshop-order-summary.service";
 
 type Attendee = {
   id: string;
@@ -59,13 +60,20 @@ function CheckoutPageContent() {
   const [workshop, setWorkshop] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const seatPrice = workshop?.price || 450;
+  const seatPrice = workshop?.standardPrice
+    ? Number(workshop.standardPrice)
+    : workshop?.price
+      ? Number(workshop.price)
+      : 0;
   const qty = attendees.length;
   const total = useMemo(() => seatPrice * qty, [seatPrice, qty]);
 
   useEffect(() => {
     if (workshopId) {
       fetchWorkshop();
+    } else {
+      setError('No workshop ID provided');
+      setLoading(false);
     }
   }, [workshopId]);
 
@@ -106,10 +114,15 @@ function CheckoutPageContent() {
   };
 
   const handlePayment = async () => {
+    if (!workshopId) {
+      setError("No workshop selected.");
+      return;
+    }
+
     // Validate all attendees have required fields
     const invalidAttendee = attendees.find(a => !a.fullName || !a.email || !a.role);
     if (invalidAttendee) {
-      setError("Please fill in all required fields for each attendee.");
+      setError("Please fill in all required fields for each attendee (Full Name, Professional Role, Email).");
       return;
     }
 
@@ -117,21 +130,41 @@ function CheckoutPageContent() {
     setError(null);
 
     try {
-      // Create order summary first (would normally call API)
-      const orderSummaryId = workshopId || 'mock-order-summary-' + Date.now();
+      // Step 1: Create a real workshop order summary via backend API
+      const orderSummaryData = await createWorkshopOrderSummary({
+        workshopId,
+        attendees: attendees.map(a => ({
+          fullName: a.fullName.trim(),
+          professionalRole: a.role.trim(),
+          npiNumber: a.npi.trim() || undefined,
+          email: a.email.trim(),
+        })),
+      });
+
+      // Step 2: Store checkout context in sessionStorage for the success page
+      const checkoutContext = {
+        workshopId,
+        orderSummaryId: orderSummaryData.orderSummaryId,
+        attendeeIds: orderSummaryData.attendees.map(a => a.id),
+        workshopTitle: orderSummaryData.workshop?.title || workshop?.title || 'Workshop',
+        numberOfAttendees: orderSummaryData.numberOfAttendees,
+        totalPrice: orderSummaryData.pricing?.totalPrice || String(total),
+      };
+      sessionStorage.setItem('workshop_checkout_context', JSON.stringify(checkoutContext));
       
-      // Create checkout session
+      // Step 3: Create Stripe checkout session with the real orderSummaryId
       const checkoutUrl = await createWorkshopCheckoutSession({
-        orderSummaryId: orderSummaryId,
-        successUrl: `${window.location.origin}/public/enrollment-confirmation`,
+        orderSummaryId: orderSummaryData.orderSummaryId,
+        successUrl: `${window.location.origin}/public/workshop-checkout-success?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${window.location.origin}/public/workshop-checkout?workshopId=${workshopId}`,
       });
 
-      // Redirect to Stripe checkout
+      // Step 4: Redirect to Stripe checkout
       window.location.href = checkoutUrl;
     } catch (err: any) {
       console.error('Payment error:', err);
-      setError(err.message || 'Failed to process payment. Please try again.');
+      const apiMessage = err?.response?.data?.message;
+      setError(apiMessage || err.message || 'Failed to process payment. Please try again.');
       setIsProcessing(false);
     }
   };
@@ -156,6 +189,26 @@ function CheckoutPageContent() {
       </div>
     );
   }
+
+  const workshopTitle = workshop?.title || "Workshop";
+  const workshopStartDate = workshop?.startDate || null;
+  const workshopEndDate = workshop?.endDate || null;
+
+  const formatDateRange = () => {
+    if (!workshopStartDate) return "";
+    try {
+      const start = new Date(workshopStartDate);
+      const end = workshopEndDate ? new Date(workshopEndDate) : null;
+      const startStr = start.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+      if (end && end.getTime() !== start.getTime()) {
+        const endStr = end.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+        return `${startStr} - ${endStr}`;
+      }
+      return start.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    } catch {
+      return "";
+    }
+  };
 
   return (
     <div className="pt-20">
@@ -351,11 +404,13 @@ function CheckoutPageContent() {
                     WORKSHOP
                   </div>
                   <div className="text-sm font-bold text-slate-900">
-                    Advanced Difficult Airway Workshop
+                    {workshopTitle}
                   </div>
-                  <div className="text-xs text-slate-500">
-                    March 12 - 14, 2024
-                  </div>
+                  {formatDateRange() && (
+                    <div className="text-xs text-slate-500">
+                      {formatDateRange()}
+                    </div>
+                  )}
                 </div>
 
                 <div className="h-px w-full bg-slate-100" />
@@ -374,39 +429,34 @@ function CheckoutPageContent() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                      <BadgePercent size={16} className="text-primary" />
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="text-[11px] font-extrabold tracking-widest text-blue-500">
-                        POTENTIAL SAVINGS
+                {workshop?.groupDiscountEnabled && workshop?.groupDiscounts?.length > 0 && (
+                  <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                        <BadgePercent size={16} className="text-primary" />
                       </div>
 
-                      <p className="text-sm leading-relaxed text-slate-700">
-                        Add{" "}
-                        <span className="font-bold text-blue-500">
-                          4 more attendees
-                        </span>{" "}
-                        to unlock our{" "}
-                        <span className="font-bold text-blue-500">
-                          15% Institutional Discount
-                        </span>
-                        . Your total savings would be $405.00.
-                      </p>
+                      <div className="space-y-2">
+                        <div className="text-[11px] font-extrabold tracking-widest text-blue-500">
+                          POTENTIAL SAVINGS
+                        </div>
 
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-blue-500 hover:opacity-80"
-                      >
-                        <Plus size={16} />
-                        Add Seats
-                      </button>
+                        <p className="text-sm leading-relaxed text-slate-700">
+                          Group discounts available for bulk registrations.
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={addAttendee}
+                          className="inline-flex items-center gap-2 text-sm font-semibold text-blue-500 hover:opacity-80"
+                        >
+                          <Plus size={16} />
+                          Add Seats
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div className="h-px w-full bg-slate-100" />
 
