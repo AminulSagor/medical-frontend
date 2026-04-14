@@ -7,7 +7,7 @@ import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
-  Bookmark,
+  Heart,
   Lock,
   Minus,
   Plus,
@@ -20,6 +20,7 @@ import Card from "@/components/cards/card";
 import Button from "@/components/buttons/button";
 
 import { useCart } from "@/app/public/context/cart-context";
+import { useWishlist } from "@/app/public/context/wishlist-context";
 import { calculateCart } from "@/service/public/cart.service";
 import { reorderBackendCart } from "@/service/public/cart-server.service";
 import type {
@@ -37,6 +38,7 @@ export default function CartPage() {
   const reorderFrom = searchParams.get("reorderFrom");
 
   const { items, updateQty, removeItem, totalItems, syncItems } = useCart();
+  const { toggleWishlist } = useWishlist();
   const [promo, setPromo] = useState("");
 
   const [calculatedData, setCalculatedData] =
@@ -211,9 +213,13 @@ export default function CartPage() {
 
                           <button
                             type="button"
-                            className="inline-flex items-center gap-2 text-light-slate hover:text-black"
+                            onClick={() => {
+                              toggleWishlist(it.productId);
+                              removeItem(it.productId);
+                            }}
+                            className="inline-flex items-center gap-2 text-light-slate hover:text-red-400"
                           >
-                            <Bookmark className="h-4 w-4" />
+                            <Heart className="h-4 w-4" />
                             Save for Later
                           </button>
                         </div>

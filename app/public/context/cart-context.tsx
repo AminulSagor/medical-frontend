@@ -12,6 +12,8 @@ import { getToken } from "@/utils/token/cookie_utils";
 import {
   addToBackendCart,
   getCartList,
+  removeBackendCartItem,
+  updateBackendCartItem,
 } from "@/service/public/cart-server.service";
 
 interface CartContextValue {
@@ -149,22 +151,56 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [syncItems],
   );
 
-  const removeItem = useCallback((productId: string) => {
-    setItems((prev) => prev.filter((item) => item.productId !== productId));
-  }, []);
-
-  const updateQty = useCallback((productId: string, quantity: number) => {
-    if (quantity <= 0) {
+  const removeItem = useCallback(
+    (productId: string) => {
+      // Optimistic update
       setItems((prev) => prev.filter((item) => item.productId !== productId));
-      return;
-    }
 
-    setItems((prev) =>
-      prev.map((item) =>
-        item.productId === productId ? { ...item, quantity } : item,
-      ),
-    );
-  }, []);
+      // Sync to backend if logged in
+      const token = getToken();
+      if (token) {
+        removeBackendCartItem(productId).catch((err) => {
+          console.error("Failed to remove item from backend cart", err);
+        });
+      }
+    },
+    [],
+  );
+
+  const updateQty = useCallback(
+    (productId: string, quantity: number) => {
+      if (quantity <= 0) {
+        // Remove instead
+        setItems((prev) =>
+          prev.filter((item) => item.productId !== productId),
+        );
+
+        const token = getToken();
+        if (token) {
+          removeBackendCartItem(productId).catch((err) => {
+            console.error("Failed to remove item from backend cart", err);
+          });
+        }
+        return;
+      }
+
+      // Optimistic update
+      setItems((prev) =>
+        prev.map((item) =>
+          item.productId === productId ? { ...item, quantity } : item,
+        ),
+      );
+
+      // Sync to backend if logged in
+      const token = getToken();
+      if (token) {
+        updateBackendCartItem(productId, quantity).catch((err) => {
+          console.error("Failed to update cart item on backend", err);
+        });
+      }
+    },
+    [],
+  );
 
   const clearCart = useCallback(() => {
     setItems([]);

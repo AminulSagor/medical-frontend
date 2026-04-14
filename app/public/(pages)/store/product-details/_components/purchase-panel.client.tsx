@@ -1,12 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Minus, Plus, ShoppingBag, Star, CreditCard } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Star, CreditCard, Heart } from "lucide-react";
 import { ProductDetails } from "@/app/public/types/product.details";
 import Card from "@/components/cards/card";
 import Button from "@/components/buttons/button";
 import { useRouter } from "next/navigation";
 import { createProductCheckoutSession } from "@/service/user/product-payment.service";
+import { useCart } from "@/app/public/context/cart-context";
+import { useWishlist } from "@/app/public/context/wishlist-context";
+import { addToCart } from "@/service/user/add-to-cart.service";
 
 function money(n: number) {
   return `$${n.toFixed(2)}`;
@@ -18,8 +21,13 @@ export default function PurchasePanelClient({
   product: ProductDetails;
 }) {
   const router = useRouter();
+  const { addItem } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const [qty, setQty] = useState(1);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+
+  const wishlisted = isInWishlist(product.id);
 
   const stars = useMemo(() => {
     const full = Math.round(product.rating.value);
@@ -146,10 +154,35 @@ export default function PurchasePanelClient({
                 <Button
                   className="h-12 w-full justify-center border border-primary bg-white text-primary shadow-sm"
                   shape="pill"
+                  disabled={isAddingToCart}
+                  onClick={async () => {
+                    if (isAddingToCart) return;
+                    try {
+                      setIsAddingToCart(true);
+                      await addToCart({ productId: product.id, quantity: qty });
+                      addItem(product.id, qty);
+                    } catch (error) {
+                      console.error('Failed to add to cart', error);
+                    } finally {
+                      setIsAddingToCart(false);
+                    }
+                  }}
                 >
                   <ShoppingBag className="h-5 w-5" />
-                  Add to Cart
+                  {isAddingToCart ? 'Adding...' : 'Add to Cart'}
                 </Button>
+
+                <button
+                  type="button"
+                  onClick={() => toggleWishlist(product.id)}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition hover:border-red-200 hover:text-red-500 active:scale-95"
+                >
+                  <Heart
+                    size={18}
+                    className={wishlisted ? 'fill-red-500 text-red-500' : ''}
+                  />
+                  {wishlisted ? 'In Wishlist' : 'Add to Wishlist'}
+                </button>
               </div>
             </div>
           </div>

@@ -22,6 +22,28 @@ export const addToBackendCart = async (
   return response.data.data;
 };
 
+export const updateBackendCartItem = async (
+  productId: string,
+  quantity: number,
+): Promise<ServerCartData> => {
+  const response = await serviceClient.patch<ServerCartResponse>(
+    "/cart/update",
+    { productId, quantity },
+  );
+
+  return response.data.data;
+};
+
+export const removeBackendCartItem = async (
+  productId: string,
+): Promise<ServerCartData> => {
+  const response = await serviceClient.delete<ServerCartResponse>(
+    `/cart/${productId}`,
+  );
+
+  return response.data.data;
+};
+
 export const reorderBackendCart = async (
   payload: ReorderCartPayload,
 ): Promise<ServerCartData> => {
