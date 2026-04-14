@@ -26,8 +26,18 @@ export type TicketBooking = {
   bookingRef: string;
 };
 
+export type VenueFacility = {
+  id: string;
+  name: string;
+  roomNumber: string;
+  physicalAddress: string;
+};
+
 export type VenueLogistics = {
   currentLocationLabel: string;
+  addressLabel: string;
+  roomNumberLabel: string;
+  facilities: VenueFacility[];
   equipment: string[];
 };
 
@@ -38,3 +48,4 @@ export type TicketDetailsModel = {
   booking: TicketBooking;
   venue: VenueLogistics;
 };
+export type TicketDetailsApiModel = TicketDetailsModel;

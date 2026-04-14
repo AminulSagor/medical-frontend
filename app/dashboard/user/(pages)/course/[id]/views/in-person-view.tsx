@@ -1,8 +1,13 @@
-// app/(user)/(registered-user)/course/[id]/_views/in-person-view.tsx
+"use client";
+
 import CourseDetailsHero from "../_components/course-details-hero";
 import CourseAboutCard from "../_components/in-person/course-about-card";
 import CourseBookingDetailsCard from "../_components/in-person/course-booking-details-card";
 import CourseScheduleTimeline from "../_components/in-person/course-scheduling-timeline";
+import CourseDetailsSummary from "../_components/in-person/course-details-summary";
+import CourseCheckinCard from "../_components/in-person/course-chekin-card";
+import CourseHelpCard from "../_components/in-person/course-help-card";
+import { downloadTicketPdf } from "@/service/user/course-details.service";
 
 import type {
   CourseDetailsHeroProps,
@@ -13,9 +18,6 @@ import type {
   CourseCheckinCardProps,
   CourseHelpCardProps,
 } from "@/types/user/course/course-details-type";
-import CourseDetailsSummaryClient from "../_components/in-person/client-server-mapper/course-details-summary-client";
-import CourseCheckinCardClient from "../_components/in-person/client-server-mapper/course-chekin-card-client";
-import CourseHelpCardClient from "../_components/in-person/client-server-mapper/course-help-card-client";
 
 export default function InPersonView({
   hero,
@@ -38,23 +40,31 @@ export default function InPersonView({
     <div className="space-y-6">
       <CourseDetailsHero {...hero} />
 
-      {/* this component can still be client internally if it needs click handlers */}
-      <CourseDetailsSummaryClient summary={summary} />
+      <CourseDetailsSummary {...summary} />
 
       <CourseAboutCard {...about} />
 
-      {/* Booking + Schedule + Right Sidebar */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
-        {/* LEFT */}
         <div className="space-y-6">
           <CourseBookingDetailsCard {...booking} />
           <CourseScheduleTimeline items={schedule} />
         </div>
 
-        {/* RIGHT */}
         <div className="space-y-6 lg:sticky lg:top-6">
-          <CourseCheckinCardClient checkin={checkin} />
-          <CourseHelpCardClient help={help} />
+          <CourseCheckinCard
+            {...checkin}
+            onDownloadTicket={() => {
+              if (!checkin.ticketId) return;
+              void downloadTicketPdf(checkin.ticketId);
+            }}
+          />
+
+          <CourseHelpCard
+            {...help}
+            onContactSupport={() => {
+              window.location.href = "/public/contact-us";
+            }}
+          />
         </div>
       </div>
     </div>

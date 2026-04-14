@@ -1,21 +1,48 @@
 "use client";
 
-import { Download, Share2, CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Download, Share2 } from "lucide-react";
+import {
+  downloadCertificatePdf,
+  shareCertificatePdf,
+  triggerServiceFileDownload,
+} from "@/service/user/course-details.service";
 import type { CompletedCertificateCardProps } from "@/types/user/course/course-completed-details-type";
 
-export default function CompletedCertificateCardClient(
-  props: CompletedCertificateCardProps,
-) {
-  const {
-    title,
-    subtitle,
-    congratsTitle,
-    congratsText,
-    primaryBtnLabel,
-    secondaryBtnLabel,
-    referenceLabel,
-    referenceValue,
-  } = props;
+export default function CompletedCertificateCardClient({
+  title,
+  subtitle,
+  congratsTitle,
+  congratsText,
+  primaryBtnLabel,
+  secondaryBtnLabel,
+  referenceLabel,
+  referenceValue,
+  ticketId,
+  downloadHref,
+}: CompletedCertificateCardProps) {
+  const handleDownload = async () => {
+    try {
+      if (ticketId) {
+        await downloadCertificatePdf(ticketId);
+        return;
+      }
+      await triggerServiceFileDownload(downloadHref, "course-certificate.pdf");
+    } catch (error) {
+      console.error("Failed to download certificate", error);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      if (ticketId) {
+        await shareCertificatePdf(ticketId);
+        return;
+      }
+      await triggerServiceFileDownload(downloadHref, "course-certificate.pdf");
+    } catch (error) {
+      console.error("Failed to share achievement", error);
+    }
+  };
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -36,18 +63,24 @@ export default function CompletedCertificateCardClient(
           {congratsText}
         </div>
 
-        <button
-          type="button"
-          onClick={() => {}}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#35BEEA] px-4 py-3 text-[12px] font-extrabold text-white shadow-sm hover:opacity-95"
-        >
-          <Download className="h-4 w-4" />
-          {primaryBtnLabel}
-        </button>
+        {(ticketId || downloadHref) ? (
+          <button
+            type="button"
+            onClick={() => {
+              void handleDownload();
+            }}
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#35BEEA] px-4 py-3 text-[12px] font-extrabold text-white shadow-sm hover:opacity-95"
+          >
+            <Download className="h-4 w-4" />
+            {primaryBtnLabel}
+          </button>
+        ) : null}
 
         <button
           type="button"
-          onClick={() => {}}
+          onClick={() => {
+            void handleShare();
+          }}
           className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-[12px] font-extrabold text-slate-700 hover:bg-slate-50"
         >
           <Share2 className="h-4 w-4" />

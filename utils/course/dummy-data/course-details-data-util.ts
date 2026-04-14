@@ -1,16 +1,14 @@
 import type {
-  CourseDetailsHeroProps,
-  CourseDetailsSummaryProps,
   CourseAboutCardProps,
   CourseBookingDetailsCardProps,
-  CourseScheduleItem,
   CourseCheckinCardProps,
+  CourseDetailsHeroProps,
+  CourseDetailsSummaryProps,
   CourseHelpCardProps,
+  CourseScheduleItem,
 } from "@/types/user/course/course-details-type";
 
-export function getCourseDetailsHeroSeed(
-  _courseId: string,
-): CourseDetailsHeroProps {
+export function getCourseDetailsHeroSeed(_courseId: string): CourseDetailsHeroProps {
   return {
     badges: ["IN-PERSON WORKSHOP", "6.0 CME CREDITS"],
     title: "Advanced Difficult Airway Workshop",
@@ -18,13 +16,14 @@ export function getCourseDetailsHeroSeed(
   };
 }
 
-export function getCourseDetailsSummarySeed(
-  _courseId: string,
-): CourseDetailsSummaryProps {
+export function getCourseDetailsSummarySeed(courseId: string): CourseDetailsSummaryProps {
   return {
     organizerLabel: "Registered Course",
     organizerText:
       "Texas Airway Institute training for complex airway management scenarios. Master the latest techniques with hands-on practice.",
+    courseId,
+    imageSrc: "/photos/child.png",
+    eventTitle: "Advanced Difficult Airway Workshop",
     chips: [
       { iconKey: "clock", text: "10:30 AM – 6:00 PM" },
       { iconKey: "pin", text: "Houston, TX" },
@@ -49,24 +48,30 @@ export function getCourseAboutSeed(_courseId: string): CourseAboutCardProps {
   };
 }
 
-export function getCourseBookingDetailsSeed(
-  _courseId: string,
-): CourseBookingDetailsCardProps {
+export function getCourseBookingDetailsSeed(courseId: string): CourseBookingDetailsCardProps {
   return {
+    courseId,
     status: {
       label: "STATUS",
       value: "Booked for: 2 People",
     },
-
     payment: {
       label: "TOTAL PAYMENT",
       title: "Total Fee",
       amount: "$450.00",
       refundNote: "Refunds are available up to 48 hours before the event.",
     },
-
     refund: {
+      enabled: true,
       label: "Refund",
+      title: "Refund available",
+      description: "Refunds are available up to 48 hours before the event.",
+      courseTitle: "Advanced Difficult Airway Workshop",
+      courseDateText: "Mar 12 - 14",
+      amountPaid: "$450.00",
+      estimatedRefund: "$450.00",
+      daysBeforeStart: 2,
+      policyText: "Refunds are available up to 48 hours before the event.",
     },
   };
 }
@@ -76,6 +81,8 @@ export function getCourseScheduleSeed(_courseId: string): CourseScheduleItem[] {
     {
       id: "t1",
       dayLabel: "TUESDAY, MAR 12",
+      dayIndex: 1,
+      dayState: "done",
       timeRange: "10:30 AM",
       partLabel: "PART A: THEORY",
       badgeText: "(COMPLETED)",
@@ -98,6 +105,8 @@ export function getCourseScheduleSeed(_courseId: string): CourseScheduleItem[] {
     {
       id: "w1",
       dayLabel: "WEDNESDAY, MAR 13",
+      dayIndex: 2,
+      dayState: "active",
       timeRange: "10:30 AM",
       partLabel: "PART A: ADVANCED TECHNIQUES",
       badgeText: "(COMPLETED)",
@@ -120,33 +129,25 @@ export function getCourseScheduleSeed(_courseId: string): CourseScheduleItem[] {
     {
       id: "th1",
       dayLabel: "THURSDAY, MAR 14",
+      dayIndex: 3,
+      dayState: "upcoming",
       timeRange: "10:30 AM",
       partLabel: "PART A: ASSESSMENT",
       title: "Practical Competency Check",
       subtitle: "Individual skill assessments under lead clinical instructors.",
       status: "upcoming",
     },
-    {
-      id: "th2",
-      dayLabel: "THURSDAY, MAR 14",
-      timeRange: "12:15 PM",
-      partLabel: "PART B: WRAP-UP",
-      title: "Debrief & Certification",
-      subtitle: "Final clinical pearls and distribution of certificates.",
-      status: "upcoming",
-    },
   ];
 }
 
-export function getCourseCheckinSeed(
-  _courseId: string,
-): CourseCheckinCardProps {
+export function getCourseCheckinSeed(_courseId: string): CourseCheckinCardProps {
   return {
     title: "Workshop Check-in",
     subtitle: "Present this QR code at the venue entrance for check-in.",
     qrImageSrc: "/photos/qr.png",
     primaryBtnLabel: "How to check-in at venue",
     secondaryBtnLabel: "Download Ticket (PDF)",
+    secondaryBtnHref: "",
     ticketCodeLabel: "Ticket Code",
     ticketCodeValue: "HST-2924",
   };

@@ -1,4 +1,4 @@
-import { Building2, Stethoscope, BarChart3 } from "lucide-react";
+import { Building2, MapPin, Stethoscope, BarChart3 } from "lucide-react";
 import type { VenueLogistics } from "@/types/user/ticket/ticket-details-type";
 
 function Label({ children }: { children: React.ReactNode }) {
@@ -31,10 +31,17 @@ export default function VenueLogisticsCard({
             <Building2 className="h-5 w-5" />
           </span>
 
-          <div>
+          <div className="min-w-0">
             <Label>CURRENT LOCATION</Label>
             <div className="mt-1 text-[18px] font-extrabold text-slate-900">
               {venue.currentLocationLabel}
+            </div>
+            <div className="mt-2 flex items-start gap-2 text-[13px] text-slate-600">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" />
+              <div className="min-w-0">
+                <div className="break-words">{venue.addressLabel}</div>
+                <div className="mt-1 text-[12px] text-slate-500">Room: {venue.roomNumberLabel}</div>
+              </div>
             </div>
           </div>
         </div>

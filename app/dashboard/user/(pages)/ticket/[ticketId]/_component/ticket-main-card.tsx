@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { BadgeCheck, User2 } from "lucide-react";
+import NetworkImageFallback from "@/app/dashboard/user/_components/network-image-fallback";
 import type { TicketDetailsModel } from "@/types/user/ticket/ticket-details-type";
 
 function Pill({ children }: { children: React.ReactNode }) {
@@ -24,7 +24,7 @@ export default function TicketMainCard({
   model: TicketDetailsModel;
 }) {
   const p = model.profile;
-  const a = model.attendees[0];
+  const attendees = model.attendees;
 
   return (
     <section className="w-full max-w-6xl rounded-3xl border-2 border-sky-400 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
@@ -33,12 +33,12 @@ export default function TicketMainCard({
       <div className="flex items-start gap-5 px-7 py-6">
         <div className="relative h-16 w-16 overflow-hidden rounded-full bg-slate-100 ring-4 ring-white">
           {p.avatarUrl ? (
-            <Image
+            <NetworkImageFallback
               src={p.avatarUrl}
               alt={p.name}
-              fill
-              className="object-cover"
-              sizes="64px"
+              className="h-full w-full object-cover"
+              fallbackClassName="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400"
+              iconClassName="h-6 w-6"
             />
           ) : (
             <div className="grid h-full w-full place-items-center text-slate-400">
@@ -75,28 +75,41 @@ export default function TicketMainCard({
       <div className="px-7 py-6">
         <Label>GROUP ATTENDEES</Label>
 
-        <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50/70 px-5 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-100 text-slate-500">
-                <User2 className="h-5 w-5" />
-              </div>
+        {attendees.length > 0 ? (
+          <div className="mt-4 space-y-3">
+            {attendees.map((attendee) => (
+              <div
+                key={attendee.id}
+                className="rounded-2xl border border-slate-100 bg-slate-50/70 px-5 py-4"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-100 text-slate-500">
+                      <User2 className="h-5 w-5" />
+                    </div>
 
-              <div>
-                <div className="text-[13px] font-extrabold text-slate-900">
-                  {a?.name}
-                </div>
-                <div className="mt-0.5 text-[12px] text-slate-500">
-                  {a?.roleLabel}
+                    <div>
+                      <div className="text-[13px] font-extrabold text-slate-900">
+                        {attendee.name}
+                      </div>
+                      <div className="mt-0.5 text-[12px] text-slate-500">
+                        {attendee.roleLabel}
+                      </div>
+                    </div>
+                  </div>
+
+                  <span className="rounded-full bg-amber-50 px-4 py-2 text-[11px] font-extrabold tracking-wide text-amber-700 ring-1 ring-amber-100">
+                    {attendee.statusLabel}
+                  </span>
                 </div>
               </div>
-            </div>
-
-            <span className="rounded-full bg-amber-50 px-4 py-2 text-[11px] font-extrabold tracking-wide text-amber-700 ring-1 ring-amber-100">
-              {a?.statusLabel}
-            </span>
+            ))}
           </div>
-        </div>
+        ) : (
+          <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-5 py-4 text-[13px] text-slate-500">
+            No additional attendees
+          </div>
+        )}
       </div>
       {/* Bottom grid */}
       <div className="px-7 pb-7">

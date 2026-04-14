@@ -4,9 +4,7 @@ import {
   getCourseScheduleSeed,
 } from "./course-details-data-util";
 
-export function getCompletedDetailsSeed(
-  courseId: string,
-): CompletedDetailsViewProps {
+export function getCompletedDetailsSeed(courseId: string): CompletedDetailsViewProps {
   return {
     hero: {
       title: "Advanced Difficult Airway Workshop",
@@ -16,27 +14,22 @@ export function getCompletedDetailsSeed(
       ],
       rightPill: { title: "COMPLETED", subtitle: "MAR 12 - 14" },
     },
-
     strip: {
       locationText: "Houston Sim Center, Room 4B",
       instructorText: "Instructor: Dr. Alan Grant",
       statusText: "Event Finished",
       downloadLabel: "Download Certificate",
+      downloadHref: "",
     },
-
     about: {
       heading: "About this Course",
       paragraphs: [
-        "This comprehensive workshop was designed for anesthesia professionals looking to master advanced airway techniques through intensive, hands-on simulation training. The curriculum focused on the latest evidence-based protocols for managing difficult and failed airways.",
-        "You have completed training with state-of-the-art simulation equipment and high-fidelity manikins, practicing fiberoptic intubation, video laryngoscopy, and surgical airway access under the guidance of leading experts.",
+        "This comprehensive workshop was designed for anesthesia professionals looking to master advanced airway techniques through intensive, hands-on simulation training.",
+        "You have completed training with state-of-the-art simulation equipment and high-fidelity manikins.",
       ],
     },
-
     booking: getCourseBookingDetailsSeed(courseId),
-
-    // reuse your schedule seed (already matches your new timeline)
     schedule: getCourseScheduleSeed(courseId),
-
     certificate: {
       title: "Course Certified",
       subtitle: "Your certificate is now available.",
@@ -47,8 +40,8 @@ export function getCompletedDetailsSeed(
       secondaryBtnLabel: "Share Achievement",
       referenceLabel: "CERTIFICATE ID",
       referenceValue: "CERT-8829-AC",
+      downloadHref: "",
     },
-
     nextSteps: {
       title: "Next Steps?",
       text: "Want to keep improving? Explore your next clinical competency module or schedule another workshop.",

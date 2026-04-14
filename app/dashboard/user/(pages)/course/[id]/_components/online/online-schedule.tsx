@@ -18,7 +18,7 @@ export default function OnlineScheduleClient({
 }: {
   schedule: OnlineScheduleProps;
 }) {
-  const [day, setDay] = useState<OnlineScheduleDayKey>("day1");
+  const [day, setDay] = useState<OnlineScheduleDayKey>(schedule.days[0]?.key ?? "day1");
 
   const items = useMemo(
     () => filterScheduleByDay(schedule.items, day),
