@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import OrderDetailsHeader from "./_components/order-details-header";
 import ShipmentItemsCard from "./_components/shipment-items-card";
@@ -53,7 +53,7 @@ function buildMeta(attributes: Record<string, string> | null) {
   );
 }
 
-export default function OrderDetailsPage() {
+function OrderDetailsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("id");
@@ -104,37 +104,6 @@ export default function OrderDetailsPage() {
       date: step.date,
     }));
   }, [orderDetails]);
-
-  // const handleDownloadInvoice = async () => {
-  //   if (!orderDetails?.id) return;
-
-  //   try {
-  //     const response = await fetch(
-  //       `/dashboard/user/order-invoice/${orderDetails.id}/invoice`,
-  //       {
-  //         method: "GET",
-  //       },
-  //     );
-
-  //     if (!response.ok) {
-  //       throw new Error("Failed to download invoice");
-  //     }
-
-  //     const blob = await response.blob();
-  //     const url = window.URL.createObjectURL(blob);
-
-  //     const anchor = document.createElement("a");
-  //     anchor.href = url;
-  //     anchor.download = `invoice-${orderDetails.orderNumber || orderDetails.id}.pdf`;
-  //     document.body.appendChild(anchor);
-  //     anchor.click();
-  //     document.body.removeChild(anchor);
-
-  //     window.URL.revokeObjectURL(url);
-  //   } catch (error) {
-  //     console.error("Invoice download failed", error);
-  //   }
-  // };
 
   const handleDownloadInvoice = () => {
     if (!orderDetails?.id) return;
@@ -236,5 +205,13 @@ export default function OrderDetailsPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function OrderDetailsPage() {
+  return (
+    <Suspense fallback={null}>
+      <OrderDetailsPageContent />
+    </Suspense>
   );
 }

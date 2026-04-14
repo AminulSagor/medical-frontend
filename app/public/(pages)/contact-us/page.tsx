@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import ContactHeroHeader from "./_components/contact-hero-header";
 import ContactSupportPanel from "./_components/contact-support-panel";
@@ -13,7 +13,7 @@ const TEXAS_STATIC_MAP_IMAGE_URL =
 
 const TEXAS_MAP_OPEN_URL = "https://www.google.com/maps?q=32.793462,-97.046664";
 
-export default function ContactPage() {
+function ContactPageContent() {
   const searchParams = useSearchParams();
 
   const source = searchParams.get("source");
@@ -54,5 +54,13 @@ export default function ContactPage() {
 
       <ContactHelpCategories />
     </div>
+  );
+}
+
+export default function ContactPage() {
+  return (
+    <Suspense fallback={null}>
+      <ContactPageContent />
+    </Suspense>
   );
 }

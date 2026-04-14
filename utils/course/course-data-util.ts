@@ -2,12 +2,69 @@
 // This is only for dummy data will be removed when api will be integrated
 
 import { CourseDeliveryType } from "@/types/user/course/course-details-type";
-import type {
-  ActiveCoursesSectionModel,
-  CourseStats,
-  CompletedCourseCard,
-  BrowseCoursesModel,
-} from "@/types/user/course/course-type";
+
+export type CourseStats = {
+  totalCmeCredits: number;
+  totalCmeDeltaText: string;
+  inProgressCount: number;
+  nextLiveSessionText: string;
+};
+
+export type ActiveCourseCard = {
+  badge: string;
+  title: string;
+  dateLabel?: string;
+  locationLabel?: string;
+  infoTitle?: string;
+  infoText?: string;
+  bookedForLabel: string;
+  bookingFeeLabel: string;
+  progressLabel?: string;
+  imageSrc: string;
+  onAddToCalendar?: () => void;
+  onViewSyllabus?: () => void;
+  onJoinLive?: () => void;
+};
+
+export type ActiveCoursesSectionModel = {
+  inPerson: ActiveCourseCard;
+  online: ActiveCourseCard;
+};
+
+export type CompletedCourseCard = {
+  cmeCreditsLabel: string;
+  title: string;
+  completedOnText: string;
+  imageSrc: string;
+  onViewDetails: () => void;
+};
+
+export type BrowseFeaturedCourse = {
+  badge: string;
+  title: string;
+  description: string;
+  imageSrc: string;
+  primaryActionLabel: string;
+  secondaryActionLabel: string;
+  onPrimaryAction: () => void;
+  onSecondaryAction: () => void;
+};
+
+export type BrowseCourseItem = {
+  badge: string;
+  title: string;
+  description: string;
+  imageSrc: string;
+  priceLabel: string;
+  creditsLabel: string;
+  ctaLabel: string;
+  onCta: () => void;
+};
+
+export type BrowseCoursesModel = {
+  featured: BrowseFeaturedCourse;
+  items: BrowseCourseItem[];
+};
 
 export function getCourseDeliveryTypeSeed(
   courseId: string,

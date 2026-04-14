@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Check, Truck, CalendarDays, Mail, ShieldCheck } from "lucide-react";
 import Card from "@/components/cards/card";
@@ -22,7 +22,7 @@ function money(value: string | number | null | undefined) {
   return `$${parsed.toFixed(2)}`;
 }
 
-export default function OrderSuccessPage() {
+function OrderSuccessPageContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
 
@@ -31,15 +31,13 @@ export default function OrderSuccessPage() {
   const [orderDetails, setOrderDetails] = useState<UserOrderDetailsData | null>(
     null,
   );
-  const [isResolvingOrder, setIsResolvingOrder] = useState(true);
+  const [isResolvingOrder, setIsResolvingOrder] =
+    useState<boolean>(!!sessionId);
 
   const hasClearedCartRef = useRef(false);
 
   useEffect(() => {
-    if (!sessionId) {
-      setIsResolvingOrder(false);
-      return;
-    }
+    if (!sessionId) return;
 
     let cancelled = false;
 
@@ -100,6 +98,7 @@ export default function OrderSuccessPage() {
 
   const orderId = orderDetails?.orderNumber || "—";
   const totalPaid = money(orderDetails?.payment?.grandTotal);
+  const isLoadingOrder = !!sessionId && isResolvingOrder;
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-10 mt-20">
@@ -176,11 +175,11 @@ export default function OrderSuccessPage() {
                       Shipping Details
                     </p>
                     <div className="mt-2 text-sm text-slate-500">
-                      <p>{orderDetails?.shipping.fullName || "—"}</p>
-                      <p>{orderDetails?.shipping.addressLine1 || "—"}</p>
+                      <p>{orderDetails?.shipping?.fullName || "—"}</p>
+                      <p>{orderDetails?.shipping?.addressLine1 || "—"}</p>
                       <p>
-                        {orderDetails?.shipping.addressLine2 ||
-                          orderDetails?.shipping.cityStateZip ||
+                        {orderDetails?.shipping?.addressLine2 ||
+                          orderDetails?.shipping?.cityStateZip ||
                           "—"}
                       </p>
                     </div>
@@ -198,14 +197,14 @@ export default function OrderSuccessPage() {
                     </p>
                     <div className="mt-2 text-sm text-slate-500">
                       <p>
-                        {isResolvingOrder
+                        {isLoadingOrder
                           ? "Confirming payment..."
-                          : orderDetails?.shipmentStatus.statusLabel || "—"}
+                          : orderDetails?.shipmentStatus?.statusLabel || "—"}
                       </p>
                       <p>
-                        {isResolvingOrder
+                        {isLoadingOrder
                           ? "Please wait a moment"
-                          : orderDetails?.shipmentStatus.estimatedDelivery ||
+                          : orderDetails?.shipmentStatus?.estimatedDelivery ||
                             "—"}
                       </p>
                     </div>
@@ -251,7 +250,7 @@ export default function OrderSuccessPage() {
             </Button>
           </Link>
 
-          <Link href={"/public/store"}>
+          <Link href="/public/store">
             <Button
               variant="secondary"
               size="md"
@@ -269,5 +268,13 @@ export default function OrderSuccessPage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={null}>
+      <OrderSuccessPageContent />
+    </Suspense>
   );
 }
