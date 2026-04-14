@@ -14,12 +14,20 @@ import type {
 
 const COURSE_DETAILS_BASE_ROUTE = "/dashboard/user/course";
 
+interface RawNextLiveSession {
+  workshopId: string;
+  title: string;
+  date: string;
+  time: string;
+  dateTime: string;
+}
+
 interface RawCourseSummaryApiResponse {
   message: string;
   data: {
     totalCmeCredits: number;
     totalInProgressCourses: number;
-    nextLiveSession: string | null;
+    nextLiveSession: RawNextLiveSession | string | null;
   };
 }
 
@@ -314,6 +322,35 @@ export const getMyCoursesSummary = async (): Promise<CourseSummaryResponse> => {
     "/workshops/student/my-courses/summary",
   );
 
+  const rawSession = response.data.data.nextLiveSession;
+  let nextLiveSessionText = "No upcoming sessions";
+
+  if (rawSession) {
+    if (typeof rawSession === "string") {
+      nextLiveSessionText = rawSession;
+    } else if (typeof rawSession === "object" && rawSession.dateTime) {
+      try {
+        const dt = new Date(rawSession.dateTime);
+        if (!Number.isNaN(dt.getTime())) {
+          const dateStr = dt.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          });
+          const timeStr = dt.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          });
+          nextLiveSessionText = `${dateStr}, ${timeStr}`;
+        } else {
+          nextLiveSessionText = rawSession.title || "Upcoming session";
+        }
+      } catch {
+        nextLiveSessionText = rawSession.title || "Upcoming session";
+      }
+    }
+  }
+
   return {
     totalCmeCredits: {
       value: response.data.data.totalCmeCredits ?? 0,
@@ -322,7 +359,7 @@ export const getMyCoursesSummary = async (): Promise<CourseSummaryResponse> => {
       value: response.data.data.totalInProgressCourses ?? 0,
     },
     nextLiveSession: {
-      value: response.data.data.nextLiveSession ?? "No upcoming sessions",
+      value: nextLiveSessionText,
     },
   };
 };
