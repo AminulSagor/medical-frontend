@@ -45,8 +45,8 @@ const COLORS = {
   text: rgb(0.12, 0.16, 0.23),
   muted: rgb(0.45, 0.52, 0.62),
   border: rgb(0.84, 0.89, 0.94),
-  bgSoft: rgb(0.97, 0.98, 0.99),
   white: rgb(1, 1, 1),
+  danger: rgb(0.52, 0, 0),
 };
 
 function money(value: string | number | null | undefined) {
@@ -112,7 +112,7 @@ function drawWrappedText(
   color = COLORS.text,
   maxLines?: number,
 ) {
-  const words = text.split(/\s+/);
+  const words = text.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let current = "";
 
@@ -226,6 +226,50 @@ function drawCircleLogo(
   });
 }
 
+function drawAddressBlock(
+  page: PDFPage,
+  x: number,
+  topY: number,
+  fontRegular: PDFFont,
+  fontBold: PDFFont,
+  data: {
+    title: string;
+    name: string;
+    addressLine1: string;
+    addressLine2?: string | null;
+    cityStateZip: string;
+  },
+) {
+  drawText(page, data.title, x, topY, fontBold, 9, COLORS.muted);
+  drawText(page, data.name || "—", x, topY - 18, fontBold, 11.5, COLORS.text);
+  drawText(
+    page,
+    data.addressLine1 || "—",
+    x,
+    topY - 36,
+    fontRegular,
+    10.5,
+    COLORS.text,
+  );
+
+  let nextY = topY - 52;
+
+  if (data.addressLine2) {
+    drawText(page, data.addressLine2, x, nextY, fontRegular, 10.5, COLORS.text);
+    nextY -= 16;
+  }
+
+  drawText(
+    page,
+    data.cityStateZip || "—",
+    x,
+    nextY,
+    fontRegular,
+    10.5,
+    COLORS.text,
+  );
+}
+
 export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> },
@@ -296,20 +340,39 @@ export async function GET(
       10,
       COLORS.primary,
     );
+
+    drawText(
+      page,
+      "1234 Medical Center Dr, Suite 500,",
+      left + 42,
+      y - 30,
+      fontRegular,
+      9.2,
+      COLORS.muted,
+    );
+    drawText(
+      page,
+      "Houston, TX 77030",
+      left + 42,
+      y - 44,
+      fontRegular,
+      9.2,
+      COLORS.muted,
+    );
+
     drawRightText(page, "INVOICE", right, y + 2, fontBold, 18, COLORS.text);
 
-    y -= 44;
+    y -= 72;
 
     const cardGap = 14;
-    const smallCardY = y;
-    const invoiceBoxW = 255;
-    const smallBoxW = 127;
-    const infoBoxH = 68;
+    const invoiceBoxW = 215;
+    const smallBoxW = 146;
+    const infoBoxH = 72;
 
     drawBox(
       page,
       left,
-      smallCardY,
+      y,
       invoiceBoxW,
       infoBoxH,
       COLORS.primarySoft,
@@ -318,7 +381,7 @@ export async function GET(
     drawBox(
       page,
       left + invoiceBoxW + cardGap,
-      smallCardY,
+      y,
       smallBoxW,
       infoBoxH,
       COLORS.white,
@@ -327,27 +390,19 @@ export async function GET(
     drawBox(
       page,
       left + invoiceBoxW + cardGap + smallBoxW + cardGap,
-      smallCardY,
+      y,
       smallBoxW,
       infoBoxH,
       COLORS.white,
       COLORS.border,
     );
 
-    drawText(
-      page,
-      "INVOICE NUMBER",
-      left + 14,
-      smallCardY - 16,
-      fontBold,
-      9,
-      COLORS.muted,
-    );
+    drawText(page, "ORDER ID", left + 14, y - 16, fontBold, 9, COLORS.muted);
     drawText(
       page,
       order.orderNumber,
       left + 14,
-      smallCardY - 40,
+      y - 42,
       fontBold,
       13,
       COLORS.text,
@@ -358,7 +413,7 @@ export async function GET(
       page,
       "ORDER DATE",
       orderDateX + 14,
-      smallCardY - 16,
+      y - 16,
       fontBold,
       9,
       COLORS.muted,
@@ -367,138 +422,89 @@ export async function GET(
       page,
       order.placedDate,
       orderDateX + 14,
-      smallCardY - 40,
+      y - 42,
       fontBold,
       12,
       COLORS.text,
     );
 
-    const orderIdX = orderDateX + smallBoxW + cardGap;
+    const paymentCardX = orderDateX + smallBoxW + cardGap;
     drawText(
       page,
-      "ORDER ID",
-      orderIdX + 14,
-      smallCardY - 16,
+      "PAYMENT",
+      paymentCardX + 14,
+      y - 16,
       fontBold,
       9,
       COLORS.muted,
     );
-    drawWrappedText(
+    drawText(
       page,
-      order.orderNumber,
-      orderIdX + 14,
-      smallCardY - 38,
-      smallBoxW - 28,
+      "FULL PAID",
+      paymentCardX + 14,
+      y - 38,
+      fontBold,
+      11.5,
+      COLORS.danger,
+    );
+    drawText(
+      page,
+      `Paid Amount: ${money(order.payment.grandTotal)}`,
+      paymentCardX + 14,
+      y - 54,
       fontRegular,
-      8.3,
-      11,
-      COLORS.text,
-      2,
+      9.5,
+      COLORS.muted,
     );
 
-    y = smallCardY - infoBoxH - 34;
+    y -= infoBoxH + 34;
 
-    const billingBoxH = 88;
-    const billingW = 260;
-    const paymentW = 260;
+    const detailsBoxH = 96;
+    const detailsBoxW = 260;
 
-    drawBox(page, left, y, billingW, billingBoxH, COLORS.white, COLORS.border);
     drawBox(
       page,
-      left + billingW + cardGap,
+      left,
       y,
-      paymentW,
-      billingBoxH,
+      detailsBoxW,
+      detailsBoxH,
+      COLORS.white,
+      COLORS.border,
+    );
+    drawBox(
+      page,
+      left + detailsBoxW + cardGap,
+      y,
+      detailsBoxW,
+      detailsBoxH,
       COLORS.white,
       COLORS.border,
     );
 
-    drawText(
+    drawAddressBlock(page, left + 14, y - 16, fontRegular, fontBold, {
+      title: "BILL TO",
+      name: order.shipping.fullName || "—",
+      addressLine1: order.shipping.addressLine1 || "—",
+      addressLine2: order.shipping.addressLine2,
+      cityStateZip: order.shipping.cityStateZip || "—",
+    });
+
+    drawAddressBlock(
       page,
-      "BILLING / SHIPPING",
-      left + 14,
+      left + detailsBoxW + cardGap + 14,
       y - 16,
-      fontBold,
-      9,
-      COLORS.muted,
-    );
-    drawText(
-      page,
-      order.shipping.fullName || "—",
-      left + 14,
-      y - 34,
-      fontBold,
-      11.5,
-      COLORS.text,
-    );
-
-    let shippingTextY = y - 52;
-    drawText(
-      page,
-      order.shipping.addressLine1 || "—",
-      left + 14,
-      shippingTextY,
       fontRegular,
-      10.5,
-      COLORS.text,
-    );
-
-    if (order.shipping.addressLine2) {
-      shippingTextY -= 16;
-      drawText(
-        page,
-        order.shipping.addressLine2,
-        left + 14,
-        shippingTextY,
-        fontRegular,
-        10.5,
-        COLORS.text,
-      );
-    }
-
-    shippingTextY -= 16;
-    drawText(
-      page,
-      order.shipping.cityStateZip || "—",
-      left + 14,
-      shippingTextY,
-      fontRegular,
-      10.5,
-      COLORS.text,
-    );
-
-    const paymentX = left + billingW + cardGap;
-    drawText(
-      page,
-      "PAYMENT METHOD",
-      paymentX + 14,
-      y - 16,
       fontBold,
-      9,
-      COLORS.muted,
-    );
-    drawText(
-      page,
-      order.payment.brand && order.payment.last4
-        ? `${order.payment.brand} ending in ${order.payment.last4}`
-        : "Card payment",
-      paymentX + 14,
-      y - 34,
-      fontBold,
-      11.5,
-      COLORS.text,
-    );
-    drawText(
-      page,
-      "Paid successfully",
-      paymentX + 14,
-      y - 52,
-      fontRegular,
-      10.5,
-      COLORS.text,
+      {
+        title: "SHIP TO",
+        name: order.shipping.fullName || "—",
+        addressLine1: order.shipping.addressLine1 || "—",
+        addressLine2: order.shipping.addressLine2,
+        cityStateZip: order.shipping.cityStateZip || "—",
+      },
     );
 
-    y -= billingBoxH + 28;
+    y -= detailsBoxH + 28;
 
     drawText(page, "ITEMS", left, y, fontBold, 14, COLORS.text);
 
@@ -555,12 +561,24 @@ export async function GET(
       const lineTotal =
         Number.parseFloat(item.price || "0") * Number(item.quantity || 0);
 
-      drawText(page, item.name, colItemX, y - 20, fontBold, 8.5, COLORS.text);
+      drawWrappedText(
+        page,
+        item.name,
+        colItemX,
+        y - 22,
+        250,
+        fontBold,
+        10.2,
+        12,
+        COLORS.text,
+        2,
+      );
+
       drawText(
         page,
         item.sku || "—",
         colSkuX,
-        y - 20,
+        y - 22,
         fontRegular,
         10,
         COLORS.text,
@@ -569,7 +587,7 @@ export async function GET(
         page,
         String(item.quantity || 0),
         colQtyX,
-        y - 20,
+        y - 22,
         fontRegular,
         10,
         COLORS.text,
@@ -579,7 +597,7 @@ export async function GET(
         page,
         money(item.price),
         colPriceRight,
-        y - 20,
+        y - 22,
         fontRegular,
         10,
         COLORS.text,
@@ -589,7 +607,7 @@ export async function GET(
         page,
         money(lineTotal),
         colTotalRight,
-        y - 20,
+        y - 22,
         fontBold,
         10,
         COLORS.text,
