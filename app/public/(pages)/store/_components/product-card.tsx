@@ -6,7 +6,8 @@ import Button from "@/components/buttons/button";
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/app/public/context/cart-context";
-import { ShoppingCart } from "lucide-react";
+import { useWishlist } from "@/app/public/context/wishlist-context";
+import { ShoppingCart, Heart } from "lucide-react";
 import { addToCart } from "@/service/user/add-to-cart.service";
 
 interface Props {
@@ -30,7 +31,10 @@ function Badge({ text }: { text: string }) {
 
 export default function ProductCard({ product }: Props) {
   const { addItem } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+
+  const wishlisted = isInWishlist(product.id);
 
   const hasValidStockQuantity =
     typeof product.stockQuantity === "number" &&
@@ -93,6 +97,12 @@ export default function ProductCard({ product }: Props) {
     }
   };
 
+  const handleToggleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await toggleWishlist(product.id);
+  };
+
   return (
     <div className="group rounded-xl md:rounded-2xl border border-light-slate/10 bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col">
       <Link
@@ -126,6 +136,23 @@ export default function ProductCard({ product }: Props) {
             </>
           )}
         </div>
+
+        {/* Wishlist heart button */}
+        <button
+          type="button"
+          onClick={handleToggleWishlist}
+          className="absolute right-3 md:right-4 top-3 md:top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm ring-1 ring-black/5 transition-all hover:scale-110 active:scale-95"
+          aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+        >
+          <Heart
+            size={18}
+            className={
+              wishlisted
+                ? "fill-red-500 text-red-500"
+                : "text-slate-400 hover:text-red-400"
+            }
+          />
+        </button>
 
         {isOut ? (
           <div className="absolute inset-0 flex items-center justify-center bg-black/40">
