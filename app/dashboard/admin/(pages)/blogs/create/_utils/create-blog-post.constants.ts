@@ -27,12 +27,10 @@ export const BLOG_CREATE_TAG_OPTIONS: BlogTagOption[] = [
 ];
 
 export const DEFAULT_BLOG_CREATE_TITLE = "New Approaches in Pediatric";
-export const DEFAULT_BLOG_CREATE_EXCERPT =
-  "An overview of the latest anatomical considerations.";
-export const DEFAULT_BLOG_CREATE_META_TITLE =
-  "New Approaches in Pediatric Airway Management";
+export const DEFAULT_BLOG_CREATE_EXCERPT = "";
+export const DEFAULT_BLOG_CREATE_META_TITLE = "";
 export const DEFAULT_BLOG_CREATE_META_DESCRIPTION =
-  "An overview of the latest anatomical considerations and guidelines for pediatric airway management.";
+  "";
 export const DEFAULT_BLOG_CREATE_COVER_IMAGE_URL =
   "https://storage.example.com/images/cover-pediatric-airway.jpg";
 

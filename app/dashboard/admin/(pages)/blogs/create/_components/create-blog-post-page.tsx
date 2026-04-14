@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  ArrowLeft,
   CalendarDays,
   EllipsisVertical,
   Save,
@@ -379,9 +380,10 @@ export default function CreateBlogPostPage() {
             <button
               type="button"
               onClick={() => router.push(BLOG_MANAGEMENT_PATH)}
-              className="font-medium text-slate-600 transition hover:text-slate-900"
+              className="inline-flex items-center gap-2 font-medium text-slate-600 transition hover:text-slate-900"
             >
-              ← Back to Posts
+              <ArrowLeft size={16} />
+              Back to Posts
             </button>
           </div>
 
@@ -415,12 +417,12 @@ export default function CreateBlogPostPage() {
               ▷ Publish
             </button>
 
-            <button
+            {/* <button
               type="button"
               className="grid h-11 w-11 place-items-center rounded-xl text-slate-700 transition hover:bg-slate-100"
             >
               <EllipsisVertical />
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
