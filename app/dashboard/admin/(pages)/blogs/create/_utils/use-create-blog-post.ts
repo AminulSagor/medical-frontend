@@ -582,16 +582,30 @@ export function useCreateBlogPost() {
       nextErrors.categories = "At least one category must be selected";
     }
 
-    if (status === "scheduled" && (!scheduleDate || !scheduleTime)) {
-      nextErrors.schedule = "Publish date and time are required";
+    if (status === "scheduled" || status === "published") {
+      if (!scheduleDate) {
+        nextErrors.schedule = "Publish date is required";
+      } else if (!scheduleTime) {
+        nextErrors.schedule = "Publish time is required";
+      }
     }
 
     setErrors(nextErrors);
 
     if (Object.keys(nextErrors).length > 0) {
-      setBannerError(
-        "Unable to publish. Please fulfill all required fields before saving.",
-      );
+      if (status === "published") {
+        setBannerError(
+          "Cannot publish. Please fill in all required fields including publish date and time.",
+        );
+      } else if (status === "scheduled") {
+        setBannerError(
+          "Cannot schedule. Please fill in all required fields including publish date and time.",
+        );
+      } else {
+        setBannerError(
+          "Cannot save draft. Please fill in all required fields.",
+        );
+      }
       return false;
     }
 
@@ -612,7 +626,7 @@ export function useCreateBlogPost() {
   const handleDoneAfterPublish = () => {
     setIsLiveNowModalOpen(false);
     setCreatedBlogModalData(null);
-    resetFormState(); // Reset form after publish
+    resetFormState();
     router.push(BLOG_MANAGEMENT_PATH);
     router.refresh();
   };
@@ -628,7 +642,7 @@ export function useCreateBlogPost() {
   const handleReturnToBlogManagement = () => {
     setIsDraftSavedModalOpen(false);
     setCreatedDraftModalData(null);
-    resetFormState(); // Reset form after saving draft and returning
+    resetFormState();
     router.push(BLOG_MANAGEMENT_PATH);
     router.refresh();
   };
@@ -639,7 +653,7 @@ export function useCreateBlogPost() {
 
   const handleViewScheduledArticles = () => {
     setIsPublishScheduledModalOpen(false);
-    resetFormState(); // Reset form after scheduling
+    resetFormState();
     clearPreview();
     router.push(BLOG_MANAGEMENT_PATH);
     router.refresh();
@@ -647,7 +661,7 @@ export function useCreateBlogPost() {
 
   const handleReturnDashboardAfterSchedule = () => {
     setIsPublishScheduledModalOpen(false);
-    resetFormState(); // Reset form after scheduling and returning
+    resetFormState();
     clearPreview();
     router.push(BLOG_MANAGEMENT_PATH);
     router.refresh();
