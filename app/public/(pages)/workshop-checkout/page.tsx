@@ -9,10 +9,13 @@ import {
   BadgePercent,
   Lock,
   Headset,
+  Loader2,
 } from "lucide-react";
 import Card from "@/components/cards/card";
 import Button from "@/components/buttons/button";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createWorkshopCheckoutSession } from "@/service/user/workshop-payment.service";
 
 type Attendee = {
   id: string;
@@ -41,11 +44,14 @@ function labelClass() {
 }
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const [useProfile, setUseProfile] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([
     { id: uid(), fullName: "", role: "", npi: "", email: "" },
     { id: uid(), fullName: "", role: "", npi: "", email: "" },
   ]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const seatPrice = 450;
   const qty = attendees.length;
@@ -66,6 +72,37 @@ export default function CheckoutPage() {
 
   const removeAttendee = (id: string) => {
     setAttendees((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const handlePayment = async () => {
+    // Validate all attendees have required fields
+    const invalidAttendee = attendees.find(a => !a.fullName || !a.email || !a.role);
+    if (invalidAttendee) {
+      setError("Please fill in all required fields for each attendee.");
+      return;
+    }
+
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      // First create order summary (mock for now)
+      const mockOrderSummaryId = 'mock-order-summary-' + Date.now();
+      
+      // Create checkout session
+      const checkoutUrl = await createWorkshopCheckoutSession({
+        orderSummaryId: mockOrderSummaryId,
+        successUrl: `${window.location.origin}/public/enrollment-confirmation`,
+        cancelUrl: `${window.location.origin}/public/workshop-checkout`,
+      });
+
+      // Redirect to Stripe checkout
+      window.location.href = checkoutUrl;
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      setError(err.message || 'Failed to process payment. Please try again.');
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -221,13 +258,30 @@ export default function CheckoutPage() {
                   + Add Another Attendee
                 </button>
 
+                {error && (
+                  <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                    {error}
+                  </div>
+                )}
+
                 <div className="flex justify-center pt-2">
-                  <Link href={"/public/enrollment-confirmation"}>
-                    <Button className="px-8">
-                      Proceed to Payment
-                      <ArrowRight size={18} />
-                    </Button>
-                  </Link>
+                  <Button
+                    className="px-8"
+                    onClick={handlePayment}
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        Proceed to Payment
+                        <ArrowRight size={18} />
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
             </Card>

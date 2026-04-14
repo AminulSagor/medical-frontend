@@ -1,7 +1,7 @@
 import axios from "axios";
 import { serviceClient } from "@/service/base/axios_client";
 
-export type CheckoutSessionDomainType = "product";
+export type CheckoutSessionDomainType = "product" | "workshop";
 
 export interface CreateCheckoutSessionPayload {
   domainType: CheckoutSessionDomainType;
