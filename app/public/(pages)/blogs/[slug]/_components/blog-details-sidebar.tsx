@@ -17,7 +17,7 @@ export default function BlogDetailsSidebar({
 }: BlogDetailsSidebarProps) {
   return (
     <div className="space-y-6">
-      <AuthorCard author={author} />
+      {/* <AuthorCard author={author} /> */}
       <QuickLinksCard />
       <TrendingNowCompactCard items={trendingItems} />
     </div>
