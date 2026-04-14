@@ -6,10 +6,8 @@ import { ProductDetails } from "@/app/public/types/product.details";
 import Card from "@/components/cards/card";
 import Button from "@/components/buttons/button";
 import { useRouter } from "next/navigation";
-import { createProductCheckoutSession } from "@/service/user/product-payment.service";
 import { useCart } from "@/app/public/context/cart-context";
 import { useWishlist } from "@/app/public/context/wishlist-context";
-import { addToCart } from "@/service/user/add-to-cart.service";
 
 function money(n: number) {
   return `$${n.toFixed(2)}`;
@@ -36,20 +34,13 @@ export default function PurchasePanelClient({
 
   const handleBuyNow = async () => {
     setIsProcessingPayment(true);
-    
     try {
-      const checkoutUrl = await createProductCheckoutSession({
-        productId: product.id,
-        quantity: qty,
-        successUrl: `${window.location.origin}/public/order-success`,
-        cancelUrl: `${window.location.origin}/public/store/product-details/${product.id}`,
-      });
-
-      // Redirect to Stripe checkout
-      window.location.href = checkoutUrl;
+      // Add to cart first, then redirect to checkout where shipping is collected
+      await addItem(product.id, qty);
+      router.push('/public/checkout');
     } catch (error: any) {
-      console.error('Payment error:', error);
-      alert(error.message || 'Failed to process payment. Please try again.');
+      console.error('Buy now error:', error);
+      alert(error.message || 'Failed to add item. Please try again.');
       setIsProcessingPayment(false);
     }
   };
@@ -159,8 +150,8 @@ export default function PurchasePanelClient({
                     if (isAddingToCart) return;
                     try {
                       setIsAddingToCart(true);
-                      await addToCart({ productId: product.id, quantity: qty });
-                      addItem(product.id, qty);
+                      // addItem handles both local state AND backend sync
+                      await addItem(product.id, qty);
                     } catch (error) {
                       console.error('Failed to add to cart', error);
                     } finally {

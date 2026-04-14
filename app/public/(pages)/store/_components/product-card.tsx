@@ -8,7 +8,6 @@ import Link from "next/link";
 import { useCart } from "@/app/public/context/cart-context";
 import { useWishlist } from "@/app/public/context/wishlist-context";
 import { ShoppingCart, Heart } from "lucide-react";
-import { addToCart } from "@/service/user/add-to-cart.service";
 
 interface Props {
   product: PublicProduct;
@@ -83,13 +82,8 @@ export default function ProductCard({ product }: Props) {
 
     try {
       setIsAddingToCart(true);
-
-      await addToCart({
-        productId: product.id,
-        quantity: 1,
-      });
-
-      addItem(product.id, 1);
+      // addItem handles both local state AND backend sync for logged-in users
+      await addItem(product.id, 1);
     } catch (error) {
       console.error("Failed to add product to cart", error);
     } finally {
