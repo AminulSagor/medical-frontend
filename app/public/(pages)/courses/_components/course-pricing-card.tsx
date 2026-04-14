@@ -5,13 +5,20 @@ import { Check, Users, Info } from "lucide-react";
 import Button from "@/components/buttons/button";
 import { CourseDetails } from "@/app/public/types/course.details.types";
 import Card from "@/components/cards/card";
+import { useRouter } from "next/navigation";
 
 function money(n: number) {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
 export default function CoursePricingCard({ data }: { data: CourseDetails }) {
+  const router = useRouter();
   const p = data.pricing;
+
+  const handleEnrollment = () => {
+    // Redirect to workshop checkout with the course/workshop ID
+    router.push(`/public/workshop-checkout?workshopId=${data.id}`);
+  };
 
   return (
     <div className="overflow-hidden border border-light-slate/15 shadow-sm p-0 rounded-3xl">
@@ -82,7 +89,9 @@ export default function CoursePricingCard({ data }: { data: CourseDetails }) {
         </Card>
 
         <div className="mt-7">
-          <Button className="w-full h-12"> {p.ctaLabel} </Button>
+          <Button className="w-full h-12" onClick={handleEnrollment}>
+            {p.ctaLabel}
+          </Button>
 
           <div className="mt-4 flex items-center justify-center gap-2 text-sm font-extrabold text-red">
             <Info size={16} />

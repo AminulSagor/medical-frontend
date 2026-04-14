@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Minus, Plus, ShoppingBag, Star } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Star, CreditCard } from "lucide-react";
 import { ProductDetails } from "@/app/public/types/product.details";
 import Card from "@/components/cards/card";
 import Button from "@/components/buttons/button";
+import { useRouter } from "next/navigation";
+import { createProductCheckoutSession } from "@/service/user/product-payment.service";
 
 function money(n: number) {
   return `$${n.toFixed(2)}`;
@@ -15,12 +17,34 @@ export default function PurchasePanelClient({
 }: {
   product: ProductDetails;
 }) {
+  const router = useRouter();
   const [qty, setQty] = useState(1);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const stars = useMemo(() => {
     const full = Math.round(product.rating.value);
     return Array.from({ length: 5 }).map((_, i) => i < full);
   }, [product.rating.value]);
+
+  const handleBuyNow = async () => {
+    setIsProcessingPayment(true);
+    
+    try {
+      const checkoutUrl = await createProductCheckoutSession({
+        productId: product.id,
+        quantity: qty,
+        successUrl: `${window.location.origin}/public/order-success`,
+        cancelUrl: `${window.location.origin}/public/store/product-details/${product.id}`,
+      });
+
+      // Redirect to Stripe checkout
+      window.location.href = checkoutUrl;
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      alert(error.message || 'Failed to process payment. Please try again.');
+      setIsProcessingPayment(false);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -108,9 +132,19 @@ export default function PurchasePanelClient({
                 </div>
               </div>
 
-              <div className="col-span-7">
+              <div className="col-span-7 space-y-3">
                 <Button
                   className="h-14 w-full justify-center bg-primary text-white shadow-sm"
+                  shape="pill"
+                  onClick={handleBuyNow}
+                  disabled={isProcessingPayment}
+                >
+                  <CreditCard className="h-5 w-5" />
+                  {isProcessingPayment ? 'Processing...' : 'Buy Now'}
+                </Button>
+                
+                <Button
+                  className="h-12 w-full justify-center border border-primary bg-white text-primary shadow-sm"
                   shape="pill"
                 >
                   <ShoppingBag className="h-5 w-5" />
