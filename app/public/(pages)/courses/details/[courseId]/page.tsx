@@ -23,18 +23,24 @@ export default function WorkshopDetailsPage() {
 
   useEffect(() => {
     const fetchWorkshop = async () => {
-      try {
-        setLoading(true);
-        const response = await getPublicWorkshopById(workshopId);
-        const transformed = transformWorkshopToDetails(response.data);
-        setData(transformed);
-      } catch (err) {
-        console.error("Failed to fetch workshop details:", err);
-        setError("Failed to load workshop details");
-      } finally {
-        setLoading(false);
-      }
-    };
+  try {
+    if (!workshopId) {
+      setError("Invalid workshop ID");
+      return;
+    }
+
+    setLoading(true);
+
+    const response = await getPublicWorkshopById(workshopId);
+    const transformed = transformWorkshopToDetails(response.data);
+    setData(transformed);
+  } catch (err) {
+    console.error("Failed to fetch workshop details:", err);
+    setError("Failed to load workshop details");
+  } finally {
+    setLoading(false);
+  }
+};
 
     if (workshopId) {
       fetchWorkshop();
