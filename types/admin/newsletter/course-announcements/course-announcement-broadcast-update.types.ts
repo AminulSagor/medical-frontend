@@ -3,12 +3,15 @@ import type {
   CourseAnnouncementPriority,
 } from "@/types/admin/newsletter/course-announcements/course-announcement-broadcast.types";
 
-export interface UpdateCourseAnnouncementBroadcastPrioritySubjectPayload {
+export interface UpdateCourseAnnouncementBroadcastPayload {
   subjectLine: string;
   priority: CourseAnnouncementPriority;
+  messageBodyHtml: string;
+  messageBodyText: string;
+  pushToStudentPanel: boolean;
 }
 
-export interface UpdateCourseAnnouncementBroadcastPrioritySubjectResponse {
+export interface UpdateCourseAnnouncementBroadcastResponse {
   message?: string;
   data?: CourseAnnouncementBroadcastDetails;
 }

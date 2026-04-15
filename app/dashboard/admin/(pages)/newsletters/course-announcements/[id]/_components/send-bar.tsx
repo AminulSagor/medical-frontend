@@ -3,32 +3,92 @@
 import { Send } from "lucide-react";
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
+
 import type { ComposeBroadcastInput } from "../_lib/compose-schema";
+import type { CourseAnnouncementPriority } from "@/types/admin/newsletter/course-announcements/course-announcement-broadcast.types";
+import { updateCourseAnnouncementBroadcast } from "@/service/admin/newsletter/course-announcements/course-announcement-broadcast-update.service";
 
 type Props = {
-  onSend: (values: ComposeBroadcastInput) => Promise<void>;
+  broadcastId: string;
+  onSend: (values: ComposeBroadcastInput) => Promise<unknown>;
 };
 
-export default function SendBar({ onSend }: Props) {
+function mapFormPriorityToApiPriority(
+  value: ComposeBroadcastInput["priority"],
+): CourseAnnouncementPriority {
+  switch (value) {
+    case "material":
+      return "MATERIAL_SHARE";
+    case "urgent":
+      return "URGENT_ALERT";
+    case "general":
+    default:
+      return "GENERAL_UPDATE";
+  }
+}
+
+function convertMessageToHtml(message: string): string {
+  return message
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => `<p>${line}</p>`)
+    .join("");
+}
+
+export default function SendBar({ broadcastId, onSend }: Props) {
   const {
     handleSubmit,
     formState: { isSubmitting, errors },
   } = useFormContext<ComposeBroadcastInput>();
 
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
   const onSubmit = async (values: ComposeBroadcastInput) => {
     try {
       setSubmitError(null);
-      await onSend(values);
+      setSubmitSuccess(null);
+
+      // console.log("SEND_BROADCAST_CLICKED_VALUES:", values);
+
+      const updatePayload = {
+        priority: mapFormPriorityToApiPriority(values.priority),
+        subjectLine: values.subject.trim(),
+        messageBodyHtml: convertMessageToHtml(values.message),
+        messageBodyText: values.message.trim(),
+        pushToStudentPanel: values.pushToStudentPanel,
+      };
+
+      // console.log("UPDATE_BROADCAST_REQUEST_PAYLOAD:", updatePayload);
+
+      const updateBroadcastResponse = await updateCourseAnnouncementBroadcast(
+        broadcastId,
+        updatePayload,
+      );
+
+      // console.log("UPDATE_BROADCAST_API_RESPONSE:", updateBroadcastResponse);
+
+      const sendResponse = await onSend(values);
+
+      // console.log("SEND_BROADCAST_API_RESPONSE:", sendResponse);
+
+      setSubmitSuccess("Broadcast sent successfully.");
     } catch (error) {
-      console.error("Failed to send broadcast:", error);
+      console.error("FAILED_TO_SEND_BROADCAST:", error);
       setSubmitError("Failed to send broadcast. Please try again.");
+      setSubmitSuccess(null);
     }
   };
 
   return (
     <div className="pb-10 pt-8">
+      {submitSuccess ? (
+        <p className="mb-3 text-center text-sm font-medium text-green-600">
+          {submitSuccess}
+        </p>
+      ) : null}
+
       <div className="flex justify-center">
         <button
           type="button"

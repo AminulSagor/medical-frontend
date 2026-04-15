@@ -7,7 +7,7 @@ export type CourseAnnouncementBroadcastStatus =
 export type CourseAnnouncementPriority =
   | "GENERAL_UPDATE"
   | "MATERIAL_SHARE"
-  | "URGENT";
+  | "URGENT_ALERT";
 
 export type CourseAnnouncementRecipientMode = "ALL" | "SELECTED";
 

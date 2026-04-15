@@ -200,21 +200,33 @@ export default function ComposeShell({ id }: ComposeShellProps) {
 
       <ComposeFormProvider defaultValues={defaults}>
         <RecipientsPanel recipients={recipients} />
-        <PrioritySubjectPanel
-          id={broadcastId}
-          canEdit={data.actionsAllowed?.edit ?? false}
-        />
+        <PrioritySubjectPanel canEdit={data.actionsAllowed?.edit ?? false} />
         <MessageContentPanel />
         <AttachmentsPanel broadcastId={broadcastId} />
         <PushToggleRow />
         <SendBar
+          broadcastId={broadcastId}
           onSend={async (values) => {
-            await setCourseAnnouncementBroadcastRecipients(broadcastId, {
-              recipientMode: "SELECTED",
-              recipientIds: values.recipientIds,
-            });
+            const recipientsResponse =
+              await setCourseAnnouncementBroadcastRecipients(broadcastId, {
+                recipientMode: "SELECTED",
+                recipientIds: values.recipientIds,
+              });
 
-            await sendCourseAnnouncementBroadcast(broadcastId);
+            // console.log("SET_RECIPIENTS_API_RESPONSE:", recipientsResponse);
+
+            const sendBroadcastResponse =
+              await sendCourseAnnouncementBroadcast(broadcastId);
+
+            // console.log(
+            //   "FINAL_SEND_BROADCAST_API_RESPONSE:",
+            //   sendBroadcastResponse,
+            // );
+
+            return {
+              recipientsResponse,
+              sendBroadcastResponse,
+            };
           }}
         />
       </ComposeFormProvider>

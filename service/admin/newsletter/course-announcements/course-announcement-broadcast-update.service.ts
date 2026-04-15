@@ -1,15 +1,15 @@
 import { serviceClient } from "@/service/base/axios_client";
 import type {
-  UpdateCourseAnnouncementBroadcastPrioritySubjectPayload,
-  UpdateCourseAnnouncementBroadcastPrioritySubjectResponse,
+  UpdateCourseAnnouncementBroadcastPayload,
+  UpdateCourseAnnouncementBroadcastResponse,
 } from "@/types/admin/newsletter/course-announcements/course-announcement-broadcast-update.types";
 
-export async function updateCourseAnnouncementBroadcastPrioritySubject(
+export async function updateCourseAnnouncementBroadcast(
   id: string,
-  payload: UpdateCourseAnnouncementBroadcastPrioritySubjectPayload,
+  payload: UpdateCourseAnnouncementBroadcastPayload,
 ) {
   const response =
-    await serviceClient.patch<UpdateCourseAnnouncementBroadcastPrioritySubjectResponse>(
+    await serviceClient.patch<UpdateCourseAnnouncementBroadcastResponse>(
       `/admin/newsletters/course-announcements/broadcasts/${id}`,
       payload,
     );
@@ -22,20 +22,37 @@ export interface SetCourseAnnouncementRecipientsPayload {
   recipientIds: string[];
 }
 
+export interface SetCourseAnnouncementRecipientsResponse {
+  message: string;
+  id: string;
+  selectedCount: number;
+}
+
 export async function setCourseAnnouncementBroadcastRecipients(
   id: string,
   payload: SetCourseAnnouncementRecipientsPayload,
-): Promise<void> {
-  await serviceClient.post(
-    `/admin/newsletters/course-announcements/broadcasts/${id}/recipients`,
-    payload,
-  );
+): Promise<SetCourseAnnouncementRecipientsResponse> {
+  const response =
+    await serviceClient.post<SetCourseAnnouncementRecipientsResponse>(
+      `/admin/newsletters/course-announcements/broadcasts/${id}/recipients`,
+      payload,
+    );
+
+  return response.data;
+}
+
+export interface SendCourseAnnouncementBroadcastResponse {
+  message: string;
+  id?: string;
 }
 
 export async function sendCourseAnnouncementBroadcast(
   id: string,
-): Promise<void> {
-  await serviceClient.post(
-    `/admin/newsletters/course-announcements/broadcasts/${id}/send`,
-  );
+): Promise<SendCourseAnnouncementBroadcastResponse> {
+  const response =
+    await serviceClient.post<SendCourseAnnouncementBroadcastResponse>(
+      `/admin/newsletters/course-announcements/broadcasts/${id}/send`,
+    );
+
+  return response.data;
 }

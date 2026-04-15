@@ -359,9 +359,9 @@ export default function GeneralStatOverview() {
                 </p>
               )}
 
-              <p className="mt-4 text-sm font-semibold text-teal-600">
+              {/* <p className="mt-4 text-sm font-semibold text-teal-600 border">
                 {cadenceFooter}
-              </p>
+              </p> */}
             </div>
           </div>
 
