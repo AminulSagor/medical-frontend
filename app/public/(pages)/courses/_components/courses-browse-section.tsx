@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { ChevronDown, Loader2 } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import CourseBrowseCard from "./course-browse-card";
 import {
@@ -21,6 +22,25 @@ function inCreditsRange(cme: number, range: CreditsRange) {
   return cme >= 8;
 }
 
+function resolveLocation(workshop: PublicWorkshop) {
+  if (workshop.deliveryMode === "online") {
+    return workshop.webinarPlatform || "Online Course";
+  }
+
+  if (workshop.facilities?.length) {
+    return workshop.facilities[0].name;
+  }
+
+  return "Location unavailable";
+}
+
+
+function getDeliveryModeFromFilters(delivery: CourseFiltersState["delivery"]) {
+  if (delivery.in_person && !delivery.online) return "in_person" as const;
+  if (delivery.online && !delivery.in_person) return "online" as const;
+  return undefined;
+}
+
 function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
   const date = workshop.date ? new Date(workshop.date) : null;
   const month = date
@@ -34,24 +54,17 @@ function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
     totalCapacity > 0
       ? ((totalCapacity - availableSeats) / totalCapacity) * 100
       : 0;
-  const isAvailable = availableSeats > 0;
+  const isAvailable = !workshop.isFullyBooked && availableSeats > 0;
 
-  let action: CourseCardModel["action"];
-  if (!isAvailable) {
-    action = { kind: "waitlist", label: "Join Waitlist" };
-  } else if (workshop.deliveryMode === "online" && !workshop.date) {
-    action = { kind: "start", label: "Start Learning" };
-  } else {
-    action = { kind: "reserve", label: "Reserve Seat" };
-  }
+  const action: CourseCardModel["action"] = !isAvailable
+    ? { kind: "waitlist", label: "Join Waitlist" }
+    : { kind: "reserve", label: "Reserve Seat" };
 
   const metaTop: CourseCardModel["metaTop"] = [];
   if (workshop.totalHours) {
     metaTop.push({ icon: "clock", label: workshop.totalHours });
   }
-  if (workshop.facility && workshop.deliveryMode === "in_person") {
-    metaTop.push({ icon: "pin", label: workshop.facility });
-  }
+  metaTop.push({ icon: "pin", label: resolveLocation(workshop) });
   if (workshop.totalModules > 0) {
     metaTop.push({
       icon: "modules",
@@ -60,23 +73,26 @@ function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
   }
 
   const metaBottom: CourseCardModel["metaBottom"] = [];
-  if (workshop.cmeFredits) {
-    metaBottom.push({ icon: "cme", label: "CME Credits" });
+  if (workshop.cmeCredits) {
+    metaBottom.push({
+      icon: "cme",
+      label: `${workshop.cmeCreditsCount ?? 0} CME`,
+    });
   }
 
-  let availability: CourseCardModel["availability"] = undefined;
-  if (workshop.deliveryMode === "in_person" || totalCapacity > 0) {
-    availability = {
-      label: "AVAILABILITY",
-      note: !isAvailable
-        ? "Sold Out - Join Waitlist"
-        : availableSeats <= 5
-          ? `Only ${availableSeats} seats left!`
-          : `${availableSeats} seats available`,
-      percent: percentFilled,
-      tone: !isAvailable || availableSeats <= 3 ? "danger" : "primary",
-    };
-  }
+  const availability: CourseCardModel["availability"] = {
+    label: "AVAILABILITY",
+    note: !isAvailable
+      ? "Sold Out - Join Waitlist"
+      : availableSeats <= 5
+        ? `Only ${availableSeats} seats left!`
+        : `${availableSeats} seats available`,
+    percent: percentFilled,
+    tone: !isAvailable || availableSeats <= 3 ? "danger" : "primary",
+  };
+
+  const currentPrice = Number(workshop.offerPrice ?? workshop.price) || 0;
+  const oldPrice = workshop.offerPrice ? Number(workshop.price) || undefined : undefined;
 
   return {
     id: workshop.id,
@@ -89,15 +105,18 @@ function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
     metaTop,
     metaBottom,
     availability,
-    price: Number(workshop.price) || 0,
-    oldPrice: workshop.offerPrice ? Number(workshop.price) : undefined,
+    price: currentPrice,
+    oldPrice,
     action,
-    cmeCredits: workshop.cmeFredits ? 8 : 0,
+    cmeCredits: workshop.cmeCreditsCount ?? 0,
     isAvailable,
   };
 }
 
 export default function CoursesBrowseSection() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [workshops, setWorkshops] = useState<PublicWorkshop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -114,17 +133,41 @@ export default function CoursesBrowseSection() {
     "recommended",
   );
 
+  const query = searchParams.get("q") ?? "";
+  const deliveryMode = searchParams.get("deliveryMode");
+  const dateFrom = searchParams.get("dateFrom") ?? "";
+  const dateTo = searchParams.get("dateTo") ?? "";
+
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      delivery: {
+        in_person: deliveryMode ? deliveryMode === "in_person" : true,
+        online: deliveryMode ? deliveryMode === "online" : true,
+      },
+    }));
+  }, [deliveryMode]);
+
   const fetchWorkshops = useCallback(
     async (pageNum: number, append = false) => {
       try {
         setLoading(true);
         setError(null);
         const response = await getPublicWorkshops({
+          q: query || undefined,
+          deliveryMode:
+            deliveryMode === "in_person" || deliveryMode === "online"
+              ? deliveryMode
+              : undefined,
+          hasAvailableSeats: filters.availableOnly || undefined,
+          offersCmeCredits: filters.credits ? true : undefined,
+          dateFrom: dateFrom || undefined,
+          dateTo: dateTo || undefined,
           page: pageNum,
-          limit: 12,
+          limit: 6,
           sortBy:
-            sort === "price_low" || sort === "price_high" ? "price" : "date",
-          sortOrder: sort === "price_high" ? "desc" : "asc",
+            sort === "price_low" || sort === "price_high" ? "price" : undefined,
+          sortOrder: sort === "price_high" ? "desc" : sort === "price_low" ? "asc" : undefined,
         });
 
         if (append) {
@@ -140,7 +183,7 @@ export default function CoursesBrowseSection() {
         setLoading(false);
       }
     },
-    [sort],
+    [dateFrom, dateTo, deliveryMode, filters.availableOnly, filters.credits, query, sort],
   );
 
   useEffect(() => {
@@ -162,26 +205,27 @@ export default function CoursesBrowseSection() {
   const filtered = useMemo(() => {
     let list: CourseCardModel[] = [...all];
 
-    // delivery
-    list = list.filter((c) => filters.delivery[c.delivery]);
-
-    // available only
-    if (filters.availableOnly) list = list.filter((c) => c.isAvailable);
-
-    // credits
     if (filters.credits) {
       list = list.filter((c) => inCreditsRange(c.cmeCredits, filters.credits!));
     }
 
     return list;
-  }, [all, filters]);
+  }, [all, filters.credits]);
 
   function reset() {
     setFilters({
       availableOnly: false,
-      delivery: { in_person: true, online: true },
+      delivery: {
+        in_person: true,
+        online: true,
+      },
       credits: null,
     });
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("deliveryMode");
+    params.delete("page");
+    router.replace(`${pathname}${params.toString() ? `?${params.toString()}` : ""}`);
   }
 
   return (
@@ -220,15 +264,26 @@ export default function CoursesBrowseSection() {
         </div>
 
         <div>
-          <div className="grid gap-8 lg:grid-cols-[320px_1fr] items-start">
-            {/* left filters */}
+          <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
             <CourseFiltersSidebar
               value={filters}
-              onChange={setFilters}
+              onChange={(nextFilters) => {
+                setFilters(nextFilters);
+
+                const nextDeliveryMode = getDeliveryModeFromFilters(nextFilters.delivery);
+                const currentDeliveryMode = searchParams.get("deliveryMode") || undefined;
+
+                if (nextDeliveryMode !== currentDeliveryMode) {
+                  const params = new URLSearchParams(searchParams.toString());
+                  if (nextDeliveryMode) params.set("deliveryMode", nextDeliveryMode);
+                  else params.delete("deliveryMode");
+                  params.delete("page");
+                  router.replace(`${pathname}${params.toString() ? `?${params.toString()}` : ""}`);
+                }
+              }}
               onReset={reset}
             />
 
-            {/* cards */}
             <div>
               {loading && workshops.length === 0 ? (
                 <div className="flex items-center justify-center py-20">

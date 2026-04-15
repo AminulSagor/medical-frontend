@@ -51,6 +51,27 @@ export default function SignInPage() {
       if (role === "admin") {
         router.push("/dashboard/admin/admin-dashboard");
       } else {
+        const pendingRedirect =
+          typeof window !== "undefined"
+            ? window.sessionStorage.getItem("publicCoursePostAuthRedirect")
+            : null;
+
+        if (pendingRedirect) {
+          try {
+            const parsed = JSON.parse(pendingRedirect) as {
+              checkoutRoute?: string;
+            };
+
+            if (parsed.checkoutRoute) {
+              window.sessionStorage.removeItem("publicCoursePostAuthRedirect");
+              router.push(parsed.checkoutRoute);
+              return;
+            }
+          } catch {
+            window.sessionStorage.removeItem("publicCoursePostAuthRedirect");
+          }
+        }
+
         router.push("/dashboard/user/dashboard");
       }
     } catch (err: unknown) {
