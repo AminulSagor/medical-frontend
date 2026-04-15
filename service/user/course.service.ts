@@ -19,13 +19,13 @@ const PUBLIC_COURSE_DETAILS_BASE_ROUTE = "/public/courses/details";
 const NOT_IN_API = "not in api";
 const PRICE_UNAVAILABLE = "price unavailable";
 
-interface RawNextLiveSession {
-  workshopId: string;
-  title: string;
-  date: string;
-  time: string;
-  dateTime: string;
-}
+// interface RawNextLiveSession {
+//   workshopId: string;
+//   title: string;
+//   date: string;
+//   time: string;
+//   dateTime: string;
+// }
 
 interface RawCourseSummaryApiResponse {
   message: string;
@@ -325,9 +325,9 @@ function normalizeActiveCourse(
     infoText: online
       ? matchingLiveSession
         ? `A Q&A workshop is scheduled for ${formatDateTime(
-            matchingLiveSession.dateTime,
-            NOT_IN_API,
-          )}.`
+          matchingLiveSession.dateTime,
+          NOT_IN_API,
+        )}.`
         : NOT_IN_API
       : null,
     actions: getActiveActions(item.courseType, courseId),
