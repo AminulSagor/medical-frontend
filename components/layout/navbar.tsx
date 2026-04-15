@@ -32,6 +32,7 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
+
 export default function Navbar() {
   const pathname = usePathname();
   const { totalItems } = useCart();
