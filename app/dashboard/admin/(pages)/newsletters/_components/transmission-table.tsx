@@ -222,8 +222,8 @@ export default function TransmissionTable() {
         </div>
       </div>
 
-      <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="w-full">
+      <div className="mt-3 overflow-x-auto overflow-y-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <table className="min-w-[900px] w-full">
           <thead className="bg-slate-50">
             <tr className="text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">
               <th className="px-5 py-3">Status / Type</th>
