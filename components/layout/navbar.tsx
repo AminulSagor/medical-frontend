@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ShoppingCart, Menu, LogIn, UserPlus, Search, X } from "lucide-react";
+import { ShoppingCart, Menu, LogIn, UserPlus, Search, X, Heart } from "lucide-react";
 import { getToken, removeToken } from "@/utils/token/cookie_utils";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -16,6 +16,7 @@ import PublicSidebar from "@/components/public-sidebar";
 import { LogOut, Settings } from "lucide-react";
 import NavbarSearch from "@/app/public/(pages)/home/_components/navbar-search";
 import { useCart } from "@/app/public/context/cart-context";
+import { useWishlist } from "@/app/public/context/wishlist-context";
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/public/home") return pathname === "/public/home";
@@ -25,6 +26,7 @@ function isActivePath(pathname: string, href: string) {
 export default function Navbar() {
   const pathname = usePathname();
   const { totalItems } = useCart();
+  const { totalItems: wishlistCount } = useWishlist();
 
   const [q, setQ] = useState("");
   const [cartSidebar, setCartSidebar] = useState(false);
@@ -182,27 +184,54 @@ export default function Navbar() {
             </nav>
 
             {!isAuthRoute && (
-              <button
-                type="button"
-                className={[
-                  "relative grid h-10 w-10 place-items-center rounded-full",
-                  "border border-light-slate/30 bg-white",
-                  "hover:bg-light-slate/5 active:scale-95 transition",
-                ].join(" ")}
-                aria-label="Cart"
-                onClick={() => setCartSidebar(true)}
-              >
-                <ShoppingCart size={18} className="text-black" />
-                <span
+              <div className="flex items-center gap-2">
+                {/* Wishlist button */}
+                <Link
+                  href="/public/store"
                   className={[
-                    "absolute -right-0.5 -top-0.5",
-                    "grid h-5 min-w-5 place-items-center rounded-full px-1",
-                    "bg-primary text-[11px] font-bold text-white",
+                    "relative grid h-10 w-10 place-items-center rounded-full",
+                    "border border-light-slate/30 bg-white",
+                    "hover:bg-light-slate/5 active:scale-95 transition",
                   ].join(" ")}
+                  aria-label="Wishlist"
                 >
-                  {totalItems}
-                </span>
-              </button>
+                  <Heart size={18} className="text-black" />
+                  {wishlistCount > 0 && (
+                    <span
+                      className={[
+                        "absolute -right-0.5 -top-0.5",
+                        "grid h-5 min-w-5 place-items-center rounded-full px-1",
+                        "bg-red-500 text-[11px] font-bold text-white",
+                      ].join(" ")}
+                    >
+                      {wishlistCount}
+                    </span>
+                  )}
+                </Link>
+
+                {/* Cart button */}
+                <button
+                  type="button"
+                  className={[
+                    "relative grid h-10 w-10 place-items-center rounded-full",
+                    "border border-light-slate/30 bg-white",
+                    "hover:bg-light-slate/5 active:scale-95 transition",
+                  ].join(" ")}
+                  aria-label="Cart"
+                  onClick={() => setCartSidebar(true)}
+                >
+                  <ShoppingCart size={18} className="text-black" />
+                  <span
+                    className={[
+                      "absolute -right-0.5 -top-0.5",
+                      "grid h-5 min-w-5 place-items-center rounded-full px-1",
+                      "bg-primary text-[11px] font-bold text-white",
+                    ].join(" ")}
+                  >
+                    {totalItems}
+                  </span>
+                </button>
+              </div>
             )}
 
             <div className="hidden md:block">

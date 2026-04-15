@@ -1,17 +1,20 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import { getPublicProducts } from "@/service/public/product.service";
 import { Product } from "@/app/public/types/equipment.types";
 import EquipmentCard from "./equipment-card";
+import { useCart } from "@/app/public/context/cart-context";
+import { useWishlist } from "@/app/public/context/wishlist-context";
 
 export default function ShopTheLabSection() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [wishedIds, setWishedIds] = useState<Record<string, boolean>>({});
+  const { addItem } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
 
   useEffect(() => {
     async function fetchProducts() {
@@ -43,12 +46,12 @@ export default function ShopTheLabSection() {
     fetchProducts();
   }, []);
 
-  function toggleWish(id: string) {
-    setWishedIds((prev) => ({ ...prev, [id]: !prev[id] }));
-  }
-
-  function addToCart(id: string) {
-    console.log("add to cart:", id);
+  async function handleAddToCart(id: string) {
+    try {
+      await addItem(id, 1);
+    } catch (error) {
+      console.error("Failed to add to cart:", error);
+    }
   }
 
   return (
@@ -118,9 +121,9 @@ export default function ShopTheLabSection() {
                 >
                   <EquipmentCard
                     product={p}
-                    wished={!!wishedIds[p.id]}
-                    onToggleWish={toggleWish}
-                    onAddToCart={addToCart}
+                    wished={isInWishlist(p.id)}
+                    onToggleWish={(id) => toggleWishlist(id)}
+                    onAddToCart={handleAddToCart}
                   />
                 </motion.div>
               ))}
