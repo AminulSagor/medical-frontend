@@ -81,7 +81,15 @@ export default function CourseBrowseCard({
         )}
 
         {course.description ? (
-          <p className="mt-3 text-sm leading-relaxed text-light-slate">
+          <p
+            className="mt-3 text-sm leading-relaxed text-light-slate"
+            style={{
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
             {course.description}
           </p>
         ) : null}

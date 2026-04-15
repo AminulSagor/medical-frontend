@@ -24,6 +24,7 @@ export interface ShortCreateWorkshopRequest {
   deliveryMode: WorkshopDeliveryMode;
   title: string;
   offersCmeCredits: boolean;
+  cmeCreditsCount?: string | null;
   facilityId: string;
   capacity: number;
   alertAt: number;
@@ -80,6 +81,7 @@ export interface UpdateWorkshopRequest {
 
 export interface WorkshopSegment {
   id: string;
+  dayId?: string;
   segmentNumber: number;
   courseTopic: string;
   topicDetails: string | null;
@@ -89,6 +91,7 @@ export interface WorkshopSegment {
 
 export interface WorkshopDay {
   id: string;
+  workshopId?: string;
   date: string;
   dayNumber: number;
   segments: WorkshopSegment[];
@@ -96,6 +99,7 @@ export interface WorkshopDay {
 
 export interface GroupDiscount {
   id: string;
+  workshopId?: string;
   minimumAttendees: number;
   groupRatePerPerson: string;
 }
@@ -104,10 +108,24 @@ export interface WorkshopFaculty {
   id: string;
   firstName: string;
   lastName: string;
-  email: string;
+  fullName?: string;
+  email?: string;
   imageUrl: string;
   medicalDesignation: string;
   institutionOrHospital: string;
+  primaryClinicalRole?: string;
+  assignedRole?: string;
+  npiNumber?: string;
+  phoneNumber?: string;
+}
+
+export interface WorkshopFacility {
+  id: string;
+  name: string;
+  roomNumber: string | null;
+  physicalAddress: string | null;
+  capacity: number;
+  notes: string | null;
 }
 
 export interface Workshop {
@@ -131,6 +149,7 @@ export interface Workshop {
   days: WorkshopDay[];
   groupDiscounts: GroupDiscount[];
   faculty: WorkshopFaculty[];
+  facilities: WorkshopFacility[];
   createdAt: string;
   updatedAt: string;
 }
@@ -144,6 +163,7 @@ export interface WorkshopListItem {
   coverImageUrl: string | null;
   learningObjectives: string | null;
   offersCmeCredits: boolean;
+  cmeCreditsCount?: string | null;
   facilityIds: string[];
   webinarPlatform: string | null;
   meetingLink: string | null;
@@ -153,18 +173,18 @@ export interface WorkshopListItem {
   alertAt: number;
   standardBaseRate: string;
   groupDiscountEnabled: boolean;
+  days: WorkshopDay[];
+  groupDiscounts: GroupDiscount[];
+  faculty: WorkshopFaculty[];
+  facilities: WorkshopFacility[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ListWorkshopsParams {
   q?: string;
-  facilityId?: string;
-  facultyId?: string;
   deliveryMode?: WorkshopDeliveryMode;
   status?: WorkshopStatus;
-  offersCmeCredits?: string;
-  groupDiscountEnabled?: string;
   page?: number;
   limit?: number;
   sortBy?: "createdAt" | "title";

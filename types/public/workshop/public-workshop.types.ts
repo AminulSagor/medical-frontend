@@ -1,10 +1,28 @@
 export type PublicWorkshopDeliveryMode = "in_person" | "online";
 
-export interface PublicWorkshopFaculty {
+export interface PublicWorkshopFacility {
   id: string;
   name: string;
-  title: string;
-  profileImageUrl: string | null;
+  roomNumber: string;
+  physicalAddress: string;
+  capacity: number;
+  notes: string;
+}
+
+export interface PublicWorkshopFaculty {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  name?: string;
+  primaryClinicalRole?: string;
+  medicalDesignation?: string;
+  institutionOrHospital?: string;
+  assignedRole?: string;
+  title?: string;
+  imageUrl?: string | null;
+  profileImageUrl?: string | null;
+  npiNumber?: string;
 }
 
 export interface PublicWorkshop {
@@ -12,20 +30,40 @@ export interface PublicWorkshop {
   date: string;
   title: string;
   description: string;
-  facility: string;
   deliveryMode: PublicWorkshopDeliveryMode;
   workshopPhoto: string | null;
   totalHours: string;
-  cmeFredits: boolean;
+  cmeCredits?: boolean;
+  cmeCreditsCount?: number;
+  cmeFredits?: boolean;
   availableSeats: number;
   totalCapacity: number;
+  isFullyBooked?: boolean;
+  isUpcoming?: boolean;
   price: string;
   offerPrice: string | null;
   totalModules: number;
+  topics?: string[];
   learningObjectives: string;
   groupDiscountEnabled: boolean;
+  facility?: string;
+  facilityIds?: string[];
+  facilities?: PublicWorkshopFacility[];
   faculty: PublicWorkshopFaculty[];
   webinarPlatform: string | null;
+}
+
+export interface FeaturedPublicWorkshop {
+  id: string;
+  title: string;
+  shortBlurb: string;
+  courseType: PublicWorkshopDeliveryMode;
+  coverImageUrl: string | null;
+  dateRange: string;
+  location: string;
+  cmeCredits: number;
+  offersCmeCredits: boolean;
+  isFeatured: boolean;
 }
 
 export interface PublicWorkshopMeta {
@@ -41,7 +79,11 @@ export interface PublicWorkshopsResponse {
   data: PublicWorkshop[];
 }
 
-// Workshop Details Types
+export interface FeaturedPublicWorkshopResponse {
+  message: string;
+  data: FeaturedPublicWorkshop;
+}
+
 export interface PublicWorkshopDetailsFaculty {
   id: string;
   name: string;

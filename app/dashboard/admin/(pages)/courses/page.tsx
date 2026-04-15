@@ -5,18 +5,18 @@ import CoursesHeader from "./_components/courses-header";
 import CourseStatsRow from "./_components/course-stats-row";
 import CoursesTabs from "./_components/courses-tabs";
 import CoursesTable from "./_components/courses-table";
-import type { CourseItem, CourseTabKey } from "./_components/courses.types";
+import type { CourseItem, CourseTabKey, DeliveryMode } from "./_components/courses.types";
 import { useRouter } from "next/navigation";
-import { listWorkshops } from "@/service/admin/workshop.service";
-import type { WorkshopListItem } from "@/types/admin/workshop.types";
+import { listWorkshops, updateWorkshop } from "@/service/admin/workshop.service";
+import type { WorkshopDay, WorkshopListItem } from "@/types/admin/workshop.types";
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 5;
+const SEARCH_DEBOUNCE_MS = 300;
 
-function formatDateLabel(value: string) {
+function formatDateLabel(value?: string) {
+    if (!value) return "—";
     const date = new Date(value);
-
     if (Number.isNaN(date.getTime())) return "—";
-
     return date.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
@@ -24,41 +24,91 @@ function formatDateLabel(value: string) {
     });
 }
 
-function formatTimeLabel(value: string) {
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return "—";
-
+function formatTimeLabel(value?: string) {
+    if (!value) return "—";
+    const [hourString = "0", minuteString = "0"] = value.split(":");
+    const hour = Number(hourString);
+    const minute = Number(minuteString);
+    if (Number.isNaN(hour) || Number.isNaN(minute)) return "—";
+    const date = new Date();
+    date.setHours(hour, minute, 0, 0);
     return date.toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
     });
 }
 
-function mapWorkshopToCourseItem(w: WorkshopListItem): CourseItem {
-    let status: CourseItem["status"];
+function sortDays(days: WorkshopDay[]) {
+    return [...days].sort((a, b) => {
+        const dateCompare = a.date.localeCompare(b.date);
+        if (dateCompare !== 0) return dateCompare;
+        return a.dayNumber - b.dayNumber;
+    });
+}
 
-    if (w.status === "draft") {
-        status = "drafts";
-    } else {
-        status = "upcoming";
-    }
-
+function getBoundaryDates(days: WorkshopDay[]) {
+    const sorted = sortDays(days);
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
     return {
-        id: w.id,
-        dateLabel: formatDateLabel(w.createdAt),
-        timeLabel: formatTimeLabel(w.createdAt),
-        title: w.title,
-        tags: [w.deliveryMode === "online" ? "Online" : "Workshop"],
-        instructorName: "Not available",
-        instructorAvatarUrl: undefined,
-        capacityUsed: 0,
-        capacityTotal: w.capacity,
-        refundRequests: 0,
-        isActive: w.status === "published",
-        status,
-        deliveryMode: w.deliveryMode,
+        firstDate: first?.date,
+        lastDate: last?.date,
+        firstStartTime: [...(first?.segments ?? [])]
+            .sort((a, b) => a.startTime.localeCompare(b.startTime))[0]?.startTime,
     };
+}
+
+function getInstructorName(workshop: WorkshopListItem) {
+    const faculty = workshop.faculty?.[0];
+    if (!faculty) return "Not available";
+    if (faculty.fullName) return faculty.fullName;
+    return [faculty.firstName, faculty.lastName].filter(Boolean).join(" ") || "Not available";
+}
+
+function mapWorkshopToCourseItem(workshop: WorkshopListItem): CourseItem {
+    const { firstDate, lastDate, firstStartTime } = getBoundaryDates(workshop.days ?? []);
+    return {
+        id: workshop.id,
+        dateLabel: formatDateLabel(firstDate ?? workshop.createdAt),
+        timeLabel: formatTimeLabel(firstStartTime),
+        title: workshop.title,
+        tags: [workshop.deliveryMode === "online" ? "Online" : "In Person"],
+        instructorName: getInstructorName(workshop),
+        instructorAvatarUrl: workshop.faculty?.[0]?.imageUrl || undefined,
+        capacityUsed: 0,
+        capacityTotal: workshop.capacity,
+        refundRequests: 0,
+        isActive: workshop.status === "published",
+        status: workshop.status === "draft" ? "drafts" : "upcoming",
+        deliveryMode: workshop.deliveryMode,
+        rawStartDate: firstDate,
+        rawEndDate: lastDate,
+    };
+}
+
+function isPastCourse(item: CourseItem) {
+    const source = item.rawEndDate || item.rawStartDate;
+    if (!source) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const date = new Date(source);
+    if (Number.isNaN(date.getTime())) return false;
+    date.setHours(0, 0, 0, 0);
+    return date < today;
+}
+
+function isUpcomingCourse(item: CourseItem) {
+    return !isPastCourse(item);
+}
+
+async function fetchAllWorkshops(params: Parameters<typeof listWorkshops>[0]) {
+    const first = await listWorkshops({ ...params, page: 1, limit: 5 });
+    let items = [...first.data];
+    for (let currentPage = 2; currentPage <= first.meta.totalPages; currentPage += 1) {
+        const next = await listWorkshops({ ...params, page: currentPage, limit: 5 });
+        items = items.concat(next.data);
+    }
+    return items;
 }
 
 export default function CoursesPage() {
@@ -66,61 +116,73 @@ export default function CoursesPage() {
 
     const [tab, setTab] = useState<CourseTabKey>("upcoming");
     const [query, setQuery] = useState("");
-    const [onlyRefunds, setOnlyRefunds] = useState(false);
+    const [debouncedQuery, setDebouncedQuery] = useState("");
+    const [deliveryMode, setDeliveryMode] = useState<DeliveryMode | "all">("all");
     const [page, setPage] = useState(1);
-    const [all, setAll] = useState<CourseItem[]>([]);
+    const [publishedItems, setPublishedItems] = useState<CourseItem[]>([]);
+    const [draftItems, setDraftItems] = useState<CourseItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {
-        setLoading(true);
-
-        listWorkshops({ page: 1, limit: 10, sortBy: "createdAt", sortOrder: "desc" })
-            .then((res) => {
-                setAll(res.data.map(mapWorkshopToCourseItem));
-            })
-            .catch((err) => {
-                console.error("Failed to load workshops:", err);
-                setAll([]);
-            })
-            .finally(() => setLoading(false));
-    }, []);
-
-    const counts = useMemo<Record<CourseTabKey, number>>(() => {
-        const base: Record<CourseTabKey, number> = {
-            upcoming: 0,
-            past: 0,
-            drafts: 0,
-            refund_requests: 0,
-        };
-
-        for (const c of all) {
-            base[c.status] += 1;
-            if (c.refundRequests > 0) base.refund_requests += 1;
-        }
-
-        return base;
-    }, [all]);
-
-    const filtered = useMemo(() => {
-        const q = query.trim().toLowerCase();
-
-        return all
-            .filter((c) =>
-                tab === "refund_requests" ? c.refundRequests > 0 : c.status === tab,
-            )
-            .filter((c) => (onlyRefunds ? c.refundRequests > 0 : true))
-            .filter((c) => {
-                if (!q) return true;
-                return (
-                    c.title.toLowerCase().includes(q) ||
-                    c.instructorName.toLowerCase().includes(q)
-                );
-            });
-    }, [all, tab, query, onlyRefunds]);
+        const handle = window.setTimeout(() => setDebouncedQuery(query.trim()), SEARCH_DEBOUNCE_MS);
+        return () => window.clearTimeout(handle);
+    }, [query]);
 
     useEffect(() => {
         setPage(1);
-    }, [tab, query, onlyRefunds]);
+    }, [tab, debouncedQuery, deliveryMode]);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        async function load() {
+            setLoading(true);
+            try {
+                const baseParams = {
+                    q: debouncedQuery || undefined,
+                    deliveryMode: deliveryMode === "all" ? undefined : deliveryMode,
+                    sortBy: "createdAt" as const,
+                    sortOrder: "desc" as const,
+                };
+
+                const [publishedResponse, draftResponse] = await Promise.all([
+                    fetchAllWorkshops({ ...baseParams, status: "published" }),
+                    fetchAllWorkshops({ ...baseParams, status: "draft" }),
+                ]);
+
+                if (!isMounted) return;
+                setPublishedItems(publishedResponse.map(mapWorkshopToCourseItem));
+                setDraftItems(draftResponse.map(mapWorkshopToCourseItem));
+            } catch (error) {
+                console.error("Failed to load workshops:", error);
+                if (!isMounted) return;
+                setPublishedItems([]);
+                setDraftItems([]);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        }
+
+        load();
+        return () => {
+            isMounted = false;
+        };
+    }, [debouncedQuery, deliveryMode, refreshKey]);
+
+    const counts = useMemo<Record<CourseTabKey, number>>(() => ({
+        upcoming: publishedItems.filter(isUpcomingCourse).length,
+        past: publishedItems.filter(isPastCourse).length,
+        drafts: draftItems.length,
+        refund_requests: 0,
+    }), [publishedItems, draftItems]);
+
+    const filtered = useMemo(() => {
+        if (tab === "upcoming") return publishedItems.filter(isUpcomingCourse);
+        if (tab === "past") return publishedItems.filter(isPastCourse);
+        if (tab === "drafts") return draftItems;
+        return [];
+    }, [tab, publishedItems, draftItems]);
 
     const totalItems = filtered.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
@@ -134,43 +196,39 @@ export default function CoursesPage() {
         return filtered.slice(start, start + PAGE_SIZE);
     }, [filtered, page]);
 
-    const nextWorkshop =
-        all.find((c) => c.status === "upcoming")?.dateLabel ?? "—";
+    const nextUpcoming = publishedItems
+        .filter(isUpcomingCourse)
+        .sort((a, b) => (a.rawStartDate || "").localeCompare(b.rawStartDate || ""))[0];
 
-    const activeSeats = all
-        .filter((c) => c.status === "upcoming")
-        .reduce((sum, c) => sum + (c.capacityTotal ?? 0), 0);
-
-    const openSeats = all
-        .filter((c) => c.status === "upcoming")
-        .reduce(
-            (sum, c) =>
-                sum + Math.max(0, (c.capacityTotal ?? 0) - (c.capacityUsed ?? 0)),
-            0,
-        );
-
-    const refundPending = all.reduce(
-        (sum, c) => sum + (c.refundRequests ?? 0),
-        0,
-    );
+    const nextWorkshop = nextUpcoming?.dateLabel ?? "—";
+    const activeSeats = publishedItems.filter(isUpcomingCourse).reduce((sum, item) => sum + (item.capacityTotal || 0), 0);
+    const openSeats = publishedItems.filter(isUpcomingCourse).reduce((sum, item) => sum + Math.max(0, (item.capacityTotal || 0) - (item.capacityUsed || 0)), 0);
+    const refundPending = 0;
 
     function buildRowQuery(id: string) {
-        const c = all.find((x) => x.id === id);
-        if (!c) return "";
-
-        const q = new URLSearchParams({
-            dateLabel: c.dateLabel ?? "",
-            timeLabel: c.timeLabel ?? "",
-            title: c.title ?? "",
-            instructorName: c.instructorName ?? "",
-            instructorAvatarUrl: c.instructorAvatarUrl ?? "",
-            capacityUsed: String(c.capacityUsed ?? 0),
-            capacityTotal: String(c.capacityTotal ?? 0),
-            refundRequests: String(c.refundRequests ?? 0),
-            deliveryMode: String(c.deliveryMode),
+        const course = [...publishedItems, ...draftItems].find((item) => item.id === id);
+        if (!course) return "";
+        const params = new URLSearchParams({
+            dateLabel: course.dateLabel ?? "",
+            timeLabel: course.timeLabel ?? "",
+            title: course.title ?? "",
+            instructorName: course.instructorName ?? "",
+            instructorAvatarUrl: course.instructorAvatarUrl ?? "",
+            capacityUsed: String(course.capacityUsed ?? 0),
+            capacityTotal: String(course.capacityTotal ?? 0),
+            refundRequests: String(course.refundRequests ?? 0),
+            deliveryMode: String(course.deliveryMode),
         });
+        return `?${params.toString()}`;
+    }
 
-        return `?${q.toString()}`;
+    async function handleToggleActive(id: string, next: boolean) {
+        try {
+            await updateWorkshop(id, { status: next ? "published" : "draft" });
+            setRefreshKey((value) => value + 1);
+        } catch (error) {
+            console.error("Failed to update workshop status:", error);
+        }
     }
 
     return (
@@ -193,21 +251,13 @@ export default function CoursesPage() {
                 </div>
 
                 <CoursesTable
-                    items={paginatedItems}
+                    items={loading ? [] : paginatedItems}
                     query={query}
                     onQueryChange={setQuery}
-                    onlyRefunds={onlyRefunds}
-                    onOnlyRefundsChange={setOnlyRefunds}
-                    onToggleActive={(id, next) => {
-                        setAll((prev) =>
-                            prev.map((c) => (c.id === id ? { ...c, isActive: next } : c)),
-                        );
-                    }}
-                    onView={(id) =>
-                        router.push(
-                            `/dashboard/admin/courses/${encodeURIComponent(id)}${buildRowQuery(id)}`,
-                        )
-                    }
+                    selectedDeliveryMode={deliveryMode}
+                    onDeliveryModeChange={setDeliveryMode}
+                    onToggleActive={handleToggleActive}
+                    onView={(id) => router.push(`/dashboard/admin/courses/${encodeURIComponent(id)}${buildRowQuery(id)}`)}
                     onEdit={(id) => console.log("edit", id)}
                     onDelete={(id) => console.log("delete", id)}
                     page={page}
