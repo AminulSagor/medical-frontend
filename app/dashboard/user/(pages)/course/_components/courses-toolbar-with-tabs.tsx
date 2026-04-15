@@ -37,6 +37,13 @@ export default function CoursesToolbarWithTabs({
   activeTab,
   onTabChange,
 }: Props) {
+  const searchPlaceholder =
+    activeTab === "completed"
+      ? "Search your completed courses..."
+      : activeTab === "browse"
+        ? "Search available courses..."
+        : "Search your enrollments...";
+
   return (
     <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -45,8 +52,8 @@ export default function CoursesToolbarWithTabs({
           <input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search courses..."
-            className="h-9 w-full rounded-md border border-slate-200 bg-white pl-9 pr-3 text-[13px] text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-300"
+            placeholder={searchPlaceholder}
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-[13px] text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-300"
           />
         </div>
 
@@ -55,7 +62,7 @@ export default function CoursesToolbarWithTabs({
             value={courseType}
             onChange={onCourseTypeChange}
             options={[
-              { value: "all", label: "All Types" },
+              { value: "all", label: "Course Type" },
               { value: "in_person", label: "In Person" },
               { value: "online", label: "Online" },
             ]}
@@ -65,17 +72,17 @@ export default function CoursesToolbarWithTabs({
             value={sortBy}
             onChange={onSortByChange}
             options={[
-              { value: "createdAt", label: "Created Date" },
+              { value: "title", label: "Sort By" },
               { value: "startDate", label: "Start Date" },
               { value: "endDate", label: "End Date" },
               { value: "completedDate", label: "Completed Date" },
-              { value: "title", label: "Title" },
+              { value: "createdAt", label: "Created Date" },
             ]}
           />
         </div>
       </div>
 
-      <div className="mt-3 border-b border-slate-200">
+      <div className="mt-4 border-b border-slate-200">
         <div className="flex items-center gap-8 overflow-x-auto">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
@@ -86,7 +93,7 @@ export default function CoursesToolbarWithTabs({
                 type="button"
                 onClick={() => onTabChange(tab.key)}
                 className={[
-                  "relative -mb-px pb-3 text-[11px] font-medium leading-none whitespace-nowrap",
+                  "relative -mb-px pb-3 text-[12px] font-medium leading-none whitespace-nowrap",
                   isActive
                     ? "text-sky-600"
                     : "text-slate-500 hover:text-slate-700",
@@ -125,10 +132,10 @@ function SelectPill<T extends string>({
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
         className={[
-          "h-8 min-w-[110px] rounded-md",
+          "h-10 min-w-[102px] rounded-xl",
           "border border-slate-200 bg-white",
           "pl-4 pr-9",
-          "text-[12px] font-medium leading-8 text-slate-700",
+          "text-[12px] font-medium leading-10 text-slate-700",
           "outline-none focus:border-slate-300",
           "appearance-none",
         ].join(" ")}

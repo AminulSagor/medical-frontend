@@ -2,13 +2,21 @@ export type CourseTabKey = "active" | "completed" | "browse";
 
 export type CourseTypeFilter = "all" | "in_person" | "online";
 
-export type CourseSortBy = "startDate" | "endDate" | "completedDate" | "createdAt" | "title";
+export type CourseSortBy =
+  | "startDate"
+  | "endDate"
+  | "completedDate"
+  | "createdAt"
+  | "title";
+
+export type CourseSortOrder = "asc" | "desc";
 
 export interface CourseToolbarState {
   activeTab: CourseTabKey;
   search: string;
   courseType: CourseTypeFilter;
   sortBy: CourseSortBy;
+  sortOrder: CourseSortOrder;
   page: number;
   limit: number;
 }
@@ -25,6 +33,14 @@ export interface CourseSummaryMetric {
   trend?: string;
 }
 
+export interface CourseSummaryNextLiveSession {
+  workshopId: string;
+  title: string;
+  date: string;
+  time: string;
+  dateTime: string;
+}
+
 export interface CourseSummaryResponse {
   totalCmeCredits: CourseSummaryMetric;
   coursesInProgress: {
@@ -32,6 +48,7 @@ export interface CourseSummaryResponse {
   };
   nextLiveSession: {
     value: string;
+    details?: CourseSummaryNextLiveSession | null;
   };
 }
 
@@ -61,44 +78,44 @@ export interface CourseInstructor {
 export interface ActiveCourseItem {
   enrollmentId: string;
   courseId: string;
+  courseType: string;
   tag: string;
   title: string;
-  description: string;
-  instructor: CourseInstructor;
-  deliveryMethod: string;
-  location: string;
-  date: string;
-  timeLabel: string;
+  subtitle: string;
   coverImageUrl?: string | null;
+  date: string;
+  location: string;
+  bookedFor: string;
+  bookingFee: string;
+  progress: string;
+  infoTitle?: string | null;
+  infoText?: string | null;
   actions: CourseActions;
 }
 
 export interface CompletedCourseItem {
   enrollmentId: string;
   courseId: string;
-  isCompleted: boolean;
   coverImageUrl: string | null;
-  tag: string;
-  title: string;
-  startDate: string;
-  completedDate: string;
-  location: string;
-  groupSizeText: string;
-  bookingFee: string;
-  progress: string;
   cmeCreditsBadge: string;
-  nextSessionBanner: string | null;
+  title: string;
+  subtitle: string;
+  location: string;
+  completedDate: string;
   actions: CourseActions;
 }
 
 export interface BrowseCourseItem {
   id: string;
+  courseType: string;
   tag: string;
   coverImageUrl: string | null;
   title: string;
   description: string;
+  location?: string;
   price?: string | null;
   cmeCredits: number;
+  cmeCreditsLabel: string;
   actions: CourseActions;
 }
 
@@ -128,5 +145,7 @@ export interface GetMyCoursesQueryDto<T extends CourseTabKey = CourseTabKey> {
   page?: number;
   limit?: number;
   sortBy?: CourseSortBy | string;
+  sortOrder?: CourseSortOrder;
   search?: string;
+  courseType?: Exclude<CourseTypeFilter, "all">;
 }

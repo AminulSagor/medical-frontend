@@ -1,8 +1,6 @@
-// app/(user)/(registered-user)/course/page.tsx
-
 "use client";
 
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import CourseStatsCards from "./_components/course-stats-cards";
 import CourseCardsSection from "./_components/course-cards-section";
 import CoursesToolbarWithTabs from "./_components/courses-toolbar-with-tabs";
@@ -36,27 +34,20 @@ export default function Page() {
     setSearch,
     setCourseType,
     setSortBy,
+    setPage,
     stats,
     activeCourses,
     completedCourses,
     browseCourses,
+    featuredBrowseCourse,
+    currentMeta,
     isSummaryLoading,
     isListLoading,
     summaryError,
     listError,
-    currentMeta,
   } = useCourseController();
 
   const currentTabCopy = TAB_COPY[toolbarState.activeTab];
-
-  const displayedTotal =
-    toolbarState.courseType === "all"
-      ? currentMeta.total
-      : toolbarState.activeTab === "active"
-        ? activeCourses.length
-        : toolbarState.activeTab === "completed"
-          ? completedCourses.length
-          : browseCourses.length;
 
   return (
     <main className="w-full">
@@ -93,10 +84,6 @@ export default function Page() {
       />
 
       <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-6">
-        <div className="mb-4 text-xs font-medium text-slate-500">
-          {displayedTotal} result{displayedTotal === 1 ? "" : "s"}
-        </div>
-
         {listError ? (
           <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             <AlertCircle className="h-4 w-4" />
@@ -124,10 +111,21 @@ export default function Page() {
 
             {toolbarState.activeTab === "browse" &&
               (browseCourses.length > 0 ? (
-                <BrowseCoursesSection items={browseCourses} />
+                <BrowseCoursesSection
+                  items={browseCourses}
+                  featuredCourse={featuredBrowseCourse}
+                />
               ) : (
                 <EmptyState message={currentTabCopy.emptyMessage} />
               ))}
+
+            <PaginationRow
+              page={currentMeta.page}
+              total={currentMeta.total}
+              limit={currentMeta.limit}
+              totalPages={currentMeta.totalPages}
+              onPageChange={setPage}
+            />
           </>
         )}
       </div>
@@ -139,6 +137,82 @@ function EmptyState({ message }: { message: string }) {
   return (
     <div className="mt-10 rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500">
       {message}
+    </div>
+  );
+}
+
+function PaginationRow({
+  page,
+  total,
+  limit,
+  totalPages,
+  onPageChange,
+}: {
+  page: number;
+  total: number;
+  limit: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  if (total <= 0) return null;
+
+  const safePage = Math.max(page, 1);
+  const safeTotalPages = Math.max(totalPages, 1);
+  const showingFrom = total === 0 ? 0 : (safePage - 1) * limit + 1;
+  const showingTo = Math.min(safePage * limit, total);
+
+  return (
+    <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="text-[11px] text-slate-500">
+        Showing {showingFrom} to {showingTo} of {total} courses
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={safePage <= 1}
+          onClick={() => onPageChange(safePage - 1)}
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <ChevronLeft className="h-4 w-4" /> Previous
+        </button>
+
+        {Array.from({ length: safeTotalPages }, (_, index) => index + 1).map(
+          (pageNumber) => (
+            <button
+              key={pageNumber}
+              type="button"
+              onClick={() => onPageChange(pageNumber)}
+              className={[
+                "inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-[11px] font-medium",
+                pageNumber === safePage
+                  ? "bg-sky-500 text-white"
+                  : "text-slate-500 hover:bg-slate-100",
+              ].join(" ")}
+            >
+              {pageNumber}
+            </button>
+          ),
+        )}
+
+        <button
+          type="button"
+          disabled={safePage >= safeTotalPages}
+          onClick={() => onPageChange(safePage + 1)}
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Next <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="flex items-center gap-2 text-[11px] text-slate-500">
+        <span>Go to page</span>
+        <input
+          value={safePage}
+          readOnly
+          className="h-8 w-12 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-900 outline-none"
+        />
+      </div>
     </div>
   );
 }

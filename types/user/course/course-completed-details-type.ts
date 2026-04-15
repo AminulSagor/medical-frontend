@@ -1,17 +1,21 @@
-import type { CourseBookingDetailsCardProps } from "@/types/user/course/course-details-type";
-import type { CourseScheduleItem } from "@/types/user/course/course-details-type";
+import type {
+  CourseBookingDetailsCardProps,
+  CourseScheduleItem,
+} from "@/types/user/course/course-details-type";
 
 export type CompletedHeroProps = {
   title: string;
   leftBadges: { label: string; tone: "success" | "neutral" }[];
-  rightPill: { title: string; subtitle: string }; // COMPLETED + MAR 12-14
+  rightPill: { title: string; subtitle: string };
 };
 
 export type CompletedTopStripProps = {
   locationText: string;
   instructorText: string;
-  statusText: string; // "Event Finished"
-  downloadLabel: string; // "Download Certificate"
+  statusText: string;
+  downloadLabel: string;
+  ticketId?: string | null;
+  downloadHref?: string | null;
 };
 
 export type CompletedAboutProps = {
@@ -20,14 +24,16 @@ export type CompletedAboutProps = {
 };
 
 export type CompletedCertificateCardProps = {
-  title: string; // Course Certified
+  title: string;
   subtitle: string;
   congratsTitle: string;
   congratsText: string;
-  primaryBtnLabel: string; // Download Certificate
-  secondaryBtnLabel: string; // Share Achievement
-  referenceLabel: string; // CERTIFICATE ID
-  referenceValue: string; // CERT-8829-AC
+  primaryBtnLabel: string;
+  secondaryBtnLabel: string;
+  referenceLabel: string;
+  referenceValue: string;
+  ticketId?: string | null;
+  downloadHref?: string | null;
 };
 
 export type CompletedNextStepsCardProps = {
@@ -42,6 +48,6 @@ export type CompletedDetailsViewProps = {
   about: CompletedAboutProps;
   booking: CourseBookingDetailsCardProps;
   schedule: CourseScheduleItem[];
-  certificate: CompletedCertificateCardProps;
-  nextSteps: CompletedNextStepsCardProps;
+  certificate?: CompletedCertificateCardProps | null;
+  nextSteps?: CompletedNextStepsCardProps | null;
 };

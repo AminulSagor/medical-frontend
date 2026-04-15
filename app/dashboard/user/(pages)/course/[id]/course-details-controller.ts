@@ -1,19 +1,24 @@
 import type { OnlineDetailsViewProps } from "@/types/user/course/course-online-details-type";
 import type { CompletedDetailsViewProps } from "@/types/user/course/course-completed-details-type";
-
+import type {
+  CourseAboutCardProps,
+  CourseBookingDetailsCardProps,
+  CourseCheckinCardProps,
+  CourseDetailsHeroProps,
+  CourseDetailsSummaryProps,
+  CourseHelpCardProps,
+  CourseScheduleItem,
+} from "@/types/user/course/course-details-type";
+import type {
+  CourseDetailFacilityItem,
+  CourseDetailResponse,
+  CourseRefundInfoResponse,
+} from "@/types/user/course/course-detail-api.types";
 import {
-  getCourseDetailsHeroSeed,
-  getCourseDetailsSummarySeed,
-  getCourseAboutSeed,
-  getCourseBookingDetailsSeed,
-  getCourseScheduleSeed,
-  getCourseCheckinSeed,
-  getCourseHelpSeed,
-} from "@/utils/course/dummy-data/course-details-data-util";
-
-import { getOnlineDetailsSeed } from "@/utils/course/dummy-data/online-course-details-data-util";
-import { getCompletedDetailsSeed } from "@/utils/course/dummy-data/completed-course-details-data-util";
-import { getCourseDeliveryTypeSeed } from "@/utils/course/course-data-util";
+  getBookedCourseDetails,
+  getCourseRefundInfoServer,
+  getTicketQrCodeServer,
+} from "@/service/user/course-details.server.service";
 
 export type CourseProgressStatus = "active" | "completed";
 export type CourseDeliveryType = "inPerson" | "online";
@@ -22,13 +27,13 @@ export type CourseDetailsControllerState =
   | {
       deliveryType: "inPerson";
       progressStatus: "active";
-      hero: ReturnType<typeof getCourseDetailsHeroSeed>;
-      summary: ReturnType<typeof getCourseDetailsSummarySeed>;
-      about: ReturnType<typeof getCourseAboutSeed>;
-      booking: ReturnType<typeof getCourseBookingDetailsSeed>;
-      schedule: ReturnType<typeof getCourseScheduleSeed>;
-      checkin: ReturnType<typeof getCourseCheckinSeed>;
-      help: ReturnType<typeof getCourseHelpSeed>;
+      hero: CourseDetailsHeroProps;
+      summary: CourseDetailsSummaryProps;
+      about: CourseAboutCardProps;
+      booking: CourseBookingDetailsCardProps;
+      schedule: CourseScheduleItem[];
+      checkin: CourseCheckinCardProps;
+      help: CourseHelpCardProps;
     }
   | {
       deliveryType: "online";
@@ -41,49 +46,495 @@ export type CourseDetailsControllerState =
       completed: CompletedDetailsViewProps;
     };
 
-function getProgressStatusSeed(courseId: string): CourseProgressStatus {
-  const v = courseId.toLowerCase();
-  if (v.includes("completed") || v.includes("done") || v.includes("finished")) {
-    return "completed";
+const NOT_IN_API = "not in api";
+
+function text(value?: string | null, fallback = NOT_IN_API) {
+  return value && value.trim() ? value : fallback;
+}
+
+function locationValue(value?: string | null) {
+  const normalized = text(value);
+  if (
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      normalized,
+    )
+  ) {
+    return NOT_IN_API;
   }
-  return "active";
+  return normalized;
+}
+
+function firstFacility(data: CourseDetailResponse): CourseDetailFacilityItem | null {
+  return data.workshop.facilities?.[0] ?? null;
+}
+
+function getCertificateTicketId(data: CourseDetailResponse) {
+  const explicitTicketId = data.sidebar.certificateBox?.ticketId ?? data.sidebar.inPersonDetails?.ticketId;
+  if (explicitTicketId) return explicitTicketId;
+
+  const downloadUrl = data.sidebar.certificateBox?.downloadUrl;
+  if (!downloadUrl) return null;
+
+  const matchedId = downloadUrl.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i);
+  return matchedId?.[0] ?? null;
+}
+
+function firstFacultyName(data: CourseDetailResponse) {
+  const faculty = data.workshop.faculty?.[0];
+  if (!faculty) return NOT_IN_API;
+  return [faculty.firstName, faculty.lastName].filter(Boolean).join(" ") || NOT_IN_API;
+}
+
+function money(value?: string | number | null, currency = "USD") {
+  if (value === null || value === undefined || `${value}`.trim() === "") return NOT_IN_API;
+  const amount = Number.parseFloat(String(value));
+  if (Number.isNaN(amount)) return NOT_IN_API;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency || "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+function getRefundDescription(refund: CourseRefundInfoResponse) {
+  return text(refund.uiMessages.policyWarning ?? refund.uiMessages.description, NOT_IN_API);
+}
+
+function getRefundDaysBeforeStart(refund: CourseRefundInfoResponse) {
+  if (typeof refund.daysBeforeStart === "number") return refund.daysBeforeStart;
+  if (typeof refund.hoursBeforeStart === "number") return Math.max(0, Math.floor(refund.hoursBeforeStart / 24));
+  return 0;
+}
+
+function mapHero(data: CourseDetailResponse): CourseDetailsHeroProps {
+  return {
+    badges: [
+      text(data.banner.badgePrimary, NOT_IN_API.toUpperCase()),
+      text(data.banner.badgeSecondary, NOT_IN_API.toUpperCase()),
+    ],
+    title: text(data.banner.title),
+    imageSrc: data.heroImage || data.workshop.coverImageUrl || null,
+  };
+}
+
+function mapRefundUi(
+  data: CourseDetailResponse,
+  refund: CourseRefundInfoResponse,
+): CourseBookingDetailsCardProps["refund"] {
+  const policy = refund.policy;
+  const deadlineHours = typeof policy.deadlineHours === "number" ? policy.deadlineHours : null;
+  const processingFee =
+    refund.financials.processingFee && refund.financials.processingFee !== "0.00"
+      ? `Processing fee: ${money(refund.financials.processingFee, refund.financials.currency)}`
+      : typeof policy.processingFee === "number" && policy.processingFee > 0
+        ? `Processing fee: ${money(policy.processingFee, refund.financials.currency)}`
+        : "";
+
+  const eligiblePolicyText: string =
+    typeof deadlineHours === "number"
+      ? `Refund requests are allowed up to ${deadlineHours} hours before the course starts.${processingFee ? ` ${processingFee}` : ""}`
+      : typeof policy.fullRefundDays === "number"
+        ? `Full refunds up to ${policy.fullRefundDays} days before start.${typeof policy.partialRefundPercentage === "number" && typeof policy.partialRefundDaysMin === "number" && typeof policy.partialRefundDaysMax === "number" ? ` Partial refunds ${policy.partialRefundPercentage}% from ${policy.partialRefundDaysMin}-${policy.partialRefundDaysMax} days before start.` : ""}`
+        : getRefundDescription(refund);
+
+  const refundTitle: string = text(refund.uiMessages.title, "Request Refund");
+  const refundDescription: string = getRefundDescription(refund);
+  const courseTitle: string = text(refund.courseDetails.title, text(data.banner.title));
+  const courseDateText: string = text(
+    refund.courseDetails.dateRange ?? refund.courseDetails.startDate,
+    text(data.banner.dateBox.dateRange),
+  );
+  const amountPaid: string = money(refund.financials.amountPaid, refund.financials.currency);
+  const estimatedRefund: string = money(
+    refund.financials.estimatedRefund,
+    refund.financials.currency,
+  );
+  const policyText: string = refund.isEligible ? eligiblePolicyText : refundDescription;
+
+  return {
+    enabled: refund.isEligible,
+    label: "Request Refund",
+    title: refundTitle,
+    description: refundDescription,
+    courseTitle,
+    courseDateText,
+    amountPaid,
+    estimatedRefund,
+    daysBeforeStart: getRefundDaysBeforeStart(refund),
+    policyText,
+  };
+}
+
+function mapBooking(
+  data: CourseDetailResponse,
+  refund: CourseRefundInfoResponse,
+): CourseBookingDetailsCardProps {
+  return {
+    courseId: data.courseId,
+    status: {
+      label: "STATUS",
+      value: text(data.bookingDetails.status),
+    },
+    payment: {
+      label: "TOTAL PAYMENT",
+      title: text(data.bookingDetails.paymentBadge),
+      amount: text(data.bookingDetails.totalPayment),
+      refundNote: text(data.bookingDetails.refundNote),
+    },
+    refund: mapRefundUi(data, refund),
+  };
+}
+
+function mapScheduleStatus(
+  session: { isCompleted: boolean; isCurrent: boolean },
+  dayStatus?: string,
+): CourseScheduleItem["status"] {
+  if (session.isCompleted) return "done";
+  if (session.isCurrent) return "active";
+  const normalized = (dayStatus || "").toLowerCase().replace(/\s+/g, "");
+  if (normalized === "current" || normalized === "inprogress") {
+    return "upcoming";
+  }
+  return "upcoming";
+}
+
+function mapDayState(status?: string): CourseScheduleItem["dayState"] {
+  const normalized = (status || "").toLowerCase().replace(/\s+/g, "");
+  if (normalized === "completed") return "done";
+  if (normalized === "current" || normalized === "inprogress") return "active";
+  return "upcoming";
+}
+
+function mapSchedule(data: CourseDetailResponse): CourseScheduleItem[] {
+  return data.schedule.flatMap((day, dayIndex) => {
+    let activeAssigned = false;
+
+    return day.sessions.map((session, sessionIndex) => {
+      let status = mapScheduleStatus(session, day.status);
+      if (
+        status === "upcoming" &&
+        !session.isCompleted &&
+        !session.isCurrent &&
+        !activeAssigned &&
+        mapDayState(day.status) === "active"
+      ) {
+        status = "active";
+        activeAssigned = true;
+      }
+      if (session.isCurrent) {
+        activeAssigned = true;
+      }
+
+      return {
+        id: session.id,
+        dayLabel: text(day.date),
+        dayIndex: dayIndex + 1,
+        dayState: sessionIndex === 0 ? mapDayState(day.status) : undefined,
+        timeRange: text(session.timeLabel),
+        partLabel: `PART ${String.fromCharCode(65 + sessionIndex)}`,
+        badgeText: session.isCompleted
+          ? "(COMPLETED)"
+          : session.isCurrent
+            ? "(CURRENT)"
+            : day.status?.toUpperCase() === "INPROGRESS"
+              ? "(IN PROGRESS)"
+              : day.status?.toUpperCase() === "UPCOMING"
+                ? "(UPCOMING)"
+                : undefined,
+        title: text(session.title),
+        subtitle: text(session.description),
+        status,
+      } satisfies CourseScheduleItem;
+    });
+  });
+}
+
+function mapAbout(data: CourseDetailResponse): CourseAboutCardProps {
+  return {
+    title: "About this Course",
+    paragraphs: [text(data.workshop.shortBlurb), text(data.workshop.learningObjectives)],
+  };
+}
+
+function mapSummary(data: CourseDetailResponse): CourseDetailsSummaryProps {
+  const facility = firstFacility(data);
+
+  return {
+    organizerLabel: text(data.banner.badgePrimary),
+    organizerText: text(data.banner.description),
+    courseId: data.courseId,
+    imageSrc: data.heroImage || data.workshop.coverImageUrl || null,
+    eventTitle: text(data.banner.title),
+    chips: [
+      {
+        iconKey: "pin",
+        text: locationValue(facility?.roomNumber || data.banner.dateBox.locationOrPlatform),
+      },
+      { iconKey: "users", text: `Instructor: ${firstFacultyName(data)}` },
+    ],
+    session: {
+      venueTitle: text(facility?.physicalAddress, locationValue(data.banner.dateBox.locationOrPlatform)),
+      dayText: text(data.banner.dateBox.dateRange),
+      timeText: text(data.banner.dateBox.time),
+      ctaLabel: "Add to Calendar",
+    },
+  };
+}
+
+function mapCheckin(
+  data: CourseDetailResponse,
+  qrImageSrc?: string,
+): CourseCheckinCardProps {
+  const details = data.sidebar.inPersonDetails;
+
+  return {
+    title: "Workshop Check-in",
+    subtitle: text(details?.qrNote),
+    qrImageSrc: qrImageSrc || "",
+    secondaryBtnLabel: "Download Ticket (PDF)",
+    ticketId: details?.ticketId,
+    ticketCodeLabel: "Ticket Reference",
+    ticketCodeValue: text(details?.ticketReference),
+  };
+}
+
+function mapHelp(): CourseHelpCardProps {
+  return {
+    title: "Need Help?",
+    subtitle: "Contact support for course access, ticketing, or schedule help.",
+    actionLabel: "Contact Support",
+  };
+}
+
+function mapCompleted(
+  data: CourseDetailResponse,
+  refund: CourseRefundInfoResponse,
+): CompletedDetailsViewProps {
+  const facility = firstFacility(data);
+
+  return {
+    hero: {
+      title: text(data.banner.title),
+      leftBadges: [
+        { label: text(data.banner.badgePrimary), tone: "success" },
+        { label: text(data.banner.badgeSecondary), tone: "neutral" },
+      ],
+      rightPill: {
+        title: text(data.progress.statusLabel).toUpperCase(),
+        subtitle: text(data.banner.dateBox.dateRange),
+      },
+    },
+    strip: {
+      locationText: text(facility?.physicalAddress, locationValue(data.banner.dateBox.locationOrPlatform)),
+      instructorText: firstFacultyName(data),
+      statusText: text(data.scheduleHeader.badge),
+      downloadLabel: "Download Certificate",
+      ticketId: getCertificateTicketId(data),
+      downloadHref: data.sidebar.certificateBox?.downloadUrl || null,
+    },
+    about: {
+      heading: "About this Course",
+      paragraphs: mapAbout(data).paragraphs,
+    },
+    booking: mapBooking(data, refund),
+    schedule: mapSchedule(data),
+    certificate: data.sidebar.certificateBox
+      ? {
+          title: text(data.sidebar.certificateBox.title),
+          subtitle: text(data.banner.title),
+          congratsTitle: "Congratulations!",
+          congratsText: text(data.sidebar.certificateBox.message),
+          primaryBtnLabel: "Download Certificate",
+          secondaryBtnLabel: "Share Achievement",
+          referenceLabel: "CERTIFICATE ID",
+          referenceValue: text(data.sidebar.certificateBox.certId),
+          ticketId: getCertificateTicketId(data),
+          downloadHref: data.sidebar.certificateBox.downloadUrl,
+        }
+      : null,
+    nextSteps: null,
+  };
+}
+
+function mapOnline(
+  data: CourseDetailResponse,
+  refund: CourseRefundInfoResponse,
+): OnlineDetailsViewProps {
+  return {
+    hero: {
+      title: text(data.banner.title),
+      subtitle: text(data.banner.description),
+      badges: [text(data.banner.badgePrimary), text(data.banner.badgeSecondary)],
+      coverImageSrc: data.heroImage || data.workshop.coverImageUrl || null,
+    },
+    summary: {
+      courseId: data.courseId,
+      imageSrc: data.heroImage || data.workshop.coverImageUrl || null,
+      eventTitle: text(data.banner.title),
+      statusPillText: text(data.banner.badgePrimary),
+      description: text(data.banner.description),
+      instructorText: firstFacultyName(data),
+      platformText: text(data.workshop.webinarPlatform),
+      sessionCard: {
+        dateRange: text(data.banner.dateBox.dateRange),
+        label: `${data.progress.totalDays || 1}-DAY WORKSHOP`,
+        time: text(data.banner.dateBox.time),
+      },
+      addToCalendarLabel: "Add to Calendar",
+    },
+    about: {
+      heading: "ABOUT THIS COURSE",
+      paragraph: text(data.workshop.shortBlurb),
+      highlights: [{ iconKey: "check", text: text(data.workshop.learningObjectives) }],
+    },
+    requirements: {
+      heading: "TECHNICAL REQUIREMENTS",
+      items: [
+        { iconKey: "wifi", title: "Internet", desc: "not in api" },
+        { iconKey: "camera", title: "Camera", desc: "not in api" },
+        { iconKey: "mic", title: "Microphone", desc: "not in api" },
+      ],
+    },
+    booking: {
+      courseId: data.courseId,
+      heading: "BOOKING DETAILS",
+      bookedText: text(data.bookingDetails.status),
+      joinLiveLabel: "Join Live Room",
+      totalFeeLabel: text(data.bookingDetails.paymentBadge),
+      totalFeeValue: text(data.bookingDetails.totalPayment),
+      refundLabel: "Request Refund",
+      refundNote: text(data.bookingDetails.refundNote),
+      refundEnabled: refund.isEligible,
+      refundTitle: text(refund.uiMessages.title),
+      refundDescription: getRefundDescription(refund),
+      refundPolicyText: mapRefundUi(data, refund).policyText,
+      refundAmount: mapRefundUi(data, refund).estimatedRefund,
+      daysBeforeStart: getRefundDaysBeforeStart(refund),
+      courseTitle: text(data.banner.title),
+      courseDateText: text(data.banner.dateBox.dateRange),
+    },
+    schedule: {
+      heading: text(data.scheduleHeader.title),
+      days: data.schedule.map((day, index) => ({
+        key: `day${index + 1}` as const,
+        label: day.title,
+      })),
+      items: data.schedule.flatMap((day, index) => {
+        let liveAssigned = false;
+        return day.sessions.map((session, sessionIndex) => {
+          let status: "completed" | "live" | "upcoming" = session.isCompleted
+            ? "completed"
+            : session.isCurrent
+              ? "live"
+              : "upcoming";
+          if (
+            status === "upcoming" &&
+            !liveAssigned &&
+            mapDayState(day.status) === "active"
+          ) {
+            status = "live";
+            liveAssigned = true;
+          }
+          return {
+            id: session.id,
+            day: `day${index + 1}` as const,
+            partLabel: `PART ${String.fromCharCode(65 + sessionIndex)}`,
+            timeText: text(session.timeLabel),
+            title: text(session.title),
+            subtitle: text(session.description),
+            status,
+            joinLiveLabel: session.joinLink ? "Join Now" : undefined,
+          };
+        });
+      }),
+    },
+    supportAndRegistration: {
+      help: {
+        title: "Need Tech Help?",
+        subtitle: text(data.sidebar.onlineDetails?.message),
+        actionLabel: "Contact Support",
+      },
+      registration: {
+        heading: "REGISTRATION REFERENCE",
+        value: text(data.courseId),
+      },
+    },
+    materials: {
+      heading: "PREPARATION MATERIALS",
+      items: [{ title: "not in api" }],
+    },
+  };
 }
 
 export async function getCourseDetailsController(
   courseId: string,
 ): Promise<CourseDetailsControllerState> {
-  const deliveryType = getCourseDeliveryTypeSeed(
-    courseId,
-  ) as CourseDeliveryType;
-  const progressStatus = getProgressStatusSeed(courseId);
+  const [details, refundInfo] = await Promise.all([
+    getBookedCourseDetails(courseId),
+    getCourseRefundInfoServer(courseId).catch(() => ({
+      isEligible: false,
+      daysBeforeStart: 0,
+      policy: {
+        deadlineHours: 0,
+        processingFee: 0,
+      },
+      courseDetails: {
+        title: "",
+        dateRange: "",
+        bookedFor: "",
+        refundWindowRemaining: "",
+      },
+      financials: {
+        amountPaid: "0.00",
+        processingFee: "0.00",
+        estimatedRefund: "0.00",
+        currency: "USD",
+      },
+      uiMessages: {
+        title: "Request Refund",
+        policyWarning: "not in api",
+      },
+    })),
+  ]);
 
-  // ✅ completed is independent of deliveryType
+  const ticketId = details.sidebar.inPersonDetails?.ticketId;
+  const qrCodeUrl = ticketId
+    ? await getTicketQrCodeServer(ticketId)
+        .then((response) => response.data.qrCodeUrl)
+        .catch(() => "")
+    : "";
+
+  const deliveryType: CourseDeliveryType =
+    details.workshop.deliveryMode === "online" ? "online" : "inPerson";
+  const progressStatus: CourseProgressStatus =
+    details.progress.status?.toLowerCase() === "completed" ? "completed" : "active";
+
   if (progressStatus === "completed") {
     return {
       deliveryType,
-      progressStatus: "completed",
-      completed: getCompletedDetailsSeed(courseId),
+      progressStatus,
+      completed: mapCompleted(details, refundInfo),
     };
   }
 
-  // active
   if (deliveryType === "online") {
     return {
-      deliveryType: "online",
-      progressStatus: "active",
-      online: getOnlineDetailsSeed(courseId),
+      deliveryType,
+      progressStatus,
+      online: mapOnline(details, refundInfo),
     };
   }
 
   return {
-    deliveryType: "inPerson",
-    progressStatus: "active",
-    hero: getCourseDetailsHeroSeed(courseId),
-    summary: getCourseDetailsSummarySeed(courseId),
-    about: getCourseAboutSeed(courseId),
-    booking: getCourseBookingDetailsSeed(courseId),
-    schedule: getCourseScheduleSeed(courseId),
-    checkin: getCourseCheckinSeed(courseId),
-    help: getCourseHelpSeed(courseId),
+    deliveryType,
+    progressStatus,
+    hero: mapHero(details),
+    summary: mapSummary(details),
+    about: mapAbout(details),
+    booking: mapBooking(details, refundInfo),
+    schedule: mapSchedule(details),
+    checkin: mapCheckin(details, qrCodeUrl),
+    help: mapHelp(),
   };
 }

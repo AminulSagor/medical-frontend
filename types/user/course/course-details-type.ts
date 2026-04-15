@@ -1,76 +1,85 @@
-
 export type CourseDeliveryType = "inPerson" | "online" | "completed";
 
 export type CourseDetailsHeroProps = {
-  badges: string[]; // ["IN-PERSON WORKSHOP", "6.0 CME CREDITS"]
-  title: string; // "Advanced Difficult Airway Workshop"
-  imageSrc: string;
+  badges: string[];
+  title: string;
+  imageSrc?: string | null;
 };
 
 export type CourseDetailsSummaryProps = {
-  organizerLabel: string; // "Registered Course"
+  organizerLabel: string;
   organizerText: string;
   chips: Array<{ iconKey: "clock" | "pin" | "users"; text: string }>;
+  courseId: string;
+  imageSrc?: string | null;
+  eventTitle?: string;
 
   session: {
-    venueTitle: string; // "Houston, TX"
-    dayText: string; // "Mar 12"
-    timeText: string; // "10:30 AM - 6:00 PM"
-    ctaLabel: string; // "Add to Calendar"
+    venueTitle: string;
+    dayText: string;
+    timeText: string;
+    ctaLabel: string;
   };
 };
 
 export type CourseAboutCardProps = {
-  title: string; // "About this Course"
+  title: string;
   paragraphs: string[];
 };
 
-export type CourseBookingDetailsCardProps = {
-  status: {
-    label: string;   // "STATUS"
-    value: string;   // "Booked for: 2 People"
-  };
+export type CourseRefundUi = {
+  enabled: boolean;
+  label: string;
+  title: string;
+  description: string;
+  courseTitle: string;
+  courseDateText: string;
+  amountPaid: string;
+  estimatedRefund: string;
+  daysBeforeStart: number;
+  policyText: string;
+};
 
+export type CourseBookingDetailsCardProps = {
+  courseId: string;
+  status: {
+    label: string;
+    value: string;
+  };
   payment: {
-    label: string;   // "TOTAL PAYMENT"
-    title: string;   // "Total Fee"
-    amount: string;  // "$450.00"
+    label: string;
+    title: string;
+    amount: string;
     refundNote: string;
   };
-
-  refund: {
-    label: string;   // "Refund"
-  };
+  refund: CourseRefundUi;
 };
 
 export type CourseScheduleItem = {
   id: string;
-
-  dayLabel: string;        // "TUESDAY, MAR 12"
-  dayIndex?: number;       // 1,2,3 (optional)
-  dayState?: "done" | "active" | "upcoming"; // for left big marker
-
-  timeRange: string;       // "10:30 AM"
-  partLabel?: string;      // "PART A: THEORY"
-  badgeText?: string;      // "(COMPLETED)" | "(CURRENT)"
+  dayLabel: string;
+  dayIndex?: number;
+  dayState?: "done" | "active" | "upcoming";
+  timeRange: string;
+  partLabel?: string;
+  badgeText?: string;
   title: string;
   subtitle: string;
-
   status: "done" | "active" | "upcoming";
 };
 
 export type CourseCheckinCardProps = {
-  title: string; // "Workshop Check-in"
+  title: string;
   subtitle: string;
   qrImageSrc: string;
-  primaryBtnLabel: string; // "How to check-in at venue"
-  secondaryBtnLabel: string; // "Download Ticket (PDF)"
-  ticketCodeLabel: string; // "Ticket Code"
-  ticketCodeValue: string; // "HST-2924"
+  secondaryBtnLabel: string;
+  ticketId?: string;
+  ticketCodeLabel: string;
+  ticketCodeValue: string;
 };
 
 export type CourseHelpCardProps = {
-  title: string; // "Need Help?"
+  title: string;
   subtitle: string;
-  actionLabel: string; // "Contact Support"
+  actionLabel: string;
 };

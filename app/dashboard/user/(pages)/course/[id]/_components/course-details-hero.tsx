@@ -1,48 +1,43 @@
-// app/(user)/(registered-user)/course/[id]/_components/course-details-hero.tsx
-
 "use client";
 
+import NetworkImageFallback from "@/app/dashboard/user/_components/network-image-fallback";
 import type { CourseDetailsHeroProps } from "@/types/user/course/course-details-type";
 
 export default function CourseDetailsHero({
   badges,
   title,
+  imageSrc,
 }: CourseDetailsHeroProps) {
-  // expects badges like: ["3-DAY WORKSHOP", "12.0 CME CREDITS"]
-  const leftBadge = badges?.[0] ?? "3-DAY WORKSHOP";
-  const rightBadge = badges?.[1] ?? "12.0 CME CREDITS";
+  const leftBadge = badges?.[0] ?? "COURSE";
+  const rightBadge = badges?.[1] ?? "NOT IN API";
 
   return (
-    <section
-      className={[
-        "relative overflow-hidden rounded-2xl",
-        "shadow-[0_10px_22px_rgba(15,23,42,0.10)]",
-      ].join(" ")}
-    >
-      {/* fixed height to match figma */}
-      <div className="relative h-[150px] w-full">
-        {/* background (no image, pure gradient like screenshot) */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#3e4749] via-[#6f7f7d] to-[#2aa6a7]" />
+    <section className="relative overflow-hidden rounded-2xl shadow-[0_10px_22px_rgba(15,23,42,0.10)]">
+      <div className="relative h-[150px] w-full bg-slate-900 md:h-[180px]">
+        {imageSrc ? (
+          <NetworkImageFallback
+            src={imageSrc}
+            alt={title}
+            className="h-full w-full object-cover"
+            fallbackClassName="flex h-full w-full items-center justify-center bg-slate-800 text-slate-400"
+            iconClassName="h-10 w-10"
+          />
+        ) : null}
 
-        {/* subtle top highlight */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-900/55 to-slate-900/15" />
         <div className="absolute -top-10 left-10 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
 
-        {/* content */}
-        <div className="absolute inset-0 px-10 py-8">
-          <div className="flex items-center gap-3">
-            {/* left blue badge */}
+        <div className="absolute inset-0 px-6 py-6 md:px-10 md:py-8">
+          <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center rounded-full bg-sky-500 px-4 py-1 text-[10px] font-extrabold tracking-wide text-white">
               {leftBadge}
             </span>
-
-            {/* right gray badge */}
             <span className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-4 py-1 text-[10px] font-extrabold tracking-wide text-white/90">
               {rightBadge}
             </span>
           </div>
 
-          {/* title */}
-          <h1 className="mt-4 max-w-[720px] text-[34px] font-extrabold leading-[1.05] text-white">
+          <h1 className="mt-4 max-w-[720px] text-[28px] font-extrabold leading-[1.05] text-white md:text-[34px]">
             {title}
           </h1>
         </div>

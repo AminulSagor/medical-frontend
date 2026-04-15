@@ -8,5 +8,5 @@ export default function CourseDetailsSummaryClient({
 }: {
   summary: CourseDetailsSummaryProps;
 }) {
-  return <CourseDetailsSummary {...summary} onAddToCalendar={() => {}} />;
+  return <CourseDetailsSummary {...summary} />;
 }

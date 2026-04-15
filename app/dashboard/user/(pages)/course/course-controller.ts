@@ -8,19 +8,24 @@ import type {
   CompletedCourseItem,
   CourseListMeta,
   CourseSortBy,
+  CourseSortOrder,
   CourseStats,
   CourseSummaryResponse,
   CourseTabKey,
   CourseToolbarState,
   CourseTypeFilter,
 } from "@/types/user/course/course-type";
-import { getMyCourses, getMyCoursesSummary } from "@/service/user/course.service";
+import {
+  getFeaturedCourse,
+  getMyCourses,
+  getMyCoursesSummary,
+} from "@/service/user/course.service";
 
 const DEFAULT_META: CourseListMeta = {
   total: 0,
   page: 1,
   limit: 10,
-  totalPages: 0,
+  totalPages: 1,
 };
 
 function useDebouncedValue<T>(value: T, delay = 300) {
@@ -37,27 +42,18 @@ function useDebouncedValue<T>(value: T, delay = 300) {
   return debouncedValue;
 }
 
-function matchesCourseType(value: string, courseType: CourseTypeFilter) {
-  if (courseType === "all") return true;
-
-  const normalizedValue = value.toLowerCase();
-
-  if (courseType === "online") {
-    return normalizedValue.includes("online");
-  }
-
-  return (
-    normalizedValue.includes("in-person") ||
-    normalizedValue.includes("in person") ||
-    normalizedValue.includes("lab")
-  );
+function formatCreditsValue(value: string | number | undefined) {
+  const numericValue = Number(value ?? 0);
+  if (Number.isNaN(numericValue)) return "0.0";
+  return numericValue.toFixed(1);
 }
 
 export function useCourseController() {
   const [activeTab, setActiveTab] = useState<CourseTabKey>("active");
   const [search, setSearch] = useState("");
   const [courseType, setCourseType] = useState<CourseTypeFilter>("all");
-  const [sortBy, setSortBy] = useState<CourseSortBy>("createdAt");
+  const [sortBy, setSortBy] = useState<CourseSortBy>("title");
+  const [sortOrder] = useState<CourseSortOrder>("desc");
   const [page, setPage] = useState(1);
   const limit = 10;
 
@@ -69,28 +65,25 @@ export function useCourseController() {
   const [listError, setListError] = useState<string | null>(null);
 
   const [activeCourses, setActiveCourses] = useState<ActiveCourseItem[]>([]);
-  const [completedCourses, setCompletedCourses] = useState<CompletedCourseItem[]>(
-    [],
-  );
+  const [completedCourses, setCompletedCourses] = useState<CompletedCourseItem[]>([]);
   const [browseCourses, setBrowseCourses] = useState<BrowseCourseItem[]>([]);
+  const [featuredBrowseCourse, setFeaturedBrowseCourse] = useState<BrowseCourseItem | null>(null);
 
   const [activeMeta, setActiveMeta] = useState<CourseListMeta>(DEFAULT_META);
-  const [completedMeta, setCompletedMeta] =
-    useState<CourseListMeta>(DEFAULT_META);
+  const [completedMeta, setCompletedMeta] = useState<CourseListMeta>(DEFAULT_META);
   const [browseMeta, setBrowseMeta] = useState<CourseListMeta>(DEFAULT_META);
 
   const debouncedSearch = useDebouncedValue(search);
 
   useEffect(() => {
     setPage(1);
-  }, [activeTab, debouncedSearch, sortBy]);
+  }, [activeTab, debouncedSearch, sortBy, courseType]);
 
   useEffect(() => {
     const fetchSummary = async () => {
       try {
         setSummaryLoading(true);
         setSummaryError(null);
-
         const response = await getMyCoursesSummary();
         setSummary(response);
       } catch (error) {
@@ -101,7 +94,7 @@ export function useCourseController() {
       }
     };
 
-    fetchSummary();
+    void fetchSummary();
   }, []);
 
   useEffect(() => {
@@ -112,15 +105,17 @@ export function useCourseController() {
         setListLoading(true);
         setListError(null);
 
-        if (activeTab === "active") {
-          const response = await getMyCourses({
-            tab: "active",
-            page,
-            limit,
-            sortBy,
-            search: debouncedSearch || undefined,
-          });
+        const baseQuery = {
+          page,
+          limit,
+          sortBy,
+          sortOrder,
+          search: debouncedSearch || undefined,
+          courseType: courseType === "all" ? undefined : courseType,
+        } as const;
 
+        if (activeTab === "active") {
+          const response = await getMyCourses({ tab: "active", ...baseQuery });
           if (!isSubscribed) return;
           setActiveCourses(response.items);
           setActiveMeta(response.meta);
@@ -128,34 +123,24 @@ export function useCourseController() {
         }
 
         if (activeTab === "completed") {
-          const response = await getMyCourses({
-            tab: "completed",
-            page,
-            limit,
-            sortBy,
-            search: debouncedSearch || undefined,
-          });
-
+          const response = await getMyCourses({ tab: "completed", ...baseQuery });
           if (!isSubscribed) return;
           setCompletedCourses(response.items);
           setCompletedMeta(response.meta);
           return;
         }
 
-        const response = await getMyCourses({
-          tab: "browse",
-          page,
-          limit,
-          sortBy,
-          search: debouncedSearch || undefined,
-        });
+        const [response, featuredResponse] = await Promise.all([
+          getMyCourses({ tab: "browse", ...baseQuery }),
+          getFeaturedCourse().catch(() => null),
+        ]);
 
         if (!isSubscribed) return;
         setBrowseCourses(response.items);
         setBrowseMeta(response.meta);
+        setFeaturedBrowseCourse(featuredResponse);
       } catch (error) {
         console.error(`Failed to fetch ${activeTab} courses:`, error);
-
         if (!isSubscribed) return;
         setListError("Failed to load courses. Please try again later.");
       } finally {
@@ -165,46 +150,21 @@ export function useCourseController() {
       }
     };
 
-    fetchCourses();
+    void fetchCourses();
 
     return () => {
       isSubscribed = false;
     };
-  }, [activeTab, page, limit, sortBy, debouncedSearch]);
+  }, [activeTab, page, limit, sortBy, sortOrder, debouncedSearch, courseType]);
 
   const stats = useMemo<CourseStats>(
     () => ({
-      totalCmeCredits: String(summary?.totalCmeCredits.value ?? "0.0"),
+      totalCmeCredits: formatCreditsValue(summary?.totalCmeCredits.value),
       totalCmeDeltaText: summary?.totalCmeCredits.trend ?? "",
       inProgressCount: Number(summary?.coursesInProgress.value ?? 0),
-      nextLiveSessionText:
-        summary?.nextLiveSession.value ?? "No upcoming sessions",
+      nextLiveSessionText: summary?.nextLiveSession.value ?? "No upcoming sessions",
     }),
     [summary],
-  );
-
-  const filteredActiveCourses = useMemo(
-    () =>
-      activeCourses.filter((item) =>
-        matchesCourseType(`${item.deliveryMethod} ${item.tag}`, courseType),
-      ),
-    [activeCourses, courseType],
-  );
-
-  const filteredCompletedCourses = useMemo(
-    () =>
-      completedCourses.filter((item) =>
-        matchesCourseType(`${item.tag} ${item.location}`, courseType),
-      ),
-    [completedCourses, courseType],
-  );
-
-  const filteredBrowseCourses = useMemo(
-    () =>
-      browseCourses.filter((item) =>
-        matchesCourseType(`${item.tag} ${item.title}`, courseType),
-      ),
-    [browseCourses, courseType],
   );
 
   const currentMeta = useMemo(() => {
@@ -218,6 +178,7 @@ export function useCourseController() {
     search,
     courseType,
     sortBy,
+    sortOrder,
     page,
     limit,
   };
@@ -231,9 +192,10 @@ export function useCourseController() {
     setPage,
 
     stats,
-    activeCourses: filteredActiveCourses,
-    completedCourses: filteredCompletedCourses,
-    browseCourses: filteredBrowseCourses,
+    activeCourses,
+    completedCourses,
+    browseCourses,
+    featuredBrowseCourse,
     currentMeta,
 
     isSummaryLoading: summaryLoading,

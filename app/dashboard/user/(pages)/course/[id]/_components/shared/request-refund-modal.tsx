@@ -1,47 +1,40 @@
-// app/(user)/(registered-user)/course/[id]/_components/shared/request-refund-modal.client.tsx
 "use client";
 
-import { useMemo, useState } from "react";
-import { X, AlertCircle, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { AlertCircle, X } from "lucide-react";
 
-export type RefundReason = {
-  id: string;
-  label: string;
+export type RefundConfirmPayload = {
+  reasonText: string;
+  acknowledged: boolean;
 };
 
 export type RequestRefundModalProps = {
   open: boolean;
   onClose: () => void;
 
-  // UI display (later from backend)
   courseTitle: string;
-  metaText: string; // "Mar 12 - 14 • Booked for: 1 Attendee"
-  refundWindowText: string; // "2d 4h remaining"
-  policyTitle: string; // "Refund Policy:"
-  policyText: string; // policy paragraph
+  metaText: string;
+  refundWindowText: string;
 
-  totalPaidLabel?: string; // "TOTAL PAID"
-  totalPaidValue: string; // "$650.00"
+  policyTitle: string;
+  policyText: string;
 
-  refundAmountLabel?: string; // "REFUND AMOUNT"
-  refundAmountValue: string; // "$600.00"
-  feeText?: string; // "-$50.00 fee"
+  totalPaidLabel?: string;
+  totalPaidValue: string;
 
-  disclaimerText: string; // checkbox line
+  refundAmountLabel?: string;
+  refundAmountValue: string;
+  feeText?: string;
 
-  footnoteText: string; // bottom hint
+  disclaimerText: string;
+  footnoteText: string;
 
-  // options (later from backend)
-  reasons: RefundReason[];
+  submitting?: boolean;
+  errorText?: string | null;
 
-  // Placeholder callbacks (backend later)
-  onConfirm?: (payload: { reasonId: string | null; acknowledged: boolean }) => void;
+  onConfirm?: (payload: RefundConfirmPayload) => void;
   onKeepBooking?: () => void;
 };
-
-function cx(...v: Array<string | false | null | undefined>) {
-  return v.filter(Boolean).join(" ");
-}
 
 export default function RequestRefundModalClient(props: RequestRefundModalProps) {
   const {
@@ -51,6 +44,7 @@ export default function RequestRefundModalClient(props: RequestRefundModalProps)
     courseTitle,
     metaText,
     refundWindowText,
+
     policyTitle,
     policyText,
 
@@ -59,30 +53,27 @@ export default function RequestRefundModalClient(props: RequestRefundModalProps)
 
     refundAmountLabel = "REFUND AMOUNT",
     refundAmountValue,
-    feeText = "-$50.00 fee",
+    feeText,
 
     disclaimerText,
     footnoteText,
 
-    reasons,
+    submitting = false,
+    errorText,
+
     onConfirm,
     onKeepBooking,
   } = props;
 
-  const [reasonId, setReasonId] = useState<string | null>(null);
+  const [reasonText, setReasonText] = useState("");
   const [ack, setAck] = useState(false);
-  const [reasonOpen, setReasonOpen] = useState(false);
-
-  const selectedReason = useMemo(
-    () => reasons.find((r) => r.id === reasonId)?.label ?? "Select a reason...",
-    [reasons, reasonId]
-  );
 
   if (!open) return null;
 
+  const canSubmit = ack && reasonText.trim().length > 0 && !submitting;
+
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center px-4">
-      {/* overlay */}
       <button
         type="button"
         aria-label="Close overlay"
@@ -90,13 +81,9 @@ export default function RequestRefundModalClient(props: RequestRefundModalProps)
         onClick={onClose}
       />
 
-      {/* modal */}
       <div className="relative z-[91] w-full max-w-[420px] overflow-hidden rounded-2xl bg-white shadow-[0_30px_80px_rgba(0,0,0,0.25)]">
-        {/* header */}
         <div className="flex items-center justify-between px-5 py-4">
-          <div className="text-[16px] font-extrabold text-slate-900">
-            Request Refund
-          </div>
+          <div className="text-[16px] font-extrabold text-slate-900">Request Refund</div>
 
           <button
             type="button"
@@ -111,18 +98,10 @@ export default function RequestRefundModalClient(props: RequestRefundModalProps)
         <div className="h-px bg-slate-100" />
 
         <div className="px-5 py-5">
-          {/* course strip */}
           <div className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
             <div className="flex items-start gap-3">
               <div className="grid h-11 w-11 place-items-center rounded-xl bg-sky-50 text-[#35BEEA] ring-1 ring-sky-100">
-                {/* calendar icon */}
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="text-[#35BEEA]"
-                >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-[#35BEEA]">
                   <path
                     d="M8 2v3M16 2v3M3.5 9h17M6.5 5h11A3 3 0 0 1 20.5 8v11A3 3 0 0 1 17.5 22h-11A3 3 0 0 1 3.5 19V8A3 3 0 0 1 6.5 5Z"
                     stroke="currentColor"
@@ -133,9 +112,7 @@ export default function RequestRefundModalClient(props: RequestRefundModalProps)
               </div>
 
               <div>
-                <div className="text-[13px] font-extrabold text-slate-900">
-                  {courseTitle}
-                </div>
+                <div className="text-[13px] font-extrabold text-slate-900">{courseTitle}</div>
                 <div className="mt-1 text-[11px] text-slate-500">{metaText}</div>
               </div>
             </div>
@@ -150,7 +127,6 @@ export default function RequestRefundModalClient(props: RequestRefundModalProps)
             </div>
           </div>
 
-          {/* policy alert */}
           <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
             <div className="flex gap-3">
               <div className="mt-0.5 text-rose-600">
@@ -164,7 +140,6 @@ export default function RequestRefundModalClient(props: RequestRefundModalProps)
             </div>
           </div>
 
-          {/* amounts */}
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-[9px] font-extrabold tracking-[0.15em] text-slate-400">
@@ -180,9 +155,7 @@ export default function RequestRefundModalClient(props: RequestRefundModalProps)
                 <div className="text-[9px] font-extrabold tracking-[0.15em] text-sky-700">
                   {refundAmountLabel}
                 </div>
-                <div className="text-[10px] font-extrabold text-rose-500">
-                  {feeText}
-                </div>
+                <div className="text-[10px] font-extrabold text-rose-500">{feeText}</div>
               </div>
 
               <div className="mt-1 text-[16px] font-extrabold text-sky-700">
@@ -191,53 +164,20 @@ export default function RequestRefundModalClient(props: RequestRefundModalProps)
             </div>
           </div>
 
-          {/* reason */}
           <div className="mt-4">
             <div className="text-[9px] font-extrabold tracking-[0.15em] text-slate-400">
               REASON FOR REFUND
             </div>
 
-            <div className="relative mt-2">
-              <button
-                type="button"
-                onClick={() => setReasonOpen((v) => !v)}
-                className={cx(
-                  "flex w-full items-center justify-between rounded-xl border bg-white px-4 py-3 text-left",
-                  reasonOpen ? "border-sky-200 ring-2 ring-sky-100" : "border-slate-200"
-                )}
-              >
-                <span className="text-[12px] font-semibold text-slate-700">
-                  {selectedReason}
-                </span>
-                <ChevronDown className="h-4 w-4 text-slate-400" />
-              </button>
-
-              {reasonOpen && (
-                <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-10 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
-                  <div className="max-h-[220px] overflow-auto py-1">
-                    {reasons.map((r) => (
-                      <button
-                        key={r.id}
-                        type="button"
-                        onClick={() => {
-                          setReasonId(r.id);
-                          setReasonOpen(false);
-                        }}
-                        className={cx(
-                          "w-full px-4 py-2.5 text-left text-[12px] hover:bg-slate-50",
-                          reasonId === r.id ? "font-extrabold text-slate-900" : "font-semibold text-slate-700"
-                        )}
-                      >
-                        {r.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <textarea
+              value={reasonText}
+              onChange={(event) => setReasonText(event.target.value)}
+              placeholder="Write your refund reason"
+              rows={4}
+              className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-700 outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+            />
           </div>
 
-          {/* checkbox */}
           <label className="mt-4 flex items-start gap-3 text-[11px] text-slate-600">
             <input
               type="checkbox"
@@ -245,25 +185,19 @@ export default function RequestRefundModalClient(props: RequestRefundModalProps)
               onChange={(e) => setAck(e.target.checked)}
               className="mt-0.5 h-4 w-4 rounded border-slate-300"
             />
-            <span>
-              {disclaimerText.split("cannot be undone").length === 2 ? (
-                <>
-                  {disclaimerText.split("cannot be undone")[0]}
-                  <span className="font-extrabold text-slate-900">cannot be undone</span>
-                  {disclaimerText.split("cannot be undone")[1]}
-                </>
-              ) : (
-                disclaimerText
-              )}
-            </span>
+            <span>{disclaimerText}</span>
           </label>
 
-          {/* footnote */}
           <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[10px] leading-relaxed text-slate-500">
             {footnoteText}
           </div>
 
-          {/* actions */}
+          {errorText ? (
+            <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-[11px] text-rose-700">
+              {errorText}
+            </div>
+          ) : null}
+
           <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <button
               type="button"
@@ -275,12 +209,12 @@ export default function RequestRefundModalClient(props: RequestRefundModalProps)
 
             <button
               type="button"
-              onClick={() => onConfirm?.({ reasonId, acknowledged: ack })}
+              onClick={() => onConfirm?.({ reasonText: reasonText.trim(), acknowledged: ack })}
               className="h-11 rounded-xl bg-[#35BEEA] text-[12px] font-extrabold text-white hover:opacity-95 disabled:opacity-50"
-              disabled={!ack || !reasonId}
-              title={!ack || !reasonId ? "Select reason and acknowledge to continue" : undefined}
+              disabled={!canSubmit}
+              title={!canSubmit ? "Add reason and confirm terms to continue" : undefined}
             >
-              Confirm Refund Request
+              {submitting ? "Submitting..." : "Confirm Refund Request"}
             </button>
           </div>
         </div>
