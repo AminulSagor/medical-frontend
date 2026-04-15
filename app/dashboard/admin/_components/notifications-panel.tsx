@@ -4,6 +4,7 @@ import Image from "next/image";
 import { BookOpen, ShoppingCart, CloudCheck } from "lucide-react";
 
 import type { DropdownNotificationItem } from "@/types/admin/notifications.types";
+import Link from "next/link";
 
 function IconBox({
   type,
@@ -124,14 +125,11 @@ export default function NotificationsPanel({
         )}
       </div>
 
-      <div className="border-t border-slate-100 p-4">
-        <button
-          disabled
-          type="button"
-          onClick={onViewAll}
-          className="w-full rounded-xl bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-hover)]"
-        >
-          View All Notifications
+      <div className="border-t border-slate-100 p-4 w-full">
+        <button className="w-full rounded-xl bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-hover)]">
+          <Link href="/dashboard/admin/notifications">
+            View All Notifications
+          </Link>
         </button>
       </div>
     </div>
