@@ -62,13 +62,13 @@ export default function SubscriberProfileHeader({
           </div>
 
           <div className="flex items-center gap-3 md:justify-end">
-            <button
+            {/* <button
               type="button"
               className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
               <Mail size={16} className="text-slate-500" />
               Message
-            </button>
+            </button> */}
 
             <button
               type="button"

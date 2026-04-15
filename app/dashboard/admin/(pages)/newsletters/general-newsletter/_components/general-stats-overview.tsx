@@ -18,7 +18,7 @@ import {
   GeneralBroadcastCadenceAvailableSlotItem,
   GeneralBroadcastCadenceFrequencyType,
 } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-cadence.types";
-import { GeneralBroadcastWorkspaceMetricsCards } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-workspace-metrics.types";
+import { GeneralBroadcastWorkspaceMetricsData } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-workspace-metrics.types";
 
 type InfoCardProps = {
   title: string;
@@ -82,15 +82,11 @@ function formatSlotChipLabel(item: GeneralBroadcastCadenceAvailableSlotItem) {
   }).format(new Date(item.scheduledAtLocalIso));
 }
 
-function formatPercent(value: number) {
-  return `${Number.isFinite(value) ? value : 0}%`;
-}
-
 export default function GeneralStatOverview() {
   const [isCadenceDialogOpen, setIsCadenceDialogOpen] = useState(false);
   const [cadence, setCadence] = useState<GeneralBroadcastCadence | null>(null);
   const [metrics, setMetrics] =
-    useState<GeneralBroadcastWorkspaceMetricsCards | null>(null);
+    useState<GeneralBroadcastWorkspaceMetricsData | null>(null);
   const [activeFrequency, setActiveFrequency] =
     useState<GeneralBroadcastCadenceFrequencyType>("WEEKLY");
   const [nextRuns, setNextRuns] = useState<
@@ -133,7 +129,7 @@ export default function GeneralStatOverview() {
       const response =
         await generalBroadcastWorkspaceMetricsService.getGeneralBroadcastWorkspaceMetrics();
 
-      setMetrics(response.cards);
+      setMetrics(response.data);
     } catch (error) {
       setMetricsError("Failed to load workspace metrics.");
       setMetrics(null);
@@ -229,39 +225,40 @@ export default function GeneralStatOverview() {
     if (isLoadingMetrics && !metrics) return "Loading metrics...";
     if (!metrics) return "Metrics unavailable";
 
-    return `${metrics.queueEfficiency.queuedCount} Items Queued`;
+    return metrics.cards.queueEfficiency.value;
   }, [isLoadingMetrics, metrics]);
 
   const queueFooter = useMemo(() => {
     if (!metrics) return metricsError || "Awaiting queue metrics";
 
-    const { coverageDays, draftCount } = metrics.queueEfficiency;
-    return `Next ${coverageDays} days covered • ${draftCount} drafts`;
+    return metrics.cards.queueEfficiency.trend;
   }, [metrics, metricsError]);
 
   const engagementValue = useMemo(() => {
     if (isLoadingMetrics && !metrics) return "Loading metrics...";
     if (!metrics) return "Metrics unavailable";
 
-    return `${formatPercent(
-      metrics.engagementPulse.averageOpenRatePercent,
-    )} Open`;
+    return metrics.cards.engagementPulse.value;
   }, [isLoadingMetrics, metrics]);
 
   const engagementFooter = useMemo(() => {
     if (!metrics) return metricsError || "Awaiting engagement metrics";
 
-    return `Best ${formatPercent(metrics.engagementPulse.bestOpenRatePercent)}`;
+    return metrics.cards.engagementPulse.trend;
   }, [metrics, metricsError]);
 
   const subscriberValue = useMemo(() => {
     if (isLoadingMetrics && !metrics) return "Loading...";
-    return "—";
+    if (!metrics) return "Metrics unavailable";
+
+    return metrics.cards.totalSubscribers.value;
   }, [isLoadingMetrics, metrics]);
 
   const subscriberFooter = useMemo(() => {
-    return "Subscriber metrics API needed";
-  }, []);
+    if (!metrics) return metricsError || "Awaiting subscriber metrics";
+
+    return metrics.cards.totalSubscribers.trend;
+  }, [metrics, metricsError]);
 
   const activeRunsLabel = activeFrequency === "WEEKLY" ? "Weekly" : "Monthly";
 

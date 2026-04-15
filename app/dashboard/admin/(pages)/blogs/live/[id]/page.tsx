@@ -63,7 +63,7 @@ export default function AdminBlogLivePage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <div className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+          <div className="mx-auto grid max-w-5xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 py-4">
             <Link
               href="/dashboard/admin/blogs"
               className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-900"
@@ -72,11 +72,11 @@ export default function AdminBlogLivePage() {
               Back to Manager
             </Link>
 
-            <p className="text-sm font-semibold text-slate-700">
+            <p className="truncate text-center text-sm font-semibold text-slate-700">
               Loading article...
             </p>
 
-            <div className="w-[120px]" />
+            <div />
           </div>
         </div>
 
@@ -101,7 +101,7 @@ export default function AdminBlogLivePage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <div className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+          <div className="mx-auto grid max-w-5xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 py-4">
             <Link
               href="/dashboard/admin/blogs"
               className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-900"
@@ -110,11 +110,11 @@ export default function AdminBlogLivePage() {
               Back to Manager
             </Link>
 
-            <p className="text-sm font-semibold text-rose-600">
+            <p className="truncate text-center text-sm font-semibold text-rose-600">
               Failed to load article
             </p>
 
-            <div className="w-[120px]" />
+            <div />
           </div>
         </div>
 
@@ -155,7 +155,8 @@ export default function AdminBlogLivePage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+        <div className="relative mx-auto flex items-center justify-between px-4 py-4">
+          {/* Left */}
           <Link
             href="/dashboard/admin/blogs"
             className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-900"
@@ -164,11 +165,15 @@ export default function AdminBlogLivePage() {
             Back to Manager
           </Link>
 
-          <p className="truncate text-sm font-semibold text-slate-700">
+          {/* Center - Responsive truncation */}
+          <p className="absolute left-1/2 hidden -translate-x-1/2 truncate font-semibold text-slate-700 md:block lg:max-w-md xl:max-w-lg text-lg">
             Previewing: {blogPost.title}
           </p>
 
-          <div className="w-[120px]" />
+          {/* Right - Empty div for flex spacing */}
+          <div className="invisible w-[110px] md:visible">
+            {/* This empty div maintains the layout and balances the left button */}
+          </div>
         </div>
       </div>
 
@@ -186,23 +191,23 @@ export default function AdminBlogLivePage() {
 
           <div className="p-6 md:p-8">
             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 font-medium">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
                 <Tag size={12} />
                 {categoryName}
               </span>
 
-              <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 text-slate-600">
                 <CalendarDays size={14} />
                 {formatDate(blogPost.publishedAt)}
               </span>
 
-              <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 text-slate-600">
                 <Clock3 size={14} />
                 {blogPost.readTimeMinutes} min read
               </span>
             </div>
 
-            <h1 className="mt-4 text-2xl font-extrabold text-slate-900 md:text-3xl">
+            <h1 className="mt-4 text-2xl font-extrabold leading-tight text-slate-900 md:text-3xl">
               {blogPost.title}
             </h1>
 
@@ -212,14 +217,26 @@ export default function AdminBlogLivePage() {
             </div>
 
             {blogPost.excerpt ? (
-              <p className="mt-5 text-sm leading-7 text-slate-600 md:text-base">
+              <p className="mt-5 text-sm leading-7 text-slate-700 md:text-base">
                 {blogPost.excerpt}
               </p>
             ) : null}
 
             <div className="mt-8 border-t border-slate-200 pt-8">
               <div
-                className="prose prose-slate max-w-none prose-p:text-sm prose-p:leading-7 md:prose-p:text-base"
+                className="
+      prose max-w-none
+
+      !text-slate-800
+      prose-p:!text-slate-700
+      prose-headings:!text-slate-900
+      prose-strong:!text-slate-900
+      prose-li:!text-slate-700
+      prose-a:!text-[var(--primary)]
+
+      prose-p:leading-7
+      md:prose-p:text-base
+    "
                 dangerouslySetInnerHTML={{ __html: blogPost.content }}
               />
             </div>
@@ -229,7 +246,7 @@ export default function AdminBlogLivePage() {
                 {blogPost.tags.map((tag) => (
                   <span
                     key={tag.id}
-                    className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
+                    className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
                   >
                     {tag.name}
                   </span>

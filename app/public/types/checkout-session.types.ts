@@ -1,4 +1,4 @@
-export type CheckoutSessionDomainType = "product";
+export type CheckoutSessionDomainType = "product" | "workshop";
 
 export interface CreateCheckoutSessionPayload {
   domainType: CheckoutSessionDomainType;

@@ -1,8 +1,8 @@
 "use client";
 
-import { Filter, Upload } from "lucide-react";
+import { Filter } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { getRecentGeneralTransmissions } from "@/service/admin/newsletter/dashboard/recent-transmissions.service";
 import type {
@@ -74,6 +74,9 @@ export default function TransmissionTable() {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const filterRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -107,6 +110,23 @@ export default function TransmissionTable() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        filterRef.current &&
+        !filterRef.current.contains(event.target as Node)
+      ) {
+        setIsFilterOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const filteredRows = useMemo(() => {
     const items = data?.items ?? [];
 
@@ -122,6 +142,14 @@ export default function TransmissionTable() {
   const totalCount = data?.meta.total ?? 0;
   const showingCount = filteredRows.length;
 
+  const filterOptions: Array<{ label: string; value: StatusFilter }> = [
+    { label: "All Status", value: "ALL" },
+    { label: "Sent", value: "SENT" },
+    { label: "Cancelled", value: "CANCELLED" },
+    { label: "Draft", value: "DRAFT" },
+    { label: "Scheduled", value: "SCHEDULED" },
+  ];
+
   return (
     <div className="mt-7">
       <div className="flex items-center justify-between gap-3">
@@ -135,7 +163,7 @@ export default function TransmissionTable() {
         </div>
 
         <div className="flex items-center gap-2">
-          <select
+          {/* <select
             value={statusFilter}
             onChange={(event) =>
               setStatusFilter(event.target.value as StatusFilter)
@@ -147,21 +175,50 @@ export default function TransmissionTable() {
             <option value="CANCELLED">Cancelled</option>
             <option value="DRAFT">Draft</option>
             <option value="SCHEDULED">Scheduled</option>
-          </select>
+          </select> */}
 
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
-          >
-            <Filter size={14} /> Filter
-          </button>
+          <div ref={filterRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsFilterOpen((prev) => !prev)}
+              className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200"
+            >
+              <Filter size={14} /> Filter
+            </button>
 
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
-          >
-            <Upload size={14} /> Export
-          </button>
+            {isFilterOpen && (
+              <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-44 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                  Filter by status
+                </p>
+
+                <div className="mt-1 flex flex-col gap-1">
+                  {filterOptions.map((option) => {
+                    const isActive = statusFilter === option.value;
+
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          setStatusFilter(option.value);
+                          setIsFilterOpen(false);
+                        }}
+                        className={`flex items-center justify-between rounded-lg px-2 py-2 text-left text-xs font-medium transition ${
+                          isActive
+                            ? "bg-[var(--primary-50)] text-[var(--primary)]"
+                            : "text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        <span>{option.label}</span>
+                        {isActive ? <span>✓</span> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
