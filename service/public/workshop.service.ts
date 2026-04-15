@@ -34,13 +34,20 @@ export const getPublicWorkshops = async (
 export const getFeaturedPublicWorkshop = async (): Promise<FeaturedPublicWorkshopResponse> => {
   const response = await serviceClient.get<FeaturedPublicWorkshopResponse>(
     "/workshops/public/featured",
+  );
+  return response.data;
+};
+
 export const getPublicWorkshopsUpcoming = async (
   params?: PublicWorkshopsQueryParams,
 ): Promise<PublicWorkshopsResponse> => {
   const response = await serviceClient.get<PublicWorkshopsResponse>(
-    "/workshops?upcoming=true",
+    "/workshops",
     {
-      params,
+      params: {
+        ...params,
+        upcoming: true,
+      },
     },
   );
   return response.data;
