@@ -1,10 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Minus, Plus, ShoppingBag, Star } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Star, CreditCard, Heart } from "lucide-react";
 import { ProductDetails } from "@/app/public/types/product.details";
 import Card from "@/components/cards/card";
 import Button from "@/components/buttons/button";
+import { useRouter } from "next/navigation";
+import { useCart } from "@/app/public/context/cart-context";
+import { useWishlist } from "@/app/public/context/wishlist-context";
 
 function money(n: number) {
   return `$${n.toFixed(2)}`;
@@ -15,12 +18,32 @@ export default function PurchasePanelClient({
 }: {
   product: ProductDetails;
 }) {
+  const router = useRouter();
+  const { addItem } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const [qty, setQty] = useState(1);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+
+  const wishlisted = isInWishlist(product.id);
 
   const stars = useMemo(() => {
     const full = Math.round(product.rating.value);
     return Array.from({ length: 5 }).map((_, i) => i < full);
   }, [product.rating.value]);
+
+  const handleBuyNow = async () => {
+    setIsProcessingPayment(true);
+    try {
+      // Add to cart first, then redirect to checkout where shipping is collected
+      await addItem(product.id, qty);
+      router.push('/public/checkout');
+    } catch (error: any) {
+      console.error('Buy now error:', error);
+      alert(error.message || 'Failed to add item. Please try again.');
+      setIsProcessingPayment(false);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -108,14 +131,49 @@ export default function PurchasePanelClient({
                 </div>
               </div>
 
-              <div className="col-span-7">
+              <div className="col-span-7 space-y-3">
                 <Button
                   className="h-14 w-full justify-center bg-primary text-white shadow-sm"
                   shape="pill"
+                  onClick={handleBuyNow}
+                  disabled={isProcessingPayment}
+                >
+                  <CreditCard className="h-5 w-5" />
+                  {isProcessingPayment ? 'Processing...' : 'Buy Now'}
+                </Button>
+                
+                <Button
+                  className="h-12 w-full justify-center border border-primary bg-white text-primary shadow-sm"
+                  shape="pill"
+                  disabled={isAddingToCart}
+                  onClick={async () => {
+                    if (isAddingToCart) return;
+                    try {
+                      setIsAddingToCart(true);
+                      // addItem handles both local state AND backend sync
+                      await addItem(product.id, qty);
+                    } catch (error) {
+                      console.error('Failed to add to cart', error);
+                    } finally {
+                      setIsAddingToCart(false);
+                    }
+                  }}
                 >
                   <ShoppingBag className="h-5 w-5" />
-                  Add to Cart
+                  {isAddingToCart ? 'Adding...' : 'Add to Cart'}
                 </Button>
+
+                <button
+                  type="button"
+                  onClick={() => toggleWishlist(product.id)}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition hover:border-red-200 hover:text-red-500 active:scale-95"
+                >
+                  <Heart
+                    size={18}
+                    className={wishlisted ? 'fill-red-500 text-red-500' : ''}
+                  />
+                  {wishlisted ? 'In Wishlist' : 'Add to Wishlist'}
+                </button>
               </div>
             </div>
           </div>

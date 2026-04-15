@@ -14,7 +14,6 @@ import {
   getCheckoutRedirectUrl,
 } from "@/service/user/checkout-session.service";
 import { UpdateShippingAddressPayload } from "@/app/public/types/shipping-address.types";
-import { updateShippingAddress } from "@/service/user/shipping-address.service";
 
 type OrderItemData = {
   id: string;
@@ -42,6 +41,7 @@ const OrderReviewCard = ({ shippingAddress }: OrderReviewCardProps) => {
   const [summary, setSummary] = useState<OrderSummaryResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -85,8 +85,10 @@ const OrderReviewCard = ({ shippingAddress }: OrderReviewCardProps) => {
   }, [items]);
 
   const handlePay = async () => {
+    setCheckoutError(null);
+
     if (!summary?.orderSummaryId) {
-      console.error("orderSummaryId is missing");
+      setCheckoutError("Order summary is not ready. Please wait a moment.");
       return;
     }
 
@@ -97,25 +99,12 @@ const OrderReviewCard = ({ shippingAddress }: OrderReviewCardProps) => {
       !shippingAddress.state?.trim() ||
       !shippingAddress.zipCode?.trim()
     ) {
-      console.error("Shipping address is incomplete");
+      setCheckoutError("Please complete all required shipping address fields.");
       return;
     }
 
     try {
       setIsStartingCheckout(true);
-
-      const shippingResult = await updateShippingAddress({
-        fullName: shippingAddress.fullName.trim(),
-        addressLine1: shippingAddress.addressLine1.trim(),
-        addressLine2: shippingAddress.addressLine2?.trim() || null,
-        city: shippingAddress.city.trim(),
-        state: shippingAddress.state.trim(),
-        zipCode: shippingAddress.zipCode.trim(),
-      });
-
-      if (!shippingResult.isComplete) {
-        throw new Error("Shipping address is incomplete");
-      }
 
       const origin = window.location.origin;
 
@@ -124,6 +113,14 @@ const OrderReviewCard = ({ shippingAddress }: OrderReviewCardProps) => {
         orderSummaryId: summary.orderSummaryId,
         successUrl: `${origin}/public/order-success?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${origin}/public/checkout`,
+        shippingAddress: {
+          fullName: shippingAddress.fullName.trim(),
+          addressLine1: shippingAddress.addressLine1.trim(),
+          addressLine2: shippingAddress.addressLine2?.trim() || undefined,
+          city: shippingAddress.city.trim(),
+          state: shippingAddress.state.trim(),
+          zipCode: shippingAddress.zipCode.trim(),
+        },
       });
 
       const redirectUrl = getCheckoutRedirectUrl(response);
@@ -133,8 +130,10 @@ const OrderReviewCard = ({ shippingAddress }: OrderReviewCardProps) => {
       }
 
       window.location.href = redirectUrl;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to start checkout session", error);
+      const apiMessage = error?.response?.data?.message;
+      setCheckoutError(apiMessage || error?.message || "Failed to start checkout. Please try again.");
     } finally {
       setIsStartingCheckout(false);
     }
@@ -197,6 +196,12 @@ const OrderReviewCard = ({ shippingAddress }: OrderReviewCardProps) => {
         <span className="font-semibold text-slate-900">Total</span>
         <span className="text-2xl font-semibold text-slate-900">{total}</span>
       </div>
+
+      {checkoutError && (
+        <div className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          {checkoutError}
+        </div>
+      )}
 
       <Button
         disabled={

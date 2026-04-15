@@ -33,7 +33,7 @@ export default function RefundUnavailableLauncherClient() {
         supportHoursText="Available Mon-Fri, 8 AM - 5 PM CST"
         primaryCtaLabel="Contact Support"
         secondaryCtaLabel="Back to Itinerary"
-        onPrimary={() => setOpen(false)}
+        onPrimary={() => { window.location.href = "/public/contact-us"; }}
         onSecondary={() => setOpen(false)}
       />
     </>

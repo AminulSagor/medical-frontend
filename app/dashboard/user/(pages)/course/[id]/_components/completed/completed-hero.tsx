@@ -30,11 +30,6 @@ export default function CompletedHero({
           <h1 className="mt-3 text-[22px] font-extrabold text-slate-900 md:text-2xl">
             {title}
           </h1>
-
-          <p className="mt-1 text-[12px] text-slate-500">
-            You have successfully completed this intensive simulation training
-            by Zobaer.
-          </p>
         </div>
 
         <div className="rounded-2xl bg-emerald-600 px-6 py-5 text-center text-white shadow-sm">

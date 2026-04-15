@@ -18,7 +18,7 @@ export const getPublicWorkshops = async (
   params?: PublicWorkshopsQueryParams,
 ): Promise<PublicWorkshopsResponse> => {
   const response = await serviceClient.get<PublicWorkshopsResponse>(
-    "/public/workshops",
+    "/workshops",
     {
       params,
     },
@@ -30,7 +30,7 @@ export const getPublicWorkshopById = async (
   workshopId: string,
 ): Promise<PublicWorkshopDetailsResponse> => {
   const response = await serviceClient.get<PublicWorkshopDetailsResponse>(
-    `/public/workshops/${workshopId}`,
+    `/workshops/${workshopId}`,
   );
   return response.data;
 };

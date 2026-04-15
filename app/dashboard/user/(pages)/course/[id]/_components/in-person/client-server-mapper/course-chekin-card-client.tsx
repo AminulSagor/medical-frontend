@@ -1,6 +1,7 @@
 "use client";
 
 import type { CourseCheckinCardProps } from "@/types/user/course/course-details-type";
+import { downloadTicketPdf } from "@/service/user/course-details.service";
 import CourseCheckinCard from "../course-chekin-card";
 
 export default function CourseCheckinCardClient({
@@ -11,11 +12,9 @@ export default function CourseCheckinCardClient({
   return (
     <CourseCheckinCard
       {...checkin}
-      onHowToCheckin={() => {
-        // TODO: show instructions modal later
-      }}
       onDownloadTicket={() => {
-        // TODO: call download ticket endpoint later
+        if (!checkin.ticketId) return;
+        void downloadTicketPdf(checkin.ticketId);
       }}
     />
   );

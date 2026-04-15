@@ -1,13 +1,22 @@
 import axios from "axios";
 import { serviceClient } from "@/service/base/axios_client";
 
-export type CheckoutSessionDomainType = "product";
+export type CheckoutSessionDomainType = "product" | "workshop";
 
 export interface CreateCheckoutSessionPayload {
   domainType: CheckoutSessionDomainType;
   orderSummaryId: string;
   successUrl: string;
   cancelUrl: string;
+  shippingAddress?: {
+    fullName: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country?: string;
+  };
 }
 
 export interface CheckoutSessionResponse {

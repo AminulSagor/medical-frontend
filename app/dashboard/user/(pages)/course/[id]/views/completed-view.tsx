@@ -20,20 +20,15 @@ export default function CompletedView({
       <CompletedTopStrip {...data.strip} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
-        {/* LEFT */}
         <div className="space-y-6">
           <CompletedAboutCard {...data.about} />
-
           <CourseBookingDetailsCard {...data.booking} />
-
-          {/* schedule already fixed to match your figma timeline */}
           <CourseScheduleTimeline items={data.schedule} />
         </div>
 
-        {/* RIGHT */}
         <aside className="space-y-6 lg:sticky lg:top-6">
-          <CompletedCertificateCardClient {...data.certificate} />
-          <CompletedNextStepsCardClient {...data.nextSteps} />
+          {data.certificate ? <CompletedCertificateCardClient {...data.certificate} /> : null}
+          {data.nextSteps ? <CompletedNextStepsCardClient {...data.nextSteps} /> : null}
         </aside>
       </div>
     </div>

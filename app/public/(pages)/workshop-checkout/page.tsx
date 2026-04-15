@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, Suspense } from "react";
 
 import {
   Plus,
@@ -9,10 +9,15 @@ import {
   BadgePercent,
   Lock,
   Headset,
+  Loader2,
 } from "lucide-react";
 import Card from "@/components/cards/card";
 import Button from "@/components/buttons/button";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { createWorkshopCheckoutSession } from "@/service/user/workshop-payment.service";
+import { getPublicWorkshopById } from "@/service/public/workshop.service";
+import { createWorkshopOrderSummary } from "@/service/user/create-workshop-order-summary.service";
 
 type Attendee = {
   id: string;
@@ -40,16 +45,56 @@ function labelClass() {
   return "text-[11px] font-semibold tracking-wide text-slate-600 uppercase";
 }
 
-export default function CheckoutPage() {
+function CheckoutPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const workshopId = searchParams.get('workshopId');
+  
   const [useProfile, setUseProfile] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([
     { id: uid(), fullName: "", role: "", npi: "", email: "" },
     { id: uid(), fullName: "", role: "", npi: "", email: "" },
   ]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [workshop, setWorkshop] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const seatPrice = 450;
+  const seatPrice = workshop?.standardPrice
+    ? Number(workshop.standardPrice)
+    : workshop?.price
+      ? Number(workshop.price)
+      : 0;
   const qty = attendees.length;
   const total = useMemo(() => seatPrice * qty, [seatPrice, qty]);
+
+  useEffect(() => {
+    if (workshopId) {
+      fetchWorkshop();
+    } else {
+      setError('No workshop ID provided');
+      setLoading(false);
+    }
+  }, [workshopId]);
+
+  const fetchWorkshop = async () => {
+    if (!workshopId) {
+      setError('No workshop ID provided');
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const response = await getPublicWorkshopById(workshopId);
+      setWorkshop(response.data);
+    } catch (err) {
+      console.error('Failed to fetch workshop:', err);
+      setError('Failed to load workshop details');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const update = (id: string, key: keyof Attendee, value: string) => {
     setAttendees((prev) =>
@@ -66,6 +111,103 @@ export default function CheckoutPage() {
 
   const removeAttendee = (id: string) => {
     setAttendees((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const handlePayment = async () => {
+    if (!workshopId) {
+      setError("No workshop selected.");
+      return;
+    }
+
+    // Validate all attendees have required fields
+    const invalidAttendee = attendees.find(a => !a.fullName || !a.email || !a.role);
+    if (invalidAttendee) {
+      setError("Please fill in all required fields for each attendee (Full Name, Professional Role, Email).");
+      return;
+    }
+
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      // Step 1: Create a real workshop order summary via backend API
+      const orderSummaryData = await createWorkshopOrderSummary({
+        workshopId,
+        attendees: attendees.map(a => ({
+          fullName: a.fullName.trim(),
+          professionalRole: a.role.trim(),
+          npiNumber: a.npi.trim() || undefined,
+          email: a.email.trim(),
+        })),
+      });
+
+      // Step 2: Store checkout context in sessionStorage for the success page
+      const checkoutContext = {
+        workshopId,
+        orderSummaryId: orderSummaryData.orderSummaryId,
+        attendeeIds: orderSummaryData.attendees.map(a => a.id),
+        workshopTitle: orderSummaryData.workshop?.title || workshop?.title || 'Workshop',
+        numberOfAttendees: orderSummaryData.numberOfAttendees,
+        totalPrice: orderSummaryData.pricing?.totalPrice || String(total),
+      };
+      sessionStorage.setItem('workshop_checkout_context', JSON.stringify(checkoutContext));
+      
+      // Step 3: Create Stripe checkout session with the real orderSummaryId
+      const checkoutUrl = await createWorkshopCheckoutSession({
+        orderSummaryId: orderSummaryData.orderSummaryId,
+        successUrl: `${window.location.origin}/public/workshop-checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${window.location.origin}/public/workshop-checkout?workshopId=${workshopId}`,
+      });
+
+      // Step 4: Redirect to Stripe checkout
+      window.location.href = checkoutUrl;
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      const apiMessage = err?.response?.data?.message;
+      setError(apiMessage || err.message || 'Failed to process payment. Please try again.');
+      setIsProcessing(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="pt-20">
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !workshop) {
+    return (
+      <div className="pt-20">
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
+          <p className="text-lg font-semibold text-red-500">{error}</p>
+          <Button onClick={() => router.back()}>Go Back</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const workshopTitle = workshop?.title || "Workshop";
+  const workshopStartDate = workshop?.startDate || null;
+  const workshopEndDate = workshop?.endDate || null;
+
+  const formatDateRange = () => {
+    if (!workshopStartDate) return "";
+    try {
+      const start = new Date(workshopStartDate);
+      const end = workshopEndDate ? new Date(workshopEndDate) : null;
+      const startStr = start.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+      if (end && end.getTime() !== start.getTime()) {
+        const endStr = end.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+        return `${startStr} - ${endStr}`;
+      }
+      return start.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    } catch {
+      return "";
+    }
   };
 
   return (
@@ -221,13 +363,30 @@ export default function CheckoutPage() {
                   + Add Another Attendee
                 </button>
 
+                {error && (
+                  <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                    {error}
+                  </div>
+                )}
+
                 <div className="flex justify-center pt-2">
-                  <Link href={"/public/enrollment-confirmation"}>
-                    <Button className="px-8">
-                      Proceed to Payment
-                      <ArrowRight size={18} />
-                    </Button>
-                  </Link>
+                  <Button
+                    className="px-8"
+                    onClick={handlePayment}
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        Proceed to Payment
+                        <ArrowRight size={18} />
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -245,11 +404,13 @@ export default function CheckoutPage() {
                     WORKSHOP
                   </div>
                   <div className="text-sm font-bold text-slate-900">
-                    Advanced Difficult Airway Workshop
+                    {workshopTitle}
                   </div>
-                  <div className="text-xs text-slate-500">
-                    March 12 - 14, 2024
-                  </div>
+                  {formatDateRange() && (
+                    <div className="text-xs text-slate-500">
+                      {formatDateRange()}
+                    </div>
+                  )}
                 </div>
 
                 <div className="h-px w-full bg-slate-100" />
@@ -268,39 +429,34 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                      <BadgePercent size={16} className="text-primary" />
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="text-[11px] font-extrabold tracking-widest text-blue-500">
-                        POTENTIAL SAVINGS
+                {workshop?.groupDiscountEnabled && workshop?.groupDiscounts?.length > 0 && (
+                  <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                        <BadgePercent size={16} className="text-primary" />
                       </div>
 
-                      <p className="text-sm leading-relaxed text-slate-700">
-                        Add{" "}
-                        <span className="font-bold text-blue-500">
-                          4 more attendees
-                        </span>{" "}
-                        to unlock our{" "}
-                        <span className="font-bold text-blue-500">
-                          15% Institutional Discount
-                        </span>
-                        . Your total savings would be $405.00.
-                      </p>
+                      <div className="space-y-2">
+                        <div className="text-[11px] font-extrabold tracking-widest text-blue-500">
+                          POTENTIAL SAVINGS
+                        </div>
 
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-blue-500 hover:opacity-80"
-                      >
-                        <Plus size={16} />
-                        Add Seats
-                      </button>
+                        <p className="text-sm leading-relaxed text-slate-700">
+                          Group discounts available for bulk registrations.
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={addAttendee}
+                          className="inline-flex items-center gap-2 text-sm font-semibold text-blue-500 hover:opacity-80"
+                        >
+                          <Plus size={16} />
+                          Add Seats
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div className="h-px w-full bg-slate-100" />
 
@@ -341,5 +497,19 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="pt-20">
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      </div>
+    }>
+      <CheckoutPageContent />
+    </Suspense>
   );
 }

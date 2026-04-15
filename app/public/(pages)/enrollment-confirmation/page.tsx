@@ -1,5 +1,10 @@
+"use client";
+
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Button from "@/components/buttons/button";
 import Card from "@/components/cards/card";
+import Link from "next/link";
 import {
   CheckCircle2,
   Mail,
@@ -7,9 +12,57 @@ import {
   CalendarDays,
   FileText,
   Download,
+  Loader2,
 } from "lucide-react";
 
-export default function EnrollmentConfirmationPage() {
+type EnrollmentData = {
+  workshopTitle: string;
+  numberOfAttendees: number;
+  totalPrice: string;
+  reservationId: string | null;
+};
+
+function EnrollmentConfirmationContent() {
+  const searchParams = useSearchParams();
+  const [data, setData] = useState<EnrollmentData | null>(null);
+
+  useEffect(() => {
+    // Try to read from URL params first, then fall back to sessionStorage
+    const title = searchParams.get("title");
+    const attendees = searchParams.get("attendees");
+    const total = searchParams.get("total");
+    const resId = searchParams.get("reservationId");
+
+    if (title) {
+      setData({
+        workshopTitle: title,
+        numberOfAttendees: Number(attendees) || 1,
+        totalPrice: total || "0.00",
+        reservationId: resId,
+      });
+    } else {
+      // Fallback: try reading context from sessionStorage
+      try {
+        const raw = sessionStorage.getItem("workshop_checkout_context");
+        if (raw) {
+          const ctx = JSON.parse(raw);
+          setData({
+            workshopTitle: ctx.workshopTitle || "Workshop",
+            numberOfAttendees: ctx.numberOfAttendees || 1,
+            totalPrice: ctx.totalPrice || "0.00",
+            reservationId: null,
+          });
+        }
+      } catch {
+        // Use defaults
+      }
+    }
+  }, [searchParams]);
+
+  const workshopTitle = data?.workshopTitle || "Workshop";
+  const numberOfAttendees = data?.numberOfAttendees || 1;
+  const totalPrice = data?.totalPrice || "0.00";
+
   return (
     <div className="mt-28">
       <div className="mx-auto max-w-3xl">
@@ -25,13 +78,13 @@ export default function EnrollmentConfirmationPage() {
               </div>
 
               <h1 className="text-3xl font-extrabold text-slate-900">
-                You&apos;re all set, Dr. Thompson!
+                You&apos;re All Set!
               </h1>
 
               <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-500">
                 Your enrollment in{" "}
                 <span className="font-semibold text-slate-700">
-                  Advanced Difficult Airway Workshop
+                  {workshopTitle}
                 </span>{" "}
                 is confirmed.
               </p>
@@ -46,12 +99,12 @@ export default function EnrollmentConfirmationPage() {
 
                   <div className="space-y-1 text-sm">
                     <div className="font-semibold text-slate-900">
-                      Order #ORD-8829
+                      {workshopTitle}
                     </div>
                     <div className="text-slate-500">
                       Total Paid:{" "}
                       <span className="font-semibold text-slate-700">
-                        $2,295.00
+                        ${Number(totalPrice).toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -64,27 +117,25 @@ export default function EnrollmentConfirmationPage() {
 
                   <div className="flex items-center gap-3 md:justify-end">
                     <div className="flex -space-x-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-[11px] font-bold text-slate-700 ring-2 ring-white">
-                        DT
-                      </div>
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary ring-2 ring-white">
-                        RK
-                      </div>
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500/15 text-[11px] font-bold text-green-700 ring-2 ring-white">
-                        +4
-                      </div>
+                      {Array.from({ length: Math.min(numberOfAttendees, 3) }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-[11px] font-bold text-slate-700 ring-2 ring-white"
+                        >
+                          {String(i + 1)}
+                        </div>
+                      ))}
+                      {numberOfAttendees > 3 && (
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500/15 text-[11px] font-bold text-green-700 ring-2 ring-white">
+                          +{numberOfAttendees - 3}
+                        </div>
+                      )}
                     </div>
 
                     <div className="text-sm">
                       <div className="font-semibold text-slate-900">
-                        6 Clinicians
+                        {numberOfAttendees} Clinician{numberOfAttendees !== 1 ? "s" : ""}
                       </div>
-                      <button
-                        type="button"
-                        className="text-xs font-semibold text-primary hover:opacity-80"
-                      >
-                        View Names
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -137,10 +188,10 @@ export default function EnrollmentConfirmationPage() {
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-slate-900">
-                          Join us on Mar 12
+                          Check your schedule
                         </div>
                         <div className="text-xs text-slate-500">
-                          Start time: 09:00 AM CST
+                          View dates in dashboard
                         </div>
                       </div>
                     </div>
@@ -150,15 +201,18 @@ export default function EnrollmentConfirmationPage() {
             </div>
 
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button className="px-6">
-                <FileText size={18} />
-                View Workshop Itinerary
-              </Button>
+              <Link href="/dashboard/user/my-courses">
+                <Button className="px-6">
+                  <FileText size={18} />
+                  Go to My Courses
+                </Button>
+              </Link>
 
-              <Button variant="secondary" className="px-6">
-                <Download size={18} />
-                Download Receipt
-              </Button>
+              <Link href="/public/courses">
+                <Button variant="secondary" className="px-6">
+                  Browse More Workshops
+                </Button>
+              </Link>
             </div>
 
             <p className="mt-5 text-center text-xs text-slate-400">
@@ -178,5 +232,19 @@ export default function EnrollmentConfirmationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function EnrollmentConfirmationPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mt-28 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <EnrollmentConfirmationContent />
+    </Suspense>
   );
 }
