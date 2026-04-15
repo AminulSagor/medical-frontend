@@ -64,7 +64,7 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="mx-auto mt-15 w-full max-w-md px-4 py-10">
+    <div className="mx-auto mt-15 w-full max-w-md px-4 py-15">
       <div className="rounded-[34px] border border-slate-200 bg-white p-8 shadow-[0_18px_60px_rgba(15,23,42,0.10)]">
         <h1 className="text-center text-3xl font-bold text-slate-900">
           Welcome Back
