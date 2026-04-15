@@ -4,12 +4,29 @@ import { Send } from "lucide-react";
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import type { ComposeBroadcastInput } from "../_lib/compose-schema";
+import type { CourseAnnouncementPriority } from "@/types/admin/newsletter/course-announcements/course-announcement-broadcast.types";
+import { updateCourseAnnouncementBroadcastPrioritySubject } from "@/service/admin/newsletter/course-announcements/course-announcement-broadcast-update.service";
 
 type Props = {
-  onSend: (values: ComposeBroadcastInput) => Promise<void>;
+  broadcastId: string;
+  onSend: (values: ComposeBroadcastInput) => Promise<unknown>;
 };
 
-export default function SendBar({ onSend }: Props) {
+function mapFormPriorityToApiPriority(
+  value: ComposeBroadcastInput["priority"],
+): CourseAnnouncementPriority {
+  switch (value) {
+    case "material":
+      return "MATERIAL_SHARE";
+    case "urgent":
+      return "URGENT";
+    case "general":
+    default:
+      return "GENERAL_UPDATE";
+  }
+}
+
+export default function SendBar({ broadcastId, onSend }: Props) {
   const {
     handleSubmit,
     formState: { isSubmitting, errors },
@@ -20,9 +37,29 @@ export default function SendBar({ onSend }: Props) {
   const onSubmit = async (values: ComposeBroadcastInput) => {
     try {
       setSubmitError(null);
-      await onSend(values);
+
+      console.log("SEND_BROADCAST_CLICKED_VALUES:", values);
+
+      const prioritySubjectPayload = {
+        priority: mapFormPriorityToApiPriority(values.priority),
+        subjectLine: values.subject.trim(),
+      };
+
+      console.log("PRIORITY_SUBJECT_REQUEST_PAYLOAD:", prioritySubjectPayload);
+
+      const prioritySubjectResponse =
+        await updateCourseAnnouncementBroadcastPrioritySubject(
+          broadcastId,
+          prioritySubjectPayload,
+        );
+
+      console.log("PRIORITY_SUBJECT_API_RESPONSE:", prioritySubjectResponse);
+
+      const sendResponse = await onSend(values);
+
+      console.log("SEND_BROADCAST_API_RESPONSE:", sendResponse);
     } catch (error) {
-      console.error("Failed to send broadcast:", error);
+      console.error("FAILED_TO_SEND_BROADCAST:", error);
       setSubmitError("Failed to send broadcast. Please try again.");
     }
   };
