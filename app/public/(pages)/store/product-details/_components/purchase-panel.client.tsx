@@ -34,16 +34,27 @@ export default function PurchasePanelClient({
 
   const wishlisted = isInWishlist(product.id);
 
+  // ── Out-of-stock / stock logic ───────────────────────────────────────────
+  const stockQty: number = (product as any).stockQuantity ?? 0;
+  const inStock: boolean =
+    (product as any).inStock !== undefined
+      ? Boolean((product as any).inStock)
+      : stockQty > 0;
+  const maxQty = inStock ? Math.max(stockQty, 1) : 0;
+
+  // Clamp qty to available stock whenever stock changes
+  const safeQty = inStock ? Math.min(qty, maxQty) : 1;
+
   const stars = useMemo(() => {
     const full = Math.round(product.rating.value);
     return Array.from({ length: 5 }).map((_, i) => i < full);
   }, [product.rating.value]);
 
   const handleBuyNow = async () => {
+    if (!inStock) return;
     setIsProcessingPayment(true);
     try {
-      // Add to cart first, then redirect to checkout where shipping is collected
-      await addItem(product.id, qty);
+      await addItem(product.id, safeQty);
       router.push("/public/checkout");
     } catch (error: any) {
       console.error("Buy now error:", error);
@@ -104,8 +115,18 @@ export default function PurchasePanelClient({
             </div>
           </div>
 
-          <div className="mt-5 rounded-full bg-primary/10 px-5 py-3 text-center text-xs font-semibold text-green">
-            {product.stock.label}
+          <div
+            className={`mt-5 rounded-full px-5 py-3 text-center text-xs font-semibold ${
+              inStock
+                ? "bg-primary/10 text-green-600"
+                : "bg-red-50 text-red-600"
+            }`}
+          >
+            {inStock
+              ? stockQty <= 10 && stockQty > 0
+                ? `Only ${stockQty} left in stock`
+                : product.stock.label
+              : "Out of Stock"}
           </div>
 
           <div className="mt-6">
@@ -117,20 +138,22 @@ export default function PurchasePanelClient({
                   <button
                     type="button"
                     onClick={() => setQty((p) => Math.max(1, p - 1))}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-light-slate/10"
+                    disabled={!inStock || qty <= 1}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-light-slate/10 disabled:opacity-40 disabled:cursor-not-allowed"
                     aria-label="Decrease quantity"
                   >
                     <Minus className="h-4 w-4 text-light-slate" />
                   </button>
 
                   <div className="text-base font-semibold text-black">
-                    {qty}
+                    {safeQty}
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => setQty((p) => p + 1)}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-light-slate/10"
+                    onClick={() => setQty((p) => Math.min(maxQty, p + 1))}
+                    disabled={!inStock || qty >= maxQty}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-light-slate/10 disabled:opacity-40 disabled:cursor-not-allowed"
                     aria-label="Increase quantity"
                   >
                     <Plus className="h-4 w-4 text-light-slate" />
@@ -152,26 +175,39 @@ export default function PurchasePanelClient({
               </div>
 
               <div className="col-span-7 space-y-3">
+                {/* Buy Now */}
                 <Button
-                  className="h-14 w-full justify-center bg-primary text-white shadow-sm"
+                  className={`h-14 w-full justify-center shadow-sm ${
+                    inStock
+                      ? "bg-primary text-white"
+                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                  }`}
                   shape="pill"
                   onClick={handleBuyNow}
-                  disabled={isProcessingPayment}
+                  disabled={!inStock || isProcessingPayment}
                 >
                   <CreditCard className="h-5 w-5" />
-                  {isProcessingPayment ? "Processing..." : "Buy Now"}
+                  {!inStock
+                    ? "Out of Stock"
+                    : isProcessingPayment
+                    ? "Processing..."
+                    : "Buy Now"}
                 </Button>
 
-                {/* ✅ Add to Cart moved below Buy Now + text primary */}
+                {/* Add to Cart */}
                 <Button
-                  className="h-12 w-full justify-center border border-primary !text-primary bg-white shadow-sm"
+                  className={`h-12 w-full justify-center bg-white shadow-sm ${
+                    inStock
+                      ? "border border-primary !text-primary"
+                      : "border border-slate-200 !text-slate-400 cursor-not-allowed"
+                  }`}
                   shape="pill"
-                  disabled={isAddingToCart}
+                  disabled={!inStock || isAddingToCart}
                   onClick={async () => {
-                    if (isAddingToCart) return;
+                    if (!inStock || isAddingToCart) return;
                     try {
                       setIsAddingToCart(true);
-                      await addItem(product.id, qty);
+                      await addItem(product.id, safeQty);
                     } catch (error) {
                       console.error("Failed to add to cart", error);
                     } finally {
@@ -179,7 +215,7 @@ export default function PurchasePanelClient({
                     }
                   }}
                 >
-                  <ShoppingBag className="h-5 w-5 text-primary" />
+                  <ShoppingBag className={`h-5 w-5 ${inStock ? "text-primary" : "text-slate-400"}`} />
                   {isAddingToCart ? "Adding..." : "Add to Cart"}
                 </Button>
               </div>
