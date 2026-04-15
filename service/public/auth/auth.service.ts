@@ -31,6 +31,7 @@ export const sendOtp = async (
     `/auth/send-otp`,
     data,
   );
+  console.log("📥 SEND OTP RESPONSE:", response.data);
   return response.data;
 };
 
@@ -41,6 +42,7 @@ export const verifyOtp = async (
     `/auth/verify-otp`,
     data,
   );
+  console.log("📥 VERIFY OTP RESPONSE:", response.data);
   return response.data;
 };
 

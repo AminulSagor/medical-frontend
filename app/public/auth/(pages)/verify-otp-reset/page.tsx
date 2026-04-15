@@ -71,7 +71,7 @@ function VerifyOtpResetContent() {
     try {
       await verifyOtp({ email, otp: otpCode });
       // Redirect to set new password page with email
-      router.push(`/auth/set-password?email=${encodeURIComponent(email)}`);
+      router.push(`/public/auth/set-password?email=${encodeURIComponent(email)}`);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       setApiError(
@@ -111,7 +111,7 @@ function VerifyOtpResetContent() {
     <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center font-sans relative px-4">
       <div className="w-full max-w-md absolute top-8 left-0 right-0 mx-auto px-4">
         <button
-          onClick={() => router.push("/auth/reset-password")}
+          onClick={() => router.push("/public/auth/reset-password")}
           className="flex items-center text-slate-500 hover:text-slate-800 font-semibold text-sm transition-colors"
         >
           <ChevronLeft className="w-4 h-4 mr-1" strokeWidth={3} />

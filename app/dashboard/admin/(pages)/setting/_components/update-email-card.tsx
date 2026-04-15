@@ -64,7 +64,6 @@ export default function UpdateEmailCard() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Load current email from JWT token on mount
   useEffect(() => {
     const token = getToken();
     if (token) {
@@ -90,10 +89,10 @@ export default function UpdateEmailCard() {
     setError(null);
     setSuccess(false);
     try {
-      const response = await updateAdminEmail({
+      await updateAdminEmail({
         newEmail: email,
       });
-      setCurrentEmail(response.medicalEmail || email);
+      setCurrentEmail(email);
       setEmail("");
       setConfirm("");
       setSuccess(true);
@@ -126,7 +125,7 @@ export default function UpdateEmailCard() {
             placeholder="Enter new email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            type="text"
+            type="email"
             autoComplete="off"
             spellCheck="false"
           />
@@ -138,7 +137,7 @@ export default function UpdateEmailCard() {
             placeholder="Re-enter new email address"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            type="text"
+            type="email"
             autoComplete="off"
           />
         </div>

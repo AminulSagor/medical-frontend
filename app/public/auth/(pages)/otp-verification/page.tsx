@@ -78,7 +78,7 @@ function OtpVerificationContent() {
 
     try {
       await verifyOtp({ email, otp: otpCode });
-      router.push("/auth/account-created");
+      router.push("/public/auth/account-created");
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       setApiError(
@@ -120,7 +120,7 @@ function OtpVerificationContent() {
       {/* Back Button Container */}
       <div className="w-full max-w-md absolute top-8 left-0 right-0 mx-auto px-4">
         <button
-          onClick={() => router.push("/auth/sign-up")}
+          onClick={() => router.push("/public/auth/sign-up")}
           className="flex items-center text-slate-500 hover:text-slate-800 font-semibold text-sm transition-colors"
         >
           <ChevronLeft className="w-4 h-4 mr-1" strokeWidth={3} />
