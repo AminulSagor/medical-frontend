@@ -27,10 +27,10 @@ export default function SignUpPage() {
   const c = useSignUpController();
 
   return (
-    <div className="w-full mt-15 bg-slate-50 px-4 py-10 pb-10">
+    <div className="flex min-h-[calc(100dvh+4rem)] w-full items-center justify-center bg-slate-50 px-4 py-10">
       <div className="mx-auto w-full max-w-[420px]">
         {/* compact "FB-like" header */}
-        <div className="mb-4 pt-12 flex flex-col items-center">
+        <div className="mb-4 flex flex-col items-center">
           <div className="flex flex-col items-center text-center">
             <h1 className="text-[22px] font-extrabold leading-7 tracking-tight text-slate-900">
               Create Professional Account

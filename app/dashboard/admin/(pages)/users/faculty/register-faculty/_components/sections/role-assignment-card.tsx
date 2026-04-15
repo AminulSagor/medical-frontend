@@ -2,15 +2,11 @@
 
 import { ClipboardList } from "lucide-react";
 
-export type AssignedUserRole = "instructor" | "faculty";
-
 export default function RoleAssignmentCard({
     value,
-    onChange,
     onActivate,
 }: {
     value: string;
-    onChange: (v: string) => void;
     onActivate?: () => void;
 }) {
     return (
@@ -39,20 +35,18 @@ export default function RoleAssignmentCard({
                 <input
                     value={value}
                     onFocus={() => onActivate?.()}
-                    onChange={(e) =>
-                        onChange(e.target.value as AssignedUserRole)
-                    }
+                    readOnly
+                    aria-readonly="true"
                     className={[
-                        "mt-2 w-full rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm",
+                        "mt-2 w-full rounded-full border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm",
                         "text-slate-900 placeholder:text-slate-400",
-                        "outline-none transition",
+                        "cursor-not-allowed outline-none transition",
                         "focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15",
                     ].join(" ")}
-                    placeholder="Instructor"
                 />
 
                 <p className="mt-3 text-xs text-slate-500">
-                    Roles are used for administrative categorization and course assignment visibility.
+                    Assigned role is managed by the system and cannot be edited.
                 </p>
             </div>
         </div>

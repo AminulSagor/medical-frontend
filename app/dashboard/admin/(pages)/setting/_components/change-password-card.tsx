@@ -144,6 +144,7 @@ export default function ChangePasswordCard() {
               value={current}
               onChange={(e) => setCurrent(e.target.value)}
               placeholder="••••••••"
+              autoComplete="off"
               right={
                 <button
                   type="button"
@@ -165,6 +166,7 @@ export default function ChangePasswordCard() {
                 value={next}
                 onChange={(e) => setNext(e.target.value)}
                 placeholder="••••••••"
+                autoComplete="new-password"
               />
             </div>
 
@@ -175,6 +177,7 @@ export default function ChangePasswordCard() {
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 placeholder="••••••••"
+                autoComplete="new-password"
               />
             </div>
           </div>
