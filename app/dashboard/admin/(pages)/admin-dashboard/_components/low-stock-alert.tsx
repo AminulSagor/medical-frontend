@@ -55,18 +55,18 @@ export default function LowStockAlert({
           )}
         </div>
 
-        {/* <button
-                    type="button"
-                    onClick={() => {
-                        if (manageRoute) {
-                            router.push(mapAdminDashboardRoute(manageRoute));
-                        }
-                    }}
-                    disabled={!manageRoute}
-                    className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                    Manage Inventory <span aria-hidden>›</span>
-                </button> */}
+        <button
+          type="button"
+          onClick={() => {
+            if (manageRoute) {
+              router.push("/dashboard/admin/products");
+            }
+          }}
+          disabled={!manageRoute}
+          className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Manage Inventory <span aria-hidden>›</span>
+        </button>
       </div>
     </div>
   );
