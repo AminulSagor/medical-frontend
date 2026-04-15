@@ -12,6 +12,7 @@ import NavbarLogo from "@/components/logo";
 import { NAV_LINKS } from "@/constant/navigation-links";
 import { IMAGE } from "@/constant/image-config";
 import CartSidebar from "@/components/cart-sidebar";
+import WishlistSidebar from "@/components/wishlist-sidebar";
 import PublicSidebar from "@/components/public-sidebar";
 import { LogOut, Settings } from "lucide-react";
 import NavbarSearch from "@/app/public/(pages)/home/_components/navbar-search";
@@ -30,6 +31,7 @@ export default function Navbar() {
 
   const [q, setQ] = useState("");
   const [cartSidebar, setCartSidebar] = useState(false);
+  const [wishlistSidebar, setWishlistSidebar] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [hideOnScrollDown, setHideOnScrollDown] = useState(false);
@@ -186,14 +188,15 @@ export default function Navbar() {
             {!isAuthRoute && (
               <div className="flex items-center gap-2">
                 {/* Wishlist button */}
-                <Link
-                  href="/public/store"
+                <button
+                  type="button"
                   className={[
                     "relative grid h-10 w-10 place-items-center rounded-full",
                     "border border-light-slate/30 bg-white",
                     "hover:bg-light-slate/5 active:scale-95 transition",
                   ].join(" ")}
                   aria-label="Wishlist"
+                  onClick={() => setWishlistSidebar(true)}
                 >
                   <Heart size={18} className="text-black" />
                   {wishlistCount > 0 && (
@@ -207,7 +210,7 @@ export default function Navbar() {
                       {wishlistCount}
                     </span>
                   )}
-                </Link>
+                </button>
 
                 {/* Cart button */}
                 <button
@@ -241,6 +244,11 @@ export default function Navbar() {
             <CartSidebar
               open={cartSidebar}
               onClose={() => setCartSidebar(false)}
+            />
+
+            <WishlistSidebar
+              open={wishlistSidebar}
+              onClose={() => setWishlistSidebar(false)}
             />
           </motion.div>
         </div>

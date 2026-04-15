@@ -90,39 +90,6 @@ export const PRODUCT_DETAILS_MOCK: ProductDetails = {
       "Authorized distributor. Sterility guaranteed upon delivery. 30-day return policy for unopened sterile packaging.",
   },
 
-  bundle: {
-    title: "Complete Your Setup",
-    items: [
-      {
-        id: "b1",
-        title: "Laryngeal Mask Airway Supreme",
-        subtitle: "Size 4, Adult",
-        price: 45.0,
-        imageUrl: IMAGE.hand_gloves,
-        selectedByDefault: true,
-      },
-      {
-        id: "b2",
-        title: "Surgilube Surgical Lubricant (5g)",
-        subtitle: "Sterile Foil Pack",
-        price: 7.5,
-        imageUrl: IMAGE.hand_gloves,
-        selectedByDefault: true,
-      },
-      {
-        id: "b3",
-        title: "Luer Lock Syringe (20ml)",
-        subtitle: "Latex-free",
-        price: 13.0,
-        imageUrl: IMAGE.hand_gloves,
-        selectedByDefault: true,
-      },
-    ],
-    bundlePriceLabel: "Bundle Price: $65.50",
-    savingsLabel: "SAVINGS OF $5.00 INCLUDED IN BUNDLE",
-    ctaLabel: "Add All to Cart",
-  },
-
   overview: {
     title: "Product Overview & Clinical Indication",
     description:
