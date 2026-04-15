@@ -5,6 +5,7 @@ import { resolveServiceHref } from "@/service/user/course-details.service";
 import type {
   AddToCalendarModalProps,
   CalendarProviderKey,
+  CalendarProviderRow,
 } from "@/types/user/course/add-to-calender-type";
 import NetworkImageFallback from "@/app/dashboard/user/_components/network-image-fallback";
 
@@ -45,13 +46,14 @@ export default function AddToCalendarModalClient({
 }: AddToCalendarModalProps) {
   if (!open) return null;
 
-  const providerItems =
-    providers.length > 0
-      ? providers
-      : (["google", "outlook", "apple", "yahoo"] as CalendarProviderKey[]).map((key) => ({
-          key,
-          ...providerLabel(key),
-        }));
+  const providerItems: CalendarProviderRow[] =
+  providers.length > 0
+    ? providers
+    : (["google", "outlook", "apple", "yahoo"] as CalendarProviderKey[]).map((key) => ({
+        key,
+        ...providerLabel(key),
+        href: undefined,
+      }));
 
   const appleHref = resolveServiceHref(
     providerItems.find((provider) => provider.key === "apple")?.href,
