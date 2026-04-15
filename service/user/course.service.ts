@@ -19,13 +19,13 @@ const PUBLIC_COURSE_DETAILS_BASE_ROUTE = "/public/courses/details";
 const NOT_IN_API = "not in api";
 const PRICE_UNAVAILABLE = "price unavailable";
 
-interface RawNextLiveSession {
-  workshopId: string;
-  title: string;
-  date: string;
-  time: string;
-  dateTime: string;
-}
+// interface RawNextLiveSession {
+//   workshopId: string;
+//   title: string;
+//   date: string;
+//   time: string;
+//   dateTime: string;
+// }
 
 interface RawCourseSummaryApiResponse {
   message: string;
