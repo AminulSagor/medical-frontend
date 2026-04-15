@@ -97,17 +97,6 @@ export default function AdminTopbar({ onMenuClick }: AdminTopbarProps) {
     }
   };
 
-  const handleViewAll = () => {
-    setOpenNotif(false);
-
-    const backendRoute = dropdownData?.viewAllRoute;
-    const fixedRoute = backendRoute
-      ? `/dashboard${backendRoute}`
-      : "/dashboard/admin/notifications";
-
-    router.push(fixedRoute);
-  };
-
   const notifications: DropdownNotificationItem[] =
     dropdownData?.recentNotifications ?? [];
 
@@ -182,7 +171,6 @@ export default function AdminTopbar({ onMenuClick }: AdminTopbarProps) {
                       title={dropdownData?.title}
                       notifications={notifications}
                       onMarkAllRead={handleMarkAllRead}
-                      onViewAll={handleViewAll}
                       markAllDisabled={isMarkingAllRead}
                     />
                   )}
