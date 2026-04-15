@@ -27,7 +27,7 @@ export default function SignUpPage() {
   const c = useSignUpController();
 
   return (
-    <div className="w-full mt-15 bg-slate-50 px-4">
+    <div className="w-full mt-15 bg-slate-50 px-4 py-10 pb-10">
       <div className="mx-auto w-full max-w-[420px]">
         {/* compact "FB-like" header */}
         <div className="mb-4 pt-12 flex flex-col items-center">
