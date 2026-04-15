@@ -9,8 +9,9 @@ export interface PublicWorkshopsQueryParams {
   q?: string;
   topic?: string;
   deliveryMode?: "in_person" | "online";
-  offersCmeCredits?: boolean | "true" | "false";
   hasAvailableSeats?: boolean | "true" | "false";
+  minCmeCredits?: number;
+  maxCmeCredits?: number;
   dateFrom?: string;
   dateTo?: string;
   page?: number;

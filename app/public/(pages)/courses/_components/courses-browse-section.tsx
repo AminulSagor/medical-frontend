@@ -153,6 +153,30 @@ export default function CoursesBrowseSection() {
       try {
         setLoading(true);
         setError(null);
+
+        // Build delivery mode filter
+        const bothDelivery = filters.delivery.in_person && filters.delivery.online;
+        const deliveryMode = bothDelivery
+          ? undefined
+          : filters.delivery.in_person
+            ? "in_person" as const
+            : filters.delivery.online
+              ? "online" as const
+              : undefined;
+
+        // Map CreditsRange to min/max CME credits params
+        let minCmeCredits: number | undefined;
+        let maxCmeCredits: number | undefined;
+        if (filters.credits === "1_4") {
+          minCmeCredits = 1;
+          maxCmeCredits = 4;
+        } else if (filters.credits === "5_8") {
+          minCmeCredits = 5;
+          maxCmeCredits = 8;
+        } else if (filters.credits === "8_plus") {
+          minCmeCredits = 8;
+        }
+
         const response = await getPublicWorkshops({
           q: query || undefined,
           deliveryMode:
@@ -160,7 +184,8 @@ export default function CoursesBrowseSection() {
               ? deliveryMode
               : undefined,
           hasAvailableSeats: filters.availableOnly || undefined,
-          offersCmeCredits: filters.credits ? true : undefined,
+          minCmeCredits,
+          maxCmeCredits,
           dateFrom: dateFrom || undefined,
           dateTo: dateTo || undefined,
           page: pageNum,
