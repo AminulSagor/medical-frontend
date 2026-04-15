@@ -2,6 +2,7 @@ import Image from "next/image";
 import Button from "@/components/buttons/button";
 import { IMAGE } from "@/constant/image-config";
 import { MapPin, Clock } from "lucide-react";
+import Link from "next/link";
 
 export default function AboutCtaVisit() {
   return (
@@ -25,7 +26,7 @@ export default function AboutCtaVisit() {
               shape="pill"
               className="px-6 py-4"
             >
-              Explore Courses
+              <Link href="/public/courses">Explore Courses</Link>
             </Button>
             <Button
               size="sm"

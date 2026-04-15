@@ -238,13 +238,11 @@ export default function AccountSidebarCard({
         <div className="flex flex-col items-center gap-2 text-center">
           <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200">
             {sidebarUser.avatarUrl ? (
-              <Image
+              <img
                 src={sidebarUser.avatarUrl}
                 alt={sidebarUser.name}
-                fill
                 className="object-cover"
                 sizes="44px"
-                priority
               />
             ) : (
               <div className="grid h-full w-full place-items-center text-xs font-semibold text-slate-600">
