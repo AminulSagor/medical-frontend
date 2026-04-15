@@ -5,10 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import FacultyStepper, { FacultyStepKey } from "./register-faculty-stepper";
 import AccountDetailsCard from "./sections/account-details-card";
-import ClinicalCredentialsCard, {
-    type ClinicalRole,
-    type MedicalDesignation,
-} from "./sections/clinical-credentials-card";
+import ClinicalCredentialsCard from "./sections/clinical-credentials-card";
 import LivePreviewCard from "./sections/live-preview-card";
 import type { AccountDetailsValue } from "./sections/account-details-card";
 import type { ClinicalCredentialsValue } from "./sections/clinical-credentials-card";
@@ -17,21 +14,19 @@ import RoleAssignmentCard from "./sections/role-assignment-card";
 import { registerFaculty } from "@/service/admin/faculty.service";
 import { uploadFile } from "@/utils/upload";
 import { registerFacultySchema } from "@/schema/admin/faculty.schema";
-import type { AssignedRole } from "@/types/admin/faculty.types";
+import type { RegisterFacultyRequest } from "@/types/admin/faculty.types";
 
 
 export type FacultyDraft = {
     firstName: string;
     lastName: string;
-    phone: string;
+    phoneNumber: string;
     email: string;
-
-    role: ClinicalRole | null;
-    designation: MedicalDesignation | null;
-    institution: string;
-    npi: string;
-
-    assignedUserRole: string;
+    primaryClinicalRole: ClinicalCredentialsValue["primaryClinicalRole"];
+    medicalDesignation: ClinicalCredentialsValue["medicalDesignation"];
+    institutionOrHospital: string;
+    npiNumber: string;
+    assignedRole: string;
     photoDataUrl: string | null;
 };
 
@@ -54,7 +49,7 @@ export default function RegisterFacultyClient() {
             [
                 { key: "account", title: "Account", subtitle: "Identity details" },
                 { key: "clinical", title: "Clinical Profile", subtitle: "Credentials" },
-                { key: "role", title: "Role Assignment", subtitle: "Designate user role" },
+                { key: "role", title: "Role Assignment", subtitle: "System permissions" },
             ] as const,
         []
     );
@@ -64,47 +59,27 @@ export default function RegisterFacultyClient() {
     const [draft, setDraft] = useState<FacultyDraft>({
         firstName: "",
         lastName: "",
-        phone: "",
+        phoneNumber: "",
         email: "",
-        role: "anesthesiologist",
-        designation: "md",
-        institution: "",
-        npi: "",
+        primaryClinicalRole: "",
+        medicalDesignation: "",
+        institutionOrHospital: "",
+        npiNumber: "",
         photoDataUrl: null,
-        assignedUserRole: "",
+        assignedRole: "instructor",
     });
 
-    const onDraftChange = <K extends keyof FacultyDraft>(key: K, value: FacultyDraft[K]) => {
-        setDraft((prev) => ({ ...prev, [key]: value }));
-        // Clear validation error for this field
-        if (validationErrors[key]) {
-            setValidationErrors((prev) => {
-                const next = { ...prev };
-                delete next[key];
-                return next;
-            });
-        }
-    };
+    const applyDraftPatch = (patch: Partial<FacultyDraft>) => {
+        setDraft((prev) => ({ ...prev, ...patch }));
 
-    // Map clinical role to API format
-    const mapClinicalRole = (role: ClinicalRole | null): string => {
-        const roleMap: Record<ClinicalRole, string> = {
-            anesthesiologist: "Anesthesiologist",
-            crna: "CRNA",
-            icu: "ICU Specialist",
-            ent: "ENT Specialist",
-        };
-        return role ? roleMap[role] : "";
-    };
+        const patchKeys = Object.keys(patch);
+        if (patchKeys.length === 0) return;
 
-    // Map medical designation to API format
-    const mapDesignation = (designation: MedicalDesignation | null): string => {
-        const designationMap: Record<MedicalDesignation, string> = {
-            md: "MD",
-            do: "DO",
-            crna: "CRNA",
-        };
-        return designation ? designationMap[designation] : "";
+        setValidationErrors((prev) => {
+            const next = { ...prev };
+            patchKeys.forEach((key) => delete next[key]);
+            return next;
+        });
     };
 
     // Convert dataUrl to File for upload
@@ -118,18 +93,22 @@ export default function RegisterFacultyClient() {
         setApiError(null);
         setValidationErrors({});
 
-        // Prepare data for validation
-        const formData = {
-            firstName: draft.firstName,
-            lastName: draft.lastName,
-            phoneNumber: draft.phone,
-            email: draft.email,
-            imageUrl: "", // Will be set after upload
-            primaryClinicalRole: mapClinicalRole(draft.role),
-            medicalDesignation: mapDesignation(draft.designation),
-            institutionOrHospital: draft.institution,
-            npiNumber: draft.npi,
-            assignedRole: draft.assignedUserRole as AssignedRole,
+        const formData: RegisterFacultyRequest = {
+            firstName: draft.firstName.trim(),
+            lastName: draft.lastName.trim(),
+            phoneNumber: draft.phoneNumber.trim(),
+            email: draft.email.trim(),
+            npiNumber: draft.npiNumber.trim(),
+            assignedRole: draft.assignedRole.trim(),
+            ...(draft.primaryClinicalRole
+                ? { primaryClinicalRole: draft.primaryClinicalRole }
+                : {}),
+            ...(draft.medicalDesignation
+                ? { medicalDesignation: draft.medicalDesignation }
+                : {}),
+            ...(draft.institutionOrHospital.trim()
+                ? { institutionOrHospital: draft.institutionOrHospital.trim() }
+                : {}),
         };
 
         // Validate with Zod
@@ -149,7 +128,7 @@ export default function RegisterFacultyClient() {
         setSubmitting(true);
 
         try {
-            let imageUrl = "";
+            let imageUrl: string | undefined;
 
             // Upload photo if exists
             if (draft.photoDataUrl) {
@@ -166,15 +145,16 @@ export default function RegisterFacultyClient() {
                 imageUrl = uploadResult.readUrl;
             }
 
+            const payload: RegisterFacultyRequest = {
+                ...result.data,
+                ...(imageUrl ? { imageUrl } : {}),
+            };
+
             // Submit faculty registration
-            const response = await registerFaculty({
-                ...formData,
-                imageUrl,
-            });
+            await registerFaculty(payload);
 
             // Success - redirect to users list
-            router.push("/users");
-            console.log("Faculty registered:", response.data);
+            router.push("/dashboard/admin/users");
         } catch (err: unknown) {
             const axiosErr = err as { response?: { data?: { message?: string } } };
             setApiError(
@@ -223,11 +203,11 @@ export default function RegisterFacultyClient() {
                                 value={{
                                     firstName: draft.firstName,
                                     lastName: draft.lastName,
-                                    phone: draft.phone,
+                                    phoneNumber: draft.phoneNumber,
                                     email: draft.email,
                                 }}
                                 onChange={(patch: Partial<AccountDetailsValue>) =>
-                                    setDraft((prev) => ({ ...prev, ...patch }))
+                                    applyDraftPatch(patch)
                                 }
                                 photoUrl={draft.photoDataUrl}
                                 onOpenPhotoModal={() => setOpenPhotoModal(true)}
@@ -240,13 +220,13 @@ export default function RegisterFacultyClient() {
                         <div onFocusCapture={() => setActiveStep("clinical")}>
                             <ClinicalCredentialsCard
                                 value={{
-                                    role: draft.role,
-                                    designation: draft.designation,
-                                    institution: draft.institution,
-                                    npi: draft.npi,
+                                    primaryClinicalRole: draft.primaryClinicalRole,
+                                    medicalDesignation: draft.medicalDesignation,
+                                    institutionOrHospital: draft.institutionOrHospital,
+                                    npiNumber: draft.npiNumber,
                                 }}
                                 onChange={(patch: Partial<ClinicalCredentialsValue>) =>
-                                    setDraft((prev) => ({ ...prev, ...patch }))
+                                    applyDraftPatch(patch)
                                 }
                                 onActivate={() => setActiveStep("clinical")}
                             />
@@ -256,8 +236,7 @@ export default function RegisterFacultyClient() {
                     {activeStep === "role" && (
                         <div onFocusCapture={() => setActiveStep("role")}>
                             <RoleAssignmentCard
-                                value={draft.assignedUserRole}
-                                onChange={(v) => setDraft((prev) => ({ ...prev, assignedUserRole: v }))}
+                                value={draft.assignedRole}
                                 onActivate={() => setActiveStep("role")}
                             />
                         </div>
@@ -267,12 +246,12 @@ export default function RegisterFacultyClient() {
                     <LivePreviewCard
                         initials={getInitials(draft.firstName, draft.lastName)}
                         fullName={`${draft.firstName} ${draft.lastName}`.trim() || "—"}
-                        role={draft.role}
-                        designation={draft.designation}
+                        primaryClinicalRole={draft.primaryClinicalRole || undefined}
+                        medicalDesignation={draft.medicalDesignation || undefined}
                         email={draft.email || "—"}
-                        institution={draft.institution || undefined}
+                        institutionOrHospital={draft.institutionOrHospital || undefined}
                         photoUrl={draft.photoDataUrl}
-                        assignedUserRole={draft.assignedUserRole}
+                        assignedRole={draft.assignedRole}
                     />
 
                     {/* API Error */}
@@ -406,9 +385,9 @@ export default function RegisterFacultyClient() {
                 onClose={() => setOpenPhotoModal(false)}
                 initialImage={draft.photoDataUrl}
                 previewName={`${draft.firstName} ${draft.lastName}`.trim() || "—"}
-                previewRole={draft.role ? String(draft.role).toUpperCase() : "—"}
+                previewRole={draft.primaryClinicalRole || "—"}
                 onApply={(dataUrl) => {
-                    setDraft((prev) => ({ ...prev, photoDataUrl: dataUrl }));
+                    applyDraftPatch({ photoDataUrl: dataUrl });
                     setOpenPhotoModal(false);
                 }}
             />

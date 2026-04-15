@@ -286,7 +286,10 @@ export default function UsersPage() {
                     title: "Faculty Directory",
                     subtitle: "Manage academic staff and clinical instructors.",
                     actionLabel: "Add Faculty Member",
-                    onAction: () => router.push("/users/faculty/register-faculty"),
+                    onAction: () =>
+                        router.push(
+                            "/dashboard/admin/users/faculty/register-faculty"
+                        ),
                 };
     }, [tab, router]);
 
