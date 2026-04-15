@@ -1,15 +1,15 @@
 import { serviceClient } from "@/service/base/axios_client";
 import type {
-  UpdateCourseAnnouncementBroadcastPrioritySubjectPayload,
-  UpdateCourseAnnouncementBroadcastPrioritySubjectResponse,
+  UpdateCourseAnnouncementBroadcastPayload,
+  UpdateCourseAnnouncementBroadcastResponse,
 } from "@/types/admin/newsletter/course-announcements/course-announcement-broadcast-update.types";
 
-export async function updateCourseAnnouncementBroadcastPrioritySubject(
+export async function updateCourseAnnouncementBroadcast(
   id: string,
-  payload: UpdateCourseAnnouncementBroadcastPrioritySubjectPayload,
+  payload: UpdateCourseAnnouncementBroadcastPayload,
 ) {
   const response =
-    await serviceClient.patch<UpdateCourseAnnouncementBroadcastPrioritySubjectResponse>(
+    await serviceClient.patch<UpdateCourseAnnouncementBroadcastResponse>(
       `/admin/newsletters/course-announcements/broadcasts/${id}`,
       payload,
     );
