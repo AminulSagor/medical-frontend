@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { FolderPlus, SquarePen, NotebookPen } from "lucide-react";
 
 import StatCards from "./_components/stat-cards";
 import RevenueTrends from "./_components/revenue-trends";
@@ -22,6 +24,7 @@ export default function AdminDashboardPage() {
       try {
         setLoading(true);
         const response = await getAdminDashboardOverview();
+
         setData(response);
       } catch (error) {
         console.error("Failed to fetch dashboard overview:", error);
@@ -74,11 +77,73 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="min-w-0 space-y-6">
-          <QuickActions quickActions={data.quickActions} />
+          {/* <QuickActions quickActions={data.quickActions} /> */}
+          <QuickActionsCard />
+
           <LowStockAlert lowStockAlerts={data.lowStockAlerts} />
           <RecentActivity recentActivities={data.recentActivities} />
-          <TopPerformingCourses topPerformingCourses={data.topPerformingCourses} />
+          <TopPerformingCourses
+            topPerformingCourses={data.topPerformingCourses}
+          />
         </div>
+      </div>
+    </div>
+  );
+}
+
+type QuickActionItem = {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  highlighted?: boolean;
+};
+
+const quickActions: QuickActionItem[] = [
+  {
+    label: "Add New Product",
+    href: "/dashboard/admin/products/add",
+    icon: FolderPlus,
+    highlighted: true,
+  },
+  {
+    label: "Create Newsletter",
+    href: "/dashboard/admin/newsletters/general-newsletter/create-broadcast",
+    icon: SquarePen,
+  },
+  {
+    label: "Manage Courses",
+    href: "/dashboard/admin/courses",
+    icon: NotebookPen,
+  },
+];
+
+function QuickActionsCard() {
+  return (
+    <div className="w-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="text-sm font-semibold text-slate-800">Quick Actions</h3>
+
+      <div className="mt-4 space-y-3">
+        {quickActions.map((action) => {
+          const Icon = action.icon;
+
+          return (
+            <Link
+              key={action.label}
+              href={action.href}
+              className={[
+                "flex h-9 w-full items-center justify-center gap-2 rounded-md border transition-colors",
+                action.highlighted
+                  ? "border-sky-200 bg-sky-50 text-sky-400"
+                  : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100",
+              ].join(" ")}
+            >
+              <Icon className="h-4 w-4" />
+              <span className="text-xs font-medium sm:text-sm">
+                {action.label}
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

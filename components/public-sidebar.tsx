@@ -155,7 +155,9 @@ export default function PublicSidebar({
                     <div className="grid h-10 w-10 place-items-center rounded-full border border-light-slate/15 bg-white">
                       <ShoppingCart size={18} className="text-black" />
                     </div>
-                    <span className="text-sm font-semibold text-black">Cart</span>
+                    <span className="text-sm font-semibold text-black">
+                      Cart
+                    </span>
                   </div>
 
                   <span className="grid h-6 min-w-6 place-items-center rounded-full bg-primary px-2 text-[12px] font-bold text-white">
@@ -169,7 +171,7 @@ export default function PublicSidebar({
 
             {/* auth actions */}
             <Link
-              href="/auth/sign-in"
+              href="/public/auth/sign-in"
               onClick={onClose}
               className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-light-slate/5 transition"
             >
@@ -178,7 +180,7 @@ export default function PublicSidebar({
             </Link>
 
             <Link
-              href="/auth/sign-up"
+              href="/public/auth/sign-up"
               onClick={onClose}
               className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-light-slate/5 transition"
             >

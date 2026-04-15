@@ -153,7 +153,9 @@ export default function TestimonialCard({
                   <Star
                     size={16}
                     className={
-                      i < item.rating ? "text-yellow-500" : "text-light-slate/40"
+                      i < item.rating
+                        ? "text-yellow-500"
+                        : "text-light-slate/40"
                     }
                     fill={i < item.rating ? "currentColor" : "none"}
                   />
@@ -166,9 +168,7 @@ export default function TestimonialCard({
             className="relative z-10 mt-5 font-mono overflow-hidden"
             style={{ transform: "translateZ(38px)" }}
           >
-            
-              “{item.quote}”
-
+            “{item.quote}”
           </div>
 
           <motion.div
@@ -185,10 +185,9 @@ export default function TestimonialCard({
                 transition={{ duration: 0.22 }}
                 className="relative h-11 w-11 overflow-hidden rounded-full bg-light-slate/15 ring-1 ring-light-slate/10"
               >
-                <Image
+                <img
                   src={author.avatarSrc}
                   alt={author.name}
-                  fill
                   className="object-cover"
                 />
               </motion.div>
