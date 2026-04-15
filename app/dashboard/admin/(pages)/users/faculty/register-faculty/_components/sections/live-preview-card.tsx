@@ -1,42 +1,28 @@
 "use client";
 
 import { MoreHorizontal, IdCard } from "lucide-react";
-import type { ClinicalRole, MedicalDesignation } from "./clinical-credentials-card";
-
-const ROLE_LABEL: Record<NonNullable<ClinicalRole>, string> = {
-    anesthesiologist: "Anesthesiologist",
-    crna: "CRNA",
-    icu: "ICU",
-    ent: "ENT",
-};
-
-const DESIG_LABEL: Record<NonNullable<MedicalDesignation>, string> = {
-    md: "MD",
-    do: "DO",
-    crna: "CRNA",
-};
 
 export default function LivePreviewCard({
     initials,
     fullName,
-    role,
-    designation,
+    primaryClinicalRole,
+    medicalDesignation,
     email,
-    institution,
+    institutionOrHospital,
     photoUrl,
-    assignedUserRole,
+    assignedRole,
 }: {
     initials: string;
     fullName: string;
-    role: ClinicalRole | null;
-    designation: MedicalDesignation | null;
+    primaryClinicalRole?: string;
+    medicalDesignation?: string;
     email: string;
-    institution?: string;
+    institutionOrHospital?: string;
     photoUrl?: string | null;
-    assignedUserRole?: string;
+    assignedRole?: string;
 }) {
-    const roleText = role ? ROLE_LABEL[role] : "—";
-    const desigText = designation ? DESIG_LABEL[designation] : "—";
+    const roleText = primaryClinicalRole?.trim() || "—";
+    const desigText = medicalDesignation?.trim() || "—";
 
     // dummy
     const memberId = "NEW_USR_2024";
@@ -103,14 +89,14 @@ export default function LivePreviewCard({
 
                         {/* Assigned role + default status (like screenshot) */}
                         <div className="mt-3 flex flex-wrap items-center gap-2">
-                            {assignedUserRole?.trim() ? (
+                            {assignedRole?.trim() ? (
                                 <span
                                     className={[
                                         "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-extrabold uppercase",
                                         "bg-[var(--primary)] text-white",
                                     ].join(" ")}
                                 >
-                                    {assignedUserRole.toUpperCase()}
+                                    {assignedRole.toUpperCase()}
                                 </span>
                             ) : null}
 
@@ -130,7 +116,9 @@ export default function LivePreviewCard({
                                 INSTITUTE IDENTITY
                             </div>
                             <div className="mt-1 text-[12px] text-slate-600">
-                                {institution?.trim() ? institution : email || "—"}
+                                {institutionOrHospital?.trim()
+                                    ? institutionOrHospital
+                                    : email || "—"}
                             </div>
                         </div>
                     </div>

@@ -1,14 +1,14 @@
-export type AssignedRole = "instructor" | "faculty" | "admin";
+export type AssignedRole = string;
 
 export interface RegisterFacultyRequest {
   firstName: string;
   lastName: string;
   phoneNumber: string;
   email: string;
-  imageUrl: string;
-  primaryClinicalRole: string;
-  medicalDesignation: string;
-  institutionOrHospital: string;
+  imageUrl?: string;
+  primaryClinicalRole?: string;
+  medicalDesignation?: string;
+  institutionOrHospital?: string;
   npiNumber: string;
   assignedRole: AssignedRole;
 }
@@ -19,10 +19,10 @@ export interface Faculty {
   lastName: string;
   phoneNumber: string;
   email: string;
-  imageUrl: string;
-  primaryClinicalRole: string;
-  medicalDesignation: string;
-  institutionOrHospital: string;
+  imageUrl?: string | null;
+  primaryClinicalRole?: string | null;
+  medicalDesignation?: string | null;
+  institutionOrHospital?: string | null;
   npiNumber: string;
   assignedRole: AssignedRole;
   createdAt: string;

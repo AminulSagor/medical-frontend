@@ -5,7 +5,7 @@ import { Camera, Plus, AtSign, User } from "lucide-react";
 export type AccountDetailsValue = {
     firstName: string;
     lastName: string;
-    phone: string;
+    phoneNumber: string;
     email: string;
 };
 
@@ -130,11 +130,11 @@ export default function AccountDetailsCard({
                             PHONE NUMBER
                         </label>
                         <input
-                            value={value.phone}
+                            value={value.phoneNumber}
                             onChange={(e) => {
                                 // Allow digits, +, -, space, ( )
                                 const cleaned = e.target.value.replace(/[^0-9+\- ()]/g, "");
-                                onChange({ phone: cleaned });
+                                onChange({ phoneNumber: cleaned });
                             }}
                             inputMode="tel"
                             className={[

@@ -29,17 +29,16 @@ export default function CourseBrowseCard({
       onClick={() => router.push(`/public/courses/details/${course.id}`)}
       className={[
         "rounded-3xl bg-white border border-light-slate/15 shadow-sm overflow-hidden cursor-pointer",
-        "flex flex-col h-full",
+        "flex flex-col",
         course.action.kind === "reserve" ? "ring-2 ring-primary/30" : "",
       ].join(" ")}
     >
       {/* Top */}
       {isOnDemand ? (
         <div className="relative h-40 w-full">
-          <Image
+          <img
             src={course.imageSrc!}
             alt={course.imageAlt || course.title}
-            fill
             className="object-cover"
           />
           {course.badge ? (

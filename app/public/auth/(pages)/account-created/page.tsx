@@ -30,8 +30,8 @@ const steps: Step[] = [
 
 export default function AccountCreatedPage() {
   return (
-    <div className="mx-auto w-full max-w-md px-4 py-10">
-      <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-[0_18px_60px_rgba(15,23,42,0.10)]">
+    <div className="flex min-h-[calc(100dvh+4rem)] w-full items-center justify-center px-4 py-10">
+      <div className="mx-auto w-full max-w-md rounded-[32px] border border-slate-200 bg-white p-8 shadow-[0_18px_60px_rgba(15,23,42,0.10)]">
         {/* Top check */}
         <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-50 ring-1 ring-emerald-100">
           <div className="grid h-9 w-9 place-items-center rounded-full bg-emerald-500">
@@ -80,7 +80,7 @@ export default function AccountCreatedPage() {
 
         {/* CTA */}
         <Link
-          href="/auth/sign-in"
+          href="/public/auth/sign-in"
           className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-sky-500 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(2,132,199,0.25)] hover:bg-sky-600 focus:outline-none focus:ring-4 focus:ring-sky-200"
         >
           Sign In to Your Account <span aria-hidden>→</span>

@@ -238,13 +238,11 @@ export default function AccountSidebarCard({
         <div className="flex flex-col items-center gap-2 text-center">
           <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200">
             {sidebarUser.avatarUrl ? (
-              <Image
+              <img
                 src={sidebarUser.avatarUrl}
                 alt={sidebarUser.name}
-                fill
                 className="object-cover"
                 sizes="44px"
-                priority
               />
             ) : (
               <div className="grid h-full w-full place-items-center text-xs font-semibold text-slate-600">
@@ -324,14 +322,14 @@ export default function AccountSidebarCard({
         type="button"
         onClick={() => setOpen(true)}
         className={cx(
-          "fixed left-4 top-[72px] z-40 md:hidden",
-          "grid h-11 w-11 place-items-center rounded-xl border border-slate-200 bg-white shadow-sm",
+          "fixed left-4 top-[20px] z-40 md:hidden",
+          "grid h-11 w-11 place-items-center rounded-xl border border-slate-200 bg-white shadow-sm z-50",
           "hover:bg-slate-50",
           "focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100",
         )}
         aria-label="Open menu"
       >
-        <Menu className="h-[18px] w-[18px] text-slate-700" />
+        <Menu className="h-[18px] w-[18px] text-slate-700 " />
       </button>
 
       {/* ✅ Mobile drawer */}

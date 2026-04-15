@@ -178,7 +178,7 @@ export default function WorkshopCreateClient() {
         {
           id: facultyItem.id,
           name: `${facultyItem.firstName} ${facultyItem.lastName}`,
-          role: facultyItem.medicalDesignation,
+          role: facultyItem.medicalDesignation || facultyItem.primaryClinicalRole || "N/A",
         },
       ]);
     }
@@ -793,7 +793,7 @@ export default function WorkshopCreateClient() {
                                 {item.firstName} {item.lastName}
                               </p>
                               <p className="text-xs text-slate-500">
-                                {item.medicalDesignation}
+                                {item.medicalDesignation || item.primaryClinicalRole || "N/A"}
                               </p>
                             </div>
                           </button>
