@@ -46,7 +46,7 @@ export default function TransmissionHistoryHeader({
               Export All History
             </button> */}
 
-            <button
+            {/* <button
               type="button"
               onClick={onArchive}
               disabled={isArchiveDisabled}
@@ -68,7 +68,7 @@ export default function TransmissionHistoryHeader({
                 : selectedCount > 0
                   ? `Bulk Archive (${selectedCount})`
                   : "Bulk Archive"}
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
