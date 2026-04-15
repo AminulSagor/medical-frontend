@@ -1,7 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Minus, Plus, ShoppingBag, Star, CreditCard, Heart } from "lucide-react";
+import {
+  Minus,
+  Plus,
+  ShoppingBag,
+  Star,
+  CreditCard,
+  Heart,
+} from "lucide-react";
 import { ProductDetails } from "@/app/public/types/product.details";
 import Card from "@/components/cards/card";
 import Button from "@/components/buttons/button";
@@ -37,10 +44,10 @@ export default function PurchasePanelClient({
     try {
       // Add to cart first, then redirect to checkout where shipping is collected
       await addItem(product.id, qty);
-      router.push('/public/checkout');
+      router.push("/public/checkout");
     } catch (error: any) {
-      console.error('Buy now error:', error);
-      alert(error.message || 'Failed to add item. Please try again.');
+      console.error("Buy now error:", error);
+      alert(error.message || "Failed to add item. Please try again.");
       setIsProcessingPayment(false);
     }
   };
@@ -129,6 +136,19 @@ export default function PurchasePanelClient({
                     <Plus className="h-4 w-4 text-light-slate" />
                   </button>
                 </div>
+
+                {/* ✅ Wishlist moved here (below quantity) */}
+                <button
+                  type="button"
+                  onClick={() => toggleWishlist(product.id)}
+                  className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition hover:border-red-200 hover:text-red-500 active:scale-95"
+                >
+                  <Heart
+                    size={18}
+                    className={wishlisted ? "fill-red-500 text-red-500" : ""}
+                  />
+                  {wishlisted ? "In Wishlist" : "Add to Wishlist"}
+                </button>
               </div>
 
               <div className="col-span-7 space-y-3">
@@ -139,41 +159,29 @@ export default function PurchasePanelClient({
                   disabled={isProcessingPayment}
                 >
                   <CreditCard className="h-5 w-5" />
-                  {isProcessingPayment ? 'Processing...' : 'Buy Now'}
+                  {isProcessingPayment ? "Processing..." : "Buy Now"}
                 </Button>
-                
+
+                {/* ✅ Add to Cart moved below Buy Now + text primary */}
                 <Button
-                  className="h-12 w-full justify-center border border-primary bg-white text-primary shadow-sm"
+                  className="h-12 w-full justify-center border border-primary !text-primary bg-white shadow-sm"
                   shape="pill"
                   disabled={isAddingToCart}
                   onClick={async () => {
                     if (isAddingToCart) return;
                     try {
                       setIsAddingToCart(true);
-                      // addItem handles both local state AND backend sync
                       await addItem(product.id, qty);
                     } catch (error) {
-                      console.error('Failed to add to cart', error);
+                      console.error("Failed to add to cart", error);
                     } finally {
                       setIsAddingToCart(false);
                     }
                   }}
                 >
-                  <ShoppingBag className="h-5 w-5" />
-                  {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+                  <ShoppingBag className="h-5 w-5 text-primary" />
+                  {isAddingToCart ? "Adding..." : "Add to Cart"}
                 </Button>
-
-                <button
-                  type="button"
-                  onClick={() => toggleWishlist(product.id)}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition hover:border-red-200 hover:text-red-500 active:scale-95"
-                >
-                  <Heart
-                    size={18}
-                    className={wishlisted ? 'fill-red-500 text-red-500' : ''}
-                  />
-                  {wishlisted ? 'In Wishlist' : 'Add to Wishlist'}
-                </button>
               </div>
             </div>
           </div>

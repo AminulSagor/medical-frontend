@@ -114,8 +114,6 @@ export default function TestimonialCard({
             className="pointer-events-none absolute z-0 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/12 blur-3xl"
           />
 
-          <div className="pointer-events-none absolute inset-0 z-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.9)_0%,rgba(255,255,255,0.72)_55%,rgba(255,255,255,0.9)_100%)]" />
-
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -155,7 +153,7 @@ export default function TestimonialCard({
                   <Star
                     size={16}
                     className={
-                      i < item.rating ? "text-yellow" : "text-light-slate/40"
+                      i < item.rating ? "text-yellow-500" : "text-light-slate/40"
                     }
                     fill={i < item.rating ? "currentColor" : "none"}
                   />
@@ -165,18 +163,12 @@ export default function TestimonialCard({
           </motion.div>
 
           <div
-            className="relative z-10 mt-5 overflow-hidden"
+            className="relative z-10 mt-5 font-mono overflow-hidden"
             style={{ transform: "translateZ(38px)" }}
           >
-            <motion.p
-              initial={{ opacity: 0, y: 28, filter: "blur(8px)" }}
-              whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              viewport={{ once: true, amount: 0.5 }}
-              transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-              className="text-sm italic leading-relaxed text-light-slate md:text-[15px]"
-            >
+            
               “{item.quote}”
-            </motion.p>
+
           </div>
 
           <motion.div
