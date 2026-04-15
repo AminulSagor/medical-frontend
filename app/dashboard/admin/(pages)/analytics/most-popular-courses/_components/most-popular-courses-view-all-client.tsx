@@ -152,14 +152,14 @@ export default function MostPopularCoursesViewAllClient({
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <p className="text-xs text-slate-500">Period: {startDate} to {endDate}</p>
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <input
             defaultValue={type}
             onBlur={(e) => onTypeChange(e.target.value)}
             placeholder="Filter type and blur"
             className="w-[220px] rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none"
           />
-        </div>
+        </div> */}
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
