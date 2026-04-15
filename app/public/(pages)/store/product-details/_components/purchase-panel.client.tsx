@@ -1,7 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Minus, Plus, ShoppingBag, Star, CreditCard, Heart } from "lucide-react";
+import {
+  Minus,
+  Plus,
+  ShoppingBag,
+  Star,
+  CreditCard,
+  Heart,
+} from "lucide-react";
 import { ProductDetails } from "@/app/public/types/product.details";
 import Card from "@/components/cards/card";
 import Button from "@/components/buttons/button";
@@ -33,14 +40,21 @@ export default function PurchasePanelClient({
   }, [product.rating.value]);
 
   const handleBuyNow = async () => {
-    setIsProcessingPayment(true);
+    if (isProcessingPayment) return;
+
     try {
-      // Add to cart first, then redirect to checkout where shipping is collected
-      await addItem(product.id, qty);
-      router.push('/public/checkout');
+      setIsProcessingPayment(true);
+
+      const params = new URLSearchParams({
+        mode: "buy-now",
+        productId: product.id,
+        quantity: String(qty),
+      });
+
+      router.push(`/public/checkout?${params.toString()}`);
     } catch (error: any) {
-      console.error('Buy now error:', error);
-      alert(error.message || 'Failed to add item. Please try again.');
+      console.error("Buy now error:", error);
+      alert(error.message || "Failed to continue to checkout. Please try again.");
       setIsProcessingPayment(false);
     }
   };
@@ -139,9 +153,9 @@ export default function PurchasePanelClient({
                   disabled={isProcessingPayment}
                 >
                   <CreditCard className="h-5 w-5" />
-                  {isProcessingPayment ? 'Processing...' : 'Buy Now'}
+                  {isProcessingPayment ? "Processing..." : "Buy Now"}
                 </Button>
-                
+
                 <Button
                   className="h-12 w-full justify-center border border-primary bg-white text-primary shadow-sm"
                   shape="pill"
@@ -150,17 +164,16 @@ export default function PurchasePanelClient({
                     if (isAddingToCart) return;
                     try {
                       setIsAddingToCart(true);
-                      // addItem handles both local state AND backend sync
                       await addItem(product.id, qty);
                     } catch (error) {
-                      console.error('Failed to add to cart', error);
+                      console.error("Failed to add to cart", error);
                     } finally {
                       setIsAddingToCart(false);
                     }
                   }}
                 >
                   <ShoppingBag className="h-5 w-5" />
-                  {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+                  {isAddingToCart ? "Adding..." : "Add to Cart"}
                 </Button>
 
                 <button
@@ -170,9 +183,9 @@ export default function PurchasePanelClient({
                 >
                   <Heart
                     size={18}
-                    className={wishlisted ? 'fill-red-500 text-red-500' : ''}
+                    className={wishlisted ? "fill-red-500 text-red-500" : ""}
                   />
-                  {wishlisted ? 'In Wishlist' : 'Add to Wishlist'}
+                  {wishlisted ? "In Wishlist" : "Add to Wishlist"}
                 </button>
               </div>
             </div>

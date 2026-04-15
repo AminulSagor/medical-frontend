@@ -3,7 +3,7 @@
 import { useState } from "react";
 import CheckOutHeader from "@/app/public/(pages)/checkout/_components/checkout-header";
 import OrderReviewCard from "@/app/public/(pages)/checkout/_components/order-review-card";
-import PaymentMethodCard from "@/app/public/(pages)/checkout/_components/payment-method-card";
+// import PaymentMethodCard from "@/app/public/(pages)/checkout/_components/payment-method-card";
 import ShippingAddressCard from "@/app/public/(pages)/checkout/_components/shipping-address-card";
 import type { UpdateShippingAddressPayload } from "@/app/public/types/shipping-address.types";
 
@@ -28,7 +28,7 @@ const Page = () => {
             shippingAddress={shippingAddress}
             setShippingAddress={setShippingAddress}
           />
-          <PaymentMethodCard />
+          {/* <PaymentMethodCard /> */}
         </div>
 
         <div>

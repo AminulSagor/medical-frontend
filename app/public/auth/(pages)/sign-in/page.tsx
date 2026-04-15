@@ -1,14 +1,13 @@
-// app/(auth)/sign-in/page.tsx
 "use client";
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail, LogIn } from "lucide-react";
 import { loginSchema } from "@/schema/auth/login.schema";
 import { zodErrorToFieldErrors } from "@/schema/zodErrorToFieldErrors";
 import { loginUser } from "@/service/public/auth/auth.service";
-import { setToken, setUserRole } from "@/utils/token/cookie_utils";
+import { setToken } from "@/utils/token/cookie_utils";
 import type { LoginRequest } from "@/types/public/auth/auth.types";
 import { getRoleFromToken } from "@/utils/decode-token.utils";
 
@@ -16,6 +15,7 @@ type FieldErrors = Partial<Record<keyof LoginRequest, string>>;
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,9 +44,14 @@ export default function SignInPage() {
       const response = await loginUser(result.data);
 
       setToken(response.accessToken);
-      // setUserRole(response.user.role);
 
+      const redirect = searchParams.get("redirect");
       const role = getRoleFromToken(response.accessToken);
+
+      if (redirect && redirect.startsWith("/")) {
+        router.push(redirect);
+        return;
+      }
 
       if (role === "admin") {
         router.push("/dashboard/admin/admin-dashboard");
@@ -74,7 +79,6 @@ export default function SignInPage() {
         </p>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-5">
-          {/* Email */}
           <div>
             <label className="text-sm font-semibold text-slate-700">
               Institutional Email
@@ -105,7 +109,6 @@ export default function SignInPage() {
             )}
           </div>
 
-          {/* Password */}
           <div>
             <label className="text-sm font-semibold text-slate-700">
               Password
@@ -150,7 +153,6 @@ export default function SignInPage() {
               <p className="mt-1 text-xs text-rose-600">{errors.password}</p>
             )}
 
-            {/* keep forget password AFTER password field */}
             <div className="mt-3 flex items-center justify-end">
               <Link
                 href="/public/auth/reset-password"
@@ -161,7 +163,6 @@ export default function SignInPage() {
             </div>
           </div>
 
-          {/* Keep signed in */}
           <label className="flex cursor-pointer items-center gap-3 text-sm text-slate-600">
             <span
               className={[
@@ -182,12 +183,10 @@ export default function SignInPage() {
             Keep me signed in for 30 days
           </label>
 
-          {/* API Error */}
           {apiError && (
-            <p className="text-sm text-rose-600 text-center">{apiError}</p>
+            <p className="text-center text-sm text-rose-600">{apiError}</p>
           )}
 
-          {/* Sign in button */}
           <button
             type="submit"
             disabled={submitting}
@@ -203,7 +202,6 @@ export default function SignInPage() {
             <LogIn className="h-5 w-5" />
           </button>
 
-          {/* Create account */}
           <div className="text-center text-sm text-slate-500">
             <Link
               href="/public/auth/sign-up"
@@ -213,12 +211,10 @@ export default function SignInPage() {
             </Link>
           </div>
 
-          {/* Divider */}
           <div className="pt-2">
             <div className="h-px w-full bg-slate-200" />
           </div>
 
-          {/* Footer note */}
           <p className="pt-2 text-center text-xs leading-5 text-slate-400">
             Authorized medical staff only. All activity is monitored for
             institutional security and compliance purposes.

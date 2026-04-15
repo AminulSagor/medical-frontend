@@ -5,7 +5,6 @@ import {
   ProductFiltersResponse,
   ProductDetailResponse,
 } from "@/types/public/product/public-product.types";
-import { Console } from "console";
 
 /**
  * Fetches products from the public products API.
@@ -32,9 +31,11 @@ export const getPublicProducts = async (
       id: item.id,
       brand: item.brand || null,
       categoryId: item.categoryId || (item.category ? [item.category] : []),
-      tags: item.tags || [],
+      tags: item.badge ? [item.badge] : item.tags || [],
       sku: item.sku || "",
-      stockQuantity: item.stockQuantity ?? 0,
+      stockQuantity:
+        typeof item.stockQuantity === "number" ? item.stockQuantity : undefined,
+      inStock: typeof item.inStock === "boolean" ? item.inStock : undefined,
       lowStockAlert: item.lowStockAlert || 0,
       isActive: item.isActive !== false,
       backorder: item.backorder || false,
