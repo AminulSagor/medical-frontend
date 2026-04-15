@@ -213,15 +213,15 @@ export default function ComposeShell({ id }: ComposeShellProps) {
                 recipientIds: values.recipientIds,
               });
 
-            console.log("SET_RECIPIENTS_API_RESPONSE:", recipientsResponse);
+            // console.log("SET_RECIPIENTS_API_RESPONSE:", recipientsResponse);
 
             const sendBroadcastResponse =
               await sendCourseAnnouncementBroadcast(broadcastId);
 
-            console.log(
-              "FINAL_SEND_BROADCAST_API_RESPONSE:",
-              sendBroadcastResponse,
-            );
+            // console.log(
+            //   "FINAL_SEND_BROADCAST_API_RESPONSE:",
+            //   sendBroadcastResponse,
+            // );
 
             return {
               recipientsResponse,

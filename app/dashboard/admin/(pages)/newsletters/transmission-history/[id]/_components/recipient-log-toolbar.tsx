@@ -27,13 +27,13 @@ export default function RecipientLogToolbar({
         />
       </div>
 
-      <button
+      {/* <button
         type="button"
         className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50"
         aria-label="Filter recipients"
       >
         <SlidersHorizontal size={15} />
-      </button>
+      </button> */}
     </div>
   );
 }

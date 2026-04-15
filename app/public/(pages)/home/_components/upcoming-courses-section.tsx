@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { getPublicWorkshops } from "@/service/public/workshop.service";
+import { getPublicWorkshops, getPublicWorkshopsUpcoming } from "@/service/public/workshop.service";
 import { PublicWorkshop } from "@/types/public/workshop/public-workshop.types";
 import CourseCard from "@/app/public/(pages)/home/_components/course-card";
 
@@ -15,7 +15,7 @@ export default function UpcomingCoursesSection() {
   useEffect(() => {
     const fetchWorkshops = async () => {
       try {
-        const response = await getPublicWorkshops();
+        const response = await getPublicWorkshopsUpcoming();
         setWorkshops(response.data);
       } catch (error) {
         console.error("Failed to fetch workshops:", error);

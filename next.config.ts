@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "**",
+        pathname: "/"
+      },
+      {
+        protocol: "https",
         hostname: "ibass-collection.s3.ap-south-1.amazonaws.com",
         pathname: "/**",
       },
@@ -31,5 +36,6 @@ const nextConfig: NextConfig = {
     ],
   },
 };
+
 
 export default nextConfig;

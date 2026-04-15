@@ -14,45 +14,46 @@ import type {
 } from "@/types/admin/analytics.types";
 
 export async function getAdminAnalyticsSummary(
-  params: AnalyticsDateRangeDateTimeQuery
+  params: AnalyticsDateRangeDateTimeQuery,
 ): Promise<AdminAnalyticsSummaryResponse> {
   const serverClient = await getServerClient();
   const response = await serverClient.get<AdminAnalyticsSummaryResponse>(
     "/admin/analytics/summary",
-    { params }
+    { params },
   );
   return response.data;
 }
 
 export async function getRevenueOverviewGraph(
-  params: RevenueOverviewGraphQuery
+  params: RevenueOverviewGraphQuery,
 ): Promise<RevenueOverviewGraphResponse> {
   const serverClient = await getServerClient();
   const response = await serverClient.get<RevenueOverviewGraphResponse>(
     "/admin/analytics/revenue-chart",
-    { params }
+    { params },
   );
   return response.data;
 }
 
 export async function getPopularCoursesMetrics(
-  params: AnalyticsDateRangeDateQuery
+  params: AnalyticsDateRangeDateQuery,
 ): Promise<PopularCoursesMetricsResponse> {
   const serverClient = await getServerClient();
   const response = await serverClient.get<PopularCoursesMetricsResponse>(
     "/admin/analytics/popular-courses/metrics",
-    { params }
+    { params },
   );
+  console.log("ress", response);
   return response.data;
 }
 
 export async function getMostPopularCoursesTable(
-  params: MostPopularCoursesTableQuery
+  params: MostPopularCoursesTableQuery,
 ): Promise<MostPopularCoursesTableResponse> {
   const serverClient = await getServerClient();
   const response = await serverClient.get<MostPopularCoursesTableResponse>(
     "/admin/analytics/popular-courses",
-    { params }
+    { params },
   );
   return response.data;
 }
@@ -60,18 +61,18 @@ export async function getMostPopularCoursesTable(
 export async function getTopSellingProductsMetrics(): Promise<TopSellingProductsMetricsResponse> {
   const serverClient = await getServerClient();
   const response = await serverClient.get<TopSellingProductsMetricsResponse>(
-    "/admin/analytics/top-products/metrics"
+    "/admin/analytics/top-products/metrics",
   );
   return response.data;
 }
 
 export async function getTopSellingProductsTable(
-  params: TopSellingProductsTableQuery
+  params: TopSellingProductsTableQuery,
 ): Promise<TopSellingProductsTableResponse> {
   const serverClient = await getServerClient();
   const response = await serverClient.get<TopSellingProductsTableResponse>(
     "/admin/analytics/top-products",
-    { params }
+    { params },
   );
   return response.data;
 }

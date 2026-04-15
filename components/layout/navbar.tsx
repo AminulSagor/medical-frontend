@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ShoppingCart, Menu, LogIn, UserPlus, Search, X, Heart } from "lucide-react";
+import {
+  ShoppingCart,
+  Menu,
+  LogIn,
+  UserPlus,
+  Search,
+  X,
+  Heart,
+} from "lucide-react";
 import { getToken, removeToken } from "@/utils/token/cookie_utils";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -23,6 +31,7 @@ function isActivePath(pathname: string, href: string) {
   if (href === "/public/home") return pathname === "/public/home";
   return pathname === href || pathname.startsWith(href + "/");
 }
+
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -281,11 +290,11 @@ function AccountAccessDropdown() {
   }, []);
 
   const isDashboard =
-    path === "/dashboard" ||
-    path === "/course" ||
-    path === "/order-history" ||
-    path === "/settings" ||
-    path.startsWith("/dashboard/");
+    path === "/dashboard/user" ||
+    path === "/dashboard/user/course" ||
+    path === "/dashboard/user/order-history" ||
+    path === "/dashboard/user/settings" ||
+    path.startsWith("/dashboard/user/");
 
   if (!isAuthenticated) {
     return (
@@ -356,7 +365,7 @@ function AccountAccessDropdown() {
                   onClick={() => {
                     removeToken();
                     setIsAuthenticated(false);
-                    router.push("/public/auth/sign-in");
+                    router.push("/public/home");
                   }}
                   className="flex w-full items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
                 >
@@ -378,7 +387,11 @@ function AccountAccessDropdown() {
               )}
 
               <Link
-                href={isDashboard ? "/settings" : "/auth/sign-up"}
+                href={
+                  isDashboard
+                    ? "/dashboard/user/settings"
+                    : "/public/auth/sign-up"
+                }
                 className="flex items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
               >
                 {isDashboard ? (

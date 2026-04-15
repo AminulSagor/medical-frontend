@@ -71,8 +71,11 @@ export default function ProductSection({
       const response = await getPublicProducts(params);
       setProducts(response.items);
       setMeta(response.meta);
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Products fetched:', { count: response.items.length, response });
+      if (process.env.NODE_ENV === "development") {
+        console.log("Products fetched:", {
+          count: response.items.length,
+          response,
+        });
       }
     } catch (error) {
       console.error("Failed to fetch products:", error);
@@ -118,7 +121,10 @@ export default function ProductSection({
             {/* Mobile Filter Button */}
             <div className="flex items-center justify-between gap-2 md:hidden mb-4">
               <div className="text-xs md:text-sm font-semibold text-light-slate flex-1">
-                Results: <span className="font-extrabold text-black">{totalResults}</span>
+                Results:{" "}
+                <span className="font-extrabold text-black">
+                  {totalResults}
+                </span>
               </div>
               <button
                 onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
@@ -150,9 +156,11 @@ export default function ProductSection({
                 No products found matching your filters.
               </div>
             ) : (
-              <div className="mt-4 md:mt-5 grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-4 grid grid-cols-1 items-start gap-4 sm:grid-cols-2 md:mt-5 md:gap-6 lg:grid-cols-3">
                 {products.map((p) => (
-                  <ProductCard key={p.id} product={p} />
+                  <div key={p.id} className="self-start">
+                    <ProductCard product={p} />
+                  </div>
                 ))}
               </div>
             )}
