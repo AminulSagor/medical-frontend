@@ -14,7 +14,6 @@ import { getProductDetails } from "@/service/public/product.service";
 import type { ProductDetailResponse } from "@/types/public/product/public-product.types";
 import { use } from "react";
 import Breadcrumb from "@/app/public/(pages)/store/product-details/_components/breadcrumb";
-import BundleSetupClient from "@/app/public/(pages)/store/product-details/_components/bundle-setup.client";
 import FrequentlyBoughtTogether from "@/app/public/(pages)/store/product-details/_components/frequently-bought-together";
 
 function transformApiToProductDetails(
@@ -89,13 +88,6 @@ function transformApiToProductDetails(
       title: "Clinical Guarantee",
       description:
         "Authorized distributor. Sterility guaranteed upon delivery. 30-day return policy for unopened sterile packaging.",
-    },
-    bundle: {
-      title: "Complete Your Setup",
-      items: [],
-      bundlePriceLabel: "",
-      savingsLabel: "",
-      ctaLabel: "Add All to Cart",
     },
     overview: {
       title: "Product Overview & Clinical Indication",
@@ -192,7 +184,6 @@ export default function ProductDetailsPage({
         <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-12">
           <div className="lg:col-span-7 space-y-5">
             <ProductGalleryClient product={product} />
-            <BundleSetupClient product={product} />
           </div>
 
           <div className="lg:col-span-5">
