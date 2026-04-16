@@ -21,5 +21,5 @@ export async function getBlogCategories(): Promise<BlogCategoryOption[]> {
 export async function createBlogCategories(
   payload: CreateBlogCategoriesBulkPayload,
 ): Promise<void> {
-  await serviceClient.post("/admin/categories/bulk", payload);
+  await serviceClient.post("/admin/blog-categories/bulk", payload);
 }
