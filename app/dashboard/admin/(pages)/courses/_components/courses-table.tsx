@@ -137,6 +137,7 @@ function Pagination({ page, totalPages, onPageChange }: { page: number; totalPag
 
 export default function CoursesTable({
     items,
+    loading,
     query,
     onQueryChange,
     selectedDeliveryMode,
@@ -152,6 +153,7 @@ export default function CoursesTable({
     onPageChange,
 }: {
     items: CourseItem[];
+    loading: boolean;
     query: string;
     onQueryChange: (v: string) => void;
     selectedDeliveryMode: DeliveryMode | "all";
@@ -350,7 +352,16 @@ export default function CoursesTable({
                             </tr>
                         ))}
 
-                        {items.length === 0 ? (
+                        {loading ? (
+                            <tr>
+                                <td colSpan={7} className="px-5 py-10 text-center text-slate-500">
+                                    <div className="inline-flex items-center gap-3">
+                                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--primary)]" />
+                                        <span>Loading courses...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : items.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="px-5 py-10 text-center text-slate-500">
                                     No courses found.

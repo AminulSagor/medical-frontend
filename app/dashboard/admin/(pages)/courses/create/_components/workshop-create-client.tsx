@@ -12,6 +12,7 @@ import {
   Trash2,
   Search,
   Loader2,
+  Save,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -21,7 +22,7 @@ import ThemeDropdown, {
 import ManageClinicalLocationsModal from "../../_components/manage-clinical-locations-modal";
 import { searchFaculty } from "@/service/admin/faculty.service";
 import { listFacilities } from "@/service/admin/facility.service";
-import { createWorkshop } from "@/service/admin/workshop.service";
+import { createWorkshop, updateWorkshop } from "@/service/admin/workshop.service";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   createWorkshopSchema,
@@ -29,7 +30,7 @@ import {
 } from "@/schema/admin/workshop.schema";
 import type { Faculty } from "@/types/admin/faculty.types";
 import type { Facility } from "@/types/admin/facility.types";
-import type { WorkshopStatus } from "@/types/admin/workshop.types";
+import type { CreateWorkshopRequest, UpdateWorkshopRequest, WorkshopStatus } from "@/types/admin/workshop.types";
 
 import RichTextEditor from "./workshop-create/_components/shared/rich-text-editor";
 import SeatMap from "./workshop-create/_components/shared/seat-map";
@@ -58,10 +59,44 @@ import type {
 
 const COURSES_LIST_ROUTE = "/dashboard/admin/courses";
 
+function formatLastSavedLabel(lastSavedAt: Date | null): string {
+  if (!lastSavedAt) return "Not saved yet";
+
+  const diffMs = Date.now() - lastSavedAt.getTime();
+  const diffMinutes = Math.floor(diffMs / 60000);
+
+  if (diffMinutes < 1) return "just now";
+  if (diffMinutes < 60) {
+    return `${diffMinutes} min${diffMinutes === 1 ? "" : "s"} ago`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+  }
+
+  const hours = lastSavedAt.getHours();
+  const minutes = String(lastSavedAt.getMinutes()).padStart(2, "0");
+  const normalizedHours = hours % 12 || 12;
+  const meridiem = hours >= 12 ? "PM" : "AM";
+  const day = lastSavedAt.getDate();
+  const month = lastSavedAt.toLocaleString("en-US", { month: "long" });
+  const year = lastSavedAt.getFullYear();
+
+  return `${normalizedHours}:${minutes}${meridiem} ${day} ${month}, ${year}`;
+}
+
 export default function WorkshopCreateClient() {
   const router = useRouter();
 
-  const [submitting, setSubmitting] = useState(false);
+  const [saveMode, setSaveMode] = useState<"publish" | "draft" | "autosave" | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
+  const [changeVersion, setChangeVersion] = useState(0);
+  const [isHydrating, setIsHydrating] = useState(true);
+  const hasMountedRef = useRef(false);
+  const coverPreviewUrlRef = useRef<string | null>(null);
+
   const [mode, setMode] = useState<DeliveryMode>("in_person");
   const isOnline = mode === "online";
 
@@ -75,8 +110,10 @@ export default function WorkshopCreateClient() {
   const [blurb, setBlurb] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
   const [coverFileName, setCoverFileName] = useState<string | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const [learningObjectives, setLearningObjectives] = useState("");
   const [cme, setCme] = useState(false);
+  const [cmeCreditsCount, setCmeCreditsCount] = useState("");
   const [registrationDeadline, setRegistrationDeadline] = useState("");
 
   const [facilities, setFacilities] = useState<Facility[]>([]);
@@ -105,6 +142,9 @@ export default function WorkshopCreateClient() {
       })
       .catch((error) => {
         console.error("Failed to load facilities:", error);
+      })
+      .finally(() => {
+        setIsHydrating(false);
       });
   }, []);
 
@@ -194,8 +234,98 @@ export default function WorkshopCreateClient() {
   const [minAttendees, setMinAttendees] = useState(0);
   const [groupRate, setGroupRate] = useState(0);
   const [draftStatus, setDraftStatus] = useState<"Draft" | "Ready">("Draft");
+  const [workshopId, setWorkshopId] = useState<string | null>(null);
 
   const derivedTotalDays = useMemo(() => days.length, [days.length]);
+  const isSaving = saveMode !== null;
+
+  const autosaveSnapshot = useMemo(
+    () =>
+      JSON.stringify({
+        mode,
+        webinarPlatform,
+        meetingPassword,
+        meetingLink,
+        recordAutomatically,
+        title,
+        blurb,
+        coverImageUrl,
+        coverFileName,
+        coverPreviewUrl,
+        learningObjectives,
+        cme,
+        cmeCreditsCount,
+        registrationDeadline,
+        facility,
+        days,
+        selectedFaculty,
+        capacity,
+        alert,
+        standardRate,
+        minAttendees,
+        groupRate,
+      }),
+    [
+      mode,
+      webinarPlatform,
+      meetingPassword,
+      meetingLink,
+      recordAutomatically,
+      title,
+      blurb,
+      coverImageUrl,
+      coverFileName,
+      coverPreviewUrl,
+      learningObjectives,
+      cme,
+      cmeCreditsCount,
+      registrationDeadline,
+      facility,
+      days,
+      selectedFaculty,
+      capacity,
+      alert,
+      standardRate,
+      minAttendees,
+      groupRate,
+    ],
+  );
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
+    if (isHydrating) {
+      return;
+    }
+
+    setHasPendingChanges(true);
+    setChangeVersion((prev) => prev + 1);
+  }, [autosaveSnapshot, isHydrating]);
+
+  useEffect(() => {
+    return () => {
+      if (coverPreviewUrlRef.current) {
+        URL.revokeObjectURL(coverPreviewUrlRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasPendingChanges || isSaving) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      void handleSaveDraft("autosave");
+    }, 60000);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [changeVersion, hasPendingChanges, isSaving]);
 
   function addDay() {
     setDays((prev) => [
@@ -288,14 +418,38 @@ export default function WorkshopCreateClient() {
     router.push(COURSES_LIST_ROUTE);
   }
 
-  async function handleSubmit(status: WorkshopStatus) {
-    const payload = buildWorkshopPayload({
+  function normalizeUpdatePayload(
+    payload: CreateWorkshopRequest,
+    status: WorkshopStatus,
+  ): UpdateWorkshopRequest {
+    if ("facilityId" in payload) {
+      return {
+        deliveryMode: payload.deliveryMode,
+        status,
+        title: payload.title,
+        offersCmeCredits: payload.offersCmeCredits,
+        cmeCreditsCount: payload.cmeCreditsCount ?? null,
+        facilityIds: payload.facilityId ? [payload.facilityId] : [],
+        capacity: payload.capacity,
+        alertAt: payload.alertAt,
+      };
+    }
+
+    return {
+      ...payload,
+      status,
+    };
+  }
+
+  function buildPayload(status: WorkshopStatus) {
+    return buildWorkshopPayload({
       mode,
       title,
       blurb,
       coverImageUrl,
       learningObjectives,
       cme,
+      cmeCreditsCount,
       facility,
       webinarPlatform,
       meetingLink,
@@ -311,56 +465,76 @@ export default function WorkshopCreateClient() {
       status,
       registrationDeadline,
     });
+  }
 
+  async function saveWorkshop(
+    status: WorkshopStatus,
+    modeToUse: "publish" | "draft" | "autosave",
+  ) {
+    const payload = buildPayload(status);
     const parsed = createWorkshopSchema.safeParse(payload);
 
     if (!parsed.success) {
       setDraftStatus("Draft");
-      window.alert(parsed.error.issues[0]?.message ?? "Validation error");
-      return;
+
+      if (modeToUse !== "autosave") {
+        window.alert(parsed.error.issues[0]?.message ?? "Validation error");
+      }
+
+      return false;
     }
 
-    setSubmitting(true);
+    setSaveMode(modeToUse);
 
     try {
-      await createWorkshop(payload);
-      setDraftStatus("Ready");
-      navigateToCourses();
+      const savedWorkshop = workshopId
+        ? await updateWorkshop(
+            workshopId,
+            normalizeUpdatePayload(payload, status),
+          )
+        : await createWorkshop(payload);
+
+      if (savedWorkshop?.id) {
+        setWorkshopId(savedWorkshop.id);
+      }
+
+      setDraftStatus(status === "published" ? "Ready" : "Draft");
+      setLastSavedAt(new Date());
+      setHasPendingChanges(false);
+      return true;
     } catch (error: any) {
-      console.error("Failed to create workshop:", error);
-      window.alert(
-        error?.response?.data?.message ||
-        "Failed to create workshop. Please try again.",
+      console.error(
+        workshopId ? "Failed to update workshop:" : "Failed to create workshop:",
+        error,
       );
+      if (modeToUse !== "autosave") {
+        window.alert(
+          error?.response?.data?.message ||
+            `Failed to ${workshopId ? "update" : "create"} workshop. Please try again.`,
+        );
+      }
+      return false;
     } finally {
-      setSubmitting(false);
+      setSaveMode(null);
     }
   }
 
+  async function handlePublish() {
+    const didSave = await saveWorkshop("published", "publish");
+    if (didSave) {
+      navigateToCourses();
+    }
+  }
+
+  async function handleSaveDraft(modeToUse: "draft" | "autosave" = "draft") {
+    await saveWorkshop("draft", modeToUse);
+  }
+
   const isShortPayload = shortCreateWorkshopSchema.safeParse(
-    buildWorkshopPayload({
-      mode,
-      title,
-      blurb,
-      coverImageUrl,
-      learningObjectives,
-      cme,
-      facility,
-      webinarPlatform,
-      meetingLink,
-      meetingPassword,
-      recordAutomatically,
-      capacity,
-      alert,
-      standardRate,
-      minAttendees,
-      groupRate,
-      selectedFaculty,
-      days,
-      status: "published",
-      registrationDeadline,
-    }),
+    buildPayload("published"),
   ).success;
+
+  const lastSavedLabel = formatLastSavedLabel(lastSavedAt);
 
   return (
     <div className="space-y-5">
@@ -399,10 +573,10 @@ export default function WorkshopCreateClient() {
 
           <PrimaryButton
             type="button"
-            disabled={submitting}
-            onClick={() => handleSubmit("published")}
+            disabled={isSaving}
+            onClick={handlePublish}
           >
-            {submitting ? (
+            {saveMode === "publish" ? (
               <>
                 <Loader2 size={14} className="animate-spin" />
                 Publishing...
@@ -603,11 +777,30 @@ export default function WorkshopCreateClient() {
                 <input
                   type="checkbox"
                   checked={cme}
-                  onChange={(e) => setCme(e.target.checked)}
+                  onChange={(e) => {
+                    setCme(e.target.checked);
+                    if (!e.target.checked) {
+                      setCmeCreditsCount("");
+                    }
+                  }}
                   className="h-5 w-5 rounded-md border-slate-300 text-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
                 />
                 This course offers CME credits
               </label>
+
+              {cme ? (
+                <div>
+                  <Label>CME Credit Number</Label>
+                  <TextInput
+                    type="number"
+                    value={cmeCreditsCount}
+                    onChange={(e) => setCmeCreditsCount(e.target.value)}
+                    placeholder="e.g., 8"
+                    min={0}
+                    step="0.1"
+                  />
+                </div>
+              ) : null}
             </div>
           </WorkshopCard>
 
@@ -985,19 +1178,79 @@ export default function WorkshopCreateClient() {
             subtitle="Selecting an image switches to the full payload."
             icon={<ImageIcon size={16} className="text-[var(--primary)]" />}
           >
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm font-medium text-slate-600 transition hover:border-[var(--primary)]/40 hover:bg-[var(--primary-50)]/30">
-              <span>{coverFileName ?? "Choose cover image"}</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  setCoverFileName(file?.name ?? null);
-                  setCoverImageUrl(null);
-                }}
-              />
-            </label>
+            <div className="space-y-4">
+              {coverPreviewUrl ? (
+                <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                  <img
+                    src={coverPreviewUrl}
+                    alt="Cover preview"
+                    className="h-44 w-full object-cover"
+                  />
+                </div>
+              ) : null}
+
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm font-medium text-slate-600 transition hover:border-[var(--primary)]/40 hover:bg-[var(--primary-50)]/30">
+                <span>{coverFileName ?? "Choose cover image"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+
+                    if (coverPreviewUrlRef.current) {
+                      URL.revokeObjectURL(coverPreviewUrlRef.current);
+                      coverPreviewUrlRef.current = null;
+                    }
+
+                    if (file) {
+                      const previewUrl = URL.createObjectURL(file);
+                      coverPreviewUrlRef.current = previewUrl;
+                      setCoverPreviewUrl(previewUrl);
+                      setCoverFileName(file.name);
+                    } else {
+                      setCoverPreviewUrl(null);
+                      setCoverFileName(null);
+                    }
+
+                    setCoverImageUrl(null);
+                  }}
+                />
+              </label>
+            </div>
+          </WorkshopCard>
+
+          <WorkshopCard
+            title="Status & Tracking"
+            subtitle="Save progress manually or let auto-save handle it."
+            icon={<Save size={16} className="text-[var(--primary)]" />}
+          >
+            <div className="space-y-4">
+              <SecondaryButton
+                type="button"
+                onClick={() => void handleSaveDraft("draft")}
+                disabled={isSaving}
+                className="w-full justify-center"
+              >
+                {saveMode === "draft" ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Saving Draft...
+                  </>
+                ) : (
+                  <>
+                    <Save size={14} />
+                    Save Draft
+                  </>
+                )}
+              </SecondaryButton>
+
+              <div className="border-t border-slate-200 pt-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                {saveMode === "autosave"
+                  ? "Auto-saving..."
+                  : `Last auto-saved ${lastSavedLabel}`}
+              </div>
+            </div>
           </WorkshopCard>
         </div>
       </div>

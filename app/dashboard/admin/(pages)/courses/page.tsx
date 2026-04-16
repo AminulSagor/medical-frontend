@@ -75,30 +75,15 @@ function mapWorkshopToCourseItem(workshop: WorkshopListItem): CourseItem {
         tags: [workshop.deliveryMode === "online" ? "Online" : "In Person"],
         instructorName: getInstructorName(workshop),
         instructorAvatarUrl: workshop.faculty?.[0]?.imageUrl || undefined,
-        capacityUsed: 0,
+        capacityUsed: workshop.overview?.totalEnrolled ?? 0,
         capacityTotal: workshop.capacity,
-        refundRequests: 0,
+        refundRequests: workshop.overview?.refundRequested ?? 0,
         isActive: workshop.status === "published",
         status: workshop.status === "draft" ? "drafts" : "upcoming",
         deliveryMode: workshop.deliveryMode,
         rawStartDate: firstDate,
         rawEndDate: lastDate,
     };
-}
-
-function isPastCourse(item: CourseItem) {
-    const source = item.rawEndDate || item.rawStartDate;
-    if (!source) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const date = new Date(source);
-    if (Number.isNaN(date.getTime())) return false;
-    date.setHours(0, 0, 0, 0);
-    return date < today;
-}
-
-function isUpcomingCourse(item: CourseItem) {
-    return !isPastCourse(item);
 }
 
 async function fetchAllWorkshops(params: Parameters<typeof listWorkshops>[0]) {
@@ -171,15 +156,14 @@ export default function CoursesPage() {
     }, [debouncedQuery, deliveryMode, refreshKey]);
 
     const counts = useMemo<Record<CourseTabKey, number>>(() => ({
-        upcoming: publishedItems.filter(isUpcomingCourse).length,
-        past: publishedItems.filter(isPastCourse).length,
+        upcoming: publishedItems.length,
+        past: 0,
         drafts: draftItems.length,
         refund_requests: 0,
     }), [publishedItems, draftItems]);
 
     const filtered = useMemo(() => {
-        if (tab === "upcoming") return publishedItems.filter(isUpcomingCourse);
-        if (tab === "past") return publishedItems.filter(isPastCourse);
+        if (tab === "upcoming") return publishedItems;
         if (tab === "drafts") return draftItems;
         return [];
     }, [tab, publishedItems, draftItems]);
@@ -196,13 +180,12 @@ export default function CoursesPage() {
         return filtered.slice(start, start + PAGE_SIZE);
     }, [filtered, page]);
 
-    const nextUpcoming = publishedItems
-        .filter(isUpcomingCourse)
+    const nextUpcoming = [...publishedItems]
         .sort((a, b) => (a.rawStartDate || "").localeCompare(b.rawStartDate || ""))[0];
 
     const nextWorkshop = nextUpcoming?.dateLabel ?? "—";
-    const activeSeats = publishedItems.filter(isUpcomingCourse).reduce((sum, item) => sum + (item.capacityTotal || 0), 0);
-    const openSeats = publishedItems.filter(isUpcomingCourse).reduce((sum, item) => sum + Math.max(0, (item.capacityTotal || 0) - (item.capacityUsed || 0)), 0);
+    const activeSeats = publishedItems.reduce((sum, item) => sum + (item.capacityTotal || 0), 0);
+    const openSeats = publishedItems.reduce((sum, item) => sum + Math.max(0, (item.capacityTotal || 0) - (item.capacityUsed || 0)), 0);
     const refundPending = 0;
 
     function buildRowQuery(id: string) {
@@ -234,7 +217,6 @@ export default function CoursesPage() {
     return (
         <div className="space-y-5">
             <CoursesHeader
-                onExport={() => console.log("Export")}
                 onSchedule={() => router.push("/dashboard/admin/courses/create")}
             />
 
@@ -252,6 +234,7 @@ export default function CoursesPage() {
 
                 <CoursesTable
                     items={loading ? [] : paginatedItems}
+                    loading={loading}
                     query={query}
                     onQueryChange={setQuery}
                     selectedDeliveryMode={deliveryMode}
