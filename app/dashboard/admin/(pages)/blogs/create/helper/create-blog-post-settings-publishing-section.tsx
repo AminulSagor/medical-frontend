@@ -6,6 +6,7 @@ import {
   ChevronDown,
   CircleX,
   Clock3,
+  Clock3Icon,
   Minus,
 } from "lucide-react";
 import { useMemo, useRef } from "react";
@@ -231,9 +232,10 @@ export default function CreateBlogPostSettingsPublishingSection({
           <button
             type="button"
             onClick={() => openNativePicker(timeInputRef.current)}
-            className="ml-4 shrink-0 text-xs font-medium text-slate-400"
+            className="ml-4 inline-flex shrink-0 items-center gap-1 text-xs font-medium text-slate-400"
           >
-            {scheduleTimeLabel}
+            <Clock3Icon className="h-5 w-5" />
+            <span>{scheduleTimeLabel}</span>
           </button>
         </div>
 
