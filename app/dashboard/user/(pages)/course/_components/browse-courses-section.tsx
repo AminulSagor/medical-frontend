@@ -26,13 +26,13 @@ export default function BrowseCoursesSection({
           Explore New Courses
         </h3>
 
-        <button
+        {/* <button
           type="button"
           className="inline-flex items-center gap-1 text-[12px] font-medium text-sky-500"
         >
           View All Categories
           <ChevronRight className="h-4 w-4" />
-        </button>
+        </button> */}
       </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">

@@ -126,9 +126,9 @@ export default function CourseCardsSection({ items }: Props) {
                   <div className="mt-4 rounded-xl border border-sky-100 bg-sky-50 px-4 py-3 text-[12px] leading-5 text-slate-600">
                     <div className="flex items-start gap-2">
                       <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" />
-                      <p>
+                      <p className="line-clamp-2">
                         <span className="font-semibold text-sky-500">{course.infoTitle} </span>
-                        {course.infoText ?? "not in api"}
+                        {course.infoText ?? ""}
                       </p>
                     </div>
                   </div>
@@ -186,8 +186,8 @@ export default function CourseCardsSection({ items }: Props) {
         onClose={() => setCalendarCourse(null)}
         event={{
           title: calendarCourse?.title || "Course",
-          dateText: calendarCourse?.date || "not in api",
-          timeText: "not in api",
+          dateText: calendarCourse?.date || "",
+          timeText: "",
           imageSrc: calendarCourse?.coverImageUrl,
         }}
         providers={providers}

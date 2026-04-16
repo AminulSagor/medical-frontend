@@ -166,9 +166,9 @@ export default function CourseBookingDetailsCard({
         title={submittedData?.title || "Refund Request Submitted"}
         courseTitle={refund.courseTitle}
         subtitle={submittedData?.message || "Your refund request has been submitted."}
-        requestIdValue="not in api"
+        requestIdValue=""
         expectedRefundValue={submittedData?.refundAmountRequested || refund.estimatedRefund}
-        confirmationText={submittedData?.reasonRecorded || "not in api"}
+        confirmationText={submittedData?.reasonRecorded || ""}
         footnoteText={submittedData?.message || refund.description}
         ctaLabel="Back to Course"
         onCta={() => setOpenSubmitted(false)}

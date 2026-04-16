@@ -23,6 +23,7 @@ export interface CourseDetailsModel {
     shortBlurb: string;
     learningObjectives: string;
     offersCmeCredits: boolean;
+    cmeCreditsCount: string;
     standardBaseRate: string;
     groupDiscounts: GroupDiscount[];
     webinarPlatform: string;

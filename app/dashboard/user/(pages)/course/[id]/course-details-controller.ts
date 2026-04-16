@@ -46,7 +46,7 @@ export type CourseDetailsControllerState =
       completed: CompletedDetailsViewProps;
     };
 
-const NOT_IN_API = "not in api";
+const NOT_IN_API = "";
 
 function text(value?: string | null, fallback = NOT_IN_API) {
   return value && value.trim() ? value : fallback;
@@ -391,9 +391,9 @@ function mapOnline(
     requirements: {
       heading: "TECHNICAL REQUIREMENTS",
       items: [
-        { iconKey: "wifi", title: "Internet", desc: "not in api" },
-        { iconKey: "camera", title: "Camera", desc: "not in api" },
-        { iconKey: "mic", title: "Microphone", desc: "not in api" },
+        { iconKey: "wifi", title: "Internet", desc: "" },
+        { iconKey: "camera", title: "Camera", desc: "" },
+        { iconKey: "mic", title: "Microphone", desc: "" },
       ],
     },
     booking: {
@@ -462,7 +462,7 @@ function mapOnline(
     },
     materials: {
       heading: "PREPARATION MATERIALS",
-      items: [{ title: "not in api" }],
+      items: [{ title: "" }],
     },
   };
 }
@@ -493,7 +493,7 @@ export async function getCourseDetailsController(
       },
       uiMessages: {
         title: "Request Refund",
-        policyWarning: "not in api",
+        policyWarning: "",
       },
     })),
   ]);

@@ -2,7 +2,7 @@ import { getTicketDetailsServer } from "@/service/user/course-details.server.ser
 import type { TicketDetailsModel } from "@/types/user/ticket/ticket-details-type";
 import TicketDetailsLayout from "./_component/ticket-details-layout";
 
-const NOT_IN_API = "not in api";
+const NOT_IN_API = "";
 
 function text(value?: string | null) {
   return value && value.trim() ? value : NOT_IN_API;

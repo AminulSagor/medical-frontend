@@ -28,7 +28,7 @@ export default function CourseBrowseCard({
     <div
       onClick={() => router.push(`/public/courses/details/${course.id}`)}
       className={[
-        "rounded-3xl bg-white border border-light-slate/15 shadow-sm overflow-hidden cursor-pointer",
+        "h-full min-h-[520px] rounded-3xl bg-white border border-light-slate/15 shadow-sm overflow-hidden cursor-pointer",
         "flex flex-col",
         course.action.kind === "reserve" ? "ring-2 ring-primary/30" : "",
       ].join(" ")}
@@ -69,26 +69,18 @@ export default function CourseBrowseCard({
               </p>
             </div>
 
-            <h3 className="flex-1 text-lg font-semibold leading-snug text-black">
+            <h3 className="flex-1 min-h-[3.5rem] line-clamp-2 text-lg font-semibold leading-snug text-black">
               {course.title}
             </h3>
           </div>
         ) : (
-          <h3 className="text-lg font-semibold leading-snug text-black">
+          <h3 className="min-h-[3.5rem] line-clamp-2 text-lg font-semibold leading-snug text-black">
             {course.title}
           </h3>
         )}
 
         {course.description ? (
-          <p
-            className="mt-3 text-sm leading-relaxed text-light-slate"
-            style={{
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
-          >
+          <p className="mt-3 min-h-[3rem] line-clamp-2 text-sm leading-relaxed text-light-slate">
             {course.description}
           </p>
         ) : null}

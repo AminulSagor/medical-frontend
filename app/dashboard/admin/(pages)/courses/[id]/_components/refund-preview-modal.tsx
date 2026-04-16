@@ -285,7 +285,7 @@ export default function RefundPreviewModal({
                                     value={adjustmentNote}
                                     onChange={(e) => setAdjustmentNote(e.target.value)}
                                     placeholder="Reason for refund or adjustment details..."
-                                    className="min-h-[96px] w-full rounded-lg border border-slate-200 px-3 py-3 text-sm outline-none transition focus:border-[var(--primary)]"
+                                    className="min-h-[96px] w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[var(--primary)]"
                                 />
                             </div>
 
@@ -298,7 +298,7 @@ export default function RefundPreviewModal({
                                         value={paymentGateway}
                                         onChange={(e) => setPaymentGateway(e.target.value)}
                                         placeholder="e.g. Stripe"
-                                        className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-[var(--primary)]"
+                                        className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[var(--primary)]"
                                     />
                                 </div>
 
@@ -310,7 +310,7 @@ export default function RefundPreviewModal({
                                         value={transactionId}
                                         onChange={(e) => setTransactionId(e.target.value)}
                                         placeholder="e.g. txn_..."
-                                        className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-[var(--primary)]"
+                                        className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[var(--primary)]"
                                     />
                                 </div>
                             </div>
