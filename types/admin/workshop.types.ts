@@ -39,6 +39,7 @@ export interface FullCreateWorkshopRequest {
   coverImageUrl?: string;
   learningObjectives?: string;
   offersCmeCredits: boolean;
+  cmeCreditsCount?: string | null;
   facilityIds: string[];
   webinarPlatform?: string | null;
   meetingLink?: string | null;
@@ -65,6 +66,7 @@ export interface UpdateWorkshopRequest {
   coverImageUrl?: string;
   learningObjectives?: string;
   offersCmeCredits?: boolean;
+  cmeCreditsCount?: string | null;
   facilityIds?: string[];
   webinarPlatform?: string | null;
   meetingLink?: string | null;
@@ -104,6 +106,14 @@ export interface GroupDiscount {
   groupRatePerPerson: string;
 }
 
+
+export interface WorkshopOverview {
+  totalEnrolled: number;
+  refundRequested: number;
+  partialRefund: number;
+  refunded: number;
+}
+
 export interface WorkshopFaculty {
   id: string;
   firstName: string;
@@ -137,6 +147,7 @@ export interface Workshop {
   coverImageUrl: string | null;
   learningObjectives: string | null;
   offersCmeCredits: boolean;
+  cmeCreditsCount?: string | null;
   facilityIds: string[];
   webinarPlatform: string | null;
   meetingLink: string | null;
@@ -150,6 +161,7 @@ export interface Workshop {
   groupDiscounts: GroupDiscount[];
   faculty: WorkshopFaculty[];
   facilities: WorkshopFacility[];
+  overview?: WorkshopOverview;
   createdAt: string;
   updatedAt: string;
 }
@@ -177,6 +189,7 @@ export interface WorkshopListItem {
   groupDiscounts: GroupDiscount[];
   faculty: WorkshopFaculty[];
   facilities: WorkshopFacility[];
+  overview?: WorkshopOverview;
   createdAt: string;
   updatedAt: string;
 }

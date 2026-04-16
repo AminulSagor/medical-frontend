@@ -19,6 +19,7 @@ type BuildWorkshopPayloadParams = {
     coverImageUrl: string | null;
     learningObjectives: string;
     cme: boolean;
+    cmeCreditsCount: string;
     facility: FacilityLocation | null;
     webinarPlatform: WebinarPlatform | null;
     meetingLink: string;
@@ -84,6 +85,7 @@ export function buildWorkshopPayload(
         coverImageUrl,
         learningObjectives,
         cme,
+        cmeCreditsCount,
         facility,
         webinarPlatform,
         meetingLink,
@@ -107,6 +109,7 @@ export function buildWorkshopPayload(
             deliveryMode: mode,
             title,
             offersCmeCredits: cme,
+            cmeCreditsCount: cme ? (cmeCreditsCount || undefined) : undefined,
             facilityId: facility ?? "",
             capacity,
             alertAt: alert,
@@ -124,6 +127,7 @@ export function buildWorkshopPayload(
         coverImageUrl: coverImageUrl || undefined,
         learningObjectives: learningObjectives || undefined,
         offersCmeCredits: cme,
+        cmeCreditsCount: cme ? (cmeCreditsCount || undefined) : undefined,
         facilityIds: facility ? [facility] : [],
         webinarPlatform: isOnline ? (webinarPlatform ?? undefined) : null,
         meetingLink: isOnline ? meetingLink || undefined : null,
