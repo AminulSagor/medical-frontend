@@ -338,7 +338,7 @@ export default function CoursesBrowseSection() {
                 </div>
               ) : (
                 <>
-                  <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3 items-start">
+                  <div className="grid items-stretch gap-8 md:grid-cols-2 xl:grid-cols-3">
                     {filtered.map((c) => (
                       <CourseBrowseCard key={c.id} course={c} />
                     ))}

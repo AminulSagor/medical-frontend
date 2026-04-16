@@ -7,6 +7,17 @@ import CourseDetailsRowLine from "./course-details-row-line";
 import CourseDetailsTinyPill from "./course-details-tiny-pill";
 import type { CourseDetailsModel } from "../_utils/course-details.types";
 
+function formatTime12Hour(time?: string | null): string {
+    if (!time) return "—";
+
+    const [hours = "0", minutes = "00"] = time.split(":");
+    const hourNum = Number(hours);
+    const suffix = hourNum >= 12 ? "PM" : "AM";
+    const twelveHour = hourNum % 12 || 12;
+
+    return `${String(twelveHour).padStart(2, "0")}:${minutes} ${suffix}`;
+}
+
 export default function CourseDetailsOnline({
     model,
 }: {
@@ -27,7 +38,7 @@ export default function CourseDetailsOnline({
                     title="Syllabus & Details"
                     right={
                         <CourseDetailsTinyPill>
-                            CME CREDITS: {model.offersCmeCredits ? "Yes" : "No"}
+                            CME CREDITS: {model.offersCmeCredits ? model.cmeCreditsCount : "0"}
                         </CourseDetailsTinyPill>
                     }
                 >
@@ -87,7 +98,7 @@ export default function CourseDetailsOnline({
                                                         <p className="mt-1">{segment.topicDetails}</p>
                                                     ) : null}
                                                     <p className="text-slate-400">
-                                                        {segment.startTime} - {segment.endTime}
+                                                        {formatTime12Hour(segment.startTime)} - {formatTime12Hour(segment.endTime)}
                                                     </p>
                                                 </div>
                                             ))}
@@ -149,9 +160,14 @@ export default function CourseDetailsOnline({
                     title="Enrollment Status"
                     right={<Eye size={16} className="text-slate-400" />}
                 >
-                    <p className="text-sm font-semibold text-slate-900">
-                        {model.capacityUsed}/{model.capacityTotal} Attendees
-                    </p>
+                    <div className="flex items-center justify-between gap-3 text-sm font-semibold text-slate-900">
+                        <p>{model.capacityUsed} / {model.capacityTotal} Attendees</p>
+                        <p className="text-[var(--primary)]">
+                            {model.capacityTotal <= 0
+                                ? 0
+                                : Math.min(100, Math.round((model.capacityUsed / model.capacityTotal) * 100))}% Capacity
+                        </p>
+                    </div>
 
                     <div className="mt-3 h-2 w-full rounded-full bg-slate-100">
                         <div

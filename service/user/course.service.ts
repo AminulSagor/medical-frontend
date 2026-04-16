@@ -16,7 +16,7 @@ import type {
 
 const COURSE_DETAILS_BASE_ROUTE = "/dashboard/user/course";
 const PUBLIC_COURSE_DETAILS_BASE_ROUTE = "/public/courses/details";
-const NOT_IN_API = "not in api";
+const NOT_IN_API = "";
 const PRICE_UNAVAILABLE = "price unavailable";
 
 // interface RawNextLiveSession {

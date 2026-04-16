@@ -114,8 +114,8 @@ export default function OnlineSummaryStripClient(props: OnlineSummaryStripProps)
         onClose={() => setOpen(false)}
         event={{
           title: eventTitle || statusPillText,
-          dateText: sessionCard?.dateRange || "not in api",
-          timeText: sessionCard?.time || "not in api",
+          dateText: sessionCard?.dateRange || "",
+          timeText: sessionCard?.time || "",
           imageSrc,
         }}
         providers={providers}

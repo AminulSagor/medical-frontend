@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
     ChevronDown,
     ChevronUp,
@@ -271,13 +271,11 @@ export default function EnrolleeListModal({
                                                 filteredItems.map((item) => {
                                                     const isExpanded = Boolean(expandedRows[item.reservationId]);
                                                     const canExpand =
-                                                        item.bookingType.toLowerCase() === "group" &&
-                                                        item.members.length > 0;
+                                                        item.members.length > 0 || item.groupSize > 1;
 
                                                     return (
-                                                        <>
+                                                        <Fragment key={item.reservationId}>
                                                             <tr
-                                                                key={item.reservationId}
                                                                 className="border-t border-slate-100 text-sm"
                                                             >
                                                                 <td className="px-4 py-4">
@@ -405,10 +403,24 @@ export default function EnrolleeListModal({
                                                                                 </div>
                                                                             ))}
                                                                         </div>
+
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                setExpandedRows((prev) => ({
+                                                                                    ...prev,
+                                                                                    [item.reservationId]: false,
+                                                                                }))
+                                                                            }
+                                                                            className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-slate-500 transition hover:text-slate-700"
+                                                                        >
+                                                                            <ChevronUp size={14} />
+                                                                            Collapse Details
+                                                                        </button>
                                                                     </td>
                                                                 </tr>
                                                             ) : null}
-                                                        </>
+                                                        </Fragment>
                                                     );
                                                 })
                                             )}

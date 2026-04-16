@@ -127,6 +127,7 @@ export interface PublicWorkshopDetails {
   endDate: string;
   numberOfDays: number;
   facility: string;
+  facilities?: PublicWorkshopFacility[];
   facilityIds: string[];
   webinarPlatform: string | null;
   meetingLink: string | null;
