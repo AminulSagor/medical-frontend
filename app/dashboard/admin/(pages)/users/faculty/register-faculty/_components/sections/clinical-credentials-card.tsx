@@ -3,14 +3,19 @@
 import { ClipboardList } from "lucide-react";
 import ThemeDropdown from "../theme-dropdown";
 
-export type ClinicalRole = "anesthesiologist" | "crna" | "icu" | "ent";
-export type MedicalDesignation = "md" | "do" | "crna";
+export type PrimaryClinicalRole =
+    | "Anesthesiologist"
+    | "CRNA"
+    | "ICU Specialist"
+    | "ENT Specialist";
+
+export type MedicalDesignation = "MD" | "DO" | "CRNA";
 
 export type ClinicalCredentialsValue = {
-    role: ClinicalRole | null;
-    designation: MedicalDesignation | null;
-    institution: string;
-    npi: string;
+    primaryClinicalRole: PrimaryClinicalRole | "";
+    medicalDesignation: MedicalDesignation | "";
+    institutionOrHospital: string;
+    npiNumber: string;
 };
 
 export default function ClinicalCredentialsCard({
@@ -44,18 +49,18 @@ export default function ClinicalCredentialsCard({
             <div className="grid gap-5 md:grid-cols-2">
                 <div>
                     <label className="text-[11px] font-bold tracking-wide text-slate-600">
-                        PRIMARY CLINICAL ROLE
+                        PRIMARY CLINICAL ROLE (OPTIONAL)
                     </label>
 
-                    <ThemeDropdown<ClinicalRole>
-                        value={value.role}
-                        onChange={(v) => onChange({ role: v })}
+                    <ThemeDropdown<PrimaryClinicalRole>
+                        value={value.primaryClinicalRole || null}
+                        onChange={(v) => onChange({ primaryClinicalRole: v })}
                         placeholder="Select role"
                         options={[
-                            { value: "anesthesiologist", label: "Anesthesiologist" },
-                            { value: "crna", label: "CRNA" },
-                            { value: "icu", label: "ICU" },
-                            { value: "ent", label: "ENT" },
+                            { value: "Anesthesiologist", label: "Anesthesiologist" },
+                            { value: "CRNA", label: "CRNA" },
+                            { value: "ICU Specialist", label: "ICU Specialist" },
+                            { value: "ENT Specialist", label: "ENT Specialist" },
                         ]}
                         // ✅ click on dropdown should also activate
                         onOpen={() => onActivate?.()}
@@ -64,17 +69,17 @@ export default function ClinicalCredentialsCard({
 
                 <div>
                     <label className="text-[11px] font-bold tracking-wide text-slate-600">
-                        MEDICAL DESIGNATION
+                        MEDICAL DESIGNATION (OPTIONAL)
                     </label>
 
                     <ThemeDropdown<MedicalDesignation>
-                        value={value.designation}
-                        onChange={(v) => onChange({ designation: v })}
+                        value={value.medicalDesignation || null}
+                        onChange={(v) => onChange({ medicalDesignation: v })}
                         placeholder="Select designation"
                         options={[
-                            { value: "md", label: "MD" },
-                            { value: "do", label: "DO" },
-                            { value: "crna", label: "CRNA" },
+                            { value: "MD", label: "MD" },
+                            { value: "DO", label: "DO" },
+                            { value: "CRNA", label: "CRNA" },
                         ]}
                         onOpen={() => onActivate?.()}
                     />
@@ -82,12 +87,14 @@ export default function ClinicalCredentialsCard({
 
                 <div className="md:col-span-2">
                     <label className="text-[11px] font-bold tracking-wide text-slate-600">
-                        INSTITUTION / HOSPITAL
+                        INSTITUTION / HOSPITAL (OPTIONAL)
                     </label>
                     <input
-                        value={value.institution}
+                        value={value.institutionOrHospital}
                         onFocus={() => onActivate?.()}
-                        onChange={(e) => onChange({ institution: e.target.value })}
+                        onChange={(e) =>
+                            onChange({ institutionOrHospital: e.target.value })
+                        }
                         className={[
                             "mt-2 w-full rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm",
                             "text-slate-900 placeholder:text-slate-400",
@@ -103,9 +110,12 @@ export default function ClinicalCredentialsCard({
                         MEDICAL LICENSE / NPI NUMBER
                     </label>
                     <input
-                        value={value.npi}
+                        value={value.npiNumber}
                         onFocus={() => onActivate?.()}
-                        onChange={(e) => onChange({ npi: e.target.value })}
+                        onChange={(e) => {
+                            const cleaned = e.target.value.replace(/\D/g, "").slice(0, 10);
+                            onChange({ npiNumber: cleaned });
+                        }}
                         className={[
                             "mt-2 w-full rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm",
                             "text-slate-900 placeholder:text-slate-400",
@@ -113,6 +123,7 @@ export default function ClinicalCredentialsCard({
                             "focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15",
                         ].join(" ")}
                         placeholder="10-digit NPI number"
+                        inputMode="numeric"
                     />
                 </div>
             </div>

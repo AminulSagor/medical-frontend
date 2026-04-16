@@ -3,6 +3,8 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRight, GraduationCap, Megaphone } from "lucide-react";
+import { generalBroadcastWorkspaceMetricsService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-workspace-metrics.service";
+import { getCourseAnnouncementCohorts } from "@/service/admin/newsletter/course-announcements/course-announcement-cohort.service";
 
 function BigActionCard({
   badge,
@@ -34,8 +36,8 @@ function BigActionCard({
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="flex items-start justify-between">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--primary-50)] text-[var(--primary)] ring-1 ring-slate-200/40">
+      <div className="flex items-start justify-between gap-3">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-50)] text-[var(--primary)] ring-1 ring-slate-200/40">
           {icon}
         </div>
 
@@ -74,6 +76,43 @@ function BigActionCard({
 }
 
 export default function NewsletterActions() {
+  const [totalSubscribers, setTotalSubscribers] = React.useState<string>("--");
+  const [totalCohorts, setTotalCohorts] = React.useState<string>("--");
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    const loadStats = async () => {
+      try {
+        const [generalMetricsResponse, cohortsResponse] = await Promise.all([
+          generalBroadcastWorkspaceMetricsService.getGeneralBroadcastWorkspaceMetrics(),
+          getCourseAnnouncementCohorts({}),
+        ]);
+
+        if (!isMounted) return;
+
+        setTotalSubscribers(
+          generalMetricsResponse?.data?.cards?.totalSubscribers?.value ?? "--",
+        );
+
+        setTotalCohorts(String(cohortsResponse?.meta?.total ?? "--"));
+      } catch (error) {
+        console.error("Failed to load newsletter action stats:", error);
+
+        if (!isMounted) return;
+
+        setTotalSubscribers("--");
+        setTotalCohorts("--");
+      }
+    };
+
+    loadStats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       <BigActionCard
@@ -81,7 +120,7 @@ export default function NewsletterActions() {
         icon={<Megaphone size={18} />}
         title="General Newsletter"
         desc="Create and manage blasts for the wider airway institute community."
-        statValue="2,450"
+        statValue={totalSubscribers}
         statLabel="Subscribers"
         buttonLabel="Manage Newsletter"
         href="/dashboard/admin/newsletters/general-newsletter"
@@ -93,7 +132,7 @@ export default function NewsletterActions() {
         icon={<GraduationCap size={18} />}
         title="Course Announcements"
         desc="Target specific trainee groups for schedule updates and materials."
-        statValue="12"
+        statValue={totalCohorts}
         statLabel="Cohorts"
         buttonLabel="Manage Course Announcement"
         href="/dashboard/admin/newsletters/course-announcements"

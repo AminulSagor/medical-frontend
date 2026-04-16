@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ShoppingCart, Menu, LogIn, UserPlus, Search, X } from "lucide-react";
+import {
+  ShoppingCart,
+  Menu,
+  LogIn,
+  UserPlus,
+  Search,
+  X,
+  Heart,
+} from "lucide-react";
 import { getToken, removeToken } from "@/utils/token/cookie_utils";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -12,10 +20,12 @@ import NavbarLogo from "@/components/logo";
 import { NAV_LINKS } from "@/constant/navigation-links";
 import { IMAGE } from "@/constant/image-config";
 import CartSidebar from "@/components/cart-sidebar";
+import WishlistSidebar from "@/components/wishlist-sidebar";
 import PublicSidebar from "@/components/public-sidebar";
 import { LogOut, Settings } from "lucide-react";
 import NavbarSearch from "@/app/public/(pages)/home/_components/navbar-search";
 import { useCart } from "@/app/public/context/cart-context";
+import { useWishlist } from "@/app/public/context/wishlist-context";
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/public/home") return pathname === "/public/home";
@@ -25,9 +35,11 @@ function isActivePath(pathname: string, href: string) {
 export default function Navbar() {
   const pathname = usePathname();
   const { totalItems } = useCart();
+  const { totalItems: wishlistCount } = useWishlist();
 
   const [q, setQ] = useState("");
   const [cartSidebar, setCartSidebar] = useState(false);
+  const [wishlistSidebar, setWishlistSidebar] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [hideOnScrollDown, setHideOnScrollDown] = useState(false);
@@ -107,7 +119,7 @@ export default function Navbar() {
               <NavbarLogo />
             </div>
 
-            <div className="flex-1 flex justify-center lg:hidden">
+            <div className="flex flex-1 justify-center lg:hidden">
               {!isSearchOpen ? (
                 <div className="lg:hidden">
                   <NavbarLogo />
@@ -119,7 +131,7 @@ export default function Navbar() {
               )}
             </div>
 
-            <div className="hidden lg:flex flex-1">
+            <div className="hidden flex-1 lg:flex">
               <NavbarSearch value={q} onChange={setQ} />
             </div>
 
@@ -162,14 +174,14 @@ export default function Navbar() {
 
                     {link.showDot && (
                       <span
-                        className="absolute top-0 -right-3 h-2 w-2 rounded-full bg-primary"
+                        className="absolute -right-3 top-0 h-2 w-2 rounded-full bg-primary"
                         aria-hidden="true"
                       />
                     )}
 
                     <span
                       className={[
-                        "absolute left-0 -bottom-1 h-[2px] w-full origin-left rounded-full bg-primary transition-transform duration-300 ease-out",
+                        "absolute -bottom-1 left-0 h-[2px] w-full origin-left rounded-full bg-primary transition-transform duration-300 ease-out",
                         active
                           ? "scale-x-100"
                           : "scale-x-0 group-hover:scale-x-100",
@@ -182,27 +194,53 @@ export default function Navbar() {
             </nav>
 
             {!isAuthRoute && (
-              <button
-                type="button"
-                className={[
-                  "relative grid h-10 w-10 place-items-center rounded-full",
-                  "border border-light-slate/30 bg-white",
-                  "hover:bg-light-slate/5 active:scale-95 transition",
-                ].join(" ")}
-                aria-label="Cart"
-                onClick={() => setCartSidebar(true)}
-              >
-                <ShoppingCart size={18} className="text-black" />
-                <span
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
                   className={[
-                    "absolute -right-0.5 -top-0.5",
-                    "grid h-5 min-w-5 place-items-center rounded-full px-1",
-                    "bg-primary text-[11px] font-bold text-white",
+                    "relative grid h-10 w-10 place-items-center rounded-full",
+                    "border border-light-slate/30 bg-white",
+                    "hover:bg-light-slate/5 active:scale-95 transition",
                   ].join(" ")}
+                  aria-label="Wishlist"
+                  onClick={() => setWishlistSidebar(true)}
                 >
-                  {totalItems}
-                </span>
-              </button>
+                  <Heart size={18} className="text-black" />
+                  {wishlistCount > 0 && (
+                    <span
+                      className={[
+                        "absolute -right-0.5 -top-0.5",
+                        "grid h-5 min-w-5 place-items-center rounded-full px-1",
+                        "bg-red-500 text-[11px] font-bold text-white",
+                      ].join(" ")}
+                    >
+                      {wishlistCount}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  className={[
+                    "relative grid h-10 w-10 place-items-center rounded-full",
+                    "border border-light-slate/30 bg-white",
+                    "hover:bg-light-slate/5 active:scale-95 transition",
+                  ].join(" ")}
+                  aria-label="Cart"
+                  onClick={() => setCartSidebar(true)}
+                >
+                  <ShoppingCart size={18} className="text-black" />
+                  <span
+                    className={[
+                      "absolute -right-0.5 -top-0.5",
+                      "grid h-5 min-w-5 place-items-center rounded-full px-1",
+                      "bg-primary text-[11px] font-bold text-white",
+                    ].join(" ")}
+                  >
+                    {totalItems}
+                  </span>
+                </button>
+              </div>
             )}
 
             <div className="hidden md:block">
@@ -212,6 +250,12 @@ export default function Navbar() {
             <CartSidebar
               open={cartSidebar}
               onClose={() => setCartSidebar(false)}
+            />
+
+            <WishlistSidebar
+              open={wishlistSidebar}
+              onClose={() => setWishlistSidebar(false)}
+              onOpenCart={() => setCartSidebar(true)}
             />
           </motion.div>
         </div>
@@ -244,11 +288,11 @@ function AccountAccessDropdown() {
   }, []);
 
   const isDashboard =
-    path === "/dashboard" ||
-    path === "/course" ||
-    path === "/order-history" ||
-    path === "/settings" ||
-    path.startsWith("/dashboard/");
+    path === "/dashboard/user" ||
+    path === "/dashboard/user/course" ||
+    path === "/dashboard/user/order-history" ||
+    path === "/dashboard/user/settings" ||
+    path.startsWith("/dashboard/user/");
 
   if (!isAuthenticated) {
     return (
@@ -287,7 +331,7 @@ function AccountAccessDropdown() {
           />
 
           <span
-            className="absolute right-0.5 bottom-0.5 h-3 w-3 rounded-full bg-primary ring-2 ring-white"
+            className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-primary ring-2 ring-white"
             aria-hidden="true"
           />
         </button>
@@ -319,7 +363,7 @@ function AccountAccessDropdown() {
                   onClick={() => {
                     removeToken();
                     setIsAuthenticated(false);
-                    router.push("/public/auth/sign-in");
+                    router.push("/public/home");
                   }}
                   className="flex w-full items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
                 >
@@ -341,7 +385,11 @@ function AccountAccessDropdown() {
               )}
 
               <Link
-                href={isDashboard ? "/settings" : "/auth/sign-up"}
+                href={
+                  isDashboard
+                    ? "/dashboard/user/settings"
+                    : "/public/auth/sign-up"
+                }
                 className="flex items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
               >
                 {isDashboard ? (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { X, Minus, Plus, ShoppingBag, ArrowRight, Lock } from "lucide-react";
@@ -24,10 +24,11 @@ export default function CartSidebar({
 }) {
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
-  const { items, updateQty, removeItem, totalItems, syncItems } = useCart();
+  const { items, updateQty, removeItem, totalItems } = useCart();
   const [calculatedData, setCalculatedData] =
     useState<CartCalculateResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const hasCalculatedOnceRef = useRef(false);
 
   useEffect(() => {
     queueMicrotask(() => setIsClient(true));
@@ -36,43 +37,44 @@ export default function CartSidebar({
   useEffect(() => {
     if (items.length === 0) {
       setCalculatedData(null);
+      hasCalculatedOnceRef.current = false;
       return;
     }
 
-    const fetchCalculation = async () => {
-      setLoading(true);
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const validItems = items.filter((i) => uuidRegex.test(i.productId));
+
+    if (validItems.length === 0) {
+      setCalculatedData(null);
+      hasCalculatedOnceRef.current = false;
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      if (!hasCalculatedOnceRef.current) {
+        setLoading(true);
+      }
+
       try {
-        const uuidRegex =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        const validItems = items.filter((i) => uuidRegex.test(i.productId));
-
-        if (validItems.length === 0) {
-          setCalculatedData(null);
-          return;
-        }
-
         const payload: CartCalculateRequest = {
           items: validItems.map((i) => ({
             productId: i.productId,
             quantity: i.quantity,
           })),
         };
+
         const data = await calculateCart(payload);
         setCalculatedData(data);
-        syncItems(
-          data.items.map((i) => ({
-            productId: i.productId,
-            quantity: i.quantity,
-          })),
-        );
+        hasCalculatedOnceRef.current = true;
       } catch (err) {
         console.error("Failed to calculate cart", err);
       } finally {
         setLoading(false);
       }
-    };
+    }, 300);
 
-    fetchCalculation();
+    return () => clearTimeout(timeout);
   }, [items]);
 
   useEffect(() => {
@@ -145,10 +147,10 @@ export default function CartSidebar({
 
         <div className="h-px w-full bg-light-slate/10" />
 
-        <div className="flex-1 overflow-auto px-6 py-5 relative">
-          {loading && (
-            <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <div className="relative flex-1 overflow-auto px-6 py-5">
+          {loading && !calculatedData && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           )}
 
@@ -164,6 +166,12 @@ export default function CartSidebar({
             </div>
           ) : (
             <div className="space-y-6">
+              {loading && calculatedData && (
+                <div className="flex justify-center">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                </div>
+              )}
+
               {calculatedData?.items.map((it) => (
                 <CartRow
                   key={it.productId}
@@ -219,7 +227,7 @@ export default function CartSidebar({
           )}
         </div>
 
-        <div className="border-t border-light-slate/10 bg-white px-6 pt-5 pb-6">
+        <div className="border-t border-light-slate/10 bg-white px-6 pb-6 pt-5">
           <div className="space-y-3 text-sm">
             <div className="flex items-center justify-between text-light-slate">
               <span>Subtotal</span>
@@ -254,11 +262,11 @@ export default function CartSidebar({
             }}
             className={[
               "mt-5 w-full rounded-2xl bg-primary px-6 py-4",
-              "text-white text-base font-extrabold",
-              "hover:opacity-90 active:scale-[0.99] transition",
               "inline-flex items-center justify-center gap-2",
+              "text-base font-extrabold text-white",
+              "hover:opacity-90 active:scale-[0.99] transition",
               items.length === 0
-                ? "opacity-50 cursor-not-allowed pointer-events-none"
+                ? "pointer-events-none cursor-not-allowed opacity-50"
                 : "",
             ].join(" ")}
           >
@@ -323,7 +331,7 @@ function CartRow({
               className={[
                 iconBtn(),
                 it.quantity <= 1
-                  ? "opacity-50 cursor-not-allowed pointer-events-none"
+                  ? "pointer-events-none cursor-not-allowed opacity-50"
                   : "",
               ].join(" ")}
               aria-label="Decrease"

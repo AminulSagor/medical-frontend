@@ -2,6 +2,7 @@ import Image from "next/image";
 import Button from "@/components/buttons/button";
 import { IMAGE } from "@/constant/image-config";
 import { MapPin, Clock } from "lucide-react";
+import Link from "next/link";
 
 export default function AboutCtaVisit() {
   return (
@@ -14,14 +15,25 @@ export default function AboutCtaVisit() {
           </h3>
 
           <p className="mt-3 text-sm text-light-slate/65">
-            Join Dr. Enoh at the Texas Airway Institute and elevate your practice.
+            Join Dr. Enoh at the Texas Airway Institute and elevate your
+            practice.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Button size="sm" variant="primary" shape="pill" className="px-6 py-4">
-              Explore Courses
+            <Button
+              size="sm"
+              variant="primary"
+              shape="pill"
+              className="px-6 py-4"
+            >
+              <Link href="/public/courses">Explore Courses</Link>
             </Button>
-            <Button size="sm" variant="secondary" shape="pill" className="px-6 py-4">
+            <Button
+              size="sm"
+              variant="secondary"
+              shape="pill"
+              className="px-6 py-4"
+            >
               Contact Dr. Enoh
             </Button>
           </div>
@@ -31,9 +43,7 @@ export default function AboutCtaVisit() {
         <div className="mt-16 grid items-center gap-10 lg:grid-cols-2">
           {/* LEFT SIDE */}
           <div>
-            <h4 className="text-lg font-bold text-black">
-              Visit Our Center
-            </h4>
+            <h4 className="text-lg font-bold text-black">Visit Our Center</h4>
 
             <p className="mt-3 max-w-[58ch] text-sm leading-6 text-light-slate/70">
               Located in the heart of the medical district, our 15,000 sq. ft.
@@ -70,9 +80,7 @@ export default function AboutCtaVisit() {
                 </div>
 
                 <div>
-                  <div className="font-semibold text-black">
-                    Hours
-                  </div>
+                  <div className="font-semibold text-black">Hours</div>
 
                   <div className="text-xs text-light-slate/60">
                     Mon - Fri: 8:00 AM - 6:00 PM
@@ -93,7 +101,7 @@ export default function AboutCtaVisit() {
                 src={IMAGE.doctor} // replace with map image later
                 alt="Map"
                 fill
-                className="object-cover"
+                className="object-contain"
                 sizes="(max-width: 768px) 100vw, 600px"
               />
             </div>

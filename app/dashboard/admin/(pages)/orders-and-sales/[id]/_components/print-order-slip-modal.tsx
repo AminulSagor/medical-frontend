@@ -307,7 +307,7 @@ export default function PrintOrderSlipModal({
               </div>
             </div>
 
-            <div className="flex flex-col bg-white px-5 py-5 sm:px-7 sm:py-6">
+            <div className="flex flex-col bg-white px-5 py-5 sm:px-7 sm:py-6  justify-between">
               <div className="space-y-6">
                 <div>
                   <div className="text-xs font-bold uppercase tracking-wide text-slate-700">
@@ -320,12 +320,11 @@ export default function PrintOrderSlipModal({
                       className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
                     >
                       <span>4×6 Thermal Label</span>
-                      <span className="text-slate-400">⌄</span>
                     </button>
                   </div>
                 </div>
 
-                <div>
+                {/* <div>
                   <div className="text-xs font-bold uppercase tracking-wide text-slate-700">
                     Orientation
                   </div>
@@ -359,9 +358,9 @@ export default function PrintOrderSlipModal({
                       Landscape
                     </button>
                   </div>
-                </div>
+                </div> */}
 
-                <div className="space-y-4 border-t border-slate-100 pt-6">
+                {/* <div className="space-y-4 border-t border-slate-100 pt-6">
                   <ToggleRow
                     title="Include Packing Slip"
                     description="Attach detailed list of clinical gear"
@@ -375,7 +374,7 @@ export default function PrintOrderSlipModal({
                     checked={printInstructions}
                     onChange={setPrintInstructions}
                   />
-                </div>
+                </div> */}
 
                 <div className="rounded-2xl bg-slate-50 px-4 py-4 text-xs font-medium text-slate-500">
                   Shipping via{" "}
@@ -402,7 +401,7 @@ export default function PrintOrderSlipModal({
                 ) : null}
               </div>
 
-              <div className="mt-8 flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+              <div className="mt-8 flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row justify-end">
                 {/* <button
                   type="button"
                   onClick={handleRegenerate}

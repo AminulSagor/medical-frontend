@@ -56,6 +56,27 @@ export default function SignInPage() {
       if (role === "admin") {
         router.push("/dashboard/admin/admin-dashboard");
       } else {
+        const pendingRedirect =
+          typeof window !== "undefined"
+            ? window.sessionStorage.getItem("publicCoursePostAuthRedirect")
+            : null;
+
+        if (pendingRedirect) {
+          try {
+            const parsed = JSON.parse(pendingRedirect) as {
+              checkoutRoute?: string;
+            };
+
+            if (parsed.checkoutRoute) {
+              window.sessionStorage.removeItem("publicCoursePostAuthRedirect");
+              router.push(parsed.checkoutRoute);
+              return;
+            }
+          } catch {
+            window.sessionStorage.removeItem("publicCoursePostAuthRedirect");
+          }
+        }
+
         router.push("/dashboard/user/dashboard");
       }
     } catch (err: unknown) {
@@ -69,7 +90,7 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="mx-auto mt-15 w-full max-w-md px-4 py-10">
+    <div className="mx-auto flex min-h-[calc(100dvh+4rem)] w-full max-w-md items-center px-4 py-10">
       <div className="rounded-[34px] border border-slate-200 bg-white p-8 shadow-[0_18px_60px_rgba(15,23,42,0.10)]">
         <h1 className="text-center text-3xl font-bold text-slate-900">
           Welcome Back

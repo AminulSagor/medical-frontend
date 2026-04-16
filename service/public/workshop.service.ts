@@ -2,15 +2,21 @@ import { serviceClient } from "@/service/base/axios_client";
 import type {
   PublicWorkshopsResponse,
   PublicWorkshopDetailsResponse,
+  FeaturedPublicWorkshopResponse,
 } from "@/types/public/workshop/public-workshop.types";
 
 export interface PublicWorkshopsQueryParams {
+  q?: string;
+  topic?: string;
   deliveryMode?: "in_person" | "online";
-  offersCmeCredits?: "true" | "false";
-  hasAvailableSeats?: "true" | "false";
+  hasAvailableSeats?: boolean | "true" | "false";
+  minCmeCredits?: number;
+  maxCmeCredits?: number;
+  dateFrom?: string;
+  dateTo?: string;
   page?: number;
   limit?: number;
-  sortBy?: "date" | "price" | "title";
+  sortBy?: "price" | "title" | "createdAt";
   sortOrder?: "asc" | "desc";
 }
 
@@ -21,6 +27,28 @@ export const getPublicWorkshops = async (
     "/workshops",
     {
       params,
+    },
+  );
+  return response.data;
+};
+
+export const getFeaturedPublicWorkshop = async (): Promise<FeaturedPublicWorkshopResponse> => {
+  const response = await serviceClient.get<FeaturedPublicWorkshopResponse>(
+    "/workshops/public/featured",
+  );
+  return response.data;
+};
+
+export const getPublicWorkshopsUpcoming = async (
+  params?: PublicWorkshopsQueryParams,
+): Promise<PublicWorkshopsResponse> => {
+  const response = await serviceClient.get<PublicWorkshopsResponse>(
+    "/workshops",
+    {
+      params: {
+        ...params,
+        upcoming: true,
+      },
     },
   );
   return response.data;

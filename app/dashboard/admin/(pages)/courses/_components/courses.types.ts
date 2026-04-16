@@ -18,4 +18,6 @@ export type CourseItem = {
     isActive: boolean;
     status: CourseTabKey;
     deliveryMode: DeliveryMode;
+    rawStartDate?: string;
+    rawEndDate?: string;
 };

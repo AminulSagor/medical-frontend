@@ -325,9 +325,9 @@ function normalizeActiveCourse(
     infoText: online
       ? matchingLiveSession
         ? `A Q&A workshop is scheduled for ${formatDateTime(
-            matchingLiveSession.dateTime,
-            NOT_IN_API,
-          )}.`
+          matchingLiveSession.dateTime,
+          NOT_IN_API,
+        )}.`
         : NOT_IN_API
       : null,
     actions: getActiveActions(item.courseType, courseId),

@@ -38,15 +38,15 @@ export default function TransmissionHistoryHeader({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 md:justify-end">
-            <button
+            {/* <button
               type="button"
               className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
             >
               <Download size={16} className="text-slate-500" />
               Export All History
-            </button>
+            </button> */}
 
-            <button
+            {/* <button
               type="button"
               onClick={onArchive}
               disabled={isArchiveDisabled}
@@ -68,7 +68,7 @@ export default function TransmissionHistoryHeader({
                 : selectedCount > 0
                   ? `Bulk Archive (${selectedCount})`
                   : "Bulk Archive"}
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

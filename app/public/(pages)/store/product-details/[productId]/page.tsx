@@ -10,7 +10,6 @@ import OverviewSection from "../_components/overview-section";
 import SpecsTable from "../_components/specs-table";
 import ReviewSection from "../_components/review-section";
 import Breadcrumb from "@/app/public/(pages)/store/product-details/_components/breadcrumb";
-import BundleSetupClient from "@/app/public/(pages)/store/product-details/_components/bundle-setup.client";
 import FrequentlyBoughtTogether from "@/app/public/(pages)/store/product-details/_components/frequently-bought-together";
 
 import { ProductDetails } from "@/app/public/types/product.details";
@@ -39,6 +38,11 @@ function transformApiToProductDetails(
     sku: apiData.sku,
     categoryLabel:
       apiData.categories.map((c: any) => c.name).join(", ") || "Uncategorized",
+
+    stockQuantity: apiData.stockQuantity,
+    inStock: apiData.inStock,
+    backorder: apiData.backorder,
+
     badges: apiData.frontendBadges.map((badge: any, idx: number) => ({
       id: `badge-${idx}`,
       label: badge.toUpperCase().replace(/-/g, " "),
@@ -89,13 +93,6 @@ function transformApiToProductDetails(
       title: "Clinical Guarantee",
       description:
         "Authorized distributor. Sterility guaranteed upon delivery. 30-day return policy for unopened sterile packaging.",
-    },
-    bundle: {
-      title: "Complete Your Setup",
-      items: [],
-      bundlePriceLabel: "",
-      savingsLabel: "",
-      ctaLabel: "Add All to Cart",
     },
     overview: {
       title: "Product Overview & Clinical Indication",
@@ -196,7 +193,6 @@ export default function ProductDetailsPage({
         <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-12">
           <div className="space-y-5 lg:col-span-7">
             <ProductGalleryClient product={product} />
-            <BundleSetupClient product={product} />
           </div>
 
           <div className="lg:col-span-5">

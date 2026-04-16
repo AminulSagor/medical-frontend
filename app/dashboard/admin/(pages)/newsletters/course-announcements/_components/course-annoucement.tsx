@@ -104,16 +104,20 @@ export default function CourseAnnouncements() {
 
   useEffect(() => {
     const timeout = setTimeout(() => {
+      const trimmedQuery = query.trim();
+      const currentSearch = searchParams.get("search") ?? "";
+
+      if (trimmedQuery === currentSearch) return;
+
       const params = new URLSearchParams(searchParams.toString());
 
-      if (query.trim()) {
-        params.set("search", query.trim());
+      if (trimmedQuery) {
+        params.set("search", trimmedQuery);
       } else {
         params.delete("search");
       }
 
       params.set("page", "1");
-
       router.replace(`${pathname}?${params.toString()}`);
     }, 400);
 

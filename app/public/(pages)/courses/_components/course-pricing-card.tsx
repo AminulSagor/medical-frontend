@@ -6,6 +6,7 @@ import Button from "@/components/buttons/button";
 import { CourseDetails } from "@/app/public/types/course.details.types";
 import Card from "@/components/cards/card";
 import { useRouter } from "next/navigation";
+import { getToken } from "@/utils/token/cookie_utils";
 
 function money(n: number) {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -16,8 +17,27 @@ export default function CoursePricingCard({ data }: { data: CourseDetails }) {
   const p = data.pricing;
 
   const handleEnrollment = () => {
-    // Redirect to workshop checkout with the course/workshop ID
-    router.push(`/public/workshop-checkout?workshopId=${data.id}`);
+    const checkoutRoute = `/public/workshop-checkout?workshopId=${data.id}`;
+
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(
+        "publicCoursePostAuthRedirect",
+        JSON.stringify({
+          source: `/public/courses/details/${data.id}`,
+          checkoutRoute,
+          workshopId: data.id,
+        }),
+      );
+    }
+
+    const token = getToken();
+
+    if (!token) {
+      router.push("/public/auth/sign-in");
+      return;
+    }
+
+    router.push(checkoutRoute);
   };
 
   return (

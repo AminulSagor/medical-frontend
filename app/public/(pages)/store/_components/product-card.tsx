@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { PublicProduct } from "@/types/public/product/public-product.types";
 import Button from "@/components/buttons/button";
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
 import { useCart } from "@/app/public/context/cart-context";
 import { useWishlist } from "@/app/public/context/wishlist-context";
 import { ShoppingCart, Heart } from "lucide-react";
@@ -113,7 +113,7 @@ export default function ProductCard({ product }: Props) {
     <div className="group flex h-full flex-col overflow-hidden rounded-xl border border-light-slate/10 bg-white shadow-sm transition-shadow hover:shadow-md md:rounded-2xl">
       <Link
         href={`/public/store/product-details/${product.id}`}
-        className="relative block flex-shrink-0"
+        className="relative block w-full overflow-hidden"
       >
         <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-light-slate/5 to-light-slate/10 md:aspect-video">
           <Image
@@ -154,7 +154,7 @@ export default function ProductCard({ product }: Props) {
             className={
               wishlisted
                 ? "fill-red-500 text-red-500"
-                : "text-slate-400 hover:text-red-400"
+                : "text-slate-400 transition-colors hover:text-red-400"
             }
           />
         </button>

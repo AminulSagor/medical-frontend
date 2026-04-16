@@ -17,23 +17,15 @@ export const registerFacultySchema = z.object({
     .string()
     .min(1, "Email is required")
     .email("Invalid email address"),
-  imageUrl: z.string().optional(),
-  primaryClinicalRole: z
-    .string()
-    .min(1, "Primary clinical role is required"),
-  medicalDesignation: z
-    .string()
-    .min(1, "Medical designation is required"),
-  institutionOrHospital: z
-    .string()
-    .min(1, "Institution or hospital is required"),
+  imageUrl: z.string().url("Invalid image URL").optional(),
+  primaryClinicalRole: z.string().optional(),
+  medicalDesignation: z.string().optional(),
+  institutionOrHospital: z.string().optional(),
   npiNumber: z
     .string()
     .min(1, "NPI number is required")
     .regex(/^\d{10}$/, "NPI number must be exactly 10 digits"),
-  assignedRole: z.enum(["instructor", "faculty", "admin"], {
-    message: "Assigned role is required",
-  }),
+  assignedRole: z.string().trim().min(1, "Assigned role is required"),
 });
 
 export type RegisterFacultyFormData = z.infer<typeof registerFacultySchema>;

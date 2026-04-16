@@ -1,5 +1,3 @@
-// types/product-details.ts
-
 export type ProductBadge = {
   id: string;
   label: string;
@@ -38,15 +36,6 @@ export type SpecRow = {
   value: string;
 };
 
-export type BundleItem = {
-  id: string;
-  title: string;
-  subtitle: string;
-  price: number;
-  imageUrl: string;
-  selectedByDefault?: boolean;
-};
-
 export type ProductDetails = {
   id: string;
   breadcrumbs: Array<{ label: string; href?: string }>;
@@ -54,6 +43,10 @@ export type ProductDetails = {
   title: string;
   sku: string;
   categoryLabel: string;
+
+  stockQuantity?: number;
+  inStock?: boolean;
+  backorder?: boolean;
 
   badges: ProductBadge[];
 
@@ -82,14 +75,6 @@ export type ProductDetails = {
   };
 
   guarantee: ProductGuarantee;
-
-  bundle: {
-    title: string; // "Complete Your Setup"
-    items: BundleItem[];
-    bundlePriceLabel: string; // "Bundle Price: $65.50"
-    savingsLabel: string; // "SAVINGS OF $5.00 INCLUDED IN BUNDLE"
-    ctaLabel: string; // "Add All to Cart"
-  };
 
   overview: {
     title: string;
