@@ -13,6 +13,7 @@ import type {
   WorkshopRefundPreviewResponse,
   ConfirmWorkshopRefundRequest,
   ConfirmWorkshopRefundResponse,
+  DeleteWorkshopResponse,
 } from "@/types/admin/workshop.types";
 
 type ApiResponse<T> = {
@@ -112,6 +113,16 @@ export const listWorkshops = async (
 
 export const getPublicWorkshops = async (): Promise<ListWorkshopsResponse> => {
   const response = await serviceClient.get<ListWorkshopsResponse>("/workshops");
+  return response.data;
+};
+
+export const deleteWorkshop = async (
+  id: string,
+): Promise<DeleteWorkshopResponse> => {
+  const response = await serviceClient.delete<DeleteWorkshopResponse>(
+    `/admin/workshops/${id}`,
+  );
+
   return response.data;
 };
 
