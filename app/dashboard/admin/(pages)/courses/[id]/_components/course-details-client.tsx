@@ -104,7 +104,7 @@ export default function CourseDetailsClient({
     return (
         <>
             <div className="space-y-5">
-                <CourseDetailsHeader title={model.title} status={model.status} />
+                <CourseDetailsHeader title={model.title} status={model.status} workshopId={workshopId} />
 
                 <CourseDetailsStats
                     capacityUsed={model.capacityUsed}

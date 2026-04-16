@@ -21,6 +21,7 @@ export interface GroupDiscountRequest {
 }
 
 export interface ShortCreateWorkshopRequest {
+  id?: string;
   deliveryMode: WorkshopDeliveryMode;
   title: string;
   offersCmeCredits: boolean;
@@ -32,6 +33,7 @@ export interface ShortCreateWorkshopRequest {
 }
 
 export interface FullCreateWorkshopRequest {
+  id?: string;
   deliveryMode: WorkshopDeliveryMode;
   status: WorkshopStatus;
   title: string;
@@ -59,6 +61,7 @@ export type CreateWorkshopRequest =
   | FullCreateWorkshopRequest;
 
 export interface UpdateWorkshopRequest {
+  id?: string;
   deliveryMode?: WorkshopDeliveryMode;
   status?: WorkshopStatus;
   title?: string;
@@ -202,6 +205,9 @@ export interface ListWorkshopsParams {
   limit?: number;
   sortBy?: "createdAt" | "title";
   sortOrder?: "asc" | "desc";
+  upcoming?: boolean;
+  past?: boolean;
+  hasRefundRequests?: boolean;
 }
 
 export interface ListWorkshopsMeta {
@@ -348,5 +354,13 @@ export interface ConfirmWorkshopRefundResponse {
     refundedAmount?: string;
     paymentGateway?: string;
     transactionId?: string;
+  };
+}
+
+export interface DeleteWorkshopResponse {
+  message?: string;
+  data: {
+    workshopId: string;
+    title: string;
   };
 }

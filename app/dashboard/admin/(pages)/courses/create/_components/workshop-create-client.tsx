@@ -14,7 +14,7 @@ import {
   Loader2,
   Save,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import ThemeDropdown, {
   ThemeDropdownOption,
@@ -22,7 +22,7 @@ import ThemeDropdown, {
 import ManageClinicalLocationsModal from "../../_components/manage-clinical-locations-modal";
 import { searchFaculty } from "@/service/admin/faculty.service";
 import { listFacilities } from "@/service/admin/facility.service";
-import { createWorkshop, updateWorkshop } from "@/service/admin/workshop.service";
+import { createWorkshop, getWorkshopById } from "@/service/admin/workshop.service";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   createWorkshopSchema,
@@ -30,7 +30,7 @@ import {
 } from "@/schema/admin/workshop.schema";
 import type { Faculty } from "@/types/admin/faculty.types";
 import type { Facility } from "@/types/admin/facility.types";
-import type { CreateWorkshopRequest, UpdateWorkshopRequest, WorkshopStatus } from "@/types/admin/workshop.types";
+import type { CreateWorkshopRequest, Workshop, WorkshopStatus } from "@/types/admin/workshop.types";
 
 import RichTextEditor from "./workshop-create/_components/shared/rich-text-editor";
 import SeatMap from "./workshop-create/_components/shared/seat-map";
@@ -58,6 +58,28 @@ import type {
 } from "./workshop-create/_utils/workshop-create.types";
 
 const COURSES_LIST_ROUTE = "/dashboard/admin/courses";
+
+
+function normalizeTimeDisplay(value?: string | null): string {
+  if (!value) return "";
+
+  const trimmed = value.trim();
+  const twentyFourHourMatch = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (twentyFourHourMatch) {
+    const hour = Number(twentyFourHourMatch[1]);
+    const minute = twentyFourHourMatch[2];
+    if (!Number.isNaN(hour)) {
+      const normalizedHour = hour % 12 || 12;
+      const meridiem = hour >= 12 ? "PM" : "AM";
+      return `${String(normalizedHour).padStart(2, "0")}:${minute} ${meridiem}`;
+    }
+  }
+
+  return trimmed
+    .replace(/\s*(AM|PM)$/i, " $1")
+    .replace(/\s+/g, " ")
+    .toUpperCase();
+}
 
 function formatLastSavedLabel(lastSavedAt: Date | null): string {
   if (!lastSavedAt) return "Not saved yet";
@@ -88,6 +110,8 @@ function formatLastSavedLabel(lastSavedAt: Date | null): string {
 
 export default function WorkshopCreateClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editingWorkshopId = searchParams.get("id");
 
   const [saveMode, setSaveMode] = useState<"publish" | "draft" | "autosave" | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -132,21 +156,6 @@ export default function WorkshopCreateClient() {
       [facilities],
     );
 
-  useEffect(() => {
-    listFacilities()
-      .then((res) => {
-        setFacilities(res.items);
-        if (res.items.length > 0) {
-          setFacility(res.items[0].id);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to load facilities:", error);
-      })
-      .finally(() => {
-        setIsHydrating(false);
-      });
-  }, []);
 
   const [days, setDays] = useState<DayAgenda[]>([]);
   const [selectedFaculty, setSelectedFaculty] = useState<FacultyChip[]>([]);
@@ -158,6 +167,107 @@ export default function WorkshopCreateClient() {
   const facultySearchRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const debouncedFacultyQuery = useDebounce(facultyQuery, 300);
+  function hydrateWorkshopForm(workshop: Workshop, availableFacilities: Facility[]) {
+    setWorkshopId(workshop.id);
+    setDraftStatus(workshop.status === "published" ? "Ready" : "Draft");
+    setMode(workshop.deliveryMode);
+    setWebinarPlatform((workshop.webinarPlatform as WebinarPlatform | null) ?? (workshop.deliveryMode === "online" ? "zoom" : null));
+    setMeetingPassword(workshop.meetingPassword ?? "");
+    setMeetingLink(workshop.meetingLink ?? "");
+    setRecordAutomatically(Boolean(workshop.autoRecordSession));
+
+    setTitle(workshop.title ?? "");
+    setBlurb(workshop.shortBlurb ?? "");
+    setCoverImageUrl(workshop.coverImageUrl ?? null);
+    setCoverPreviewUrl(workshop.coverImageUrl ?? null);
+    setCoverFileName(null);
+    setLearningObjectives(workshop.learningObjectives ?? "");
+    setCme(Boolean(workshop.offersCmeCredits));
+    setCmeCreditsCount(workshop.cmeCreditsCount ?? "");
+
+    const defaultFacilityId =
+      workshop.facilityIds?.[0] ?? workshop.facilities?.[0]?.id ?? availableFacilities[0]?.id ?? null;
+    setFacility(defaultFacilityId);
+
+    const sortedDays = [...(workshop.days ?? [])].sort((a, b) => a.dayNumber - b.dayNumber);
+    setDays(
+      sortedDays.map((day, dayIndex) => ({
+        id: day.id || `day-${dayIndex + 1}`,
+        label: `Day ${day.dayNumber ?? dayIndex + 1}`,
+        segments: [...(day.segments ?? [])]
+          .sort((a, b) => a.segmentNumber - b.segmentNumber)
+          .map((segment, segmentIndex) => ({
+            id: segment.id || `${day.id || dayIndex}-segment-${segmentIndex + 1}`,
+            topic: segment.courseTopic ?? "",
+            details: segment.topicDetails ?? "",
+            date: day.date ?? "",
+            startTime: normalizeTimeDisplay(segment.startTime),
+            endTime: normalizeTimeDisplay(segment.endTime),
+          })),
+      })),
+    );
+
+    setSelectedFaculty(
+      (workshop.faculty ?? []).map((faculty) => ({
+        id: faculty.id,
+        name: faculty.fullName || `${faculty.firstName} ${faculty.lastName}`.trim(),
+        role: faculty.medicalDesignation || faculty.primaryClinicalRole || "N/A",
+      })),
+    );
+
+    setCapacity(workshop.capacity ?? 24);
+    setAlert(workshop.alertAt ?? 5);
+    setStandardRate(Number(workshop.standardBaseRate ?? 0));
+
+    const primaryDiscount = [...(workshop.groupDiscounts ?? [])]
+      .sort((a, b) => a.minimumAttendees - b.minimumAttendees)[0];
+    setMinAttendees(primaryDiscount?.minimumAttendees ?? 0);
+    setGroupRate(Number(primaryDiscount?.groupRatePerPerson ?? 0));
+
+    const firstDayDate = sortedDays[0]?.date ?? "";
+    setRegistrationDeadline(firstDayDate);
+
+    const updatedAt = workshop.updatedAt || workshop.createdAt;
+    setLastSavedAt(updatedAt ? new Date(updatedAt) : null);
+    setHasPendingChanges(false);
+  }
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadInitialData() {
+      setIsHydrating(true);
+
+      try {
+        const facilitiesResponse = await listFacilities();
+        if (isCancelled) return;
+
+        const availableFacilities = facilitiesResponse.items;
+        setFacilities(availableFacilities);
+
+        if (editingWorkshopId) {
+          const workshop = await getWorkshopById(editingWorkshopId);
+          if (isCancelled) return;
+          hydrateWorkshopForm(workshop, availableFacilities);
+        } else {
+          setWorkshopId(null);
+          setFacility((current) => current ?? availableFacilities[0]?.id ?? null);
+        }
+      } catch (error) {
+        console.error("Failed to load workshop create dependencies:", error);
+      } finally {
+        if (!isCancelled) {
+          setIsHydrating(false);
+        }
+      }
+    }
+
+    void loadInitialData();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [editingWorkshopId]);
 
   useEffect(() => {
     if (debouncedFacultyQuery.length < 3) {
@@ -418,29 +528,6 @@ export default function WorkshopCreateClient() {
     router.push(COURSES_LIST_ROUTE);
   }
 
-  function normalizeUpdatePayload(
-    payload: CreateWorkshopRequest,
-    status: WorkshopStatus,
-  ): UpdateWorkshopRequest {
-    if ("facilityId" in payload) {
-      return {
-        deliveryMode: payload.deliveryMode,
-        status,
-        title: payload.title,
-        offersCmeCredits: payload.offersCmeCredits,
-        cmeCreditsCount: payload.cmeCreditsCount ?? null,
-        facilityIds: payload.facilityId ? [payload.facilityId] : [],
-        capacity: payload.capacity,
-        alertAt: payload.alertAt,
-      };
-    }
-
-    return {
-      ...payload,
-      status,
-    };
-  }
-
   function buildPayload(status: WorkshopStatus) {
     return buildWorkshopPayload({
       mode,
@@ -487,12 +574,11 @@ export default function WorkshopCreateClient() {
     setSaveMode(modeToUse);
 
     try {
-      const savedWorkshop = workshopId
-        ? await updateWorkshop(
-            workshopId,
-            normalizeUpdatePayload(payload, status),
-          )
-        : await createWorkshop(payload);
+      const requestBody: CreateWorkshopRequest = workshopId
+        ? ({ ...payload, id: workshopId, status } as CreateWorkshopRequest)
+        : payload;
+
+      const savedWorkshop = await createWorkshop(requestBody);
 
       if (savedWorkshop?.id) {
         setWorkshopId(savedWorkshop.id);
@@ -504,13 +590,13 @@ export default function WorkshopCreateClient() {
       return true;
     } catch (error: any) {
       console.error(
-        workshopId ? "Failed to update workshop:" : "Failed to create workshop:",
+        workshopId ? "Failed to save workshop draft:" : "Failed to create workshop:",
         error,
       );
       if (modeToUse !== "autosave") {
         window.alert(
           error?.response?.data?.message ||
-            `Failed to ${workshopId ? "update" : "create"} workshop. Please try again.`,
+            `Failed to ${workshopId ? "save" : "create"} workshop. Please try again.`,
         );
       }
       return false;
@@ -551,7 +637,7 @@ export default function WorkshopCreateClient() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold text-slate-900">
-                Create New Clinical Workshop
+                {workshopId ? "Update Clinical Workshop" : "Create New Clinical Workshop"}
               </h1>
 
               <span className="rounded-full bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600 ring-1 ring-slate-200">
@@ -905,7 +991,7 @@ export default function WorkshopCreateClient() {
                               value={segment.startTime}
                               onChange={(e) =>
                                 updateSegment(day.id, segment.id, {
-                                  startTime: e.target.value,
+                                  startTime: normalizeTimeDisplay(e.target.value),
                                 })
                               }
                               placeholder="08:00 AM"
@@ -918,7 +1004,7 @@ export default function WorkshopCreateClient() {
                               value={segment.endTime}
                               onChange={(e) =>
                                 updateSegment(day.id, segment.id, {
-                                  endTime: e.target.value,
+                                  endTime: normalizeTimeDisplay(e.target.value),
                                 })
                               }
                               placeholder="12:00 PM"
