@@ -274,11 +274,7 @@ export function useCreateBlogPost() {
       const response = await getAdminUsers();
 
       const mappedAuthors: BlogAuthorOption[] = response.data
-        .filter(
-          (user) =>
-            (user.status === "active" && user.type === "faculty") ||
-            user.type === "student",
-        )
+        .filter((user) => user.status === "active" && user.type === "faculty")
         .map((user) => ({
           id: user.id,
           name: user.name,
@@ -582,7 +578,7 @@ export function useCreateBlogPost() {
       nextErrors.categories = "At least one category must be selected";
     }
 
-    if (status === "scheduled" || status === "published") {
+    if (status === "scheduled") {
       if (!scheduleDate) {
         nextErrors.schedule = "Publish date is required";
       } else if (!scheduleTime) {
@@ -689,7 +685,7 @@ export function useCreateBlogPost() {
         scheduledPublishDate:
           status === "scheduled"
             ? buildScheduledPublishDateFromInputs(scheduleDate, scheduleTime)
-            : undefined,
+            : new Date().toISOString(),
         isFeatured,
         excerpt,
         authorIds: selectedAuthorId ? [selectedAuthorId] : [],
