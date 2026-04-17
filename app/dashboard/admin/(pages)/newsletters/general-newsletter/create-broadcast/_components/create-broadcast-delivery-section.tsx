@@ -9,7 +9,6 @@ import {
   UserRound,
 } from "lucide-react";
 import { BROADCAST_TIMEZONE } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_utils/create-broadcast-schedule.utils";
-import { generalBroadcastCadenceService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-cadence.service";
 import type {
   CreateBroadcastFormErrors,
   CreateBroadcastFormState,
@@ -31,6 +30,7 @@ type AvailableSlot =
 
 const getDateFromIso = (value: string) => value.slice(0, 10);
 const getTimeFromIso = (value: string) => value.slice(11, 16);
+const getCurrentYear = () => new Date().getFullYear();
 
 export default function CreateBroadcastDeliverySection({
   form,
@@ -52,32 +52,20 @@ export default function CreateBroadcastDeliverySection({
         const response =
           await generalBroadcastAvailableSlotsService.getSlotsByFrequency(
             form.frequency,
+            {
+              year: getCurrentYear(),
+            },
           );
 
         if (!active) return;
 
         const nextSlots = response.items ?? [];
         setAvailableSlots(nextSlots);
-
-        const hasSelectedSlot = nextSlots.some((slot) => {
-          return (
-            slot.isAvailable &&
-            getDateFromIso(slot.scheduledAtLocalIso) === form.cadenceDate &&
-            getTimeFromIso(slot.scheduledAtLocalIso) === form.scheduledTime
-          );
-        });
-
-        if (!hasSelectedSlot) {
-          onChange("cadenceDate", "");
-          onChange("scheduledTime", "");
-        }
       } catch {
         if (!active) return;
 
         setAvailableSlots([]);
         setSlotsError("Failed to load available cadence dates.");
-        onChange("cadenceDate", "");
-        onChange("scheduledTime", "");
       } finally {
         if (active) {
           setSlotsLoading(false);
@@ -92,13 +80,37 @@ export default function CreateBroadcastDeliverySection({
     };
   }, [form.frequency]);
 
-  const availableOnlySlots = useMemo(
-    () => availableSlots.filter((slot) => slot.isAvailable),
-    [availableSlots],
-  );
+  const selectedExistingSlot = useMemo(() => {
+    return availableSlots.find((slot) => {
+      return (
+        getDateFromIso(slot.scheduledAtLocalIso) === form.cadenceDate &&
+        getTimeFromIso(slot.scheduledAtLocalIso) === form.scheduledTime
+      );
+    });
+  }, [availableSlots, form.cadenceDate, form.scheduledTime]);
+
+  const selectableSlots = useMemo(() => {
+    const onlyAvailable = availableSlots.filter((slot) => slot.isAvailable);
+
+    if (!selectedExistingSlot) {
+      return onlyAvailable;
+    }
+
+    const alreadyIncluded = onlyAvailable.some(
+      (slot) => slot.scheduledAtUtc === selectedExistingSlot.scheduledAtUtc,
+    );
+
+    if (alreadyIncluded) {
+      return onlyAvailable;
+    }
+
+    return [selectedExistingSlot, ...onlyAvailable].sort((a, b) =>
+      a.scheduledAtUtc.localeCompare(b.scheduledAtUtc),
+    );
+  }, [availableSlots, selectedExistingSlot]);
 
   const selectedSlotValue = useMemo(() => {
-    const matchedSlot = availableOnlySlots.find((slot) => {
+    const matchedSlot = selectableSlots.find((slot) => {
       return (
         getDateFromIso(slot.scheduledAtLocalIso) === form.cadenceDate &&
         getTimeFromIso(slot.scheduledAtLocalIso) === form.scheduledTime
@@ -106,10 +118,10 @@ export default function CreateBroadcastDeliverySection({
     });
 
     return matchedSlot?.scheduledAtLocalIso ?? "";
-  }, [availableOnlySlots, form.cadenceDate, form.scheduledTime]);
+  }, [selectableSlots, form.cadenceDate, form.scheduledTime]);
 
   const handleSlotChange = (value: string) => {
-    const selectedSlot = availableOnlySlots.find(
+    const selectedSlot = selectableSlots.find(
       (slot) => slot.scheduledAtLocalIso === value,
     );
 
@@ -177,12 +189,13 @@ export default function CreateBroadcastDeliverySection({
                     : "Select available cadence date"}
                 </option>
 
-                {availableOnlySlots.map((slot) => (
+                {selectableSlots.map((slot) => (
                   <option
                     key={slot.scheduledAtUtc}
                     value={slot.scheduledAtLocalIso}
                   >
                     {slot.scheduledAtLocalLabel}
+                    {!slot.isAvailable ? " (Current selection)" : ""}
                   </option>
                 ))}
               </select>
@@ -199,7 +212,7 @@ export default function CreateBroadcastDeliverySection({
               <p className="mt-2 text-xs text-red-500">{errors.cadenceDate}</p>
             ) : slotsError ? (
               <p className="mt-2 text-xs text-red-500">{slotsError}</p>
-            ) : availableOnlySlots.length === 0 && !slotsLoading ? (
+            ) : selectableSlots.length === 0 && !slotsLoading ? (
               <p className="mt-2 text-xs text-slate-400">
                 No available cadence slots found for this frequency.
               </p>
