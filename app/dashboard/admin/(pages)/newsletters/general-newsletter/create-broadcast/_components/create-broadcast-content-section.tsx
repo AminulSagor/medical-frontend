@@ -8,7 +8,6 @@ import {
   Link2,
   List,
   ListOrdered,
-  Paperclip,
   Search,
   UploadCloud,
   X,
@@ -28,6 +27,7 @@ import type {
 } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-create.types";
 
 type Props = {
+  mode: "create" | "edit";
   form: CreateBroadcastFormState;
   errors: CreateBroadcastFormErrors;
   onChange: <K extends keyof CreateBroadcastFormState>(
@@ -39,6 +39,7 @@ type Props = {
 };
 
 export default function CreateBroadcastContentSection({
+  mode,
   form,
   errors,
   onChange,
@@ -46,15 +47,20 @@ export default function CreateBroadcastContentSection({
   onRemoveAttachment,
 }: Props) {
   const isCustomMessage = form.contentType === "CUSTOM_MESSAGE";
+  const isEditMode = mode === "edit";
   const editorRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
 
   const [articleOptions, setArticleOptions] = useState<
     GeneralBroadcastArticleSourceItem[]
   >([]);
   const [isSearchingArticles, setIsSearchingArticles] = useState(false);
   const [showArticleDropdown, setShowArticleDropdown] = useState(false);
+
+  const isArticleCardDisabled =
+    isEditMode && form.contentType === "CUSTOM_MESSAGE";
+  const isCustomCardDisabled =
+    isEditMode && form.contentType === "ARTICLE_LINK";
 
   useEffect(() => {
     if (form.contentType !== "ARTICLE_LINK") return;
@@ -92,7 +98,6 @@ export default function CreateBroadcastContentSection({
 
     const sanitizedHtml = sanitizeBroadcastHtml(form.messageBodyHtml || "");
 
-    // Only update DOM if content differs to avoid cursor jumps
     if (editorRef.current.innerHTML !== sanitizedHtml) {
       editorRef.current.innerHTML = sanitizedHtml;
     }
@@ -115,7 +120,6 @@ export default function CreateBroadcastContentSection({
     const rawHtml = editorRef.current.innerHTML || "";
     const sanitizedHtml = normalizeEditorHtml(rawHtml);
 
-    // Only update if content actually changed to avoid infinite loops
     if (form.messageBodyHtml !== sanitizedHtml) {
       onChange("messageBodyHtml", sanitizedHtml);
       onChange("messageBodyText", htmlToPlainText(sanitizedHtml));
@@ -135,6 +139,7 @@ export default function CreateBroadcastContentSection({
     const textarea = document.querySelector(
       "#message-body-textarea",
     ) as HTMLTextAreaElement;
+
     if (textarea) {
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
@@ -144,6 +149,7 @@ export default function CreateBroadcastContentSection({
       const after = text.substring(end);
       const linkText = selectedText || "link text";
       const linkMarkdown = `[${linkText}](${url.trim()})`;
+
       textarea.value = before + linkMarkdown + after;
       onChange("messageBodyText", textarea.value);
       onChange("messageBodyHtml", textarea.value);
@@ -159,6 +165,7 @@ export default function CreateBroadcastContentSection({
     const textarea = document.querySelector(
       "#message-body-textarea",
     ) as HTMLTextAreaElement;
+
     if (textarea) {
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
@@ -166,23 +173,13 @@ export default function CreateBroadcastContentSection({
       const before = text.substring(0, start);
       const after = text.substring(end);
       const tag = "{{Student_Name}}";
+
       textarea.value = before + tag + after;
       onChange("messageBodyText", textarea.value);
       onChange("messageBodyHtml", textarea.value);
       textarea.focus();
       textarea.setSelectionRange(start + tag.length, start + tag.length);
     }
-  };
-
-  const handleEditorPaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
-    event.preventDefault();
-
-    const pastedText = event.clipboardData.getData("text/plain");
-    if (!pastedText) return;
-
-    editorRef.current?.focus();
-    applyEditorCommand("insertText", pastedText);
-    syncEditorValue();
   };
 
   const handleSelectArticle = (article: GeneralBroadcastArticleSourceItem) => {
@@ -201,6 +198,11 @@ export default function CreateBroadcastContentSection({
           <p className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
             Select your primary newsletter format
           </p>
+          {isEditMode ? (
+            <p className="mt-2 text-xs text-amber-600">
+              Content type cannot be changed after creation.
+            </p>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -209,7 +211,11 @@ export default function CreateBroadcastContentSection({
             description="Select from published research, surgical insights, and peer-reviewed journals."
             icon={<FileText size={20} />}
             selected={form.contentType === "ARTICLE_LINK"}
-            onClick={() => onChange("contentType", "ARTICLE_LINK")}
+            disabled={isArticleCardDisabled}
+            onClick={() => {
+              if (isArticleCardDisabled) return;
+              onChange("contentType", "ARTICLE_LINK");
+            }}
           />
 
           <SelectableCard
@@ -217,7 +223,11 @@ export default function CreateBroadcastContentSection({
             description="Write a standalone announcement, update, or personalized clinical memo."
             icon={<Link2 size={20} />}
             selected={form.contentType === "CUSTOM_MESSAGE"}
-            onClick={() => onChange("contentType", "CUSTOM_MESSAGE")}
+            disabled={isCustomCardDisabled}
+            onClick={() => {
+              if (isCustomCardDisabled) return;
+              onChange("contentType", "CUSTOM_MESSAGE");
+            }}
           />
         </div>
       </section>
@@ -376,10 +386,10 @@ export default function CreateBroadcastContentSection({
                   ) as HTMLTextAreaElement;
                   if (textarea) {
                     const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
                     const text = textarea.value;
                     const before = text.substring(0, start);
-                    const after = text.substring(end);
+                    const after = text.substring(textarea.selectionEnd);
+
                     textarea.value = before + "**bold**" + after;
                     onChange("messageBodyText", textarea.value);
                     onChange("messageBodyHtml", textarea.value);
@@ -400,10 +410,10 @@ export default function CreateBroadcastContentSection({
                   ) as HTMLTextAreaElement;
                   if (textarea) {
                     const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
                     const text = textarea.value;
                     const before = text.substring(0, start);
-                    const after = text.substring(end);
+                    const after = text.substring(textarea.selectionEnd);
+
                     textarea.value = before + "*italic*" + after;
                     onChange("messageBodyText", textarea.value);
                     onChange("messageBodyHtml", textarea.value);
@@ -426,10 +436,10 @@ export default function CreateBroadcastContentSection({
                   ) as HTMLTextAreaElement;
                   if (textarea) {
                     const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
                     const text = textarea.value;
                     const before = text.substring(0, start);
-                    const after = text.substring(end);
+                    const after = text.substring(textarea.selectionEnd);
+
                     textarea.value = before + "\n- item\n- item\n" + after;
                     onChange("messageBodyText", textarea.value);
                     onChange("messageBodyHtml", textarea.value);
@@ -448,10 +458,10 @@ export default function CreateBroadcastContentSection({
                   ) as HTMLTextAreaElement;
                   if (textarea) {
                     const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
                     const text = textarea.value;
                     const before = text.substring(0, start);
-                    const after = text.substring(end);
+                    const after = text.substring(textarea.selectionEnd);
+
                     textarea.value = before + "\n1. item\n2. item\n" + after;
                     onChange("messageBodyText", textarea.value);
                     onChange("messageBodyHtml", textarea.value);
@@ -485,7 +495,7 @@ export default function CreateBroadcastContentSection({
                 onChange("messageBodyHtml", e.target.value);
               }}
               placeholder="Write your message here..."
-              className="min-h-[300px] w-full px-5 py-6 text-sm leading-8 text-slate-600 outline-none resize-y focus:ring-0"
+              className="min-h-[300px] w-full resize-y px-5 py-6 text-sm leading-8 text-slate-600 outline-none focus:ring-0"
             />
           </div>
 
@@ -574,6 +584,7 @@ type SelectableCardProps = {
   description: string;
   icon: React.ReactNode;
   selected: boolean;
+  disabled?: boolean;
   onClick: () => void;
 };
 
@@ -582,17 +593,21 @@ function SelectableCard({
   description,
   icon,
   selected,
+  disabled = false,
   onClick,
 }: SelectableCardProps) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
+      title={disabled ? "Content type cannot be changed in edit mode" : title}
       className={[
         "relative rounded-[24px] border p-6 text-left transition",
         selected
           ? "border-[#18c3b2] bg-[#f3fffd] shadow-[0_8px_24px_rgba(24,195,178,0.12)]"
           : "border-slate-200 bg-white hover:bg-slate-50",
+        disabled ? "cursor-not-allowed opacity-55 hover:bg-white" : "",
       ].join(" ")}
     >
       {selected ? (
@@ -621,24 +636,6 @@ function SelectableCard({
       <p className="mt-3 text-center text-xs leading-6 text-slate-500">
         {description}
       </p>
-    </button>
-  );
-}
-
-function EditorTool({
-  icon,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
-    >
-      {icon}
     </button>
   );
 }
