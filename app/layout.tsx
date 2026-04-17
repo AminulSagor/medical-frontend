@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import "react-day-picker/dist/style.css";
 import "./globals.css";
 import { CartProvider } from "@/app/public/context/cart-context";
@@ -31,7 +32,15 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-slate-50 antialiased`}
       >
         <CartProvider>
-          <WishlistProvider>{children}</WishlistProvider>
+          <WishlistProvider>
+            {children}
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                duration: 3000,
+              }}
+            />
+          </WishlistProvider>
         </CartProvider>
       </body>
     </html>
