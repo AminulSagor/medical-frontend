@@ -6,7 +6,30 @@ import type {
   UpdateGeneralBroadcastScheduleResponse,
 } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-create.types";
 
+type UpdateArticleLinkBroadcastPayload = {
+  subjectLine: string;
+  preheaderText: string;
+  articleLink: {
+    sourceRefId: string;
+    ctaLabel: string;
+  };
+};
+
 export const generalBroadcastUpdateService = {
+  async updateArticleLinkBroadcast(
+    broadcastId: string,
+    payload: UpdateArticleLinkBroadcastPayload,
+  ): Promise<{ message: string }> {
+    console.log(broadcastId);
+    console.log(payload);
+    const response = await serviceClient.patch<{ message: string }>(
+      `/admin/newsletters/general/broadcasts/${broadcastId}`,
+      payload,
+    );
+
+    return response.data;
+  },
+
   async addAttachment(
     broadcastId: string,
     payload: AddGeneralBroadcastAttachmentPayload,

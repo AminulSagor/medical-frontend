@@ -33,7 +33,6 @@ export const generalBroadcastCreateService = {
   async createBroadcastDraft(
     payload: CreateGeneralBroadcastPayload,
   ): Promise<CreateGeneralBroadcastResponse> {
-    
     const response = await serviceClient.post<CreateGeneralBroadcastResponse>(
       `/admin/newsletters/general/broadcasts`,
       payload,
@@ -66,5 +65,11 @@ export const generalBroadcastCreateService = {
       );
 
     return response.data;
+  },
+
+  async scheduleBroadcast(broadcastId: string): Promise<void> {
+    await serviceClient.post(
+      `/admin/newsletters/general/broadcasts/${broadcastId}/schedule`,
+    );
   },
 };
