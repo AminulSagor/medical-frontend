@@ -46,8 +46,8 @@ export default function CreateBroadcastHeader({
     isSubmitting || (mode === "create" ? !isDraftReady : false);
 
   return (
-    <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+    <div className="">
+      <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <button
             onClick={() => router.back()}

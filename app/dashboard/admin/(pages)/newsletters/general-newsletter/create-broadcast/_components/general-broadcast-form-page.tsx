@@ -498,20 +498,20 @@ export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
-      <CreateBroadcastHeader
-        mode={mode}
-        onDiscard={handleDiscard}
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        isDraftReady={mode === "create" ? isContentCompleteForCreate() : true}
-        isCreateReady={
-          mode === "create"
-            ? isContentCompleteForCreate() && isScheduleComplete()
-            : false
-        }
-      />
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-7 px-4 py-8 sm:px-6 lg:px-8">
+    <div className=" bg-[#f8fafc]">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-7 px-4 sm:px-6 lg:px-8">
+        <CreateBroadcastHeader
+          mode={mode}
+          onDiscard={handleDiscard}
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          isDraftReady={mode === "create" ? isContentCompleteForCreate() : true}
+          isCreateReady={
+            mode === "create"
+              ? isContentCompleteForCreate() && isScheduleComplete()
+              : false
+          }
+        />
         <CreateBroadcastContentSection
           mode={mode}
           form={form}
