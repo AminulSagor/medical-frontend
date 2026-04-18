@@ -3,6 +3,7 @@ export interface WorkshopCheckoutSummaryWorkshop {
   title: string;
   deliveryMode: "in_person" | "online";
   coverImageUrl: string | null;
+  registrationDeadline?: string | null;
 }
 
 export interface WorkshopCheckoutSummaryAttendee {
@@ -32,6 +33,8 @@ export interface WorkshopCheckoutOrderSummaryData {
   availableSeats: number;
   pricing: WorkshopCheckoutSummaryPricing;
   createdAt: string;
+  status?: string;
+  expiresAt?: string;
 }
 
 export interface WorkshopCheckoutOrderSummaryResponse {

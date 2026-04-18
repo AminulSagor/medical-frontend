@@ -7,8 +7,8 @@ import CoursesTabs from "./_components/courses-tabs";
 import CoursesTable from "./_components/courses-table";
 import type { CourseItem, CourseTabKey, DeliveryMode } from "./_components/courses.types";
 import { useRouter } from "next/navigation";
-import { deleteWorkshop, listWorkshops, updateWorkshop } from "@/service/admin/workshop.service";
-import type { ListWorkshopsParams, WorkshopDay, WorkshopListItem } from "@/types/admin/workshop.types";
+import { deleteWorkshop, getWorkshopStats, listWorkshops, updateWorkshop } from "@/service/admin/workshop.service";
+import type { ListWorkshopsParams, WorkshopDay, WorkshopListItem, WorkshopStatsResponse } from "@/types/admin/workshop.types";
 import { AlertTriangle, Loader2, Trash2, X } from "lucide-react";
 
 const PAGE_SIZE = 5;
@@ -37,6 +37,31 @@ function formatTimeLabel(value?: string) {
         hour: "2-digit",
         minute: "2-digit",
     });
+}
+
+function formatStatDate(value?: string) {
+    if (!value) return "—";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "—";
+    return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+}
+
+function getDaysAwayLabel(value?: string) {
+    if (!value) return "—";
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(value);
+    if (Number.isNaN(target.getTime())) return "—";
+    target.setHours(0, 0, 0, 0);
+    const diffMs = target.getTime() - today.getTime();
+    const diffDays = Math.round(diffMs / 86400000);
+    if (diffDays <= 0) return "Today";
+    if (diffDays === 1) return "In 1 Day";
+    return `In ${diffDays} Days`;
 }
 
 function sortDays(days: WorkshopDay[]) {
@@ -228,6 +253,7 @@ export default function CoursesPage() {
     });
     const [totalItems, setTotalItems] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
+    const [stats, setStats] = useState<WorkshopStatsResponse | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<CourseItem | null>(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -243,6 +269,25 @@ export default function CoursesPage() {
     useEffect(() => {
         setDidInitialLoad(false);
     }, [debouncedQuery, deliveryMode, refreshKey]);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        void getWorkshopStats()
+            .then((response) => {
+                if (!isMounted) return;
+                setStats(response);
+            })
+            .catch((error) => {
+                console.error("Failed to load workshop stats:", error);
+                if (!isMounted) return;
+                setStats(null);
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [refreshKey]);
 
     useEffect(() => {
         let isMounted = true;
@@ -337,16 +382,24 @@ export default function CoursesPage() {
         };
     }, [tab, page, debouncedQuery, deliveryMode, refreshKey]);
 
-    const nextUpcoming = useMemo(() => {
-        if (tab !== "upcoming") return null;
-        return [...items]
-            .sort((a, b) => (a.rawStartDate || "").localeCompare(b.rawStartDate || ""))[0] ?? null;
-    }, [items, tab]);
+    const nextStatsWorkshop = useMemo(() => {
+        const workshops = [...(stats?.workshops ?? [])];
+        workshops.sort((a, b) => (a.startDate || "").localeCompare(b.startDate || ""));
+        return workshops[0] ?? null;
+    }, [stats]);
 
-    const nextWorkshop = nextUpcoming?.dateLabel ?? "—";
-    const activeSeats = items.reduce((sum, item) => sum + (item.capacityTotal || 0), 0);
-    const openSeats = items.reduce((sum, item) => sum + Math.max(0, (item.capacityTotal || 0) - (item.capacityUsed || 0)), 0);
-    const refundPending = counts.refund_requests;
+    const nextWorkshopValue = nextStatsWorkshop?.startDate
+        ? getDaysAwayLabel(nextStatsWorkshop.startDate)
+        : "—";
+    const nextWorkshopDate = nextStatsWorkshop?.startDate
+        ? formatStatDate(nextStatsWorkshop.startDate)
+        : "—";
+    const openSeats = Math.max(
+        0,
+        (stats?.summary.totalActiveSeats ?? 0) - (stats?.summary.totalFilledSeats ?? 0),
+    );
+    const filledSeats = stats?.summary.totalFilledSeats ?? 0;
+    const refundPending = stats?.summary.totalRefundRequests ?? 0;
 
     function buildRowQuery(id: string) {
         const course = items.find((item) => item.id === id);
@@ -401,10 +454,11 @@ export default function CoursesPage() {
                 />
 
                 <CourseStatsRow
-                    nextWorkshop={nextWorkshop}
-                    activeSeatsLabel={`${activeSeats} Total`}
-                    openSeatsLabel={`${openSeats} Open`}
-                    refundPendingLabel={`${refundPending} Pending`}
+                    nextWorkshopValue={nextWorkshopValue}
+                    nextWorkshopDate={nextWorkshopDate}
+                    openSeats={openSeats}
+                    filledSeats={filledSeats}
+                    refundRequests={refundPending}
                 />
 
                 <div className="rounded-2xl border border-slate-200 bg-white">

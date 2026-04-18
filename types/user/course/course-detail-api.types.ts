@@ -178,6 +178,7 @@ export interface CourseRefundSubmitResponse {
   success: boolean;
   title: string;
   message: string;
+  requestId?: string;
   refundAmountRequested: string;
   reasonRecorded: string;
 }

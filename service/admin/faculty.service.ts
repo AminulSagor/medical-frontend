@@ -16,15 +16,20 @@ export const registerFaculty = async (
 };
 
 export const searchFaculty = async (
-  query: string,
+  query?: string,
   page = 1,
   limit = 10,
   signal?: AbortSignal
 ): Promise<SearchFacultyResponse> => {
+  const trimmedQuery = query?.trim();
   const response = await serviceClient.get<SearchFacultyResponse>(
     `/admin/faculty`,
     {
-      params: { search: query, page, limit },
+      params: {
+        ...(trimmedQuery ? { q: trimmedQuery } : {}),
+        page,
+        limit,
+      },
       signal,
     }
   );

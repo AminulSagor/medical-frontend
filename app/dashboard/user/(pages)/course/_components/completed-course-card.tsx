@@ -3,7 +3,7 @@
 import { CheckCircle2, Eye, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { CompletedCourseItem } from "@/types/user/course/course-type";
-import NetworkImageFallback from "../../../_components/network-image-fallback";
+import NetworkImageFallback from "../../../../../../utils/network-image-fallback";
 
 function openRoute(route: string, router: ReturnType<typeof useRouter>) {
   if (!route) return;

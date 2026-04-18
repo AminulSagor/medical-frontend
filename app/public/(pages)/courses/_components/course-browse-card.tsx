@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { Clock, MapPin, Layers, BadgeCheck } from "lucide-react";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 import { CourseCardModel } from "@/app/public/types/course-browse.types";
 import { useRouter } from "next/navigation";
 
@@ -22,24 +22,36 @@ export default function CourseBrowseCard({
   course: CourseCardModel;
 }) {
   const isOnDemand = !!course.imageSrc;
+  const isRegistrationClosed = !!course.isRegistrationClosed;
   const router = useRouter();
 
   return (
     <div
-      onClick={() => router.push(`/public/courses/details/${course.id}`)}
+      onClick={() => {
+        if (isRegistrationClosed) return;
+        router.push(`/public/courses/details/${course.id}`);
+      }}
+      aria-disabled={isRegistrationClosed}
       className={[
-        "h-full min-h-[520px] rounded-3xl bg-white border border-light-slate/15 shadow-sm overflow-hidden cursor-pointer",
-        "flex flex-col",
-        course.action.kind === "reserve" ? "ring-2 ring-primary/30" : "",
+        "h-full min-h-[450px] rounded-3xl bg-white border border-light-slate/15 shadow-sm overflow-hidden",
+        "flex flex-col transition",
+        isRegistrationClosed
+          ? "cursor-not-allowed grayscale opacity-50"
+          : "cursor-pointer hover:shadow-md",
+        course.action.kind === "reserve" && !isRegistrationClosed
+          ? "ring-2 ring-primary/30"
+          : "",
       ].join(" ")}
     >
       {/* Top */}
       {isOnDemand ? (
-        <div className="relative h-40 w-full">
-          <img
+        <div className="relative h-32 w-full overflow-hidden">
+          <NetworkImageFallback
             src={course.imageSrc!}
             alt={course.imageAlt || course.title}
-            className="object-cover"
+            className="h-full w-full object-cover"
+            fallbackClassName="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400"
+            iconClassName="h-8 w-8"
           />
           {course.badge ? (
             <span
@@ -56,7 +68,7 @@ export default function CourseBrowseCard({
         </div>
       ) : null}
 
-      <div className="p-6 flex-1 flex flex-col">
+      <div className="p-5 flex-1 flex flex-col">
         {/* Top row: date pill (scheduled cards) */}
         {!isOnDemand && course.date ? (
           <div className="flex items-start justify-between gap-4">
@@ -86,19 +98,20 @@ export default function CourseBrowseCard({
         ) : null}
 
         {/* meta rows */}
-        <div className="mt-5 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-light-slate">
+        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm font-semibold text-light-slate">
           {(course.metaTop || []).map((m) => {
             const Icon = metaIcon(m.icon);
+            const isPin = m.icon === "pin";
             return (
-              <div key={m.label} className="flex items-center gap-2">
-                <Icon size={16} className="text-primary" />
-                {m.label}
+              <div key={m.label} className="flex min-w-0 items-center gap-2">
+                <Icon size={16} className="shrink-0 text-primary" />
+                <span className={isPin ? "truncate" : ""}>{m.label}</span>
               </div>
             );
           })}
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="mt-4 flex flex-wrap gap-2.5">
           {(course.metaBottom || []).map((m) => (
             <span
               key={m.label}
@@ -111,7 +124,7 @@ export default function CourseBrowseCard({
 
         {/* availability bar */}
         {course.availability ? (
-          <div className="mt-6">
+          <div className="mt-5">
             <div className="flex items-center justify-between text-[11px] font-bold tracking-[0.18em]">
               <span className="text-light-slate">
                 {course.availability.label}
@@ -142,7 +155,7 @@ export default function CourseBrowseCard({
         ) : null}
 
         {/* bottom row always aligned */}
-        <div className="mt-auto pt-6 flex items-center justify-between">
+        <div className="mt-auto pt-5 flex items-center justify-between gap-3">
           <div>
             {course.oldPrice ? (
               <p className="text-xs font-semibold text-light-slate line-through">
@@ -156,8 +169,9 @@ export default function CourseBrowseCard({
 
           <button
             type="button"
+            disabled={isRegistrationClosed}
             className={[
-              "h-11 rounded-full px-5 text-sm font-extrabold transition active:scale-95",
+              "h-11 shrink-0 rounded-full px-5 text-sm font-extrabold transition active:scale-95 disabled:pointer-events-none disabled:opacity-70",
               course.action.kind === "reserve"
                 ? "border border-primary/30 bg-white text-primary hover:bg-primary/10"
                 : course.action.kind === "start"

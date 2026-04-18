@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CreditCard, RotateCcw, Users2 } from "lucide-react";
+import { CircleX, CreditCard, Users2 } from "lucide-react";
 import { submitCourseRefundRequest } from "@/service/user/course-details.service";
 import type { CourseRefundSubmitResponse } from "@/types/user/course/course-detail-api.types";
 import type { CourseBookingDetailsCardProps } from "@/types/user/course/course-details-type";
@@ -70,40 +70,38 @@ export default function CourseBookingDetailsCard({
         BOOKING DETAILS
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
+      <div className="rounded-[26px] border border-slate-200 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1px_1fr]">
-          <div className="flex items-start gap-4 p-6">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-sky-50 text-sky-600 ring-1 ring-sky-100">
-              <Users2 className="h-5 w-5" />
+          <div className="flex items-center gap-4 p-6 lg:p-7">
+            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-sky-50 text-sky-500 ring-1 ring-sky-100">
+              <Users2 className="h-6 w-6" />
             </div>
 
             <div>
-              <div className="text-[10px] font-extrabold tracking-[0.14em] text-slate-300">
+              <div className="text-[11px] font-extrabold tracking-[0.16em] text-slate-400">
                 {status.label}
               </div>
-              <div className="mt-1 text-[14px] font-extrabold text-slate-900">{status.value}</div>
+              <div className="mt-1 text-[18px] font-extrabold leading-tight text-slate-900">{status.value}</div>
             </div>
           </div>
 
           <div className="hidden bg-slate-100 md:block" />
 
-          <div className="flex items-start justify-between gap-4 p-6">
+          <div className="flex items-start justify-between gap-4 p-6 lg:p-7">
             <div className="flex items-start gap-4">
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-sky-50 text-sky-600 ring-1 ring-sky-100">
-                <CreditCard className="h-5 w-5" />
+              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-sky-50 text-sky-500 ring-1 ring-sky-100">
+                <CreditCard className="h-6 w-6" />
               </div>
 
-              <div>
-                <div className="text-[10px] font-extrabold tracking-[0.14em] text-slate-300">
+              <div className="max-w-[240px]">
+                <div className="text-[11px] font-extrabold tracking-[0.16em] text-slate-400">
                   {payment.label}
                 </div>
-
-                <div className="mt-1 text-[14px] font-extrabold text-sky-600">{payment.title}</div>
-
-                <div className="mt-1 text-[18px] font-extrabold text-sky-600">{payment.amount}</div>
-
-                <div className="mt-2 text-[11px] leading-relaxed text-slate-400">
-                  {payment.refundNote}
+                <div className="mt-1 text-[18px] font-extrabold leading-tight text-sky-500">Total Fee:</div>
+                <div className="mt-1 text-[18px] font-extrabold leading-tight text-sky-500">{payment.amount}</div>
+                <div className="mt-3 flex items-start gap-2 text-[11px] leading-snug text-slate-400">
+                  <span className="mt-[2px] inline-grid h-4 w-4 shrink-0 place-items-center rounded-full border border-slate-300 text-[10px] text-slate-400">i</span>
+                  <span>{payment.refundNote}</span>
                 </div>
               </div>
             </div>
@@ -111,10 +109,10 @@ export default function CourseBookingDetailsCard({
             <button
               type="button"
               onClick={() => setOpenRefund(true)}
-              className="mt-1 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-[12px] font-semibold text-slate-600 hover:bg-slate-50"
+              className="mt-1 inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-[12px] font-semibold text-slate-500 hover:bg-slate-50"
             >
-              <RotateCcw className="h-4 w-4" />
-              {refund.label}
+              <CircleX className="h-4 w-4" />
+              Refund
             </button>
           </div>
         </div>
@@ -166,9 +164,9 @@ export default function CourseBookingDetailsCard({
         title={submittedData?.title || "Refund Request Submitted"}
         courseTitle={refund.courseTitle}
         subtitle={submittedData?.message || "Your refund request has been submitted."}
-        requestIdValue=""
+        requestIdValue={submittedData?.requestId || "—"}
         expectedRefundValue={submittedData?.refundAmountRequested || refund.estimatedRefund}
-        confirmationText={submittedData?.reasonRecorded || ""}
+        confirmationText={undefined}
         footnoteText={submittedData?.message || refund.description}
         ctaLabel="Back to Course"
         onCta={() => setOpenSubmitted(false)}

@@ -1,5 +1,5 @@
 import { BadgeCheck, User2 } from "lucide-react";
-import NetworkImageFallback from "@/app/dashboard/user/_components/network-image-fallback";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 import type { TicketDetailsModel } from "@/types/user/ticket/ticket-details-type";
 
 function Pill({ children }: { children: React.ReactNode }) {

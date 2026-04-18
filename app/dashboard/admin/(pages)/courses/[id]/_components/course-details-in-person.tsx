@@ -130,8 +130,13 @@ export default function CourseDetailsInPerson({
                             Facility / Location
                         </p>
                         <p className="mt-1 text-sm font-semibold text-slate-900">
-                            {model.facilityLabel}
+                            {model.facilityName || model.facilityLabel}
                         </p>
+                        {model.facilityAddressLine ? (
+                            <p className="mt-1 text-xs leading-5 text-slate-500">
+                                {model.facilityAddressLine}
+                            </p>
+                        ) : null}
                     </div>
                 </CourseDetailsSideCard>
 

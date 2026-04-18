@@ -33,4 +33,6 @@ export interface CourseDetailsModel {
     days: WorkshopDay[];
     faculty: WorkshopFaculty[];
     facilityLabel: string;
+    facilityName: string;
+    facilityAddressLine: string;
 }

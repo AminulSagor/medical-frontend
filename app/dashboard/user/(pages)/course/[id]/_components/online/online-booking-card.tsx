@@ -212,9 +212,9 @@ export default function OnlineBookingCardClient({
         title={submittedData?.title || "Refund Request Submitted"}
         courseTitle={booking.courseTitle}
         subtitle={submittedData?.message || "Your refund request has been submitted."}
-        requestIdValue=""
+        requestIdValue={submittedData?.requestId || "—"}
         expectedRefundValue={submittedData?.refundAmountRequested || booking.refundAmount}
-        confirmationText={submittedData?.reasonRecorded || ""}
+        confirmationText={undefined}
         footnoteText={submittedData?.message || booking.refundNote}
         ctaLabel="Back to Course"
         onCta={() => setOpenSubmitted(false)}

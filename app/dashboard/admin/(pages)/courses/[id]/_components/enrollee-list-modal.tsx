@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
     ChevronDown,
     ChevronUp,
@@ -9,15 +9,11 @@ import {
     Mail,
     Phone,
     Search,
-    Users,
     X,
 } from "lucide-react";
 
 import { getWorkshopEnrollees } from "@/service/admin/workshop.service";
-import type {
-    WorkshopEnrolleeItem,
-    WorkshopEnrolleesResponse,
-} from "@/types/admin/workshop.types";
+import type { WorkshopEnrolleesResponse } from "@/types/admin/workshop.types";
 
 function StatusBadge({ status }: { status: string }) {
     const normalized = status.toLowerCase();
@@ -68,7 +64,7 @@ export default function EnrolleeListModal({
     onClose: () => void;
     onProcessRefund: (reservationId: string) => void;
 }) {
-    const [loading, setLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const [response, setResponse] = useState<WorkshopEnrolleesResponse | null>(
@@ -77,16 +73,56 @@ export default function EnrolleeListModal({
     const [page, setPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState("all");
     const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+    const lastLoadedWorkshopIdRef = useRef<string | null>(null);
+
+
+    useEffect(() => {
+        const timer = window.setTimeout(() => {
+            setDebouncedSearch(search.trim());
+        }, 300);
+
+        return () => window.clearTimeout(timer);
+    }, [search]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedSearch, statusFilter]);
+
+    useEffect(() => {
+        if (!open) {
+            setResponse(null);
+            setError(null);
+            setPage(1);
+            setSearch("");
+            setDebouncedSearch("");
+            setStatusFilter("all");
+            setExpandedRows({});
+            lastLoadedWorkshopIdRef.current = null;
+        }
+    }, [open]);
 
     useEffect(() => {
         if (!open) return;
 
-        setLoading(true);
+        const isInitialLoad = lastLoadedWorkshopIdRef.current !== workshopId || !response;
+        if (isInitialLoad) {
+            setInitialLoading(true);
+        }
         setError(null);
 
-        getWorkshopEnrollees(workshopId, { page, limit: 10 })
+        getWorkshopEnrollees(workshopId, {
+            page,
+            limit: 5,
+            search: debouncedSearch || undefined,
+            enrollmentStatus:
+                statusFilter === "all"
+                    ? undefined
+                    : (statusFilter as "BOOKED" | "REFUND_REQUESTED" | "PARTIAL_REFUNDED" | "REFUNDED"),
+        })
             .then((res) => {
+                lastLoadedWorkshopIdRef.current = workshopId;
                 setResponse(res);
             })
             .catch((err) => {
@@ -95,28 +131,13 @@ export default function EnrolleeListModal({
                 );
             })
             .finally(() => {
-                setLoading(false);
+                if (isInitialLoad) {
+                    setInitialLoading(false);
+                }
             });
-    }, [open, workshopId, page]);
+    }, [open, workshopId, page, debouncedSearch, statusFilter]);
 
-    const filteredItems = useMemo(() => {
-        const items = response?.data.items ?? [];
-        const query = search.trim().toLowerCase();
-
-        return items.filter((item) => {
-            const matchesSearch =
-                !query ||
-                item.studentInfo.fullName.toLowerCase().includes(query) ||
-                item.studentInfo.email.toLowerCase().includes(query) ||
-                item.institutionOrHospital.toLowerCase().includes(query);
-
-            const matchesStatus =
-                statusFilter === "all" ||
-                item.status.toLowerCase() === statusFilter.toLowerCase();
-
-            return matchesSearch && matchesStatus;
-        });
-    }, [response, search, statusFilter]);
+    const filteredItems = useMemo(() => response?.data.items ?? [], [response]);
 
     if (!open) return null;
 
@@ -147,7 +168,7 @@ export default function EnrolleeListModal({
                     `"${item.studentInfo.phoneNumber}"`,
                     `"${item.bookingType}"`,
                     item.groupSize,
-                    `"${item.institutionOrHospital}"`,
+                    `"${item.institutionOrHospital || "—"}"`,
                     `"${item.registeredAt}"`,
                     `"${item.paymentAmount}"`,
                     `"${item.status}"`,
@@ -166,7 +187,7 @@ export default function EnrolleeListModal({
 
     return (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
-            <div className="max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" style={{ maxHeight: "90vh" }}>
                 <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
                     <div>
                         <h2 className="text-2xl font-bold text-slate-900">
@@ -186,7 +207,7 @@ export default function EnrolleeListModal({
                 </div>
 
                 <div className="space-y-5 overflow-y-auto px-6 py-5">
-                    {loading ? (
+                    {initialLoading && !response ? (
                         <div className="flex items-center justify-center py-16">
                             <Loader2 size={24} className="animate-spin text-slate-400" />
                         </div>
@@ -225,25 +246,25 @@ export default function EnrolleeListModal({
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
                                         placeholder="Search by name, email or institution..."
-                                        className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-[var(--primary)]"
+                                        className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[var(--primary)]"
                                     />
                                 </div>
 
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-[var(--primary)]"
+                                    className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)]"
                                 >
                                     <option value="all">Enrollment Status</option>
-                                    <option value="booked">Booked</option>
-                                    <option value="refund requested">Refund Requested</option>
-                                    <option value="partial refunded">Partial Refunded</option>
-                                    <option value="refunded">Refunded</option>
+                                    <option value="BOOKED">Booked</option>
+                                    <option value="REFUND_REQUESTED">Refund Requested</option>
+                                    <option value="PARTIAL_REFUNDED">Partial Refunded</option>
+                                    <option value="REFUNDED">Refunded</option>
                                 </select>
                             </div>
 
                             <div className="overflow-hidden rounded-xl border border-slate-200">
-                                <div className="overflow-x-auto">
+                                <div className="max-h-[42vh] overflow-auto">
                                     <table className="w-full min-w-[980px]">
                                         <thead className="bg-slate-50">
                                             <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-slate-400">
@@ -332,7 +353,7 @@ export default function EnrolleeListModal({
                                                                 </td>
 
                                                                 <td className="px-4 py-4 text-sm text-slate-600">
-                                                                    {item.institutionOrHospital}
+                                                                    {item.institutionOrHospital || "—"}
                                                                 </td>
 
                                                                 <td className="px-4 py-4 text-sm text-slate-600">
@@ -395,7 +416,7 @@ export default function EnrolleeListModal({
                                                                                         {member.email}
                                                                                     </p>
                                                                                     <p className="text-xs text-slate-400">
-                                                                                        {member.institutionOrHospital}
+                                                                                        {member.institutionOrHospital || "—"}
                                                                                     </p>
                                                                                     <div className="mt-3">
                                                                                         <StatusBadge status={member.status} />
@@ -469,7 +490,7 @@ export default function EnrolleeListModal({
                     )}
                 </div>
 
-                <div className="border-t border-slate-100 px-6 py-4">
+                <div className="border-t border-slate-100 px-6 py-3">
                     <div className="flex justify-end">
                         <button
                             type="button"

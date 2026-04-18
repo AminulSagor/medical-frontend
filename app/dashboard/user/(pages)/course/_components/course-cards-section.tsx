@@ -17,7 +17,7 @@ import type { CalendarProviderKey } from "@/types/user/course/add-to-calender-ty
 import type { CourseCalendarLinksResponse } from "@/types/user/course/course-detail-api.types";
 import { getCourseCalendarLinks } from "@/service/user/course-details.service";
 import AddToCalendarModalClient from "../[id]/_components/shared/add-to-calender-modal";
-import NetworkImageFallback from "../../../_components/network-image-fallback";
+import NetworkImageFallback from "../../../../../../utils/network-image-fallback";
 
 type Props = {
   items: ActiveCourseItem[];

@@ -146,8 +146,8 @@ export function transformWorkshopToDetails(
           ? {
               title: "GROUP & SAVE",
               oldPrice: parseFloat(workshop.standardPrice),
-              newPrice: parseFloat(workshop.groupDiscounts[0].pricePerPerson),
-              discountLabel: `SAVE $${workshop.groupDiscounts[0].savingsPerPerson}`,
+              newPrice: parseFloat(workshop.groupDiscounts[0].pricePerPerson || workshop.groupDiscounts[0].ratePerPerson || workshop.standardPrice),
+              discountLabel: `SAVE $${workshop.groupDiscounts[0].savingsPerPerson || "0.00"}`,
               note: `Special pricing for ${workshop.groupDiscounts[0].minimumAttendees}+ attendees`,
             }
           : {
