@@ -34,6 +34,16 @@ export function mapWorkshopToCourseDetailsModel(
             ? `${formatTime12Hour(firstSegment.startTime)} - ${formatTime12Hour(lastSegment.endTime)}`
             : "—";
 
+    const primaryFacility = workshop.facilities?.[0];
+    const facilityName = workshop.deliveryMode === "online"
+        ? workshop.webinarPlatform || "Online"
+        : primaryFacility?.name || "—";
+    const facilityAddressLine = workshop.deliveryMode === "online"
+        ? ""
+        : [primaryFacility?.physicalAddress, primaryFacility?.roomNumber ? `(${primaryFacility.roomNumber})` : null]
+            .filter(Boolean)
+            .join(" ");
+
     return {
         id: workshop.id,
         title: workshop.title,
@@ -60,11 +70,8 @@ export function mapWorkshopToCourseDetailsModel(
         autoRecordSession: workshop.autoRecordSession,
         days: workshop.days || [],
         faculty: workshop.faculty || [],
-        facilityLabel:
-            workshop.deliveryMode === "online"
-                ? workshop.webinarPlatform || "Online"
-                : workshop.facilities?.[0]
-                    ? `${workshop.facilities[0].name}${workshop.facilities[0].roomNumber ? ` (${workshop.facilities[0].roomNumber})` : ""}`
-                    : "—",
+        facilityLabel: facilityName,
+        facilityName,
+        facilityAddressLine,
     };
 }

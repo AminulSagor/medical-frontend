@@ -1,6 +1,6 @@
 "use client";
 
-import NetworkImageFallback from "@/app/dashboard/user/_components/network-image-fallback";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 import type { CourseCheckinCardProps } from "@/types/user/course/course-details-type";
 
 export default function CourseCheckinCard(

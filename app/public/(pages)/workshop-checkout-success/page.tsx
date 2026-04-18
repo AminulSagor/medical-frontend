@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   Check,
   Loader2,
@@ -16,7 +16,10 @@ import Card from "@/components/cards/card";
 import Button from "@/components/buttons/button";
 import Link from "next/link";
 import { verifyWorkshopPayment } from "@/service/user/workshop-payment.service";
-import { createWorkshopReservation } from "@/service/user/create-workshop-reservation.service";
+import {
+  createWorkshopReservation,
+  type WorkshopReservationData,
+} from "@/service/user/create-workshop-reservation.service";
 
 type CheckoutContext = {
   workshopId: string;
@@ -25,6 +28,14 @@ type CheckoutContext = {
   workshopTitle: string;
   numberOfAttendees: number;
   totalPrice: string;
+  workshopStartDate?: string | null;
+  workshopEndDate?: string | null;
+  workshopLocation?: string | null;
+  primaryAttendee?: {
+    fullName: string;
+    role: string;
+    email: string;
+  };
 };
 
 type PageState =
@@ -36,7 +47,6 @@ type PageState =
 
 function WorkshopCheckoutSuccessContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const sessionId = searchParams.get("session_id");
 
   const [pageState, setPageState] = useState<PageState>("verifying");
@@ -44,6 +54,8 @@ function WorkshopCheckoutSuccessContent() {
   const [checkoutContext, setCheckoutContext] =
     useState<CheckoutContext | null>(null);
   const [reservationId, setReservationId] = useState<string | null>(null);
+  const [reservationData, setReservationData] =
+    useState<WorkshopReservationData | null>(null);
 
   const hasStartedRef = useRef(false);
 
@@ -155,6 +167,7 @@ function WorkshopCheckoutSuccessContent() {
         });
 
         setReservationId(reservation.reservationId);
+        setReservationData(reservation);
 
         // Clear sessionStorage after successful reservation
         sessionStorage.removeItem("workshop_checkout_context");
@@ -205,8 +218,39 @@ function WorkshopCheckoutSuccessContent() {
   };
 
   const workshopTitle = checkoutContext?.workshopTitle || "Workshop";
-  const numberOfAttendees = checkoutContext?.numberOfAttendees || 0;
-  const totalPrice = checkoutContext?.totalPrice || "0.00";
+  const numberOfAttendees =
+    reservationData?.attendeesCount ||
+    reservationData?.attendees?.length ||
+    checkoutContext?.numberOfAttendees ||
+    0;
+  const totalPrice = reservationData?.totalPrice || checkoutContext?.totalPrice || "0.00";
+
+  const handleDownloadReceipt = () => {
+    const params = new URLSearchParams({
+      workshopTitle,
+      attendees: String(numberOfAttendees),
+      totalPrice: String(totalPrice),
+      reservationId: reservationId || reservationData?.reservationId || "",
+      sessionId: sessionId || "",
+      pricePerSeat: reservationData?.pricePerSeat || "",
+      reservationCreatedAt:
+        reservationData?.updatedAt || reservationData?.createdAt || "",
+      workshopStartDate: checkoutContext?.workshopStartDate || "",
+      workshopEndDate: checkoutContext?.workshopEndDate || "",
+      workshopLocation: checkoutContext?.workshopLocation || "",
+      primaryName: checkoutContext?.primaryAttendee?.fullName || reservationData?.attendees?.[0]?.fullName || "",
+      primaryRole: checkoutContext?.primaryAttendee?.role || reservationData?.attendees?.[0]?.professionalRole || "",
+      primaryEmail: checkoutContext?.primaryAttendee?.email || reservationData?.attendees?.[0]?.email || "",
+      attendeesJson: encodeURIComponent(JSON.stringify(reservationData?.attendees || [])),
+    });
+
+    const anchor = document.createElement("a");
+    anchor.href = `/public/workshop-checkout-success/receipt?${params.toString()}`;
+    anchor.download = `invoice-${reservationId || reservationData?.reservationId || sessionId || "workshop"}.pdf`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  };
 
   // ─── VERIFYING STATE ──────────────────────────────────────
   if (pageState === "verifying") {
@@ -438,11 +482,10 @@ function WorkshopCheckoutSuccessContent() {
             </Button>
           </Link>
 
-          <Link href="/public/courses">
-            <Button variant="secondary" className="px-6">
-              Browse More Workshops
-            </Button>
-          </Link>
+          <Button variant="secondary" className="px-6" onClick={handleDownloadReceipt}>
+            <ShieldCheck size={18} />
+            Download Receipt
+          </Button>
         </div>
 
         <div className="mt-6 flex items-center justify-center gap-2 text-xs tracking-widest text-slate-400">

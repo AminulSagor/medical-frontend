@@ -136,7 +136,7 @@ export default function RefundPreviewModal({
 
     return (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-            <div className="max-h-[92vh] w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" style={{ maxHeight: "88vh" }}>
                 <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
                     <div>
                         <h2 className="text-2xl font-bold text-slate-900">Process Refund</h2>

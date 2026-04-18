@@ -23,6 +23,10 @@ import ManageClinicalLocationsModal from "../../_components/manage-clinical-loca
 import { searchFaculty } from "@/service/admin/faculty.service";
 import { listFacilities } from "@/service/admin/facility.service";
 import { createWorkshop, getWorkshopById } from "@/service/admin/workshop.service";
+import {
+  getUploadUrl,
+  uploadFileToSignedUrl,
+} from "@/service/upload/upload.service";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   createWorkshopSchema,
@@ -135,6 +139,7 @@ export default function WorkshopCreateClient() {
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
   const [coverFileName, setCoverFileName] = useState<string | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const [pendingCoverFile, setPendingCoverFile] = useState<File | null>(null);
   const [learningObjectives, setLearningObjectives] = useState("");
   const [cme, setCme] = useState(false);
   const [cmeCreditsCount, setCmeCreditsCount] = useState("");
@@ -163,7 +168,10 @@ export default function WorkshopCreateClient() {
   const [facultyQuery, setFacultyQuery] = useState("");
   const [facultyResults, setFacultyResults] = useState<Faculty[]>([]);
   const [facultySearching, setFacultySearching] = useState(false);
+  const [facultyLoadingMore, setFacultyLoadingMore] = useState(false);
   const [facultyDropdownOpen, setFacultyDropdownOpen] = useState(false);
+  const [facultyPage, setFacultyPage] = useState(1);
+  const [facultyHasMore, setFacultyHasMore] = useState(false);
   const facultySearchRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const debouncedFacultyQuery = useDebounce(facultyQuery, 300);
@@ -181,6 +189,7 @@ export default function WorkshopCreateClient() {
     setCoverImageUrl(workshop.coverImageUrl ?? null);
     setCoverPreviewUrl(workshop.coverImageUrl ?? null);
     setCoverFileName(null);
+    setPendingCoverFile(null);
     setLearningObjectives(workshop.learningObjectives ?? "");
     setCme(Boolean(workshop.offersCmeCredits));
     setCmeCreditsCount(workshop.cmeCreditsCount ?? "");
@@ -225,7 +234,7 @@ export default function WorkshopCreateClient() {
     setGroupRate(Number(primaryDiscount?.groupRatePerPerson ?? 0));
 
     const firstDayDate = sortedDays[0]?.date ?? "";
-    setRegistrationDeadline(firstDayDate);
+    setRegistrationDeadline(workshop.registrationDeadline ? String(workshop.registrationDeadline).slice(0, 10) : firstDayDate);
 
     const updatedAt = workshop.updatedAt || workshop.createdAt;
     setLastSavedAt(updatedAt ? new Date(updatedAt) : null);
@@ -269,37 +278,52 @@ export default function WorkshopCreateClient() {
     };
   }, [editingWorkshopId]);
 
-  useEffect(() => {
-    if (debouncedFacultyQuery.length < 3) {
-      setFacultyResults([]);
-      setFacultyDropdownOpen(false);
-      return;
-    }
-
+  async function fetchFacultyOptions(query: string, page: number, append: boolean) {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
-    setFacultySearching(true);
+    if (append) {
+      setFacultyLoadingMore(true);
+    } else {
+      setFacultySearching(true);
+    }
 
-    searchFaculty(debouncedFacultyQuery, 1, 10, controller.signal)
-      .then((res) => {
-        setFacultyResults(res.data);
-        setFacultyDropdownOpen(true);
-      })
-      .catch((error) => {
-        if (error?.name !== "AbortError" && error?.code !== "ERR_CANCELED") {
-          console.error("Faculty search failed:", error);
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) {
-          setFacultySearching(false);
-        }
+    try {
+      const res = await searchFaculty(query || undefined, page, 10, controller.signal);
+      if (controller.signal.aborted) return;
+
+      setFacultyResults((prev) => {
+        if (!append) return res.data;
+
+        const existingIds = new Set(prev.map((item) => item.id));
+        const incoming = res.data.filter((item) => !existingIds.has(item.id));
+        return [...prev, ...incoming];
       });
+      setFacultyPage(page);
+      setFacultyHasMore((res.meta?.page ?? page) < (res.meta?.totalPages ?? 1));
+      setFacultyDropdownOpen(true);
+    } catch (error: any) {
+      if (error?.name !== "AbortError" && error?.code !== "ERR_CANCELED") {
+        console.error("Faculty search failed:", error);
+      }
+    } finally {
+      if (!controller.signal.aborted) {
+        setFacultySearching(false);
+        setFacultyLoadingMore(false);
+      }
+    }
+  }
 
-    return () => controller.abort();
-  }, [debouncedFacultyQuery]);
+  useEffect(() => {
+    if (!facultyDropdownOpen && debouncedFacultyQuery.trim() === "") {
+      return;
+    }
+
+    void fetchFacultyOptions(debouncedFacultyQuery, 1, false);
+
+    return () => abortRef.current?.abort();
+  }, [debouncedFacultyQuery, facultyDropdownOpen]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -316,6 +340,27 @@ export default function WorkshopCreateClient() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  function handleFacultySearchFocus() {
+    setFacultyDropdownOpen(true);
+    void fetchFacultyOptions(facultyQuery, 1, false);
+  }
+
+  function handleFacultyResultsScroll(event: React.UIEvent<HTMLDivElement>) {
+    const element = event.currentTarget;
+    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+
+    if (
+      distanceFromBottom > 60 ||
+      facultySearching ||
+      facultyLoadingMore ||
+      !facultyHasMore
+    ) {
+      return;
+    }
+
+    void fetchFacultyOptions(facultyQuery, facultyPage + 1, true);
+  }
 
   function selectFacultyFromSearch(facultyItem: Faculty) {
     const alreadySelected = selectedFaculty.some(
@@ -362,6 +407,13 @@ export default function WorkshopCreateClient() {
         coverImageUrl,
         coverFileName,
         coverPreviewUrl,
+        pendingCoverFile: pendingCoverFile
+          ? {
+              name: pendingCoverFile.name,
+              size: pendingCoverFile.size,
+              type: pendingCoverFile.type,
+            }
+          : null,
         learningObjectives,
         cme,
         cmeCreditsCount,
@@ -386,6 +438,7 @@ export default function WorkshopCreateClient() {
       coverImageUrl,
       coverFileName,
       coverPreviewUrl,
+      pendingCoverFile,
       learningObjectives,
       cme,
       cmeCreditsCount,
@@ -528,12 +581,12 @@ export default function WorkshopCreateClient() {
     router.push(COURSES_LIST_ROUTE);
   }
 
-  function buildPayload(status: WorkshopStatus) {
+  function buildPayload(status: WorkshopStatus, imageUrlOverride?: string | null) {
     return buildWorkshopPayload({
       mode,
       title,
       blurb,
-      coverImageUrl,
+      coverImageUrl: imageUrlOverride ?? coverImageUrl,
       learningObjectives,
       cme,
       cmeCreditsCount,
@@ -554,26 +607,43 @@ export default function WorkshopCreateClient() {
     });
   }
 
+  async function uploadCoverImageIfNeeded() {
+    if (!pendingCoverFile) {
+      return coverImageUrl;
+    }
+
+    const uploadUrlResponse = await getUploadUrl({
+      fileName: pendingCoverFile.name,
+      contentType: pendingCoverFile.type || "application/octet-stream",
+      folder: "courses",
+    });
+
+    await uploadFileToSignedUrl(uploadUrlResponse.signedUrl, pendingCoverFile);
+
+    return uploadUrlResponse.readUrl;
+  }
+
   async function saveWorkshop(
     status: WorkshopStatus,
     modeToUse: "publish" | "draft" | "autosave",
   ) {
-    const payload = buildPayload(status);
-    const parsed = createWorkshopSchema.safeParse(payload);
-
-    if (!parsed.success) {
-      setDraftStatus("Draft");
-
-      if (modeToUse !== "autosave") {
-        window.alert(parsed.error.issues[0]?.message ?? "Validation error");
-      }
-
-      return false;
-    }
-
     setSaveMode(modeToUse);
 
     try {
+      const uploadedCoverImageUrl = await uploadCoverImageIfNeeded();
+      const payload = buildPayload(status, uploadedCoverImageUrl);
+      const parsed = createWorkshopSchema.safeParse(payload);
+
+      if (!parsed.success) {
+        setDraftStatus("Draft");
+
+        if (modeToUse !== "autosave") {
+          window.alert(parsed.error.issues[0]?.message ?? "Validation error");
+        }
+
+        return false;
+      }
+
       const requestBody: CreateWorkshopRequest = workshopId
         ? ({ ...payload, id: workshopId, status } as CreateWorkshopRequest)
         : payload;
@@ -583,6 +653,12 @@ export default function WorkshopCreateClient() {
       if (savedWorkshop?.id) {
         setWorkshopId(savedWorkshop.id);
       }
+
+      if (uploadedCoverImageUrl) {
+        setCoverImageUrl(uploadedCoverImageUrl);
+      }
+      setPendingCoverFile(null);
+      setCoverFileName(null);
 
       setDraftStatus(status === "published" ? "Ready" : "Draft");
       setLastSavedAt(new Date());
@@ -1033,33 +1109,16 @@ export default function WorkshopCreateClient() {
             icon={<Search size={16} className="text-[var(--primary)]" />}
           >
             <div className="space-y-4">
-              <div ref={facultySearchRef} className="relative">
+              <div ref={facultySearchRef} className="relative z-30">
                 <Label>Search Faculty</Label>
 
-                <div className="relative">
-                  <Search
-                    size={16}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-                  <TextInput
-                    value={facultyQuery}
-                    onChange={(e) => setFacultyQuery(e.target.value)}
-                    placeholder="Search by faculty name"
-                    className="pl-9"
-                  />
-
-                  {facultySearching ? (
-                    <Loader2
-                      size={16}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-slate-400"
-                    />
-                  ) : null}
-                </div>
-
                 {facultyDropdownOpen ? (
-                  <div className="absolute z-20 mt-2 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                  <div className="absolute bottom-full left-0 z-20 mb-2 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
                     {facultyResults.length > 0 ? (
-                      <div className="space-y-1">
+                      <div
+                        className="max-h-64 space-y-1 overflow-y-auto"
+                        onScroll={handleFacultyResultsScroll}
+                      >
                         {facultyResults.map((item) => (
                           <button
                             key={item.id}
@@ -1077,6 +1136,15 @@ export default function WorkshopCreateClient() {
                             </div>
                           </button>
                         ))}
+                        {facultyLoadingMore ? (
+                          <div className="flex items-center justify-center py-2 text-slate-400">
+                            <Loader2 size={16} className="animate-spin" />
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : facultySearching ? (
+                      <div className="flex items-center justify-center py-3 text-slate-400">
+                        <Loader2 size={16} className="animate-spin" />
                       </div>
                     ) : (
                       <p className="px-3 py-2 text-sm text-slate-500">
@@ -1085,6 +1153,27 @@ export default function WorkshopCreateClient() {
                     )}
                   </div>
                 ) : null}
+
+                <div className="relative">
+                  <Search
+                    size={16}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <TextInput
+                    value={facultyQuery}
+                    onChange={(e) => setFacultyQuery(e.target.value)}
+                    onFocus={handleFacultySearchFocus}
+                    placeholder="Search by faculty name"
+                    className="pl-9"
+                  />
+
+                  {facultySearching ? (
+                    <Loader2
+                      size={16}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-slate-400"
+                    />
+                  ) : null}
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -1294,9 +1383,11 @@ export default function WorkshopCreateClient() {
                       coverPreviewUrlRef.current = previewUrl;
                       setCoverPreviewUrl(previewUrl);
                       setCoverFileName(file.name);
+                      setPendingCoverFile(file);
                     } else {
                       setCoverPreviewUrl(null);
                       setCoverFileName(null);
+                      setPendingCoverFile(null);
                     }
 
                     setCoverImageUrl(null);

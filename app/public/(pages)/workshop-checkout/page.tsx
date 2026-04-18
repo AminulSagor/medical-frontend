@@ -265,6 +265,20 @@ function CheckoutPageContent() {
         workshopTitle: orderSummaryData.workshop?.title || workshop?.title || "Workshop",
         numberOfAttendees: orderSummaryData.numberOfAttendees,
         totalPrice: orderSummaryData.pricing?.totalPrice || String(total),
+        workshopStartDate: workshop?.startDate ?? null,
+        workshopEndDate: workshop?.endDate ?? null,
+        workshopLocation:
+          workshop?.facilities?.[0]?.physicalAddress ||
+          workshop?.facility ||
+          workshop?.webinarPlatform ||
+          null,
+        primaryAttendee: attendees[0]
+          ? {
+              fullName: attendees[0].fullName.trim(),
+              role: attendees[0].role.trim(),
+              email: attendees[0].email.trim(),
+            }
+          : undefined,
       };
       sessionStorage.setItem(
         "workshop_checkout_context",
