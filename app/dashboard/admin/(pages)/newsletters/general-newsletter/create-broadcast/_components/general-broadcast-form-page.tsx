@@ -387,7 +387,6 @@ export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
         const newAttachments = form.attachments.filter((a) => !a.isExisting);
         const attachmentsChanged = newAttachments.length > 0;
 
-        // ✅ detect draft → scheduled case
         const shouldOpenSuccessDialog =
           broadcastDetails?.status === "DRAFT" &&
           logisticsChanged &&
@@ -406,6 +405,7 @@ export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
                 subjectLine: form.subjectLine.trim(),
                 preheaderText: form.preHeader.trim(),
                 articleLink: {
+                  sourceType: form.selectedArticle?.sourceType || "",
                   sourceRefId: form.selectedArticle?.sourceRefId || "",
                   ctaLabel: "Read the Full Report",
                 },
@@ -422,10 +422,26 @@ export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
         }
 
         if (form.contentType === "CUSTOM_MESSAGE" && contentChanged) {
-          console.info(
-            "Custom message edit API is not available yet. Skipping content update.",
-          );
-          toast("Custom message content update is not available yet");
+          try {
+            await generalBroadcastUpdateService.updateCustomMessageBroadcast(
+              broadcastId,
+              {
+                subjectLine: form.subjectLine.trim(),
+                preheaderText: form.preHeader.trim(),
+                customContent: {
+                  messageBodyHtml: form.messageBodyHtml?.trim() || "",
+                  messageBodyText: form.messageBodyText?.trim() || "",
+                },
+              },
+            );
+          } catch (error) {
+            console.error(
+              "Custom message content update failed",
+              (error as any)?.response?.data || error,
+            );
+            toast.error("Failed to update custom message content");
+            return;
+          }
         }
 
         if (attachmentsChanged) {
@@ -467,7 +483,6 @@ export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
               },
             );
 
-            // ✅ IMPORTANT: if draft → now scheduling → call schedule API
             if (shouldOpenSuccessDialog) {
               await generalBroadcastCreateService.scheduleBroadcast(
                 broadcastId,
@@ -485,7 +500,6 @@ export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
 
         setInitialEditForm(form);
 
-        // ✅ final UI decision
         if (shouldOpenSuccessDialog) {
           setIsSuccessDialogOpen(true);
         } else {

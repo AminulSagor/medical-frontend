@@ -10,8 +10,18 @@ type UpdateArticleLinkBroadcastPayload = {
   subjectLine: string;
   preheaderText: string;
   articleLink: {
+    sourceType: string;
     sourceRefId: string;
     ctaLabel: string;
+  };
+};
+
+type UpdateCustomMessageBroadcastPayload = {
+  subjectLine: string;
+  preheaderText: string;
+  customContent: {
+    messageBodyHtml: string;
+    messageBodyText: string;
   };
 };
 
@@ -19,6 +29,18 @@ export const generalBroadcastUpdateService = {
   async updateArticleLinkBroadcast(
     broadcastId: string,
     payload: UpdateArticleLinkBroadcastPayload,
+  ): Promise<{ message: string }> {
+    const response = await serviceClient.patch<{ message: string }>(
+      `/admin/newsletters/general/broadcasts/${broadcastId}`,
+      payload,
+    );
+
+    return response.data;
+  },
+
+  async updateCustomMessageBroadcast(
+    broadcastId: string,
+    payload: UpdateCustomMessageBroadcastPayload,
   ): Promise<{ message: string }> {
     const response = await serviceClient.patch<{ message: string }>(
       `/admin/newsletters/general/broadcasts/${broadcastId}`,
