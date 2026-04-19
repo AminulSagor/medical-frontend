@@ -160,8 +160,10 @@ export function transformWorkshopToDetails(
       ctaLabel: "Enroll Now",
       warningLabel:
         workshop.availableSeats <= workshop.alertAt
-          ? `Only ${workshop.availableSeats} seats remaining!`
-          : `${workshop.availableSeats} seats available`,
+          ? `Only ${workshop.availableSeats} seats remaining`
+          : `${workshop.availableSeats} seats remaining`,
+      warningTone:
+        workshop.availableSeats <= workshop.alertAt ? "danger" : "default",
       footnote: `LIMITED SLOTS: ONLY ${workshop.totalCapacity} AVAILABLE`,
     },
 

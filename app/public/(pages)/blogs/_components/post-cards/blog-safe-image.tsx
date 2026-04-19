@@ -1,22 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type BlogSafeImageProps = {
-    src?: string | null;
+    src?: unknown;
     alt: string;
     className?: string;
 };
 
 const FALLBACK_IMAGE = "/images/blog-placeholder.jpg";
 
-function isUsableImageUrl(src?: string | null) {
-    if (!src) return false;
+function normalizeImageSrc(value: unknown): string {
+    if (typeof value === "string") {
+        return value.trim();
+    }
 
-    if (src.includes("storage.example.com")) return false;
+    if (!value || typeof value !== "object") {
+        return "";
+    }
+
+    const record = value as Record<string, unknown>;
+    for (const key of ["url", "src", "secureUrl", "href", "location"]) {
+        const candidate = record[key];
+        if (typeof candidate === "string" && candidate.trim()) {
+            return candidate.trim();
+        }
+    }
+
+    return "";
+}
+
+function isUsableImageUrl(src: unknown) {
+    const normalizedSrc = normalizeImageSrc(src);
+
+    if (!normalizedSrc) return false;
+    if (normalizedSrc.includes("storage.example.com")) return false;
 
     try {
-        const url = new URL(src);
+        const url = new URL(normalizedSrc);
         return url.protocol === "http:" || url.protocol === "https:";
     } catch {
         return false;
@@ -28,9 +49,11 @@ export default function BlogSafeImage({
     alt,
     className = "",
 }: BlogSafeImageProps) {
-    const [imgSrc, setImgSrc] = useState<string>(
-        isUsableImageUrl(src) ? src! : FALLBACK_IMAGE,
-    );
+    const [imgSrc, setImgSrc] = useState<string>(FALLBACK_IMAGE);
+
+    useEffect(() => {
+        setImgSrc(isUsableImageUrl(src) ? normalizeImageSrc(src) : FALLBACK_IMAGE);
+    }, [src]);
 
     return (
         <img

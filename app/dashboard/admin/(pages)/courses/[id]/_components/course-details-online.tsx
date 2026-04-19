@@ -18,6 +18,16 @@ function formatTime12Hour(time?: string | null): string {
     return `${String(twelveHour).padStart(2, "0")}:${minutes} ${suffix}`;
 }
 
+function formatAgendaDate(date?: string | null): string {
+    if (!date) return "—";
+
+    return new Date(date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+}
+
 export default function CourseDetailsOnline({
     model,
 }: {
@@ -81,7 +91,7 @@ export default function CourseDetailsOnline({
                                 >
                                     <p className="text-sm font-semibold text-slate-900">
                                         Day {day.dayNumber || idx + 1}:{" "}
-                                        {day.date ? new Date(day.date).toLocaleDateString() : "—"}
+                                        {formatAgendaDate(day.date)}
                                     </p>
 
                                     {day.segments.length > 0 ? (
@@ -151,11 +161,11 @@ export default function CourseDetailsOnline({
                             Facility / Location
                         </p>
                         <p className="mt-1 text-sm font-semibold text-slate-900">
-                            {model.facilityName || model.facilityLabel}
+                            {model.facilityLabel}
                         </p>
-                        {model.facilityAddressLine ? (
-                            <p className="mt-1 text-xs leading-5 text-slate-500">
-                                {model.facilityAddressLine}
+                        {model.facilitySubLabel ? (
+                            <p className="mt-1 text-xs text-slate-500">
+                                {model.facilitySubLabel}
                             </p>
                         ) : null}
                     </div>

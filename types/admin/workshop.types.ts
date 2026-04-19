@@ -168,6 +168,7 @@ export interface Workshop {
   faculty: WorkshopFaculty[];
   facilities: WorkshopFacility[];
   overview?: WorkshopOverview;
+  revenueGenerated?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -197,6 +198,7 @@ export interface WorkshopListItem {
   faculty: WorkshopFaculty[];
   facilities: WorkshopFacility[];
   overview?: WorkshopOverview;
+  revenueGenerated?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -372,34 +374,29 @@ export interface DeleteWorkshopResponse {
 }
 
 
-export interface WorkshopStatsPeriod {
-  startDate: string;
-  endDate: string;
-  days: number;
+export interface WorkshopStatsNextWorkshop {
+  daysRemaining: number;
+  targetDate: string;
+  label: string;
 }
 
-export interface WorkshopStatsSummary {
-  totalWorkshops: number;
-  totalActiveSeats: number;
-  totalFilledSeats: number;
-  totalRefundRequests: number;
-  overallOccupancyRate: number;
+export interface WorkshopStatsActiveSeats {
+  open: number;
+  filled: number;
+  totalCapacity: number;
 }
 
-export interface WorkshopStatsItem {
-  workshopId: string;
-  title: string;
-  startDate: string;
-  endDate: string;
-  totalActiveSeats: number;
-  totalFilledSeats: number;
-  totalRefundRequests: number;
-  availableSeats: number;
-  occupancyRate: number;
+export interface WorkshopStatsRefundRequests {
+  pendingReview: number;
+}
+
+export interface WorkshopStatsData {
+  nextWorkshop: WorkshopStatsNextWorkshop | null;
+  activeSeats: WorkshopStatsActiveSeats;
+  refundRequests: WorkshopStatsRefundRequests;
 }
 
 export interface WorkshopStatsResponse {
-  period: WorkshopStatsPeriod;
-  summary: WorkshopStatsSummary;
-  workshops: WorkshopStatsItem[];
+  message?: string;
+  data: WorkshopStatsData;
 }

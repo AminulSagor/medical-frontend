@@ -52,17 +52,29 @@ export type BlogAuthorApi = {
   profilePhotoUrl?: string;
 };
 
+export type BlogImageLike =
+  | string
+  | null
+  | {
+      url?: string;
+      src?: string;
+      secureUrl?: string;
+      href?: string;
+      location?: string;
+    };
+
 export type BlogPostApi = {
   id: string;
   title: string;
-  description: string;
-  coverImageUrl: string;
-  categories: BlogCategoryApi[];
-  authors: BlogAuthorApi[];
-  readTimeMinutes: number;
-  readCount?: number;
+  description?: string;
+  excerpt?: string;
+  coverImageUrl?: BlogImageLike;
+  categories?: BlogCategoryApi[] | null;
+  authors?: BlogAuthorApi[] | null;
+  readTimeMinutes?: number | string | null;
+  readCount?: number | string;
   readBy?: string;
-  publishedAt: string;
+  publishedAt?: string | null;
   isFeatured: boolean;
 };
 

@@ -12,6 +12,16 @@ function formatTime12Hour(time?: string | null): string {
     return `${String(twelveHour).padStart(2, "0")}:${minutes} ${suffix}`;
 }
 
+function formatWebinarPlatform(value?: string | null): string {
+    if (!value) return "";
+
+    return value
+        .split("_")
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(" ");
+}
+
 export function mapWorkshopToCourseDetailsModel(
     workshop: Workshop,
 ): CourseDetailsModel {
@@ -34,15 +44,23 @@ export function mapWorkshopToCourseDetailsModel(
             ? `${formatTime12Hour(firstSegment.startTime)} - ${formatTime12Hour(lastSegment.endTime)}`
             : "—";
 
-    const primaryFacility = workshop.facilities?.[0];
-    const facilityName = workshop.deliveryMode === "online"
-        ? workshop.webinarPlatform || "Online"
-        : primaryFacility?.name || "—";
-    const facilityAddressLine = workshop.deliveryMode === "online"
+    const firstFacility = workshop.facilities?.[0];
+    const formattedPlatform = formatWebinarPlatform(workshop.webinarPlatform);
+    const facilityLabel = workshop.deliveryMode === "online"
+        ? formattedPlatform
+            ? `Online (${formattedPlatform})`
+            : "Online"
+        : firstFacility?.name || "—";
+    const facilitySubLabel = workshop.deliveryMode === "online"
         ? ""
-        : [primaryFacility?.physicalAddress, primaryFacility?.roomNumber ? `(${primaryFacility.roomNumber})` : null]
-            .filter(Boolean)
-            .join(" ");
+        : firstFacility
+            ? [
+                firstFacility.physicalAddress || "",
+                firstFacility.roomNumber ? `(${firstFacility.roomNumber})` : "",
+            ]
+                .filter(Boolean)
+                .join(" ")
+            : "";
 
     return {
         id: workshop.id,
@@ -57,6 +75,7 @@ export function mapWorkshopToCourseDetailsModel(
         capacityUsed: 0,
         capacityTotal: workshop.capacity,
         refundRequests: 0,
+        revenueGenerated: Number(workshop.revenueGenerated ?? 0),
         deliveryMode: workshop.deliveryMode,
         shortBlurb: workshop.shortBlurb || "",
         learningObjectives: workshop.learningObjectives || "",
@@ -64,14 +83,13 @@ export function mapWorkshopToCourseDetailsModel(
         cmeCreditsCount: workshop.cmeCreditsCount || "0",
         standardBaseRate: workshop.standardBaseRate,
         groupDiscounts: workshop.groupDiscounts || [],
-        webinarPlatform: workshop.webinarPlatform || "",
+        webinarPlatform: formattedPlatform,
         meetingLink: workshop.meetingLink || "",
         meetingPassword: workshop.meetingPassword || "",
         autoRecordSession: workshop.autoRecordSession,
         days: workshop.days || [],
         faculty: workshop.faculty || [],
-        facilityLabel: facilityName,
-        facilityName,
-        facilityAddressLine,
+        facilityLabel,
+        facilitySubLabel,
     };
 }
