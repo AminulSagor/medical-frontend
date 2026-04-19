@@ -1,13 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  ArrowLeft,
-  CalendarDays,
-  EllipsisVertical,
-  Save,
-  TriangleAlert,
-} from "lucide-react";
+import { ArrowLeft, CalendarDays, Save, TriangleAlert } from "lucide-react";
 
 import CreateBlogPostEditor from "../helper/create-blog-post-editor";
 import CreateBlogPostPreview from "../helper/create-blog-post-preview";
@@ -44,18 +38,24 @@ export default function CreateBlogPostPage() {
     setMetaTitle,
     metaDescription,
     setMetaDescription,
+
+    authorName,
+    setAuthorName,
+
     coverImageUrl,
+    secondImageUrl,
+
     isUploadingCoverImage,
+    isUploadingSecondImage,
+
     coverImageError,
+    secondImageError,
+
     scheduleDate,
     setScheduleDate,
     scheduleTime,
     setScheduleTime,
-    authorOptions,
-    selectedAuthorId,
-    setSelectedAuthorId,
-    authorSearch,
-    setAuthorSearch,
+
     categoryOptions,
     isLoadingCategories,
     categoryLoadError,
@@ -65,6 +65,7 @@ export default function CreateBlogPostPage() {
     setNewCategoryName,
     isCreatingCategory,
     categoryCreateError,
+
     tagOptions,
     selectedTagIds,
     setSelectedTagIds,
@@ -74,24 +75,31 @@ export default function CreateBlogPostPage() {
     tagLoadError,
     isCreatingTag,
     createTagError,
+
     isFeatured,
     setIsFeatured,
+
     errors,
     bannerError,
     isSubmitting,
+    isPublishReady,
+
     wordCount,
     readTimeLabel,
+
     isLiveNowModalOpen,
     createdBlogModalData,
     isDraftSavedModalOpen,
     createdDraftModalData,
     isPublishScheduledModalOpen,
     scheduledBlogModalData,
+
     handleSelectCoverImage,
+    handleSelectSecondImage,
     handleRemoveCoverImage,
+    handleRemoveSecondImage,
+
     handleAddTag,
-    handleApplyAuthorSearch,
-    handleClearAuthorSelection,
     handleCreateCategory,
     handleSubmit,
     handleViewLiveArticle,
@@ -103,11 +111,17 @@ export default function CreateBlogPostPage() {
     handleClosePublishScheduledModal,
     handleViewScheduledArticles,
     handleReturnDashboardAfterSchedule,
+
     clearAuthorError,
     clearTitleError,
     clearContentError,
     clearScheduleError,
     clearCategoryError,
+    clearExcerptError,
+    clearCoverImageError,
+    clearSecondImageError,
+    clearMetaTitleError,
+    clearMetaDescriptionError,
     clearCreateTagError,
   } = useCreateBlogPost();
 
@@ -161,17 +175,13 @@ export default function CreateBlogPostPage() {
     if (
       !title.trim() ||
       !content.trim() ||
-      !selectedAuthorId ||
+      !authorName.trim() ||
       selectedCategoryIds.length === 0
     ) {
       return;
     }
 
-    const selectedAuthor = authorOptions.find(
-      (author) => author.id === selectedAuthorId,
-    );
-
-    const selectedCategory = categoryOptions.find((category) =>
+    const selectedCategories = categoryOptions.filter((category) =>
       selectedCategoryIds.includes(category.id),
     );
 
@@ -179,43 +189,20 @@ export default function CreateBlogPostPage() {
       id: "",
       title: title.trim(),
       content,
-      coverImageUrl,
-      excerpt,
-      readTimeMinutes: Number.parseInt(readTimeLabel, 10) || 0,
-      authors: selectedAuthor
-        ? [
-            {
-              id: selectedAuthor.id,
-              fullLegalName: selectedAuthor.name,
-              medicalEmail: "",
-              professionalRole: "",
-            },
-          ]
-        : [],
-      categories: selectedCategory
-        ? [
-            {
-              id: selectedCategory.id,
-              name: selectedCategory.name,
-              slug: "",
-              description: null,
-              isActive: true,
-              createdAt: "",
-              updatedAt: "",
-            },
-          ]
-        : [],
-      tags: tagOptions
-        .filter((tag) => selectedTagIds.includes(tag.id))
-        .map((tag) => ({
-          id: tag.id,
-          name: tag.name,
-          slug: "",
-          createdAt: "",
-        })),
+      authorName: authorName.trim(),
+      coverImages: [
+        ...(coverImageUrl
+          ? [{ imageUrl: coverImageUrl, imageType: "hero" as const }]
+          : []),
+        ...(secondImageUrl
+          ? [{ imageUrl: secondImageUrl, imageType: "thumbnail" as const }]
+          : []),
+      ],
       publishingStatus: "draft",
       scheduledPublishDate: null,
       isFeatured,
+      excerpt,
+      readTimeMinutes: Number.parseInt(readTimeLabel, 10) || 0,
       publishedAt: null,
       seo: {
         id: "",
@@ -225,6 +212,23 @@ export default function CreateBlogPostPage() {
         createdAt: "",
         updatedAt: "",
       },
+      categories: selectedCategories.map((category) => ({
+        id: category.id,
+        name: category.name,
+        slug: "",
+        description: null,
+        isActive: true,
+        createdAt: "",
+        updatedAt: "",
+      })),
+      tags: tagOptions
+        .filter((tag) => selectedTagIds.includes(tag.id))
+        .map((tag) => ({
+          id: tag.id,
+          name: tag.name,
+          slug: "",
+          createdAt: "",
+        })),
       createdAt: "",
       updatedAt: "",
     });
@@ -374,7 +378,7 @@ export default function CreateBlogPostPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="border-b border-slate-200 bg-white px-4 py-3">
+      <div className="py-2 pb-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-4 text-sm">
             <button
@@ -391,8 +395,10 @@ export default function CreateBlogPostPage() {
             <button
               type="button"
               onClick={() => handleSubmit("draft")}
-              disabled={isSubmitting || isUploadingCoverImage}
-              className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60"
+              disabled={
+                isSubmitting || isUploadingCoverImage || isUploadingSecondImage
+              }
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60"
             >
               <Save size={16} />
               Save Draft
@@ -401,8 +407,10 @@ export default function CreateBlogPostPage() {
             <button
               type="button"
               onClick={() => handleSubmit("scheduled")}
-              disabled={isSubmitting || isUploadingCoverImage}
-              className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60"
+              disabled={
+                isSubmitting || isUploadingCoverImage || isUploadingSecondImage
+              }
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60"
             >
               <CalendarDays size={16} />
               Schedule
@@ -411,23 +419,18 @@ export default function CreateBlogPostPage() {
             <button
               type="button"
               onClick={() => handleSubmit("published")}
-              disabled={isSubmitting || isUploadingCoverImage}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--primary-hover)] disabled:opacity-60"
+              disabled={
+                isSubmitting || isUploadingCoverImage || isUploadingSecondImage
+              }
+              className="inline-flex h-11 items-center gap-2 rounded-lg bg-[var(--primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--primary-hover)] disabled:opacity-60"
             >
               ▷ Publish
             </button>
-
-            {/* <button
-              type="button"
-              className="grid h-11 w-11 place-items-center rounded-xl text-slate-700 transition hover:bg-slate-100"
-            >
-              <EllipsisVertical />
-            </button> */}
           </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1280px] px-4 py-6">
+      <div className="mx-auto max-w-[1280px]">
         {bannerError ? (
           <div className="mb-6 flex items-center gap-3 rounded-xl border border-rose-300 bg-rose-50 px-4 py-4 text-sm font-semibold text-rose-500">
             <TriangleAlert size={18} />
@@ -441,56 +444,51 @@ export default function CreateBlogPostPage() {
             content={content}
             excerpt={excerpt}
             coverImageUrl={coverImageUrl}
+            secondImageUrl={secondImageUrl}
             isUploadingCoverImage={isUploadingCoverImage}
-            coverImageError={coverImageError}
+            isUploadingSecondImage={isUploadingSecondImage}
+            coverImageError={coverImageError || errors.coverImage}
+            secondImageError={secondImageError || errors.secondImage}
+            titleError={errors.title}
+            contentError={errors.content}
+            onTitleChange={(value) => {
+              setTitle(value);
+              if (value.trim()) {
+                clearTitleError();
+              }
+            }}
+            onContentChange={(value) => {
+              setContent(value);
+              if (value.trim()) {
+                clearContentError();
+              }
+            }}
             onSelectCoverImage={handleSelectCoverImage}
+            onSelectSecondImage={handleSelectSecondImage}
             onRemoveCoverImage={handleRemoveCoverImage}
+            onRemoveSecondImage={handleRemoveSecondImage}
           />
 
           <aside className="min-w-0 xl:w-[320px]">
             <div className="sticky top-6 space-y-4">
               <CreateBlogPostPreview
                 disabled={
-                  !title ||
-                  !content ||
-                  !selectedAuthorId ||
+                  !title.trim() ||
+                  !content.trim() ||
+                  !authorName.trim() ||
                   selectedCategoryIds.length === 0
                 }
                 onClick={handlePreview}
               />
 
               <CreateBlogPostSettingsSidebar
-                title={title}
-                content={content}
-                onTitleChange={(value) => {
-                  setTitle(value);
+                authorName={authorName}
+                onAuthorNameChange={(value) => {
+                  setAuthorName(value);
                   if (value.trim()) {
-                    clearTitleError();
-                  }
-                }}
-                onContentChange={(value) => {
-                  setContent(value);
-                  if (value.trim()) {
-                    clearContentError();
-                  }
-                }}
-                titleError={errors.title}
-                contentError={errors.content}
-                authorOptions={authorOptions}
-                selectedAuthorId={selectedAuthorId}
-                authorSearch={authorSearch}
-                onAuthorSelect={(value) => {
-                  setSelectedAuthorId(value);
-                  if (value) {
                     clearAuthorError();
                   }
                 }}
-                onAuthorSearchChange={(value) => {
-                  setAuthorSearch(value);
-                  clearAuthorError();
-                }}
-                onApplyAuthorSearch={handleApplyAuthorSearch}
-                onClearAuthorSelection={handleClearAuthorSelection}
                 scheduleDate={scheduleDate}
                 scheduleTime={scheduleTime}
                 onScheduleDateChange={(value) => {
@@ -551,12 +549,27 @@ export default function CreateBlogPostPage() {
                 isCreatingTag={isCreatingTag}
                 createTagError={createTagError}
                 excerpt={excerpt}
-                onExcerptChange={setExcerpt}
+                onExcerptChange={(value) => {
+                  setExcerpt(value);
+                  if (value.trim()) {
+                    clearExcerptError();
+                  }
+                }}
                 metaTitle={metaTitle}
                 metaDescription={metaDescription}
-                onMetaTitleChange={setMetaTitle}
-                onMetaDescriptionChange={setMetaDescription}
-                authorError={errors.author}
+                onMetaTitleChange={(value) => {
+                  setMetaTitle(value);
+                  if (value.trim()) {
+                    clearMetaTitleError();
+                  }
+                }}
+                onMetaDescriptionChange={(value) => {
+                  setMetaDescription(value);
+                  if (value.trim()) {
+                    clearMetaDescriptionError();
+                  }
+                }}
+                authorError={errors.authorName}
               />
             </div>
           </aside>

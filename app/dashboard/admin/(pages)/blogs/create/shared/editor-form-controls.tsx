@@ -98,11 +98,20 @@ export function PrimaryBtn({
   );
 }
 
-export function ToolBtn({ icon }: { icon: React.ReactNode }) {
+import type { ReactNode } from "react";
+
+type ToolBtnProps = {
+  icon: ReactNode;
+  onClick?: () => void;
+  type?: "button" | "submit" | "reset";
+};
+
+export function ToolBtn({ icon, onClick, type = "button" }: ToolBtnProps) {
   return (
     <button
-      type="button"
-      className="grid h-9 w-9 place-items-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50"
+      type={type}
+      onClick={onClick}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
     >
       {icon}
     </button>

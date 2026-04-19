@@ -9,29 +9,166 @@ type CreateBlogPostEditorProps = {
   content: string;
   excerpt: string;
   coverImageUrl: string;
+  secondImageUrl: string;
   isUploadingCoverImage: boolean;
+  isUploadingSecondImage: boolean;
   coverImageError?: string;
+  secondImageError?: string;
+  titleError?: string;
+  contentError?: string;
+  onTitleChange: (value: string) => void;
+  onContentChange: (value: string) => void;
   onSelectCoverImage: (file: File) => Promise<void> | void;
+  onSelectSecondImage: (file: File) => Promise<void> | void;
   onRemoveCoverImage: () => void;
+  onRemoveSecondImage: () => void;
 };
+
+type ImageUploadCardProps = {
+  label: string;
+  imageUrl: string;
+  title: string;
+  isUploading: boolean;
+  error?: string;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  onOpenPicker: () => void;
+  onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+  onRemove: () => void;
+  emptyHeightClassName?: string;
+};
+
+function ImageUploadCard({
+  label,
+  imageUrl,
+  title,
+  isUploading,
+  error,
+  inputRef,
+  onOpenPicker,
+  onFileChange,
+  onRemove,
+  emptyHeightClassName = "h-[260px] md:h-[340px]",
+}: ImageUploadCardProps) {
+  return (
+    <div>
+      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+        {label}
+      </p>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        onChange={onFileChange}
+        className="hidden"
+      />
+
+      {imageUrl ? (
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div className="relative h-[260px] w-full bg-slate-100 md:h-[340px]">
+            <img
+              src={imageUrl}
+              alt={title || label}
+              className="h-full w-full object-cover"
+            />
+
+            {isUploading ? (
+              <div className="absolute inset-0 grid place-items-center bg-white/75">
+                <div className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow">
+                  <Loader2 size={16} className="animate-spin" />
+                  Uploading image...
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+            <button
+              type="button"
+              onClick={onOpenPicker}
+              disabled={isUploading}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+            >
+              <Upload size={16} />
+              Change Image
+            </button>
+
+            <button
+              type="button"
+              onClick={onRemove}
+              disabled={isUploading}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 text-sm font-medium text-rose-500 transition hover:bg-rose-50 disabled:opacity-60"
+            >
+              <Trash2 size={16} />
+              Remove
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onOpenPicker}
+          disabled={isUploading}
+          className={`grid w-full place-items-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 transition hover:bg-slate-100 disabled:opacity-60 ${emptyHeightClassName}`}
+        >
+          <div>
+            {isUploading ? (
+              <>
+                <Loader2
+                  size={28}
+                  className="mx-auto animate-spin text-slate-500"
+                />
+                <p className="mt-3 text-sm text-slate-500">
+                  Uploading image...
+                </p>
+              </>
+            ) : (
+              <>
+                <ImageIcon size={28} className="mx-auto text-slate-500" />
+                <p className="mt-3 text-sm text-slate-500">{label}</p>
+              </>
+            )}
+          </div>
+        </button>
+      )}
+
+      {error ? <p className="mt-3 text-xs text-rose-500">{error}</p> : null}
+    </div>
+  );
+}
 
 export default function CreateBlogPostEditor({
   title,
   content,
   excerpt,
   coverImageUrl,
+  secondImageUrl,
   isUploadingCoverImage,
+  isUploadingSecondImage,
   coverImageError,
+  secondImageError,
+  titleError,
+  contentError,
+  onTitleChange,
+  onContentChange,
   onSelectCoverImage,
+  onSelectSecondImage,
   onRemoveCoverImage,
+  onRemoveSecondImage,
 }: CreateBlogPostEditorProps) {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const coverImageInputRef = useRef<HTMLInputElement | null>(null);
+  const secondImageInputRef = useRef<HTMLInputElement | null>(null);
+  const contentTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const handleOpenFilePicker = () => {
-    fileInputRef.current?.click();
+  const handleOpenCoverPicker = () => {
+    coverImageInputRef.current?.click();
   };
 
-  const handleFileChange = async (
+  const handleOpenSecondImagePicker = () => {
+    secondImageInputRef.current?.click();
+  };
+
+  const handleCoverFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = event.target.files?.[0];
@@ -42,6 +179,50 @@ export default function CreateBlogPostEditor({
     event.target.value = "";
   };
 
+  const handleSecondImageFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    await onSelectSecondImage(file);
+    event.target.value = "";
+  };
+
+  const applyTagToSelection = (
+    openTag: string,
+    closeTag: string,
+    defaultText: string,
+  ) => {
+    const textarea = contentTextareaRef.current;
+
+    if (!textarea) return;
+
+    const start = textarea.selectionStart ?? 0;
+    const end = textarea.selectionEnd ?? 0;
+    const selectedText = content.slice(start, end);
+    const textToWrap = selectedText || defaultText;
+
+    const nextValue =
+      content.slice(0, start) +
+      openTag +
+      textToWrap +
+      closeTag +
+      content.slice(end);
+
+    onContentChange(nextValue);
+
+    requestAnimationFrame(() => {
+      textarea.focus();
+
+      const selectionStart = start + openTag.length;
+      const selectionEnd = selectionStart + textToWrap.length;
+
+      textarea.setSelectionRange(selectionStart, selectionEnd);
+    });
+  };
+
   return (
     <div className="min-w-0">
       <div className="mb-4 flex items-center gap-2 text-xs font-semibold text-slate-500">
@@ -49,136 +230,97 @@ export default function CreateBlogPostEditor({
         Post Editor
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white px-6 py-6 shadow-sm md:px-10 md:py-8">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
+      <div className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm md:px-8 md:py-8 xl:px-10">
+        <div className="mb-8">
+          <ImageUploadCard
+            label="Add Cover Image"
+            imageUrl={coverImageUrl}
+            title={title}
+            isUploading={isUploadingCoverImage}
+            error={coverImageError}
+            inputRef={coverImageInputRef}
+            onOpenPicker={handleOpenCoverPicker}
+            onFileChange={handleCoverFileChange}
+            onRemove={onRemoveCoverImage}
+            emptyHeightClassName="h-[240px] md:h-[320px]"
+          />
+        </div>
 
-        {/* Toolbar */}
-        <div className="mb-8 flex justify-center">
-          <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-md shadow-slate-200/60">
-            {/* <CreateBlogPostToolbar /> */}
+        <div className="mb-6">
+          <input
+            value={title}
+            onChange={(e) => onTitleChange(e.target.value)}
+            placeholder="Write your article title..."
+            className={`w-full border-0 bg-transparent text-3xl font-black leading-tight tracking-[-0.03em] text-slate-700 outline-none placeholder:text-slate-300 md:text-4xl ${
+              titleError ? "text-rose-500 placeholder:text-rose-300" : ""
+            }`}
+          />
+
+          {titleError ? (
+            <p className="mt-3 text-xs text-rose-500">{titleError}</p>
+          ) : null}
+        </div>
+
+        {excerpt ? (
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+            <p className="text-sm leading-7 text-slate-600">{excerpt}</p>
+          </div>
+        ) : null}
+
+        <div className="mb-5 overflow-hidden rounded-lg flex items-center justify-center">
+          <div className="border rounded-lg">
+            <CreateBlogPostToolbar
+              onBold={() =>
+                applyTagToSelection("<strong>", "</strong>", "bold text")
+              }
+              onItalic={() =>
+                applyTagToSelection("<em>", "</em>", "italic text")
+              }
+              onUnderline={() =>
+                applyTagToSelection("<u>", "</u>", "underlined text")
+              }
+              onH1={() => applyTagToSelection("<h1>", "</h1>", "Heading 1")}
+              onH2={() => applyTagToSelection("<h2>", "</h2>", "Heading 2")}
+              onQuote={() =>
+                applyTagToSelection(
+                  "<blockquote>",
+                  "</blockquote>",
+                  "Quote text",
+                )
+              }
+            />
           </div>
         </div>
 
-        {/* Cover Image Picker */}
-        <div className="relative">
-          {coverImageUrl ? (
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-              <div className="relative h-[240px] w-full bg-slate-100 md:h-[360px]">
-                <img
-                  src={coverImageUrl}
-                  alt={title || "Cover image"}
-                  className="h-full w-full object-cover"
-                />
-
-                {isUploadingCoverImage && (
-                  <div className="absolute inset-0 grid place-items-center bg-white/70">
-                    <div className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow">
-                      <Loader2 size={16} className="animate-spin" />
-                      Uploading image...
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-                <button
-                  type="button"
-                  onClick={handleOpenFilePicker}
-                  disabled={isUploadingCoverImage}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  <Upload size={16} />
-                  Change Image
-                </button>
-
-                <button
-                  type="button"
-                  onClick={onRemoveCoverImage}
-                  disabled={isUploadingCoverImage}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 text-sm font-medium text-rose-500 hover:bg-rose-50"
-                >
-                  <Trash2 size={16} />
-                  Remove
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={handleOpenFilePicker}
-              disabled={isUploadingCoverImage}
-              className="grid h-[240px] w-full place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 md:h-[360px]"
-            >
-              <div>
-                {isUploadingCoverImage ? (
-                  <>
-                    <Loader2 size={28} className="mx-auto animate-spin" />
-                    <p className="mt-3 text-sm text-slate-500">
-                      Uploading image...
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <ImageIcon size={28} className="mx-auto text-slate-500" />
-                    <p className="mt-3 text-sm text-slate-500">
-                      Add Cover Image
-                    </p>
-                  </>
-                )}
-              </div>
-            </button>
-          )}
+        <div>
+          <textarea
+            ref={contentTextareaRef}
+            value={content}
+            onChange={(e) => onContentChange(e.target.value)}
+            rows={14}
+            placeholder="Write your blog content here..."
+            className={`min-h-[280px] w-full resize-none border border-slate-100 rounded-lg p-2 bg-transparent text-sm leading-7 text-slate-700 outline-none placeholder:text-slate-400 md:text-base ${
+              contentError ? "text-rose-500 placeholder:text-rose-300" : ""
+            }`}
+          />
+          {contentError ? (
+            <p className="mt-3 text-xs text-rose-500">{contentError}</p>
+          ) : null}
         </div>
 
-        {coverImageError && (
-          <p className="mt-3 text-sm text-rose-500">{coverImageError}</p>
-        )}
-
-        {/* Title */}
         <div className="mt-8">
-          <h1
-            className={`text-[44px] font-black leading-[1.08] tracking-[-0.03em] ${
-              title ? "text-slate-900" : "text-slate-300"
-            }`}
-          >
-            {title || "Write article title from the sidebar..."}
-          </h1>
-        </div>
-
-        {/* Content */}
-        <div className="mt-5 max-w-[760px] space-y-5">
-          {excerpt && (
-            <p className="text-[15px] leading-8 text-slate-700">{excerpt}</p>
-          )}
-
-          {/* NEW: Render image inside article body */}
-          {coverImageUrl && (
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white h-96">
-              <img
-                src={coverImageUrl}
-                alt="Article image"
-                className="h-full w-full object-cover"
-              />
-              <p className="px-4 py-2 text-xs text-slate-400 text-center">
-                Figure: Article cover image preview
-              </p>
-            </div>
-          )}
-
-          <div
-            className={`whitespace-pre-wrap text-[16px] leading-8 ${
-              content ? "text-slate-700" : "text-slate-400"
-            }`}
-          >
-            {content ||
-              "The content you write from the sidebar will appear here as the article body preview."}
-          </div>
+          <ImageUploadCard
+            label="Add Article Image"
+            imageUrl={secondImageUrl}
+            title={title}
+            isUploading={isUploadingSecondImage}
+            error={secondImageError}
+            inputRef={secondImageInputRef}
+            onOpenPicker={handleOpenSecondImagePicker}
+            onFileChange={handleSecondImageFileChange}
+            onRemove={onRemoveSecondImage}
+            emptyHeightClassName="h-[220px] md:h-[300px]"
+          />
         </div>
       </div>
     </div>

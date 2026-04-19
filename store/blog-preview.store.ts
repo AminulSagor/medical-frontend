@@ -3,11 +3,17 @@ import { persist } from "zustand/middleware";
 
 export type BlogPreviewSource = "draft" | "published";
 
+export type BlogPreviewImage = {
+  imageUrl: string;
+  imageType: "hero" | "thumbnail";
+};
+
 export type BlogPreviewItem = {
   id: string;
   title: string;
   content: string;
-  coverImageUrl: string;
+  authorName: string;
+  coverImages: BlogPreviewImage[];
   publishingStatus: string;
   scheduledPublishDate: string | null;
   isFeatured: boolean;
@@ -22,12 +28,6 @@ export type BlogPreviewItem = {
     createdAt: string;
     updatedAt: string;
   } | null;
-  authors: Array<{
-    id: string;
-    fullLegalName: string;
-    medicalEmail: string;
-    professionalRole: string;
-  }>;
   categories: Array<{
     id: string;
     name: string;

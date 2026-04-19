@@ -1,7 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import {
   createBlogCategories,
   getBlogCategories,
@@ -11,17 +12,16 @@ import {
   createBlogTags,
   getBlogTags,
 } from "@/service/admin/blogs/blog-tag.service";
-import { getAdminUsers } from "@/service/admin/users/admin-user.service";
 import { useBlogPreviewStore } from "@/store/blog-preview.store";
 import {
   getUploadUrl,
   uploadFileToSignedUrl,
 } from "@/service/upload/upload.service";
 import type {
-  BlogAuthorOption,
   BlogCategoryOption,
   BlogCreatePublishingStatus,
   BlogTagOption,
+  CreateBlogPostResponse,
 } from "@/types/admin/blogs/blog-create.types";
 import { BLOG_MANAGEMENT_PATH } from "./create-blog-post.constants";
 import {
@@ -38,9 +38,14 @@ import {
 type ValidationErrors = {
   title?: string;
   content?: string;
-  author?: string;
+  authorName?: string;
   categories?: string;
+  excerpt?: string;
+  coverImage?: string;
+  secondImage?: string;
   schedule?: string;
+  metaTitle?: string;
+  metaDescription?: string;
 };
 
 type CreatedBlogModalData = {
@@ -61,31 +66,7 @@ type ScheduledBlogModalData = {
   publishTime: string;
 };
 
-type CreatedBlogPostResponse = {
-  id?: string;
-  title?: string;
-  readTimeMinutes?: number;
-  authors?: Array<{
-    id: string;
-    fullLegalName?: string;
-    name?: string;
-  }>;
-  categories?: Array<{
-    id: string;
-    name: string;
-  }>;
-};
-
 const BLOG_COVER_UPLOAD_FOLDER = "vendors";
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
 
 function buildBlogContentHtml(content: string) {
   const trimmedContent = content.trim();
@@ -94,13 +75,7 @@ function buildBlogContentHtml(content: string) {
     return "";
   }
 
-  return trimmedContent
-    .split(/\n\s*\n/)
-    .map((block) => {
-      const safeBlock = escapeHtml(block.trim()).replace(/\n/g, "<br />");
-      return `<p>${safeBlock}</p>`;
-    })
-    .join("");
+  return trimmedContent;
 }
 
 function buildLocalDateInputValue(value?: string | null) {
@@ -134,8 +109,22 @@ function buildLocalTimeInputValue(value?: string | null) {
   return `${hours}:${minutes}`;
 }
 
+function extractImageUrlByType(
+  images:
+    | Array<{
+        imageUrl: string;
+        imageType: string;
+      }>
+    | undefined,
+  type: string,
+) {
+  return images?.find((item) => item.imageType === type)?.imageUrl || "";
+}
+
 export function useCreateBlogPost() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromPreview = searchParams.get("fromPreview") === "true";
   const previewBlog = useBlogPreviewStore((state) => state.previewBlog);
   const clearPreview = useBlogPreviewStore((state) => state.clearPreview);
 
@@ -151,15 +140,18 @@ export function useCreateBlogPost() {
   );
 
   const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [secondImageUrl, setSecondImageUrl] = useState("");
+
   const [isUploadingCoverImage, setIsUploadingCoverImage] = useState(false);
+  const [isUploadingSecondImage, setIsUploadingSecondImage] = useState(false);
+
   const [coverImageError, setCoverImageError] = useState("");
+  const [secondImageError, setSecondImageError] = useState("");
 
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
 
-  const [authorOptions, setAuthorOptions] = useState<BlogAuthorOption[]>([]);
-  const [selectedAuthorId, setSelectedAuthorId] = useState("");
-  const [authorSearch, setAuthorSearch] = useState("");
+  const [authorName, setAuthorName] = useState("");
 
   const [categoryOptions, setCategoryOptions] = useState<BlogCategoryOption[]>(
     [],
@@ -207,39 +199,64 @@ export function useCreateBlogPost() {
     return estimateReadTime(wordCount);
   }, [wordCount]);
 
-  // Reset all form fields to default values
+  const readTimeMinutes = useMemo(() => {
+    const parsed = Number.parseInt(readTimeLabel, 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }, [readTimeLabel]);
+
+  const isPublishReady = useMemo(() => {
+    return Boolean(
+      title.trim() &&
+      content.trim() &&
+      authorName.trim() &&
+      coverImageUrl &&
+      secondImageUrl &&
+      excerpt.trim() &&
+      metaTitle.trim() &&
+      metaDescription.trim() &&
+      selectedCategoryIds.length > 0,
+    );
+  }, [
+    title,
+    content,
+    authorName,
+    coverImageUrl,
+    secondImageUrl,
+    excerpt,
+    metaTitle,
+    metaDescription,
+    selectedCategoryIds,
+  ]);
+
   const resetFormState = () => {
     setTitle("");
     setContent("");
     setExcerpt(DEFAULT_BLOG_CREATE_EXCERPT);
     setMetaTitle(DEFAULT_BLOG_CREATE_META_TITLE);
     setMetaDescription(DEFAULT_BLOG_CREATE_META_DESCRIPTION);
+
     setCoverImageUrl("");
+    setSecondImageUrl("");
     setCoverImageError("");
+    setSecondImageError("");
+
     setScheduleDate("");
     setScheduleTime("");
-    setAuthorSearch("");
+
+    setAuthorName("");
+
     setSelectedCategoryIds([]);
     setNewCategoryName("");
     setSelectedTagIds([]);
     setTagInput("");
+
     setIsFeatured(false);
     setErrors({});
     setBannerError("");
     setCreateTagError("");
     setCategoryCreateError("");
 
-    // Reset author to first available if exists, otherwise empty
-    if (authorOptions.length > 0) {
-      setSelectedAuthorId(authorOptions[0]?.id ?? "");
-    } else {
-      setSelectedAuthorId("");
-    }
-
-    // Clear preview store
     clearPreview();
-
-    // Reset the hydration flag
     didHydrateFromPreviewRef.current = false;
   };
 
@@ -252,7 +269,7 @@ export function useCreateBlogPost() {
   };
 
   const clearAuthorError = () => {
-    setErrors((prev) => ({ ...prev, author: undefined }));
+    setErrors((prev) => ({ ...prev, authorName: undefined }));
   };
 
   const clearScheduleError = () => {
@@ -263,40 +280,29 @@ export function useCreateBlogPost() {
     setErrors((prev) => ({ ...prev, categories: undefined }));
   };
 
+  const clearExcerptError = () => {
+    setErrors((prev) => ({ ...prev, excerpt: undefined }));
+  };
+
+  const clearCoverImageError = () => {
+    setErrors((prev) => ({ ...prev, coverImage: undefined }));
+  };
+
+  const clearSecondImageError = () => {
+    setErrors((prev) => ({ ...prev, secondImage: undefined }));
+  };
+
+  const clearMetaTitleError = () => {
+    setErrors((prev) => ({ ...prev, metaTitle: undefined }));
+  };
+
+  const clearMetaDescriptionError = () => {
+    setErrors((prev) => ({ ...prev, metaDescription: undefined }));
+  };
+
   const clearCreateTagError = () => {
     if (createTagError) {
       setCreateTagError("");
-    }
-  };
-
-  const loadAuthors = async (): Promise<BlogAuthorOption[]> => {
-    try {
-      const response = await getAdminUsers();
-
-      const mappedAuthors: BlogAuthorOption[] = response.data
-        .filter((user) => user.status === "active" && user.type === "faculty")
-        .map((user) => ({
-          id: user.id,
-          name: user.name,
-        }));
-
-      setAuthorOptions(mappedAuthors);
-
-      setSelectedAuthorId((currentSelectedAuthorId) => {
-        if (
-          currentSelectedAuthorId &&
-          mappedAuthors.some((author) => author.id === currentSelectedAuthorId)
-        ) {
-          return currentSelectedAuthorId;
-        }
-
-        return mappedAuthors[0]?.id ?? "";
-      });
-
-      return mappedAuthors;
-    } catch (error) {
-      console.error("Failed to load authors:", error);
-      return [];
     }
   };
 
@@ -312,6 +318,7 @@ export function useCreateBlogPost() {
     } catch (error) {
       console.error("Failed to load categories:", error);
       setCategoryLoadError("Failed to load categories.");
+      toast.error("Failed to load categories.");
       return [];
     } finally {
       setIsLoadingCategories(false);
@@ -336,6 +343,7 @@ export function useCreateBlogPost() {
     } catch (error) {
       console.error("Failed to load tags:", error);
       setTagLoadError("Failed to load tags.");
+      toast.error("Failed to load tags.");
       return [];
     } finally {
       setIsLoadingTags(false);
@@ -343,21 +351,23 @@ export function useCreateBlogPost() {
   };
 
   useEffect(() => {
-    void loadAuthors();
     void loadCategories();
     void loadTags();
   }, []);
 
-  // Reset form on mount (for new post creation)
   useEffect(() => {
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      // Only reset if there's no preview data
-      if (!previewBlog) {
-        resetFormState();
-      }
+    if (!isInitialMountRef.current) {
+      return;
     }
-  }, []);
+
+    isInitialMountRef.current = false;
+
+    if (fromPreview) {
+      return;
+    }
+
+    resetFormState();
+  }, [fromPreview]);
 
   useEffect(() => {
     if (!previewBlog || didHydrateFromPreviewRef.current) {
@@ -369,7 +379,6 @@ export function useCreateBlogPost() {
     setTitle(previewBlog.title || "");
     setContent(previewBlog.content || "");
     setExcerpt(previewBlog.excerpt || "");
-    setCoverImageUrl(previewBlog.coverImageUrl || "");
     setIsFeatured(Boolean(previewBlog.isFeatured));
 
     setMetaTitle(previewBlog.seo?.metaTitle || DEFAULT_BLOG_CREATE_META_TITLE);
@@ -377,11 +386,16 @@ export function useCreateBlogPost() {
       previewBlog.seo?.metaDescription || DEFAULT_BLOG_CREATE_META_DESCRIPTION,
     );
 
-    setSelectedAuthorId(previewBlog.authors?.[0]?.id || "");
+    setAuthorName(previewBlog.authorName || "");
     setSelectedCategoryIds(
       previewBlog.categories?.map((category) => category.id) || [],
     );
     setSelectedTagIds(previewBlog.tags?.map((tag) => tag.id) || []);
+
+    setCoverImageUrl(extractImageUrlByType(previewBlog.coverImages, "hero"));
+    setSecondImageUrl(
+      extractImageUrlByType(previewBlog.coverImages, "thumbnail"),
+    );
 
     setScheduleDate(
       buildLocalDateInputValue(previewBlog.scheduledPublishDate || null),
@@ -391,15 +405,31 @@ export function useCreateBlogPost() {
     );
   }, [previewBlog]);
 
-  const handleSelectCoverImage = async (file: File) => {
+  const uploadImage = async (
+    file: File,
+    type: "hero" | "thumbnail",
+  ): Promise<void> => {
     if (!file.type.startsWith("image/")) {
-      setCoverImageError("Please select a valid image file.");
+      const message = "Please select a valid image file.";
+
+      if (type === "hero") {
+        setCoverImageError(message);
+      } else {
+        setSecondImageError(message);
+      }
+
+      toast.error(message);
       return;
     }
 
     try {
-      setIsUploadingCoverImage(true);
-      setCoverImageError("");
+      if (type === "hero") {
+        setIsUploadingCoverImage(true);
+        setCoverImageError("");
+      } else {
+        setIsUploadingSecondImage(true);
+        setSecondImageError("");
+      }
 
       const uploadMeta = await getUploadUrl({
         fileName: file.name,
@@ -409,18 +439,54 @@ export function useCreateBlogPost() {
 
       await uploadFileToSignedUrl(uploadMeta.signedUrl, file);
 
-      setCoverImageUrl(uploadMeta.readUrl);
+      if (type === "hero") {
+        setCoverImageUrl(uploadMeta.readUrl);
+        clearCoverImageError();
+        toast.success("Cover image uploaded.");
+      } else {
+        setSecondImageUrl(uploadMeta.readUrl);
+        clearSecondImageError();
+        toast.success("Article image uploaded.");
+      }
     } catch (error) {
-      console.error("Failed to upload cover image:", error);
-      setCoverImageError("Failed to upload cover image. Please try again.");
+      console.error("Failed to upload image:", error);
+
+      if (type === "hero") {
+        setCoverImageError("Failed to upload cover image. Please try again.");
+        toast.error("Failed to upload cover image.");
+      } else {
+        setSecondImageError("Failed to upload image. Please try again.");
+        toast.error("Failed to upload article image.");
+      }
     } finally {
-      setIsUploadingCoverImage(false);
+      if (type === "hero") {
+        setIsUploadingCoverImage(false);
+      } else {
+        setIsUploadingSecondImage(false);
+      }
     }
+  };
+
+  const handleSelectCoverImage = async (file: File) => {
+    await uploadImage(file, "hero");
+  };
+
+  const handleSelectSecondImage = async (file: File) => {
+    await uploadImage(file, "thumbnail");
   };
 
   const handleRemoveCoverImage = () => {
     setCoverImageUrl("");
     setCoverImageError("");
+    clearCoverImageError();
+    toast.success("Cover image removed.");
+  };
+
+  const handleRemoveSecondImage = () => {
+    setSecondImageUrl("");
+    setSecondImageError("");
+    clearSecondImageError();
+    toast.success("Article image removed.");
   };
 
   const handleAddTag = async () => {
@@ -438,6 +504,7 @@ export function useCreateBlogPost() {
       );
       setTagInput("");
       setCreateTagError("");
+      toast.success("Tag selected.");
       return;
     }
 
@@ -462,45 +529,14 @@ export function useCreateBlogPost() {
       }
 
       setTagInput("");
+      toast.success("Tag created successfully.");
     } catch (error) {
       console.error("Failed to create tag:", error);
       setCreateTagError("Failed to create tag. Please try again.");
+      toast.error("Failed to create tag.");
     } finally {
       setIsCreatingTag(false);
     }
-  };
-
-  const handleApplyAuthorSearch = () => {
-    const nextValue = authorSearch.trim().toLowerCase();
-
-    if (!nextValue) {
-      setErrors((prev) => ({
-        ...prev,
-        author: "Author not found.",
-      }));
-      return;
-    }
-
-    const found = authorOptions.find((author) =>
-      author.name.toLowerCase().includes(nextValue),
-    );
-
-    if (!found) {
-      setErrors((prev) => ({
-        ...prev,
-        author: "Author not found.",
-      }));
-      return;
-    }
-
-    setSelectedAuthorId(found.id);
-    clearAuthorError();
-  };
-
-  const handleClearAuthorSelection = () => {
-    setAuthorSearch("");
-    setSelectedAuthorId("");
-    clearAuthorError();
   };
 
   const handleCreateCategory = async () => {
@@ -508,6 +544,7 @@ export function useCreateBlogPost() {
 
     if (!trimmedName) {
       setCategoryCreateError("Category name is required.");
+      toast.error("Category name is required.");
       return;
     }
 
@@ -524,6 +561,7 @@ export function useCreateBlogPost() {
       setNewCategoryName("");
       setCategoryCreateError("");
       clearCategoryError();
+      toast.success("Category selected.");
       return;
     }
 
@@ -551,9 +589,11 @@ export function useCreateBlogPost() {
 
       setNewCategoryName("");
       clearCategoryError();
+      toast.success("Category created successfully.");
     } catch (error) {
       console.error("Failed to create category:", error);
       setCategoryCreateError("Failed to create category. Please try again.");
+      toast.error("Failed to create category.");
     } finally {
       setIsCreatingCategory(false);
     }
@@ -570,12 +610,8 @@ export function useCreateBlogPost() {
       nextErrors.content = "Post content is required";
     }
 
-    if (!selectedAuthorId) {
-      nextErrors.author = "Author selection is required";
-    }
-
-    if (selectedCategoryIds.length === 0) {
-      nextErrors.categories = "At least one category must be selected";
+    if (!authorName.trim()) {
+      nextErrors.authorName = "Author name is required";
     }
 
     if (status === "scheduled") {
@@ -586,20 +622,42 @@ export function useCreateBlogPost() {
       }
     }
 
+    if (status === "published") {
+      if (!coverImageUrl) {
+        nextErrors.coverImage = "Cover image is required";
+      }
+
+      // if (!secondImageUrl) {
+      //   nextErrors.secondImage = "Second image is required";
+      // }
+
+      if (selectedCategoryIds.length === 0) {
+        nextErrors.categories = "At least one category must be selected";
+      }
+
+      if (!excerpt.trim()) {
+        nextErrors.excerpt = "Excerpt is required";
+      }
+
+      // if (!metaTitle.trim()) {
+      //   nextErrors.metaTitle = "Meta title is required";
+      // }
+
+      // if (!metaDescription.trim()) {
+      //   nextErrors.metaDescription = "Meta description is required";
+      // }
+    }
+
     setErrors(nextErrors);
 
     if (Object.keys(nextErrors).length > 0) {
       if (status === "published") {
         setBannerError(
-          "Cannot publish. Please fill in all required fields including publish date and time.",
+          "Cannot publish. Please fill in all required fields first.",
         );
       } else if (status === "scheduled") {
         setBannerError(
-          "Cannot schedule. Please fill in all required fields including publish date and time.",
-        );
-      } else {
-        setBannerError(
-          "Cannot save draft. Please fill in all required fields.",
+          "Cannot schedule. Please complete title, content, author, date, and time.",
         );
       }
       return false;
@@ -664,8 +722,29 @@ export function useCreateBlogPost() {
   };
 
   const handleSubmit = async (status: BlogCreatePublishingStatus) => {
-    if (isUploadingCoverImage) {
-      setBannerError("Please wait for the cover image upload to finish.");
+    if (isUploadingCoverImage || isUploadingSecondImage) {
+      setBannerError("Please wait for the image upload to finish.");
+      toast.error("Please wait for the image upload to finish.");
+      return;
+    }
+
+    const hasAnyDraftContent = Boolean(
+      title.trim() ||
+      content.trim() ||
+      authorName.trim() ||
+      coverImageUrl ||
+      secondImageUrl ||
+      excerpt.trim() ||
+      metaTitle.trim() ||
+      metaDescription.trim() ||
+      selectedCategoryIds.length > 0 ||
+      selectedTagIds.length > 0 ||
+      scheduleDate ||
+      scheduleTime,
+    );
+
+    if (status === "draft" && !hasAnyDraftContent) {
+      setBannerError("Add at least one field before saving a draft.");
       return;
     }
 
@@ -680,24 +759,32 @@ export function useCreateBlogPost() {
       const payload = {
         title: title.trim(),
         content: buildBlogContentHtml(content),
-        coverImageUrl,
+        authorName: authorName.trim(),
+        coverImageUrl: [
+          ...(coverImageUrl
+            ? [{ imageUrl: coverImageUrl, imageType: "hero" as const }]
+            : []),
+          ...(secondImageUrl
+            ? [{ imageUrl: secondImageUrl, imageType: "thumbnail" as const }]
+            : []),
+        ],
+        categoryIds: selectedCategoryIds,
+        tagIds: selectedTagIds,
         publishingStatus: status,
         scheduledPublishDate:
           status === "scheduled"
             ? buildScheduledPublishDateFromInputs(scheduleDate, scheduleTime)
-            : new Date().toISOString(),
+            : undefined,
         isFeatured,
-        excerpt,
-        authorIds: selectedAuthorId ? [selectedAuthorId] : [],
-        categoryIds: selectedCategoryIds,
-        tagIds: selectedTagIds,
-        seoMetaTitle: metaTitle,
-        seoMetaDescription: metaDescription,
+        excerpt: excerpt.trim(),
+        readTimeMinutes,
+        seoMetaTitle: metaTitle.trim(),
+        seoMetaDescription: metaDescription.trim(),
       };
 
       const createdPost = (await createBlogPost(
         payload,
-      )) as CreatedBlogPostResponse;
+      )) as CreateBlogPostResponse;
 
       if (status === "draft") {
         setCreatedDraftModalData({
@@ -718,12 +805,6 @@ export function useCreateBlogPost() {
         return;
       }
 
-      const modalAuthor =
-        createdPost?.authors?.[0]?.fullLegalName ||
-        createdPost?.authors?.[0]?.name ||
-        authorOptions.find((author) => author.id === selectedAuthorId)?.name ||
-        "Unknown Author";
-
       const modalCategory =
         createdPost?.categories?.[0]?.name ||
         categoryOptions.find((category) =>
@@ -731,12 +812,14 @@ export function useCreateBlogPost() {
         )?.name ||
         "Uncategorized";
 
-      const modalReadTime = `${createdPost?.readTimeMinutes ?? 0} min`;
+      const modalReadTime = `${
+        createdPost?.readTimeMinutes ?? readTimeMinutes
+      } min`;
 
       setCreatedBlogModalData({
         id: createdPost?.id ?? "",
         title: createdPost?.title ?? title.trim(),
-        author: modalAuthor,
+        author: createdPost?.authorName || authorName.trim(),
         category: modalCategory,
         readTime: modalReadTime,
       });
@@ -748,6 +831,7 @@ export function useCreateBlogPost() {
         error?.response?.data || error,
       );
       setBannerError("Failed to save the post. Please try again.");
+      toast.error("Failed to save the post.");
     } finally {
       setIsSubmitting(false);
     }
@@ -765,18 +849,24 @@ export function useCreateBlogPost() {
     setMetaTitle,
     metaDescription,
     setMetaDescription,
+
+    authorName,
+    setAuthorName,
+
     coverImageUrl,
+    secondImageUrl,
+
     isUploadingCoverImage,
+    isUploadingSecondImage,
+
     coverImageError,
+    secondImageError,
+
     scheduleDate,
     setScheduleDate,
     scheduleTime,
     setScheduleTime,
-    authorOptions,
-    selectedAuthorId,
-    setSelectedAuthorId,
-    authorSearch,
-    setAuthorSearch,
+
     categoryOptions,
     isLoadingCategories,
     categoryLoadError,
@@ -786,6 +876,7 @@ export function useCreateBlogPost() {
     setNewCategoryName,
     isCreatingCategory,
     categoryCreateError,
+
     tagOptions,
     selectedTagIds,
     setSelectedTagIds,
@@ -795,24 +886,32 @@ export function useCreateBlogPost() {
     tagLoadError,
     isCreatingTag,
     createTagError,
+
     isFeatured,
     setIsFeatured,
+
     errors,
     bannerError,
     isSubmitting,
+    isPublishReady,
+
     wordCount,
     readTimeLabel,
+    readTimeMinutes,
+
     isLiveNowModalOpen,
     createdBlogModalData,
     isDraftSavedModalOpen,
     createdDraftModalData,
     isPublishScheduledModalOpen,
     scheduledBlogModalData,
+
     handleSelectCoverImage,
+    handleSelectSecondImage,
     handleRemoveCoverImage,
+    handleRemoveSecondImage,
+
     handleAddTag,
-    handleApplyAuthorSearch,
-    handleClearAuthorSelection,
     handleCreateCategory,
     handleSubmit,
     handleViewLiveArticle,
@@ -824,12 +923,19 @@ export function useCreateBlogPost() {
     handleClosePublishScheduledModal,
     handleViewScheduledArticles,
     handleReturnDashboardAfterSchedule,
+
     clearAuthorError,
     clearTitleError,
     clearContentError,
     clearScheduleError,
     clearCategoryError,
+    clearExcerptError,
+    clearCoverImageError,
+    clearSecondImageError,
+    clearMetaTitleError,
+    clearMetaDescriptionError,
     clearCreateTagError,
+
     resetFormState,
   };
 }
