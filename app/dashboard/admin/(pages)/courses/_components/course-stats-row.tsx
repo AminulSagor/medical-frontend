@@ -10,9 +10,9 @@ function StatCard({
     icon,
 }: {
     label: string;
-    value: string;        // big text
-    inlineMeta?: string;  // small text beside big (used for date or "Open")
-    pillText?: string;    // pill badge text (used for "120 Filled")
+    value: string;
+    inlineMeta?: string;
+    pillText?: string;
     icon: React.ReactNode;
 }) {
     return (
@@ -23,7 +23,6 @@ function StatCard({
                         {label}
                     </p>
 
-                    {/* value row */}
                     <div className="mt-1 flex flex-wrap items-center gap-3">
                         <div className="flex items-end gap-2">
                             <p className="text-xl font-semibold leading-none text-slate-900">
@@ -50,12 +49,11 @@ function StatCard({
                     </div>
                 </div>
 
-                {/* icon unchanged */}
                 <div
                     className={[
                         "grid h-10 w-10 place-items-center rounded-xl ring-1",
                         label === "REFUND REQUESTS"
-                            ? "bg-rose-50 text-rose-500 ring-rose-100"   // ✅ red tone
+                            ? "bg-rose-50 text-rose-500 ring-rose-100"
                             : "bg-[var(--primary-50)] text-[var(--primary)] ring-sky-100",
                     ].join(" ")}
                 >
@@ -66,46 +64,40 @@ function StatCard({
     );
 }
 
-
 export default function CourseStatsRow({
-    nextWorkshop,
-    activeSeatsLabel,
-    openSeatsLabel,
-    refundPendingLabel,
+    nextWorkshopValue,
+    nextWorkshopDate,
+    openSeats,
+    filledSeats,
+    refundRequests,
 }: {
-    nextWorkshop: string;
-    activeSeatsLabel: string;
-    openSeatsLabel: string;
-    refundPendingLabel: string;
+    nextWorkshopValue: string;
+    nextWorkshopDate: string;
+    openSeats: number;
+    filledSeats: number;
+    refundRequests: number;
 }) {
-    // split like "153 Total", "45 Open", "7 Pending"
-    const [activeMain, ...activeRest] = activeSeatsLabel.split(" ");
-    const activeTag = activeRest.join(" ");
-
-    const [refundMain, ...refundRest] = refundPendingLabel.split(" ");
-    const refundTag = refundRest.join(" ");
-
     return (
         <div className="grid gap-3 md:grid-cols-3">
             <StatCard
                 label="NEXT WORKSHOP"
-                value="In 5 Days"
-                inlineMeta={nextWorkshop}   // ✅ inline date (matches pic-1)
+                value={nextWorkshopValue}
+                inlineMeta={nextWorkshopDate}
                 icon={<CalendarDays size={18} />}
             />
 
             <StatCard
                 label="TOTAL ACTIVE SEATS"
-                value="45"
+                value={String(openSeats)}
                 inlineMeta="Open"
-                pillText="120 Filled"
+                pillText={`${filledSeats} Filled`}
                 icon={<Users size={18} />}
             />
 
             <StatCard
                 label="REFUND REQUESTS"
-                value={refundPendingLabel.split(" ")[0]}          // "2" or "7"
-                inlineMeta="Pending Review"                      // ✅ orange text
+                value={String(refundRequests)}
+                inlineMeta="Pending Review"
                 icon={<Repeat size={18} />}
             />
         </div>

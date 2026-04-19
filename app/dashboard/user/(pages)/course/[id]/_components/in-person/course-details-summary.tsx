@@ -19,8 +19,8 @@ export default function CourseDetailsSummary(props: CourseDetailsSummaryProps) {
   const [loading, setLoading] = useState(false);
   const [calendarData, setCalendarData] = useState<CourseCalendarLinksResponse | null>(null);
 
-  const locationText = chips.find((c) => c.iconKey === "pin")?.text ?? "not in api";
-  const secondText = chips.find((c) => c.iconKey === "users")?.text ?? "not in api";
+  const locationText = chips.find((c) => c.iconKey === "pin")?.text ?? "";
+  const secondText = chips.find((c) => c.iconKey === "users")?.text ?? "";
 
   const providers: Array<{ key: CalendarProviderKey; title: string; subtitle: string; href?: string }> = [
     {

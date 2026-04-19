@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { BrowseCourseItem } from "@/types/user/course/course-type";
-import NetworkImageFallback from "../../../_components/network-image-fallback";
+import NetworkImageFallback from "../../../../../../utils/network-image-fallback";
 
 function openRoute(route: string, router: ReturnType<typeof useRouter>) {
   if (!route) return;
@@ -57,8 +57,8 @@ export default function BrowseCourseCard({
       </div>
 
       <div className="px-4 pb-4 pt-4">
-        <h3 className="text-[14px] font-semibold leading-6 text-slate-900">{title}</h3>
-        <p className="mt-2 min-h-[40px] text-[12px] leading-5 text-slate-500">{description}</p>
+        <h3 className="text-[14px] font-semibold leading-6 text-slate-900 line-clamp-2 min-h-[3rem]">{title}</h3>
+        <p className="mt-2 min-h-[40px] text-[12px] leading-5 text-slate-500 line-clamp-2">{description}</p>
 
         <div className="mt-4 flex items-end justify-between gap-3">
           <div className="text-[14px] font-semibold text-slate-900">{formatBrowsePrice(price)}</div>

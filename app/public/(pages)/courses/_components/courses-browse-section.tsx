@@ -31,7 +31,16 @@ function resolveLocation(workshop: PublicWorkshop) {
     return workshop.facilities[0].name;
   }
 
-  return "Location unavailable";
+  return "";
+}
+
+function isRegistrationDeadlineExpired(deadline?: string | null) {
+  if (!deadline) return false;
+
+  const parsed = new Date(deadline);
+  if (Number.isNaN(parsed.getTime())) return false;
+
+  return parsed.getTime() <= Date.now();
 }
 
 
@@ -50,6 +59,9 @@ function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
 
   const availableSeats = workshop.availableSeats;
   const totalCapacity = workshop.totalCapacity;
+  const isRegistrationClosed = isRegistrationDeadlineExpired(
+    workshop.registrationDeadline,
+  );
   const percentFilled =
     totalCapacity > 0
       ? ((totalCapacity - availableSeats) / totalCapacity) * 100
@@ -64,8 +76,10 @@ function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
   if (workshop.totalHours) {
     metaTop.push({ icon: "clock", label: workshop.totalHours });
   }
-  metaTop.push({ icon: "pin", label: resolveLocation(workshop) });
-  if (workshop.totalModules > 0) {
+  const resolvedLocation = resolveLocation(workshop);
+  if (resolvedLocation) {
+    metaTop.push({ icon: "pin", label: resolvedLocation });
+  } else if (workshop.totalModules > 0) {
     metaTop.push({
       icon: "modules",
       label: `${workshop.totalModules} Modules`,
@@ -73,10 +87,11 @@ function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
   }
 
   const metaBottom: CourseCardModel["metaBottom"] = [];
+  const cmeCreditsCount = Number(workshop.cmeCreditsCount ?? 0);
   if (workshop.cmeCredits) {
     metaBottom.push({
       icon: "cme",
-      label: `${workshop.cmeCreditsCount ?? 0} CME`,
+      label: `${cmeCreditsCount} CME`,
     });
   }
 
@@ -108,8 +123,9 @@ function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
     price: currentPrice,
     oldPrice,
     action,
-    cmeCredits: workshop.cmeCreditsCount ?? 0,
+    cmeCredits: cmeCreditsCount,
     isAvailable,
+    isRegistrationClosed,
   };
 }
 
@@ -338,7 +354,7 @@ export default function CoursesBrowseSection() {
                 </div>
               ) : (
                 <>
-                  <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3 items-start">
+                  <div className="grid items-stretch gap-8 md:grid-cols-2 xl:grid-cols-3">
                     {filtered.map((c) => (
                       <CourseBrowseCard key={c.id} course={c} />
                     ))}

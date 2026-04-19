@@ -1,6 +1,6 @@
 "use client";
 
-import NetworkImageFallback from "@/app/dashboard/user/_components/network-image-fallback";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 import type { CourseDetailsHeroProps } from "@/types/user/course/course-details-type";
 
 export default function CourseDetailsHero({
@@ -9,7 +9,7 @@ export default function CourseDetailsHero({
   imageSrc,
 }: CourseDetailsHeroProps) {
   const leftBadge = badges?.[0] ?? "COURSE";
-  const rightBadge = badges?.[1] ?? "NOT IN API";
+  const rightBadge = badges?.[1] ?? "";
 
   return (
     <section className="relative overflow-hidden rounded-2xl shadow-[0_10px_22px_rgba(15,23,42,0.10)]">

@@ -7,7 +7,7 @@ import type {
   CalendarProviderKey,
   CalendarProviderRow,
 } from "@/types/user/course/add-to-calender-type";
-import NetworkImageFallback from "@/app/dashboard/user/_components/network-image-fallback";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 
 function providerLabel(key: CalendarProviderKey) {
   if (key === "google") {

@@ -23,6 +23,7 @@ export interface CourseDetailsModel {
     shortBlurb: string;
     learningObjectives: string;
     offersCmeCredits: boolean;
+    cmeCreditsCount: string;
     standardBaseRate: string;
     groupDiscounts: GroupDiscount[];
     webinarPlatform: string;
@@ -32,4 +33,6 @@ export interface CourseDetailsModel {
     days: WorkshopDay[];
     faculty: WorkshopFaculty[];
     facilityLabel: string;
+    facilityName: string;
+    facilityAddressLine: string;
 }

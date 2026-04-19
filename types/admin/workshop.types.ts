@@ -21,6 +21,7 @@ export interface GroupDiscountRequest {
 }
 
 export interface ShortCreateWorkshopRequest {
+  id?: string;
   deliveryMode: WorkshopDeliveryMode;
   title: string;
   offersCmeCredits: boolean;
@@ -32,6 +33,7 @@ export interface ShortCreateWorkshopRequest {
 }
 
 export interface FullCreateWorkshopRequest {
+  id?: string;
   deliveryMode: WorkshopDeliveryMode;
   status: WorkshopStatus;
   title: string;
@@ -39,6 +41,8 @@ export interface FullCreateWorkshopRequest {
   coverImageUrl?: string;
   learningObjectives?: string;
   offersCmeCredits: boolean;
+  cmeCreditsCount?: string | null;
+  registrationDeadline: string;
   facilityIds: string[];
   webinarPlatform?: string | null;
   meetingLink?: string | null;
@@ -58,6 +62,7 @@ export type CreateWorkshopRequest =
   | FullCreateWorkshopRequest;
 
 export interface UpdateWorkshopRequest {
+  id?: string;
   deliveryMode?: WorkshopDeliveryMode;
   status?: WorkshopStatus;
   title?: string;
@@ -65,6 +70,8 @@ export interface UpdateWorkshopRequest {
   coverImageUrl?: string;
   learningObjectives?: string;
   offersCmeCredits?: boolean;
+  cmeCreditsCount?: string | null;
+  registrationDeadline?: string;
   facilityIds?: string[];
   webinarPlatform?: string | null;
   meetingLink?: string | null;
@@ -104,6 +111,14 @@ export interface GroupDiscount {
   groupRatePerPerson: string;
 }
 
+
+export interface WorkshopOverview {
+  totalEnrolled: number;
+  refundRequested: number;
+  partialRefund: number;
+  refunded: number;
+}
+
 export interface WorkshopFaculty {
   id: string;
   firstName: string;
@@ -137,6 +152,8 @@ export interface Workshop {
   coverImageUrl: string | null;
   learningObjectives: string | null;
   offersCmeCredits: boolean;
+  cmeCreditsCount?: string | null;
+  registrationDeadline?: string | null;
   facilityIds: string[];
   webinarPlatform: string | null;
   meetingLink: string | null;
@@ -150,6 +167,7 @@ export interface Workshop {
   groupDiscounts: GroupDiscount[];
   faculty: WorkshopFaculty[];
   facilities: WorkshopFacility[];
+  overview?: WorkshopOverview;
   createdAt: string;
   updatedAt: string;
 }
@@ -164,6 +182,7 @@ export interface WorkshopListItem {
   learningObjectives: string | null;
   offersCmeCredits: boolean;
   cmeCreditsCount?: string | null;
+  registrationDeadline?: string | null;
   facilityIds: string[];
   webinarPlatform: string | null;
   meetingLink: string | null;
@@ -177,6 +196,7 @@ export interface WorkshopListItem {
   groupDiscounts: GroupDiscount[];
   faculty: WorkshopFaculty[];
   facilities: WorkshopFacility[];
+  overview?: WorkshopOverview;
   createdAt: string;
   updatedAt: string;
 }
@@ -189,6 +209,9 @@ export interface ListWorkshopsParams {
   limit?: number;
   sortBy?: "createdAt" | "title";
   sortOrder?: "asc" | "desc";
+  upcoming?: boolean;
+  past?: boolean;
+  hasRefundRequests?: boolean;
 }
 
 export interface ListWorkshopsMeta {
@@ -231,7 +254,7 @@ export interface WorkshopEnrolleeMember {
   attendeeId: string;
   fullName: string;
   email: string;
-  institutionOrHospital: string;
+  institutionOrHospital: string | null;
   status: string;
 }
 
@@ -246,7 +269,7 @@ export interface WorkshopEnrolleeItem {
   bookingType: string;
   groupSize: number;
   studentInfo: WorkshopEnrolleeStudentInfo;
-  institutionOrHospital: string;
+  institutionOrHospital: string | null;
   registeredAt: string;
   paymentAmount: string;
   status: string;
@@ -282,6 +305,8 @@ export interface WorkshopEnrolleesResponse {
 export interface ListWorkshopEnrolleesParams {
   page?: number;
   limit?: number;
+  search?: string;
+  enrollmentStatus?: "BOOKED" | "REFUND_REQUESTED" | "PARTIAL_REFUNDED" | "REFUNDED";
 }
 
 export interface RefundPreviewBookingOwner {
@@ -336,4 +361,45 @@ export interface ConfirmWorkshopRefundResponse {
     paymentGateway?: string;
     transactionId?: string;
   };
+}
+
+export interface DeleteWorkshopResponse {
+  message?: string;
+  data: {
+    workshopId: string;
+    title: string;
+  };
+}
+
+
+export interface WorkshopStatsPeriod {
+  startDate: string;
+  endDate: string;
+  days: number;
+}
+
+export interface WorkshopStatsSummary {
+  totalWorkshops: number;
+  totalActiveSeats: number;
+  totalFilledSeats: number;
+  totalRefundRequests: number;
+  overallOccupancyRate: number;
+}
+
+export interface WorkshopStatsItem {
+  workshopId: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  totalActiveSeats: number;
+  totalFilledSeats: number;
+  totalRefundRequests: number;
+  availableSeats: number;
+  occupancyRate: number;
+}
+
+export interface WorkshopStatsResponse {
+  period: WorkshopStatsPeriod;
+  summary: WorkshopStatsSummary;
+  workshops: WorkshopStatsItem[];
 }

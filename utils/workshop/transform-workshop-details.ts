@@ -42,6 +42,31 @@ function formatTime(timeStr: string): string {
   return `${hour12.toString().padStart(2, "0")}:${minutes} ${ampm}`;
 }
 
+
+function getLocationLines(workshop: PublicWorkshopDetails): string[] {
+  if (workshop.deliveryMode === "online") {
+    return [
+      workshop.webinarPlatform
+        ? `${workshop.webinarPlatform}`
+        : "Online Course",
+    ];
+  }
+
+  const facility = workshop.facilities?.[0];
+
+  if (facility) {
+    return [
+      `${facility.physicalAddress || facility.name || workshop.facility}${facility.roomNumber ? ` (${facility.roomNumber})` : ""}`,
+    ];
+  }
+
+  if (workshop.facility) {
+    return [workshop.facility];
+  }
+
+  return ["Location unavailable"];
+}
+
 function getDayPill(dayNumber: number): string {
   const words = ["ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN"];
   return `DAY ${words[dayNumber - 1] || dayNumber}`;
@@ -50,8 +75,6 @@ function getDayPill(dayNumber: number): string {
 export function transformWorkshopToDetails(
   workshop: PublicWorkshopDetails,
 ): CourseDetails {
-  const deliveryModeLabel =
-    workshop.deliveryMode === "online" ? "ONLINE" : "IN-PERSON";
   const daysLabel =
     workshop.numberOfDays === 1
       ? "1-DAY WORKSHOP"
@@ -80,13 +103,8 @@ export function transformWorkshopToDetails(
     info: [
       {
         key: "location" as const,
-        title: "DELIVERY MODE",
-        lines: [
-          deliveryModeLabel,
-          workshop.deliveryMode === "online" && workshop.webinarPlatform
-            ? `Via ${workshop.webinarPlatform.charAt(0).toUpperCase() + workshop.webinarPlatform.slice(1)}`
-            : "",
-        ].filter(Boolean),
+        title: "LOCATION",
+        lines: getLocationLines(workshop),
       },
       {
         key: "dates" as const,
@@ -128,8 +146,8 @@ export function transformWorkshopToDetails(
           ? {
               title: "GROUP & SAVE",
               oldPrice: parseFloat(workshop.standardPrice),
-              newPrice: parseFloat(workshop.groupDiscounts[0].pricePerPerson),
-              discountLabel: `SAVE $${workshop.groupDiscounts[0].savingsPerPerson}`,
+              newPrice: parseFloat(workshop.groupDiscounts[0].pricePerPerson || workshop.groupDiscounts[0].ratePerPerson || workshop.standardPrice),
+              discountLabel: `SAVE $${workshop.groupDiscounts[0].savingsPerPerson || "0.00"}`,
               note: `Special pricing for ${workshop.groupDiscounts[0].minimumAttendees}+ attendees`,
             }
           : {

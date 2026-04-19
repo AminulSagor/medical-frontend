@@ -1,6 +1,17 @@
 import type { Workshop } from "@/types/admin/workshop.types";
 import type { CourseDetailsModel } from "./course-details.types";
 
+function formatTime12Hour(time?: string | null): string {
+    if (!time) return "—";
+
+    const [hours = "0", minutes = "00"] = time.split(":");
+    const hourNum = Number(hours);
+    const suffix = hourNum >= 12 ? "PM" : "AM";
+    const twelveHour = hourNum % 12 || 12;
+
+    return `${String(twelveHour).padStart(2, "0")}:${minutes} ${suffix}`;
+}
+
 export function mapWorkshopToCourseDetailsModel(
     workshop: Workshop,
 ): CourseDetailsModel {
@@ -20,8 +31,18 @@ export function mapWorkshopToCourseDetailsModel(
 
     const timeLabel =
         firstSegment?.startTime && lastSegment?.endTime
-            ? `${firstSegment.startTime} - ${lastSegment.endTime}`
+            ? `${formatTime12Hour(firstSegment.startTime)} - ${formatTime12Hour(lastSegment.endTime)}`
             : "—";
+
+    const primaryFacility = workshop.facilities?.[0];
+    const facilityName = workshop.deliveryMode === "online"
+        ? workshop.webinarPlatform || "Online"
+        : primaryFacility?.name || "—";
+    const facilityAddressLine = workshop.deliveryMode === "online"
+        ? ""
+        : [primaryFacility?.physicalAddress, primaryFacility?.roomNumber ? `(${primaryFacility.roomNumber})` : null]
+            .filter(Boolean)
+            .join(" ");
 
     return {
         id: workshop.id,
@@ -40,6 +61,7 @@ export function mapWorkshopToCourseDetailsModel(
         shortBlurb: workshop.shortBlurb || "",
         learningObjectives: workshop.learningObjectives || "",
         offersCmeCredits: workshop.offersCmeCredits,
+        cmeCreditsCount: workshop.cmeCreditsCount || "0",
         standardBaseRate: workshop.standardBaseRate,
         groupDiscounts: workshop.groupDiscounts || [],
         webinarPlatform: workshop.webinarPlatform || "",
@@ -48,7 +70,8 @@ export function mapWorkshopToCourseDetailsModel(
         autoRecordSession: workshop.autoRecordSession,
         days: workshop.days || [],
         faculty: workshop.faculty || [],
-        facilityLabel:
-            workshop.deliveryMode === "online" ? "N/A (Online Only)" : "—",
+        facilityLabel: facilityName,
+        facilityName,
+        facilityAddressLine,
     };
 }

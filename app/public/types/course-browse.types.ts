@@ -45,4 +45,5 @@ export type CourseCardModel = {
   // for filtering
   cmeCredits: number; // numeric, we’ll map to ranges
   isAvailable: boolean;
+  isRegistrationClosed?: boolean;
 };

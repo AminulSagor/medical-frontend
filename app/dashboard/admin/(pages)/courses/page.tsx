@@ -7,8 +7,9 @@ import CoursesTabs from "./_components/courses-tabs";
 import CoursesTable from "./_components/courses-table";
 import type { CourseItem, CourseTabKey, DeliveryMode } from "./_components/courses.types";
 import { useRouter } from "next/navigation";
-import { listWorkshops, updateWorkshop } from "@/service/admin/workshop.service";
-import type { WorkshopDay, WorkshopListItem } from "@/types/admin/workshop.types";
+import { deleteWorkshop, getWorkshopStats, listWorkshops, updateWorkshop } from "@/service/admin/workshop.service";
+import type { ListWorkshopsParams, WorkshopDay, WorkshopListItem, WorkshopStatsResponse } from "@/types/admin/workshop.types";
+import { AlertTriangle, Loader2, Trash2, X } from "lucide-react";
 
 const PAGE_SIZE = 5;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -38,6 +39,31 @@ function formatTimeLabel(value?: string) {
     });
 }
 
+function formatStatDate(value?: string) {
+    if (!value) return "—";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "—";
+    return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+}
+
+function getDaysAwayLabel(value?: string) {
+    if (!value) return "—";
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(value);
+    if (Number.isNaN(target.getTime())) return "—";
+    target.setHours(0, 0, 0, 0);
+    const diffMs = target.getTime() - today.getTime();
+    const diffDays = Math.round(diffMs / 86400000);
+    if (diffDays <= 0) return "Today";
+    if (diffDays === 1) return "In 1 Day";
+    return `In ${diffDays} Days`;
+}
+
 function sortDays(days: WorkshopDay[]) {
     return [...days].sort((a, b) => {
         const dateCompare = a.date.localeCompare(b.date);
@@ -65,7 +91,7 @@ function getInstructorName(workshop: WorkshopListItem) {
     return [faculty.firstName, faculty.lastName].filter(Boolean).join(" ") || "Not available";
 }
 
-function mapWorkshopToCourseItem(workshop: WorkshopListItem): CourseItem {
+function mapWorkshopToCourseItem(workshop: WorkshopListItem, tab: CourseTabKey): CourseItem {
     const { firstDate, lastDate, firstStartTime } = getBoundaryDates(workshop.days ?? []);
     return {
         id: workshop.id,
@@ -75,54 +101,161 @@ function mapWorkshopToCourseItem(workshop: WorkshopListItem): CourseItem {
         tags: [workshop.deliveryMode === "online" ? "Online" : "In Person"],
         instructorName: getInstructorName(workshop),
         instructorAvatarUrl: workshop.faculty?.[0]?.imageUrl || undefined,
-        capacityUsed: 0,
+        capacityUsed: workshop.overview?.totalEnrolled ?? 0,
         capacityTotal: workshop.capacity,
-        refundRequests: 0,
+        refundRequests: workshop.overview?.refundRequested ?? 0,
         isActive: workshop.status === "published",
-        status: workshop.status === "draft" ? "drafts" : "upcoming",
+        status: tab,
         deliveryMode: workshop.deliveryMode,
         rawStartDate: firstDate,
         rawEndDate: lastDate,
     };
 }
 
-function isPastCourse(item: CourseItem) {
-    const source = item.rawEndDate || item.rawStartDate;
-    if (!source) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const date = new Date(source);
-    if (Number.isNaN(date.getTime())) return false;
-    date.setHours(0, 0, 0, 0);
-    return date < today;
-}
+function buildParamsForTab(
+    tab: CourseTabKey,
+    baseParams: Omit<ListWorkshopsParams, "page" | "limit" | "status" | "upcoming" | "past" | "hasRefundRequests">,
+    pageValue: number,
+    limitValue: number,
+): ListWorkshopsParams {
+    const shared: ListWorkshopsParams = {
+        ...baseParams,
+        page: pageValue,
+        limit: limitValue,
+    };
 
-function isUpcomingCourse(item: CourseItem) {
-    return !isPastCourse(item);
-}
-
-async function fetchAllWorkshops(params: Parameters<typeof listWorkshops>[0]) {
-    const first = await listWorkshops({ ...params, page: 1, limit: 5 });
-    let items = [...first.data];
-    for (let currentPage = 2; currentPage <= first.meta.totalPages; currentPage += 1) {
-        const next = await listWorkshops({ ...params, page: currentPage, limit: 5 });
-        items = items.concat(next.data);
+    if (tab === "drafts") {
+        return {
+            ...shared,
+            status: "draft",
+        };
     }
-    return items;
+
+    if (tab === "past") {
+        return {
+            ...shared,
+            status: "published",
+            past: true,
+        };
+    }
+
+    if (tab === "refund_requests") {
+        return {
+            ...shared,
+            status: "published",
+            hasRefundRequests: true,
+        };
+    }
+
+    return {
+        ...shared,
+        status: "published",
+        upcoming: true,
+    };
+}
+
+function buildFallbackPublishedParams(
+    baseParams: Omit<ListWorkshopsParams, "page" | "limit" | "status" | "upcoming" | "past" | "hasRefundRequests">,
+    pageValue: number,
+    limitValue: number,
+): ListWorkshopsParams {
+    return {
+        ...baseParams,
+        page: pageValue,
+        limit: limitValue,
+        status: "published",
+    };
+}
+
+function DeleteConfirmationDialog({
+    title,
+    busy,
+    onClose,
+    onConfirm,
+}: {
+    title: string;
+    busy: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+}) {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
+            <div className="w-full max-w-md rounded-2xl border border-rose-200 bg-white shadow-2xl">
+                <div className="flex items-start justify-between gap-4 border-b border-rose-100 px-6 py-5">
+                    <div className="flex items-start gap-3">
+                        <div className="grid h-10 w-10 place-items-center rounded-full bg-rose-50 text-rose-600">
+                            <AlertTriangle size={18} />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-900">Delete Workshop</h3>
+                            <p className="mt-1 text-sm text-slate-500">
+                                This action cannot be undone.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="grid h-8 w-8 place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                        aria-label="Close"
+                    >
+                        <X size={16} />
+                    </button>
+                </div>
+
+                <div className="space-y-4 px-6 py-5">
+                    <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                        Are you sure you want to delete <span className="font-semibold">{title}</span>?
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={busy}
+                            className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onConfirm}
+                            disabled={busy}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {busy ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                            Delete Workshop
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 export default function CoursesPage() {
     const router = useRouter();
+    const [didInitialLoad, setDidInitialLoad] = useState(false);
 
     const [tab, setTab] = useState<CourseTabKey>("upcoming");
     const [query, setQuery] = useState("");
     const [debouncedQuery, setDebouncedQuery] = useState("");
     const [deliveryMode, setDeliveryMode] = useState<DeliveryMode | "all">("all");
     const [page, setPage] = useState(1);
-    const [publishedItems, setPublishedItems] = useState<CourseItem[]>([]);
-    const [draftItems, setDraftItems] = useState<CourseItem[]>([]);
+    const [items, setItems] = useState<CourseItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [counts, setCounts] = useState<Record<CourseTabKey, number>>({
+        upcoming: 0,
+        past: 0,
+        drafts: 0,
+        refund_requests: 0,
+    });
+    const [totalItems, setTotalItems] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [stats, setStats] = useState<WorkshopStatsResponse | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<CourseItem | null>(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     useEffect(() => {
         const handle = window.setTimeout(() => setDebouncedQuery(query.trim()), SEARCH_DEBOUNCE_MS);
@@ -134,7 +267,49 @@ export default function CoursesPage() {
     }, [tab, debouncedQuery, deliveryMode]);
 
     useEffect(() => {
+        setDidInitialLoad(false);
+    }, [debouncedQuery, deliveryMode, refreshKey]);
+
+    useEffect(() => {
         let isMounted = true;
+
+        void getWorkshopStats()
+            .then((response) => {
+                if (!isMounted) return;
+                setStats(response);
+            })
+            .catch((error) => {
+                console.error("Failed to load workshop stats:", error);
+                if (!isMounted) return;
+                setStats(null);
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [refreshKey]);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        async function fetchTabData(
+            targetTab: CourseTabKey,
+            pageValue: number,
+            limitValue: number,
+            baseParams: Omit<ListWorkshopsParams, "page" | "limit" | "status" | "upcoming" | "past" | "hasRefundRequests">,
+        ) {
+            const params = buildParamsForTab(targetTab, baseParams, pageValue, limitValue);
+
+            try {
+                return await listWorkshops(params);
+            } catch (error) {
+                if (targetTab !== "drafts") {
+                    console.warn(`Falling back to published-only params for ${targetTab} tab`, error);
+                    return listWorkshops(buildFallbackPublishedParams(baseParams, pageValue, limitValue));
+                }
+                throw error;
+            }
+        }
 
         async function load() {
             setLoading(true);
@@ -146,67 +321,88 @@ export default function CoursesPage() {
                     sortOrder: "desc" as const,
                 };
 
-                const [publishedResponse, draftResponse] = await Promise.all([
-                    fetchAllWorkshops({ ...baseParams, status: "published" }),
-                    fetchAllWorkshops({ ...baseParams, status: "draft" }),
-                ]);
+                const shouldLoadAllTabs = !didInitialLoad;
+
+                if (shouldLoadAllTabs) {
+                    const [upcomingCountResponse, pastCountResponse, draftCountResponse, refundCountResponse, activeResponse] = await Promise.all([
+                        fetchTabData("upcoming", 1, 1, baseParams),
+                        fetchTabData("past", 1, 1, baseParams),
+                        fetchTabData("drafts", 1, 1, baseParams),
+                        fetchTabData("refund_requests", 1, 1, baseParams),
+                        fetchTabData(tab, page, PAGE_SIZE, baseParams),
+                    ]);
+
+                    if (!isMounted) return;
+
+                    setCounts({
+                        upcoming: upcomingCountResponse.meta.total,
+                        past: pastCountResponse.meta.total,
+                        drafts: draftCountResponse.meta.total,
+                        refund_requests: refundCountResponse.meta.total,
+                    });
+                    setItems(activeResponse.data.map((item) => mapWorkshopToCourseItem(item, tab)));
+                    setTotalItems(activeResponse.meta.total);
+                    setTotalPages(Math.max(1, activeResponse.meta.totalPages));
+                    setDidInitialLoad(true);
+
+                    if (page > Math.max(1, activeResponse.meta.totalPages)) {
+                        setPage(Math.max(1, activeResponse.meta.totalPages));
+                    }
+                    return;
+                }
+
+                const activeResponse = await fetchTabData(tab, page, PAGE_SIZE, baseParams);
 
                 if (!isMounted) return;
-                setPublishedItems(publishedResponse.map(mapWorkshopToCourseItem));
-                setDraftItems(draftResponse.map(mapWorkshopToCourseItem));
+
+                setItems(activeResponse.data.map((item) => mapWorkshopToCourseItem(item, tab)));
+                setTotalItems(activeResponse.meta.total);
+                setTotalPages(Math.max(1, activeResponse.meta.totalPages));
+
+                if (page > Math.max(1, activeResponse.meta.totalPages)) {
+                    setPage(Math.max(1, activeResponse.meta.totalPages));
+                }
             } catch (error) {
                 console.error("Failed to load workshops:", error);
                 if (!isMounted) return;
-                setPublishedItems([]);
-                setDraftItems([]);
+                setItems([]);
+                if (!didInitialLoad || page === 1) {
+                    setCounts({ upcoming: 0, past: 0, drafts: 0, refund_requests: 0 });
+                }
+                setTotalItems(0);
+                setTotalPages(1);
             } finally {
                 if (isMounted) setLoading(false);
             }
         }
 
-        load();
+        void load();
         return () => {
             isMounted = false;
         };
-    }, [debouncedQuery, deliveryMode, refreshKey]);
+    }, [tab, page, debouncedQuery, deliveryMode, refreshKey]);
 
-    const counts = useMemo<Record<CourseTabKey, number>>(() => ({
-        upcoming: publishedItems.filter(isUpcomingCourse).length,
-        past: publishedItems.filter(isPastCourse).length,
-        drafts: draftItems.length,
-        refund_requests: 0,
-    }), [publishedItems, draftItems]);
+    const nextStatsWorkshop = useMemo(() => {
+        const workshops = [...(stats?.workshops ?? [])];
+        workshops.sort((a, b) => (a.startDate || "").localeCompare(b.startDate || ""));
+        return workshops[0] ?? null;
+    }, [stats]);
 
-    const filtered = useMemo(() => {
-        if (tab === "upcoming") return publishedItems.filter(isUpcomingCourse);
-        if (tab === "past") return publishedItems.filter(isPastCourse);
-        if (tab === "drafts") return draftItems;
-        return [];
-    }, [tab, publishedItems, draftItems]);
-
-    const totalItems = filtered.length;
-    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-
-    useEffect(() => {
-        if (page > totalPages) setPage(totalPages);
-    }, [page, totalPages]);
-
-    const paginatedItems = useMemo(() => {
-        const start = (page - 1) * PAGE_SIZE;
-        return filtered.slice(start, start + PAGE_SIZE);
-    }, [filtered, page]);
-
-    const nextUpcoming = publishedItems
-        .filter(isUpcomingCourse)
-        .sort((a, b) => (a.rawStartDate || "").localeCompare(b.rawStartDate || ""))[0];
-
-    const nextWorkshop = nextUpcoming?.dateLabel ?? "—";
-    const activeSeats = publishedItems.filter(isUpcomingCourse).reduce((sum, item) => sum + (item.capacityTotal || 0), 0);
-    const openSeats = publishedItems.filter(isUpcomingCourse).reduce((sum, item) => sum + Math.max(0, (item.capacityTotal || 0) - (item.capacityUsed || 0)), 0);
-    const refundPending = 0;
+    const nextWorkshopValue = nextStatsWorkshop?.startDate
+        ? getDaysAwayLabel(nextStatsWorkshop.startDate)
+        : "—";
+    const nextWorkshopDate = nextStatsWorkshop?.startDate
+        ? formatStatDate(nextStatsWorkshop.startDate)
+        : "—";
+    const openSeats = Math.max(
+        0,
+        (stats?.summary.totalActiveSeats ?? 0) - (stats?.summary.totalFilledSeats ?? 0),
+    );
+    const filledSeats = stats?.summary.totalFilledSeats ?? 0;
+    const refundPending = stats?.summary.totalRefundRequests ?? 0;
 
     function buildRowQuery(id: string) {
-        const course = [...publishedItems, ...draftItems].find((item) => item.id === id);
+        const course = items.find((item) => item.id === id);
         if (!course) return "";
         const params = new URLSearchParams({
             dateLabel: course.dateLabel ?? "",
@@ -231,42 +427,75 @@ export default function CoursesPage() {
         }
     }
 
+    async function handleDeleteConfirm() {
+        if (!deleteTarget) return;
+
+        setDeleteLoading(true);
+        try {
+            await deleteWorkshop(deleteTarget.id);
+            setDeleteTarget(null);
+            if (items.length === 1 && page > 1) {
+                setPage((current) => Math.max(1, current - 1));
+            } else {
+                setRefreshKey((value) => value + 1);
+            }
+        } catch (error) {
+            console.error("Failed to delete workshop:", error);
+        } finally {
+            setDeleteLoading(false);
+        }
+    }
+
     return (
-        <div className="space-y-5">
-            <CoursesHeader
-                onExport={() => console.log("Export")}
-                onSchedule={() => router.push("/dashboard/admin/courses/create")}
-            />
-
-            <CourseStatsRow
-                nextWorkshop={nextWorkshop}
-                activeSeatsLabel={`${activeSeats} Total`}
-                openSeatsLabel={`${openSeats} Open`}
-                refundPendingLabel={`${refundPending} Pending`}
-            />
-
-            <div className="rounded-2xl border border-slate-200 bg-white">
-                <div className="px-5 pt-5">
-                    <CoursesTabs tab={tab} onChange={setTab} counts={counts} />
-                </div>
-
-                <CoursesTable
-                    items={loading ? [] : paginatedItems}
-                    query={query}
-                    onQueryChange={setQuery}
-                    selectedDeliveryMode={deliveryMode}
-                    onDeliveryModeChange={setDeliveryMode}
-                    onToggleActive={handleToggleActive}
-                    onView={(id) => router.push(`/dashboard/admin/courses/${encodeURIComponent(id)}${buildRowQuery(id)}`)}
-                    onEdit={(id) => console.log("edit", id)}
-                    onDelete={(id) => console.log("delete", id)}
-                    page={page}
-                    totalPages={totalPages}
-                    totalItems={totalItems}
-                    pageSize={PAGE_SIZE}
-                    onPageChange={setPage}
+        <>
+            <div className="space-y-5">
+                <CoursesHeader
+                    onSchedule={() => router.push("/dashboard/admin/courses/create")}
                 />
+
+                <CourseStatsRow
+                    nextWorkshopValue={nextWorkshopValue}
+                    nextWorkshopDate={nextWorkshopDate}
+                    openSeats={openSeats}
+                    filledSeats={filledSeats}
+                    refundRequests={refundPending}
+                />
+
+                <div className="rounded-2xl border border-slate-200 bg-white">
+                    <div className="px-5 pt-5">
+                        <CoursesTabs tab={tab} onChange={setTab} counts={counts} />
+                    </div>
+
+                    <CoursesTable
+                        items={loading ? [] : items}
+                        loading={loading}
+                        query={query}
+                        onQueryChange={setQuery}
+                        selectedDeliveryMode={deliveryMode}
+                        onDeliveryModeChange={setDeliveryMode}
+                        onToggleActive={handleToggleActive}
+                        onView={(id) => router.push(`/dashboard/admin/courses/${encodeURIComponent(id)}${buildRowQuery(id)}`)}
+                        onEdit={(id) => router.push(`/dashboard/admin/courses/create?id=${encodeURIComponent(id)}`)}
+                        onDelete={(id) => setDeleteTarget(items.find((item) => item.id === id) ?? null)}
+                        page={page}
+                        totalPages={totalPages}
+                        totalItems={totalItems}
+                        pageSize={PAGE_SIZE}
+                        onPageChange={setPage}
+                    />
+                </div>
             </div>
-        </div>
+
+            {deleteTarget ? (
+                <DeleteConfirmationDialog
+                    title={deleteTarget.title}
+                    busy={deleteLoading}
+                    onClose={() => {
+                        if (!deleteLoading) setDeleteTarget(null);
+                    }}
+                    onConfirm={handleDeleteConfirm}
+                />
+            ) : null}
+        </>
     );
 }

@@ -1,13 +1,11 @@
 "use client";
 
 import PageTitle from "@/app/dashboard/admin/_components/page-title";
-import { Download, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 export default function CoursesHeader({
-  onExport,
   onSchedule,
 }: {
-  onExport?: () => void;
   onSchedule?: () => void;
 }) {
   return (
@@ -18,14 +16,6 @@ export default function CoursesHeader({
       />
 
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onExport}
-          className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-        >
-          <Download size={16} />
-          Export
-        </button>
 
         <button
           type="button"
