@@ -20,8 +20,6 @@ export const generalBroadcastUpdateService = {
     broadcastId: string,
     payload: UpdateArticleLinkBroadcastPayload,
   ): Promise<{ message: string }> {
-    console.log(broadcastId);
-    console.log(payload);
     const response = await serviceClient.patch<{ message: string }>(
       `/admin/newsletters/general/broadcasts/${broadcastId}`,
       payload,
@@ -39,6 +37,17 @@ export const generalBroadcastUpdateService = {
         `/admin/newsletters/general/broadcasts/${broadcastId}/attachments`,
         payload,
       );
+
+    return response.data;
+  },
+
+  async removeAttachment(
+    broadcastId: string,
+    attachmentId: string,
+  ): Promise<{ message: string }> {
+    const response = await serviceClient.delete<{ message: string }>(
+      `/admin/newsletters/general/broadcasts/${broadcastId}/attachments/${attachmentId}`,
+    );
 
     return response.data;
   },

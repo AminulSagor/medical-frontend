@@ -244,11 +244,38 @@ export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
     }
   };
 
-  const removeAttachment = (fileKey: string) => {
-    setForm((prev) => ({
-      ...prev,
-      attachments: prev.attachments.filter((item) => item.fileKey !== fileKey),
-    }));
+  const removeAttachment = async (fileKey: string): Promise<void> => {
+    const targetAttachment = form.attachments.find(
+      (item) => item.fileKey === fileKey,
+    );
+
+    console.log("targetAttachment:", targetAttachment);
+
+    if (!targetAttachment) return;
+
+    try {
+      if (broadcastId && targetAttachment.isExisting && targetAttachment.id) {
+        await generalBroadcastUpdateService.removeAttachment(
+          broadcastId,
+          targetAttachment.id,
+        );
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        attachments: prev.attachments.filter(
+          (item) => item.fileKey !== fileKey,
+        ),
+      }));
+
+      toast.success("Attachment removed successfully");
+    } catch (error) {
+      console.error(
+        "Attachment remove failed",
+        (error as any)?.response?.data || error,
+      );
+      toast.error("Failed to remove attachment");
+    }
   };
 
   const formatScheduledText = (date: string, time: string) => {

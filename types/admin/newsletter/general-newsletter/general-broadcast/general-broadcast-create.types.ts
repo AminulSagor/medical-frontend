@@ -69,6 +69,7 @@ export type AddGeneralBroadcastAttachmentResponse = {
   message: string;
   id: string;
   identifier: string;
+  attachmentId?: string;
 };
 
 export type UpdateGeneralBroadcastSchedulePayload = {
@@ -91,6 +92,7 @@ export type UploadedBroadcastAttachment = {
   readUrl?: string;
   id?: string;
   isExisting?: boolean;
+  attachmentId?: string;
 };
 
 export type CreateBroadcastFormState = {

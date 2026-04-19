@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
+  ChevronDown,
   Clock3,
   Loader2,
   ShieldCheck,
@@ -31,6 +32,18 @@ type AvailableSlot =
 const getDateFromIso = (value: string) => value.slice(0, 10);
 const getTimeFromIso = (value: string) => value.slice(11, 16);
 const getCurrentYear = () => new Date().getFullYear();
+
+const formatCadenceDateOnly = (value: string) => {
+  const date = new Date(value);
+
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "America/Chicago",
+  }).format(date);
+};
 
 export default function CreateBroadcastDeliverySection({
   form,
@@ -194,7 +207,7 @@ export default function CreateBroadcastDeliverySection({
                     key={slot.scheduledAtUtc}
                     value={slot.scheduledAtLocalIso}
                   >
-                    {slot.scheduledAtLocalLabel}
+                    {formatCadenceDateOnly(slot.scheduledAtLocalIso)}
                     {!slot.isAvailable ? " (Current selection)" : ""}
                   </option>
                 ))}
@@ -205,7 +218,12 @@ export default function CreateBroadcastDeliverySection({
                   size={16}
                   className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-slate-400"
                 />
-              ) : null}
+              ) : (
+                <ChevronDown
+                  size={16}
+                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+              )}
             </div>
 
             {errors.cadenceDate ? (

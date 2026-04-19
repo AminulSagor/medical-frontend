@@ -35,7 +35,7 @@ type Props = {
     value: CreateBroadcastFormState[K],
   ) => void;
   onUploadAttachments: (files: FileList | null) => Promise<void>;
-  onRemoveAttachment: (fileKey: string) => void;
+  onRemoveAttachment: (fileKey: string) => Promise<void>;
 };
 
 export default function CreateBroadcastContentSection({
@@ -564,7 +564,9 @@ export default function CreateBroadcastContentSection({
 
                   <button
                     type="button"
-                    onClick={() => onRemoveAttachment(attachment.fileKey)}
+                    onClick={() => {
+                      void onRemoveAttachment(attachment.fileKey);
+                    }}
                     className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
                   >
                     <X size={16} />
