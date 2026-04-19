@@ -1,350 +1,329 @@
 "use client";
 
-import { ArrowLeft, CalendarDays, Clock3, Eye, Tag } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { ArrowLeft, CalendarDays, Save, TriangleAlert } from "lucide-react";
+
 import { useEditBlogPost } from "../_utils/use-edit-blog-post";
+import CreateBlogPostEditor from "@/app/dashboard/admin/(pages)/blogs/create/helper/create-blog-post-editor";
+import CreateBlogPostPreview from "@/app/dashboard/admin/(pages)/blogs/create/helper/create-blog-post-preview";
+import CreateBlogPostSettingsSidebar from "@/app/dashboard/admin/(pages)/blogs/create/helper/create-blog-post-settings-sidebar";
 
-function Pill({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600">
-      {children}
-    </span>
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-      {children}
-    </p>
-  );
-}
+const BLOG_MANAGEMENT_PATH = "/dashboard/admin/blogs";
 
 export default function EditBlogPostPage({ blogId }: { blogId: string }) {
-  const router = useRouter();
-
   const {
     loading,
-    isSaving,
-    error,
-    successMessage,
-    blog,
-    authorOptions,
-    categoryOptions,
-    tagOptions,
+    isSubmitting,
+    bannerError,
+
+    title,
+    setTitle,
+    content,
+    setContent,
+    authorName,
+    setAuthorName,
+
     excerpt,
     setExcerpt,
     metaTitle,
     setMetaTitle,
     metaDescription,
     setMetaDescription,
-    authorIds,
-    categoryIds,
-    tagIds,
-    publishingStatus,
-    setPublishingStatus,
-    handleAuthorChange,
-    handleToggleCategory,
-    handleToggleTag,
-    handleSave,
+
+    coverImageUrl,
+    secondImageUrl,
+
+    isUploadingCoverImage,
+    isUploadingSecondImage,
+
+    coverImageError,
+    secondImageError,
+
+    scheduleDate,
+    setScheduleDate,
+    scheduleTime,
+    setScheduleTime,
+
+    categoryOptions,
+    isLoadingCategories,
+    categoryLoadError,
+    selectedCategoryIds,
+    setSelectedCategoryIds,
+    newCategoryName,
+    setNewCategoryName,
+    isCreatingCategory,
+    categoryCreateError,
+
+    tagOptions,
+    selectedTagIds,
+    setSelectedTagIds,
+    tagInput,
+    setTagInput,
+    isLoadingTags,
+    tagLoadError,
+    isCreatingTag,
+    createTagError,
+
+    isFeatured,
+    setIsFeatured,
+
+    errors,
+
+    wordCount,
+    readTimeLabel,
+
+    handleSelectCoverImage,
+    handleSelectSecondImage,
+    handleRemoveCoverImage,
+    handleRemoveSecondImage,
+
+    handleAddTag,
+    handleCreateCategory,
+    handleSubmit,
+
+    clearAuthorError,
+    clearTitleError,
+    clearContentError,
+    clearScheduleError,
+    clearCategoryError,
+    clearExcerptError,
+    clearCoverImageError,
+    clearSecondImageError,
+    clearMetaTitleError,
+    clearMetaDescriptionError,
+    clearCreateTagError,
   } = useEditBlogPost(blogId);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="border-b border-slate-200 bg-white px-4 py-3">
-          <div className="mx-auto max-w-7xl">
-            <div className="flex items-center gap-4">
-              <div className="h-9 w-24 animate-pulse rounded-lg bg-slate-100" />
+      <div className="min-h-screen">
+        <div className="py-2 pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="h-11 w-32 animate-pulse rounded-lg bg-slate-100" />
+            <div className="flex gap-3">
+              <div className="h-11 w-28 animate-pulse rounded-lg bg-slate-100" />
+              <div className="h-11 w-28 animate-pulse rounded-lg bg-slate-100" />
+              <div className="h-11 w-28 animate-pulse rounded-lg bg-slate-100" />
             </div>
           </div>
         </div>
-        <div className="p-6 text-sm text-slate-500">Loading...</div>
+
+        <div className="mx-auto max-w-[1280px]">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="min-h-[600px] animate-pulse rounded-2xl bg-slate-100" />
+            <div className="min-h-[600px] animate-pulse rounded-2xl bg-slate-100" />
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (!blog) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="border-b border-slate-200 bg-white px-4 py-3">
-          <div className="mx-auto max-w-7xl">
+  const handleUpdateAsDraft = async () => {
+    await handleSubmit("draft");
+  };
+
+  const handleUpdateAsScheduled = async () => {
+    await handleSubmit("scheduled");
+  };
+
+  const handleUpdateAsPublished = async () => {
+    await handleSubmit("published");
+  };
+
+  return (
+    <div className="min-h-screen">
+      <div className="py-2 pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-4 text-sm">
             <button
               type="button"
-              onClick={() => router.push("/dashboard/admin/blogs")}
-              className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-900"
+              onClick={() => window.location.assign(BLOG_MANAGEMENT_PATH)}
+              className="inline-flex items-center gap-2 font-medium text-slate-600 transition hover:text-slate-900"
             >
               <ArrowLeft size={16} />
-              Back to Manager
+              Back to Posts
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleUpdateAsDraft}
+              disabled={
+                isSubmitting || isUploadingCoverImage || isUploadingSecondImage
+              }
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60"
+            >
+              <Save size={16} />
+              Save Draft
+            </button>
+
+            <button
+              type="button"
+              onClick={handleUpdateAsScheduled}
+              disabled={
+                isSubmitting || isUploadingCoverImage || isUploadingSecondImage
+              }
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60"
+            >
+              <CalendarDays size={16} />
+              Schedule
+            </button>
+
+            <button
+              type="button"
+              onClick={handleUpdateAsPublished}
+              disabled={
+                isSubmitting || isUploadingCoverImage || isUploadingSecondImage
+              }
+              className="inline-flex h-11 items-center gap-2 rounded-lg bg-[var(--primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--primary-hover)] disabled:opacity-60"
+            >
+              ▷ Publish
             </button>
           </div>
         </div>
-        <div className="p-6 text-sm text-rose-500">Blog not found.</div>
       </div>
-    );
-  }
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard/admin/blogs")}
-                className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-900"
-              >
-                <ArrowLeft size={16} />
-                Back to Manager
-              </button>
-
-              <div className="h-6 w-px bg-slate-200" />
-
-              <h1 className="text-sm font-semibold text-slate-700">
-                Editing: {blog.title}
-              </h1>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={isSaving}
-                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--primary-hover)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSaving ? "Updating..." : "Update Post"}
-              </button>
-            </div>
+      <div className="mx-auto max-w-[1280px]">
+        {bannerError ? (
+          <div className="mb-6 flex items-center gap-3 rounded-xl border border-rose-300 bg-rose-50 px-4 py-4 text-sm font-semibold text-rose-500">
+            <TriangleAlert size={18} />
+            {bannerError}
           </div>
-        </div>
-      </div>
+        ) : null}
 
-      {/* Main Content */}
-      <div className="mx-auto max-w-7xl p-4 md:p-6">
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          {/* Left Column - Preview */}
-          <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-6">
-            <p className="mb-4 text-xs font-medium text-slate-500">
-              Post Preview
-            </p>
+          <CreateBlogPostEditor
+            title={title}
+            content={content}
+            excerpt={excerpt}
+            coverImageUrl={coverImageUrl}
+            secondImageUrl={secondImageUrl}
+            isUploadingCoverImage={isUploadingCoverImage}
+            isUploadingSecondImage={isUploadingSecondImage}
+            coverImageError={coverImageError || errors.coverImage}
+            secondImageError={secondImageError || errors.secondImage}
+            titleError={errors.title}
+            contentError={errors.content}
+            onTitleChange={(value) => {
+              setTitle(value);
+              if (value.trim()) {
+                clearTitleError();
+              }
+            }}
+            onContentChange={(value) => {
+              setContent(value);
+              if (value.trim()) {
+                clearContentError();
+              }
+            }}
+            onSelectCoverImage={handleSelectCoverImage}
+            onSelectSecondImage={handleSelectSecondImage}
+            onRemoveCoverImage={handleRemoveCoverImage}
+            onRemoveSecondImage={handleRemoveSecondImage}
+          />
 
-            {blog.coverImageUrl ? (
-              <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
-                <div className="h-[220px] w-full md:h-[340px]">
-                  <img
-                    src={blog.coverImageUrl}
-                    alt={blog.title}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              </div>
-            ) : null}
-
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              <Pill>{publishingStatus}</Pill>
-
-              {blog.categories.map((category) => (
-                <Pill key={category.id}>{category.name}</Pill>
-              ))}
-            </div>
-
-            <div className="mt-4">
-              <h1 className="text-xl font-semibold leading-tight text-slate-900 md:text-3xl">
-                {blog.title}
-              </h1>
-
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
-                {blog.authors[0]?.fullLegalName ? (
-                  <span>By {blog.authors[0].fullLegalName}</span>
-                ) : null}
-
-                <span className="inline-flex items-center gap-1">
-                  <Clock3 size={14} />
-                  {blog.readTimeMinutes} min read
-                </span>
-
-                <span className="inline-flex items-center gap-1">
-                  <Eye size={14} />
-                  {blog.readCount ?? 0} views
-                </span>
-
-                {blog.createdAt ? (
-                  <span className="inline-flex items-center gap-1">
-                    <CalendarDays size={14} />
-                    {new Date(blog.createdAt).toLocaleDateString()}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-
-            {excerpt ? (
-              <p className="mt-5 text-sm leading-7 text-slate-700">{excerpt}</p>
-            ) : null}
-
-            {blog.tags.length > 0 ? (
-              <div className="mt-5 flex flex-wrap gap-2">
-                {blog.tags.map((tag) => (
-                  <span
-                    key={tag.id}
-                    className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600"
-                  >
-                    <Tag size={12} />
-                    {tag.name}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-
-            <div className="prose prose-sm mt-6 max-w-none text-slate-700 prose-p:leading-7 prose-headings:text-slate-900">
-              <div dangerouslySetInnerHTML={{ __html: blog.content }} />
-            </div>
-          </div>
-
-          {/* Right Column - Settings */}
-          <aside className="space-y-4">
-            {error ? (
-              <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-600">
-                {error}
-              </div>
-            ) : null}
-
-            {successMessage ? (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-                {successMessage}
-              </div>
-            ) : null}
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="mb-3 text-xs font-semibold text-slate-700">
-                Post Details
-              </p>
-
-              <div className="space-y-4">
-                <div>
-                  <SectionLabel>Title</SectionLabel>
-                  <p className="text-sm text-slate-800">{blog.title}</p>
-                </div>
-
-                <div>
-                  <SectionLabel>Status</SectionLabel>
-                  <select
-                    value={publishingStatus}
-                    onChange={(e) =>
-                      setPublishingStatus(
-                        e.target.value as "draft" | "published" | "scheduled",
-                      )
-                    }
-                    className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-800 outline-none transition focus:border-[var(--primary)]"
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                    <option value="scheduled">Scheduled</option>
-                  </select>
-                </div>
-
-                <div>
-                  <SectionLabel>Author</SectionLabel>
-                  <select
-                    value={authorIds[0] || ""}
-                    onChange={(e) => handleAuthorChange(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-800 outline-none transition focus:border-[var(--primary)]"
-                  >
-                    <option value="">Select author</option>
-                    {authorOptions.map((author) => (
-                      <option key={author.id} value={author.id}>
-                        {author.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <SectionLabel>Categories</SectionLabel>
-                  <div className="space-y-2">
-                    {categoryOptions.map((category) => (
-                      <label
-                        key={category.id}
-                        className="flex items-center gap-2 text-sm text-slate-700"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={categoryIds.includes(category.id)}
-                          onChange={() => handleToggleCategory(category.id)}
-                          className="h-4 w-4 rounded border-slate-300 text-[var(--primary)] focus:ring-[var(--primary)]"
-                        />
-                        <span>{category.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <SectionLabel>Tags</SectionLabel>
-                  <div className="flex flex-wrap gap-2">
-                    {tagOptions.map((tag) => {
-                      const active = tagIds.includes(tag.id);
-
-                      return (
-                        <button
-                          key={tag.id}
-                          type="button"
-                          onClick={() => handleToggleTag(tag.id)}
-                          className={`rounded-full border px-3 py-1 text-xs transition ${
-                            active
-                              ? "border-[var(--primary)] bg-[var(--primary-50)] text-[var(--primary-hover)]"
-                              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                          }`}
-                        >
-                          {tag.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="mb-2 text-xs font-semibold text-slate-700">
-                Excerpt
-              </p>
-
-              <textarea
-                value={excerpt}
-                onChange={(e) => setExcerpt(e.target.value)}
-                className="min-h-[120px] w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 placeholder:text-slate-300 outline-none transition focus:border-[var(--primary)]"
-                rows={5}
-                placeholder="Write excerpt"
+          <aside className="min-w-0 xl:w-[320px]">
+            <div className="sticky top-6 space-y-4">
+              <CreateBlogPostPreview
+                disabled={
+                  !title.trim() ||
+                  !content.trim() ||
+                  !authorName.trim() ||
+                  selectedCategoryIds.length === 0
+                }
+                onClick={() => {}}
               />
-            </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="mb-3 text-xs font-semibold text-slate-700">SEO</p>
+              <CreateBlogPostSettingsSidebar
+                authorName={authorName}
+                onAuthorNameChange={(value) => {
+                  setAuthorName(value);
+                  if (value.trim()) {
+                    clearAuthorError();
+                  }
+                }}
+                scheduleDate={scheduleDate}
+                scheduleTime={scheduleTime}
+                onScheduleDateChange={(value) => {
+                  setScheduleDate(value);
+                  if (value && scheduleTime) {
+                    clearScheduleError();
+                  }
+                }}
+                onScheduleTimeChange={(value) => {
+                  setScheduleTime(value);
+                  if (scheduleDate && value) {
+                    clearScheduleError();
+                  }
+                }}
+                scheduleError={errors.schedule}
+                isFeatured={isFeatured}
+                onToggleFeatured={() => setIsFeatured((prev) => !prev)}
+                wordCount={wordCount}
+                readTimeLabel={readTimeLabel}
+                categoryOptions={categoryOptions}
+                selectedCategoryIds={selectedCategoryIds}
+                onToggleCategory={(value) => {
+                  setSelectedCategoryIds((prev) => {
+                    const next = prev.includes(value)
+                      ? prev.filter((item) => item !== value)
+                      : [...prev, value];
 
-              <div className="space-y-3">
-                <div>
-                  <SectionLabel>Meta Title</SectionLabel>
-                  <input
-                    value={metaTitle}
-                    onChange={(e) => setMetaTitle(e.target.value)}
-                    placeholder="Meta title"
-                    className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 placeholder:text-slate-300 outline-none transition focus:border-[var(--primary)]"
-                  />
-                </div>
+                    if (next.length > 0) {
+                      clearCategoryError();
+                    }
 
-                <div>
-                  <SectionLabel>Meta Description</SectionLabel>
-                  <textarea
-                    value={metaDescription}
-                    onChange={(e) => setMetaDescription(e.target.value)}
-                    placeholder="Meta description"
-                    className="min-h-[110px] w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 placeholder:text-slate-300 outline-none transition focus:border-[var(--primary)]"
-                    rows={4}
-                  />
-                </div>
-              </div>
+                    return next;
+                  });
+                }}
+                categoryError={errors.categories}
+                categoryLoadError={categoryLoadError}
+                isLoadingCategories={isLoadingCategories}
+                newCategoryName={newCategoryName}
+                onNewCategoryNameChange={setNewCategoryName}
+                onCreateCategory={handleCreateCategory}
+                isCreatingCategory={isCreatingCategory}
+                createCategoryError={categoryCreateError}
+                tagOptions={tagOptions}
+                selectedTagIds={selectedTagIds}
+                tagInput={tagInput}
+                onTagInputChange={(value) => {
+                  setTagInput(value);
+                  clearCreateTagError();
+                }}
+                onAddTag={handleAddTag}
+                onRemoveTag={(value) => {
+                  setSelectedTagIds((prev) =>
+                    prev.filter((item) => item !== value),
+                  );
+                }}
+                isLoadingTags={isLoadingTags}
+                tagLoadError={tagLoadError}
+                isCreatingTag={isCreatingTag}
+                createTagError={createTagError}
+                excerpt={excerpt}
+                onExcerptChange={(value) => {
+                  setExcerpt(value);
+                  if (value.trim()) {
+                    clearExcerptError();
+                  }
+                }}
+                metaTitle={metaTitle}
+                metaDescription={metaDescription}
+                onMetaTitleChange={(value) => {
+                  setMetaTitle(value);
+                  if (value.trim()) {
+                    clearMetaTitleError();
+                  }
+                }}
+                onMetaDescriptionChange={(value) => {
+                  setMetaDescription(value);
+                  if (value.trim()) {
+                    clearMetaDescriptionError();
+                  }
+                }}
+                authorError={errors.authorName}
+              />
             </div>
           </aside>
         </div>

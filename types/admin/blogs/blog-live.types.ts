@@ -9,9 +9,10 @@ export interface BlogLiveSeo {
 
 export interface BlogLiveAuthor {
   id: string;
-  fullLegalName: string;
-  medicalEmail: string;
-  professionalRole: string;
+  fullLegalName?: string;
+  medicalEmail?: string;
+  professionalRole?: string;
+  name?: string;
 }
 
 export interface BlogLiveCategory {
@@ -31,11 +32,17 @@ export interface BlogLiveTag {
   createdAt: string;
 }
 
+export interface BlogLiveCoverImage {
+  imageUrl: string;
+  imageType: "hero" | "thumbnail";
+}
+
 export interface BlogLivePost {
   id: string;
   title: string;
   content: string;
-  coverImageUrl: string;
+  authorName: string;
+  coverImages: BlogLiveCoverImage[];
   publishingStatus: string;
   scheduledPublishDate: string | null;
   isFeatured: boolean;

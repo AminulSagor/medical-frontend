@@ -77,3 +77,18 @@ export type CreateBlogPostResponse = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type UpdateBlogPostPayload = {
+  title: string;
+  content: string;
+  authorName: string;
+  coverImageUrl: BlogCoverImagePayloadItem[];
+  categoryIds: string[];
+  tagIds: string[];
+  publishingStatus: BlogCreatePublishingStatus;
+  scheduledPublishDate?: string;
+  isFeatured: boolean;
+  excerpt: string;
+  seoMetaTitle: string;
+  seoMetaDescription: string;
+};

@@ -855,6 +855,8 @@ export function useCreateBlogPost() {
 
     coverImageUrl,
     secondImageUrl,
+    setCoverImageUrl,
+    setSecondImageUrl,
 
     isUploadingCoverImage,
     isUploadingSecondImage,
@@ -891,8 +893,11 @@ export function useCreateBlogPost() {
     setIsFeatured,
 
     errors,
+    setErrors,
     bannerError,
+    setBannerError,
     isSubmitting,
+    setIsSubmitting,
     isPublishReady,
 
     wordCount,

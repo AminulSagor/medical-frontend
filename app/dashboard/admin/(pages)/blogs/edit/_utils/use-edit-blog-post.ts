@@ -2,241 +2,259 @@
 
 import { useEffect, useState } from "react";
 import { getAdminBlogLiveById } from "@/service/admin/blogs/blog-live.service";
-import { getBlogCategories } from "@/service/admin/blogs/blog-category.service";
-import { getBlogTags } from "@/service/admin/blogs/blog-tag.service";
-import { getAdminUsers } from "@/service/admin/users/admin-user.service";
-import type {
-  BlogAuthorOption,
-  BlogCategoryOption,
-  BlogCreatePublishingStatus,
-} from "@/types/admin/blogs/blog-create.types";
-import type { BlogTagItem } from "@/types/admin/blogs/blog-tag.types";
-import {
-  updateBlogRelations,
-  updateBlogSeoAndExcerpt,
-  updateBlogStatus,
-} from "./edit-blog-post.service";
-import type { BlogLivePost } from "@/types/admin/blogs/blog-live.types";
+import { updateBlogPost } from "@/service/admin/blogs/blog-edit.service";
+import type { BlogCreatePublishingStatus } from "@/types/admin/blogs/blog-create.types";
+import toast from "react-hot-toast";
+import { useCreateBlogPost } from "@/app/dashboard/admin/(pages)/blogs/create/_utils/use-create-blog-post";
+import { buildScheduledPublishDateFromInputs } from "@/app/dashboard/admin/(pages)/blogs/create/_utils/create-blog-post.helpers";
 
 export function useEditBlogPost(blogId: string) {
+  const create = useCreateBlogPost();
   const [loading, setLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
 
-  const [blog, setBlog] = useState<BlogLivePost | null>(null);
-
-  const [authorOptions, setAuthorOptions] = useState<BlogAuthorOption[]>([]);
-  const [categoryOptions, setCategoryOptions] = useState<BlogCategoryOption[]>(
-    [],
-  );
-  const [tagOptions, setTagOptions] = useState<BlogTagItem[]>([]);
-
-  const [excerpt, setExcerpt] = useState("");
-  const [metaTitle, setMetaTitle] = useState("");
-  const [metaDescription, setMetaDescription] = useState("");
-
-  const [authorIds, setAuthorIds] = useState<string[]>([]);
-  const [categoryIds, setCategoryIds] = useState<string[]>([]);
-  const [tagIds, setTagIds] = useState<string[]>([]);
-  const [publishingStatus, setPublishingStatus] =
-    useState<BlogCreatePublishingStatus>("draft");
+  const {
+    setTitle,
+    setContent,
+    setAuthorName,
+    setExcerpt,
+    setMetaTitle,
+    setMetaDescription,
+    setCoverImageUrl,
+    setSecondImageUrl,
+    setSelectedCategoryIds,
+    setSelectedTagIds,
+    setIsFeatured,
+    setScheduleDate,
+    setScheduleTime,
+    setBannerError,
+    setIsSubmitting,
+    setErrors,
+  } = create;
 
   useEffect(() => {
-    let isMounted = true;
-
     async function load() {
       try {
         setLoading(true);
-        setError("");
 
-        const [blogData, usersResponse, categoriesData, tagsData] =
-          await Promise.all([
-            getAdminBlogLiveById(blogId),
-            getAdminUsers(),
-            getBlogCategories(),
-            getBlogTags(),
-          ]);
+        const blog = await getAdminBlogLiveById(blogId);
 
-        if (!isMounted) return;
+        setTitle(blog.title || "");
+        setContent(blog.content || "");
+        setAuthorName(blog.authorName || "");
 
-        const mappedAuthors: BlogAuthorOption[] = usersResponse.data
-          .filter(
-            (user) =>
-              (user.status === "active" && user.type === "faculty") ||
-              user.type === "student",
-          )
-          .map((user) => ({
-            id: user.id,
-            name: user.name,
-          }));
+        setExcerpt(blog.excerpt || "");
+        setMetaTitle(blog.seo?.metaTitle || "");
+        setMetaDescription(blog.seo?.metaDescription || "");
 
-        setBlog(blogData);
-        setAuthorOptions(mappedAuthors);
-        setCategoryOptions(categoriesData);
-        setTagOptions(tagsData);
+        setIsFeatured(blog.isFeatured || false);
 
-        setExcerpt(blogData.excerpt || "");
-        setMetaTitle(blogData.seo?.metaTitle || "");
-        setMetaDescription(blogData.seo?.metaDescription || "");
+        setSelectedCategoryIds(blog.categories.map((c) => c.id));
+        setSelectedTagIds(blog.tags.map((t) => t.id));
 
-        setAuthorIds(blogData.authors.map((a) => a.id));
-        setCategoryIds(blogData.categories.map((c) => c.id));
-        setTagIds(blogData.tags.map((t) => t.id));
-        setPublishingStatus(
-          (blogData.publishingStatus?.toLowerCase() as BlogCreatePublishingStatus) ||
-            "draft",
-        );
+        const hero = blog.coverImages.find((i) => i.imageType === "hero");
+        const thumb = blog.coverImages.find((i) => i.imageType === "thumbnail");
+
+        setCoverImageUrl(hero?.imageUrl || "");
+        setSecondImageUrl(thumb?.imageUrl || "");
+
+        if (blog.scheduledPublishDate) {
+          const d = new Date(blog.scheduledPublishDate);
+
+          setScheduleDate(d.toISOString().split("T")[0]);
+          setScheduleTime(d.toTimeString().slice(0, 5));
+        } else {
+          setScheduleDate("");
+          setScheduleTime("");
+        }
       } catch (err) {
-        console.error("Failed to load blog details:", err);
-        if (isMounted) {
-          setError("Failed to load blog details.");
-        }
+        console.error(err);
+        toast.error("Failed to load blog");
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     }
 
     void load();
+  }, [
+    blogId,
+    setTitle,
+    setContent,
+    setAuthorName,
+    setExcerpt,
+    setMetaTitle,
+    setMetaDescription,
+    setCoverImageUrl,
+    setSecondImageUrl,
+    setSelectedCategoryIds,
+    setSelectedTagIds,
+    setIsFeatured,
+    setScheduleDate,
+    setScheduleTime,
+  ]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [blogId]);
+  const validateForEdit = (status: BlogCreatePublishingStatus) => {
+    const nextErrors: {
+      title?: string;
+      content?: string;
+      authorName?: string;
+      categories?: string;
+      excerpt?: string;
+      coverImage?: string;
+      secondImage?: string;
+      schedule?: string;
+      metaTitle?: string;
+      metaDescription?: string;
+    } = {};
 
-  const handleAuthorChange = (authorId: string) => {
-    setAuthorIds(authorId ? [authorId] : []);
+    if (!create.title.trim()) {
+      nextErrors.title = "Post title is required";
+    }
+
+    if (!create.content.trim()) {
+      nextErrors.content = "Post content is required";
+    }
+
+    if (!create.authorName.trim()) {
+      nextErrors.authorName = "Author name is required";
+    }
+
+    if (status === "scheduled") {
+      if (!create.scheduleDate) {
+        nextErrors.schedule = "Publish date is required";
+      } else if (!create.scheduleTime) {
+        nextErrors.schedule = "Publish time is required";
+      }
+    }
+
+    if (status === "published") {
+      if (!create.coverImageUrl) {
+        nextErrors.coverImage = "Cover image is required";
+      }
+
+      if (!create.secondImageUrl) {
+        nextErrors.secondImage = "Second image is required";
+      }
+
+      if (create.selectedCategoryIds.length === 0) {
+        nextErrors.categories = "At least one category must be selected";
+      }
+
+      if (!create.excerpt.trim()) {
+        nextErrors.excerpt = "Excerpt is required";
+      }
+
+      if (!create.metaTitle.trim()) {
+        nextErrors.metaTitle = "Meta title is required";
+      }
+
+      if (!create.metaDescription.trim()) {
+        nextErrors.metaDescription = "Meta description is required";
+      }
+    }
+
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      if (status === "published") {
+        setBannerError(
+          "Cannot publish. Please fill in all required fields first.",
+        );
+      } else if (status === "scheduled") {
+        setBannerError(
+          "Cannot schedule. Please complete title, content, author, date, and time.",
+        );
+      }
+
+      return false;
+    }
+
+    setBannerError("");
+    return true;
   };
 
-  const handleToggleCategory = (categoryId: string) => {
-    setCategoryIds((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId],
+  const handleUpdate = async (status: BlogCreatePublishingStatus) => {
+    if (create.isUploadingCoverImage || create.isUploadingSecondImage) {
+      setBannerError("Please wait for the image upload to finish.");
+      toast.error("Please wait for the image upload to finish.");
+      return;
+    }
+
+    const hasAnyDraftContent = Boolean(
+      create.title.trim() ||
+      create.content.trim() ||
+      create.authorName.trim() ||
+      create.coverImageUrl ||
+      create.secondImageUrl ||
+      create.excerpt.trim() ||
+      create.metaTitle.trim() ||
+      create.metaDescription.trim() ||
+      create.selectedCategoryIds.length > 0 ||
+      create.selectedTagIds.length > 0 ||
+      create.scheduleDate ||
+      create.scheduleTime,
     );
-  };
 
-  const handleToggleTag = (tagId: string) => {
-    setTagIds((prev) =>
-      prev.includes(tagId)
-        ? prev.filter((id) => id !== tagId)
-        : [...prev, tagId],
-    );
-  };
+    if (status === "draft" && !hasAnyDraftContent) {
+      setBannerError("Add at least one field before saving a draft.");
+      return;
+    }
 
-  const handleSave = async () => {
+    if (status !== "draft" && !validateForEdit(status)) {
+      return;
+    }
+
     try {
-      setIsSaving(true);
-      setError("");
-      setSuccessMessage("");
+      setIsSubmitting(true);
+      setBannerError("");
 
-      await updateBlogSeoAndExcerpt(blogId, {
-        excerpt,
-        seoMetaTitle: metaTitle,
-        seoMetaDescription: metaDescription,
-      });
+      const payload = {
+        title: create.title.trim(),
+        content: create.content.trim(),
+        authorName: create.authorName.trim(),
+        coverImageUrl: [
+          ...(create.coverImageUrl
+            ? [{ imageUrl: create.coverImageUrl, imageType: "hero" as const }]
+            : []),
+          ...(create.secondImageUrl
+            ? [
+                {
+                  imageUrl: create.secondImageUrl,
+                  imageType: "thumbnail" as const,
+                },
+              ]
+            : []),
+        ],
+        categoryIds: create.selectedCategoryIds,
+        tagIds: create.selectedTagIds,
+        publishingStatus: status,
+        scheduledPublishDate:
+          status === "scheduled"
+            ? buildScheduledPublishDateFromInputs(
+                create.scheduleDate,
+                create.scheduleTime,
+              )
+            : undefined,
+        isFeatured: create.isFeatured,
+        excerpt: create.excerpt.trim(),
+        seoMetaTitle: create.metaTitle.trim(),
+        seoMetaDescription: create.metaDescription.trim(),
+      };
 
-      await updateBlogRelations(blogId, {
-        authorIds,
-        categoryIds,
-        tagIds,
-      });
+      await updateBlogPost(blogId, payload);
 
-      await updateBlogStatus(blogId, {
-        publishingStatus,
-      });
-
-      setBlog((prev) => {
-        if (!prev) return prev;
-
-        return {
-          ...prev,
-          excerpt,
-          publishingStatus,
-          authors: authorOptions
-            .filter((item) => authorIds.includes(item.id))
-            .map((item) => ({
-              id: item.id,
-              fullLegalName: item.name,
-              medicalEmail: "",
-              professionalRole: "",
-            })),
-          categories: categoryOptions
-            .filter((item) => categoryIds.includes(item.id))
-            .map((item) => ({
-              id: item.id,
-              name: item.name,
-              slug: "",
-              description: null,
-              isActive: true,
-              createdAt: "",
-              updatedAt: "",
-            })),
-          tags: tagOptions
-            .filter((item) => tagIds.includes(item.id))
-            .map((item) => ({
-              id: item.id,
-              name: item.name,
-              slug: "",
-              createdAt: "",
-            })),
-          seo: prev.seo
-            ? {
-                ...prev.seo,
-                metaTitle,
-                metaDescription,
-              }
-            : {
-                id: "",
-                postId: prev.id,
-                metaTitle,
-                metaDescription,
-                createdAt: "",
-                updatedAt: "",
-              },
-        };
-      });
-
-      setSuccessMessage("Blog updated successfully.");
+      toast.success("Blog updated successfully");
     } catch (err) {
-      console.error("Failed to update blog:", err);
-      setError("Failed to save changes.");
+      console.error(err);
+      setBannerError("Failed to save the post. Please try again.");
+      toast.error("Update failed");
     } finally {
-      setIsSaving(false);
+      setIsSubmitting(false);
     }
   };
 
   return {
     loading,
-    isSaving,
-    error,
-    successMessage,
-    blog,
-
-    authorOptions,
-    categoryOptions,
-    tagOptions,
-
-    excerpt,
-    setExcerpt,
-
-    metaTitle,
-    setMetaTitle,
-
-    metaDescription,
-    setMetaDescription,
-
-    authorIds,
-    categoryIds,
-    tagIds,
-    publishingStatus,
-    setPublishingStatus,
-
-    handleAuthorChange,
-    handleToggleCategory,
-    handleToggleTag,
-    handleSave,
+    ...create,
+    handleSubmit: handleUpdate,
   };
 }
