@@ -27,6 +27,7 @@ export type CoursePricing = {
   groupSave: CourseGroupSave;
   ctaLabel: string;
   warningLabel: string;
+  warningTone?: "danger" | "default";
   footnote: string;
 };
 

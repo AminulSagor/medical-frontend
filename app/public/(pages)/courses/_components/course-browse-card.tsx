@@ -23,22 +23,24 @@ export default function CourseBrowseCard({
 }) {
   const isOnDemand = !!course.imageSrc;
   const isRegistrationClosed = !!course.isRegistrationClosed;
+  const isSoldOut = !!course.isSoldOut;
+  const isDisabled = isRegistrationClosed || isSoldOut;
   const router = useRouter();
 
   return (
     <div
       onClick={() => {
-        if (isRegistrationClosed) return;
+        if (isDisabled) return;
         router.push(`/public/courses/details/${course.id}`);
       }}
-      aria-disabled={isRegistrationClosed}
+      aria-disabled={isDisabled}
       className={[
         "h-full min-h-[450px] rounded-3xl bg-white border border-light-slate/15 shadow-sm overflow-hidden",
         "flex flex-col transition",
-        isRegistrationClosed
-          ? "cursor-not-allowed grayscale opacity-50"
+        isDisabled
+          ? "cursor-not-allowed bg-slate-50 grayscale-[0.55] opacity-70"
           : "cursor-pointer hover:shadow-md",
-        course.action.kind === "reserve" && !isRegistrationClosed
+        course.action.kind === "reserve" && !isDisabled
           ? "ring-2 ring-primary/30"
           : "",
       ].join(" ")}
@@ -122,40 +124,42 @@ export default function CourseBrowseCard({
           ))}
         </div>
 
-        {/* availability bar */}
-        {course.availability ? (
-          <div className="mt-5">
-            <div className="flex items-center justify-between text-[11px] font-bold tracking-[0.18em]">
-              <span className="text-light-slate">
-                {course.availability.label}
-              </span>
-              <span
-                className={
-                  course.availability.tone === "danger"
-                    ? "text-red"
-                    : "text-primary"
-                }
-              >
-                {course.availability.note}
-              </span>
-            </div>
+        <div className="mt-auto pt-8">
+          {/* availability bar */}
+          {course.availability ? (
+            <div>
+              <div className="flex items-center justify-between gap-3 text-[11px] font-bold tracking-[0.18em]">
+                <span className="uppercase text-light-slate">
+                  {course.availability.label}
+                </span>
+                <span
+                  className={[
+                    "text-right text-sm font-extrabold tracking-normal",
+                    course.availability.tone === "danger"
+                      ? "text-red"
+                      : "text-primary",
+                  ].join(" ")}
+                >
+                  {course.availability.note}
+                </span>
+              </div>
 
-            <div className="mt-3 h-2 w-full rounded-full bg-light-slate/15 overflow-hidden">
-              <div
-                className={[
-                  "h-full rounded-full",
-                  course.availability.tone === "danger"
-                    ? "bg-red"
-                    : "bg-primary",
-                ].join(" ")}
-                style={{ width: `${course.availability.percent}%` }}
-              />
+              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-light-slate/15">
+                <div
+                  className={[
+                    "h-full rounded-full",
+                    course.availability.tone === "danger"
+                      ? "bg-red"
+                      : "bg-primary",
+                  ].join(" ")}
+                  style={{ width: `${Math.max(0, Math.min(100, course.availability.percent))}%` }}
+                />
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        {/* bottom row always aligned */}
-        <div className="mt-auto pt-5 flex items-center justify-between gap-3">
+          {/* bottom row always aligned */}
+          <div className="mt-6 flex items-center justify-between gap-3 border-t border-light-slate/10 pt-6">
           <div>
             {course.oldPrice ? (
               <p className="text-xs font-semibold text-light-slate line-through">
@@ -169,18 +173,19 @@ export default function CourseBrowseCard({
 
           <button
             type="button"
-            disabled={isRegistrationClosed}
+            disabled={isDisabled}
             className={[
               "h-11 shrink-0 rounded-full px-5 text-sm font-extrabold transition active:scale-95 disabled:pointer-events-none disabled:opacity-70",
               course.action.kind === "reserve"
                 ? "border border-primary/30 bg-white text-primary hover:bg-primary/10"
                 : course.action.kind === "start"
                   ? "bg-primary text-white hover:opacity-90"
-                  : "bg-light-slate/10 text-light-slate hover:bg-light-slate/15",
+                  : "border border-red/20 bg-red/5 text-red",
             ].join(" ")}
           >
             {course.action.label}
           </button>
+          </div>
         </div>
       </div>
     </div>

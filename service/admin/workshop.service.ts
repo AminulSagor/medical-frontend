@@ -16,6 +16,7 @@ import type {
   DeleteWorkshopResponse,
   WorkshopEnrolleeItem,
   WorkshopStatsResponse,
+  WorkshopStatus,
 } from "@/types/admin/workshop.types";
 
 type ApiResponse<T> = {
@@ -284,12 +285,21 @@ export const updateWorkshop = async (
   id: string,
   data: UpdateWorkshopRequest,
 ): Promise<Workshop> => {
-  const response = await serviceClient.post<ApiResponse<Workshop> | Workshop>(
-    "/admin/workshops",
-    {
-      ...data,
-      id,
-    },
+  const response = await serviceClient.put<ApiResponse<Workshop> | Workshop>(
+    `/admin/workshops/${id}`,
+    data,
+  );
+
+  return unwrapWorkshopResponse(response.data);
+};
+
+export const updateWorkshopStatus = async (
+  id: string,
+  status: WorkshopStatus,
+): Promise<Workshop> => {
+  const response = await serviceClient.put<ApiResponse<Workshop> | Workshop>(
+    `/admin/workshops/${id}`,
+    { status },
   );
 
   return unwrapWorkshopResponse(response.data);

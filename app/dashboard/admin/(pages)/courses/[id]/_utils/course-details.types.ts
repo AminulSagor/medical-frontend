@@ -19,6 +19,7 @@ export interface CourseDetailsModel {
     capacityUsed: number;
     capacityTotal: number;
     refundRequests: number;
+    revenueGenerated: number;
     deliveryMode: CourseDetailsDeliveryMode;
     shortBlurb: string;
     learningObjectives: string;
@@ -33,6 +34,5 @@ export interface CourseDetailsModel {
     days: WorkshopDay[];
     faculty: WorkshopFaculty[];
     facilityLabel: string;
-    facilityName: string;
-    facilityAddressLine: string;
+    facilitySubLabel: string;
 }

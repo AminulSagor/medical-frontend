@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ImageOff } from "lucide-react";
 
 type FallbackNetworkImageProps = {
-  src?: string | null;
+  src?: unknown;
   alt: string;
   className?: string;
   style?: React.CSSProperties;
@@ -15,6 +15,26 @@ type FallbackNetworkImageProps = {
 
 function cn(...values: Array<string | undefined | null | false>) {
   return values.filter(Boolean).join(" ");
+}
+
+function normalizeImageSrc(value: unknown): string {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (!value || typeof value !== "object") {
+    return "";
+  }
+
+  const record = value as Record<string, unknown>;
+  for (const key of ["url", "src", "secureUrl", "href", "location"]) {
+    const candidate = record[key];
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+
+  return "";
 }
 
 export default function FallbackNetworkImage({
@@ -28,13 +48,7 @@ export default function FallbackNetworkImage({
 }: FallbackNetworkImageProps) {
   const [hasError, setHasError] = useState(false);
 
-  const normalizedSrc = useMemo(() => {
-    if (!src) {
-      return "";
-    }
-
-    return src.trim();
-  }, [src]);
+  const normalizedSrc = useMemo(() => normalizeImageSrc(src), [src]);
 
   if (!normalizedSrc || hasError) {
     return (

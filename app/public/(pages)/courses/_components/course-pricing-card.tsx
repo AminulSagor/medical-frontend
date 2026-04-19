@@ -113,7 +113,10 @@ export default function CoursePricingCard({ data }: { data: CourseDetails }) {
             {p.ctaLabel}
           </Button>
 
-          <div className="mt-4 flex items-center justify-center gap-2 text-sm font-extrabold text-red">
+          <div className={[
+            "mt-4 flex items-center justify-center gap-2 text-sm font-extrabold",
+            p.warningTone === "danger" ? "text-red" : "text-light-slate",
+          ].join(" ")}>
             <Info size={16} />
             {p.warningLabel}
           </div>

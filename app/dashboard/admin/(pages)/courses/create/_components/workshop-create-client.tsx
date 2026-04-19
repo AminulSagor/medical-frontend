@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Calendar,
+  CalendarPlus,
   Check,
   Clock,
   ImageIcon,
@@ -23,10 +24,6 @@ import ManageClinicalLocationsModal from "../../_components/manage-clinical-loca
 import { searchFaculty } from "@/service/admin/faculty.service";
 import { listFacilities } from "@/service/admin/facility.service";
 import { createWorkshop, getWorkshopById } from "@/service/admin/workshop.service";
-import {
-  getUploadUrl,
-  uploadFileToSignedUrl,
-} from "@/service/upload/upload.service";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   createWorkshopSchema,
@@ -85,6 +82,133 @@ function normalizeTimeDisplay(value?: string | null): string {
     .toUpperCase();
 }
 
+
+function toNativeTimeValue(value?: string | null): string {
+  if (!value) return "";
+
+  const trimmed = value.trim().toUpperCase();
+  const meridiemMatch = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+  if (meridiemMatch) {
+    const rawHour = Number(meridiemMatch[1]);
+    const minute = meridiemMatch[2];
+    const meridiem = meridiemMatch[3];
+    let hour = rawHour % 12;
+    if (meridiem === "PM") hour += 12;
+    return `${String(hour).padStart(2, "0")}:${minute}`;
+  }
+
+  const twentyFourHourMatch = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (twentyFourHourMatch) {
+    return `${String(Number(twentyFourHourMatch[1])).padStart(2, "0")}:${twentyFourHourMatch[2]}`;
+  }
+
+  return "";
+}
+
+function NativeDatePickerField({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const openPicker = () => {
+    const input = inputRef.current;
+    if (!input) return;
+
+    try {
+      (input as HTMLInputElement & { showPicker?: () => void }).showPicker?.();
+    } catch {
+      input.focus();
+      input.click();
+    }
+  };
+
+  return (
+    <div className="relative" onClick={openPicker}>
+      <TextInput
+        value={value}
+        readOnly
+        placeholder={placeholder}
+        className="cursor-pointer pr-10"
+      />
+      <Calendar
+        size={16}
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+      />
+      <input
+        ref={inputRef}
+        type="date"
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value)}
+        onClick={(e) => {
+          e.stopPropagation();
+          openPicker();
+        }}
+        className="pointer-events-none absolute bottom-0 left-0 h-0 w-0 opacity-0"
+        tabIndex={-1}
+        aria-label={placeholder || "Select date"}
+      />
+    </div>
+  );
+}
+
+function NativeTimePickerField({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const openPicker = () => {
+    const input = inputRef.current;
+    if (!input) return;
+
+    try {
+      (input as HTMLInputElement & { showPicker?: () => void }).showPicker?.();
+    } catch {
+      input.focus();
+      input.click();
+    }
+  };
+
+  return (
+    <div className="relative" onClick={openPicker}>
+      <TextInput
+        value={value}
+        readOnly
+        placeholder={placeholder}
+        className="cursor-pointer pr-10"
+      />
+      <Clock
+        size={16}
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+      />
+      <input
+        ref={inputRef}
+        type="time"
+        value={toNativeTimeValue(value)}
+        onChange={(e) => onChange(normalizeTimeDisplay(e.target.value))}
+        onClick={(e) => {
+          e.stopPropagation();
+          openPicker();
+        }}
+        className="pointer-events-none absolute bottom-0 left-0 h-0 w-0 opacity-0"
+        tabIndex={-1}
+        aria-label={placeholder || "Select time"}
+      />
+    </div>
+  );
+}
+
 function formatLastSavedLabel(lastSavedAt: Date | null): string {
   if (!lastSavedAt) return "Not saved yet";
 
@@ -139,7 +263,6 @@ export default function WorkshopCreateClient() {
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
   const [coverFileName, setCoverFileName] = useState<string | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
-  const [pendingCoverFile, setPendingCoverFile] = useState<File | null>(null);
   const [learningObjectives, setLearningObjectives] = useState("");
   const [cme, setCme] = useState(false);
   const [cmeCreditsCount, setCmeCreditsCount] = useState("");
@@ -168,10 +291,8 @@ export default function WorkshopCreateClient() {
   const [facultyQuery, setFacultyQuery] = useState("");
   const [facultyResults, setFacultyResults] = useState<Faculty[]>([]);
   const [facultySearching, setFacultySearching] = useState(false);
-  const [facultyLoadingMore, setFacultyLoadingMore] = useState(false);
   const [facultyDropdownOpen, setFacultyDropdownOpen] = useState(false);
-  const [facultyPage, setFacultyPage] = useState(1);
-  const [facultyHasMore, setFacultyHasMore] = useState(false);
+  const [isFacultyInputActive, setIsFacultyInputActive] = useState(false);
   const facultySearchRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const debouncedFacultyQuery = useDebounce(facultyQuery, 300);
@@ -189,7 +310,6 @@ export default function WorkshopCreateClient() {
     setCoverImageUrl(workshop.coverImageUrl ?? null);
     setCoverPreviewUrl(workshop.coverImageUrl ?? null);
     setCoverFileName(null);
-    setPendingCoverFile(null);
     setLearningObjectives(workshop.learningObjectives ?? "");
     setCme(Boolean(workshop.offersCmeCredits));
     setCmeCreditsCount(workshop.cmeCreditsCount ?? "");
@@ -234,7 +354,10 @@ export default function WorkshopCreateClient() {
     setGroupRate(Number(primaryDiscount?.groupRatePerPerson ?? 0));
 
     const firstDayDate = sortedDays[0]?.date ?? "";
-    setRegistrationDeadline(workshop.registrationDeadline ? String(workshop.registrationDeadline).slice(0, 10) : firstDayDate);
+    const normalizedRegistrationDeadline = workshop.registrationDeadline
+      ? workshop.registrationDeadline.split("T")[0]
+      : firstDayDate;
+    setRegistrationDeadline(normalizedRegistrationDeadline);
 
     const updatedAt = workshop.updatedAt || workshop.createdAt;
     setLastSavedAt(updatedAt ? new Date(updatedAt) : null);
@@ -278,52 +401,40 @@ export default function WorkshopCreateClient() {
     };
   }, [editingWorkshopId]);
 
-  async function fetchFacultyOptions(query: string, page: number, append: boolean) {
+  useEffect(() => {
+    if (!isFacultyInputActive) {
+      abortRef.current?.abort();
+      setFacultySearching(false);
+      return;
+    }
+
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
-    if (append) {
-      setFacultyLoadingMore(true);
-    } else {
-      setFacultySearching(true);
-    }
+    setFacultySearching(true);
+    setFacultyDropdownOpen(true);
 
-    try {
-      const res = await searchFaculty(query || undefined, page, 10, controller.signal);
-      if (controller.signal.aborted) return;
-
-      setFacultyResults((prev) => {
-        if (!append) return res.data;
-
-        const existingIds = new Set(prev.map((item) => item.id));
-        const incoming = res.data.filter((item) => !existingIds.has(item.id));
-        return [...prev, ...incoming];
+    searchFaculty(debouncedFacultyQuery.trim() || undefined, 1, 10, controller.signal)
+      .then((res) => {
+        if (controller.signal.aborted) return;
+        setFacultyResults(res.data);
+        setFacultyDropdownOpen(true);
+      })
+      .catch((error) => {
+        if (error?.name !== "AbortError" && error?.code !== "ERR_CANCELED") {
+          console.error("Faculty search failed:", error);
+          setFacultyResults([]);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setFacultySearching(false);
+        }
       });
-      setFacultyPage(page);
-      setFacultyHasMore((res.meta?.page ?? page) < (res.meta?.totalPages ?? 1));
-      setFacultyDropdownOpen(true);
-    } catch (error: any) {
-      if (error?.name !== "AbortError" && error?.code !== "ERR_CANCELED") {
-        console.error("Faculty search failed:", error);
-      }
-    } finally {
-      if (!controller.signal.aborted) {
-        setFacultySearching(false);
-        setFacultyLoadingMore(false);
-      }
-    }
-  }
 
-  useEffect(() => {
-    if (!facultyDropdownOpen && debouncedFacultyQuery.trim() === "") {
-      return;
-    }
-
-    void fetchFacultyOptions(debouncedFacultyQuery, 1, false);
-
-    return () => abortRef.current?.abort();
-  }, [debouncedFacultyQuery, facultyDropdownOpen]);
+    return () => controller.abort();
+  }, [debouncedFacultyQuery, isFacultyInputActive]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -332,6 +443,7 @@ export default function WorkshopCreateClient() {
         !facultySearchRef.current.contains(event.target as Node)
       ) {
         setFacultyDropdownOpen(false);
+        setIsFacultyInputActive(false);
       }
     }
 
@@ -340,27 +452,6 @@ export default function WorkshopCreateClient() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  function handleFacultySearchFocus() {
-    setFacultyDropdownOpen(true);
-    void fetchFacultyOptions(facultyQuery, 1, false);
-  }
-
-  function handleFacultyResultsScroll(event: React.UIEvent<HTMLDivElement>) {
-    const element = event.currentTarget;
-    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
-
-    if (
-      distanceFromBottom > 60 ||
-      facultySearching ||
-      facultyLoadingMore ||
-      !facultyHasMore
-    ) {
-      return;
-    }
-
-    void fetchFacultyOptions(facultyQuery, facultyPage + 1, true);
-  }
 
   function selectFacultyFromSearch(facultyItem: Faculty) {
     const alreadySelected = selectedFaculty.some(
@@ -380,6 +471,7 @@ export default function WorkshopCreateClient() {
 
     setFacultyQuery("");
     setFacultyDropdownOpen(false);
+    setIsFacultyInputActive(false);
     setFacultyResults([]);
   }
 
@@ -407,13 +499,6 @@ export default function WorkshopCreateClient() {
         coverImageUrl,
         coverFileName,
         coverPreviewUrl,
-        pendingCoverFile: pendingCoverFile
-          ? {
-              name: pendingCoverFile.name,
-              size: pendingCoverFile.size,
-              type: pendingCoverFile.type,
-            }
-          : null,
         learningObjectives,
         cme,
         cmeCreditsCount,
@@ -438,7 +523,6 @@ export default function WorkshopCreateClient() {
       coverImageUrl,
       coverFileName,
       coverPreviewUrl,
-      pendingCoverFile,
       learningObjectives,
       cme,
       cmeCreditsCount,
@@ -581,12 +665,12 @@ export default function WorkshopCreateClient() {
     router.push(COURSES_LIST_ROUTE);
   }
 
-  function buildPayload(status: WorkshopStatus, imageUrlOverride?: string | null) {
+  function buildPayload(status: WorkshopStatus) {
     return buildWorkshopPayload({
       mode,
       title,
       blurb,
-      coverImageUrl: imageUrlOverride ?? coverImageUrl,
+      coverImageUrl,
       learningObjectives,
       cme,
       cmeCreditsCount,
@@ -607,43 +691,26 @@ export default function WorkshopCreateClient() {
     });
   }
 
-  async function uploadCoverImageIfNeeded() {
-    if (!pendingCoverFile) {
-      return coverImageUrl;
-    }
-
-    const uploadUrlResponse = await getUploadUrl({
-      fileName: pendingCoverFile.name,
-      contentType: pendingCoverFile.type || "application/octet-stream",
-      folder: "courses",
-    });
-
-    await uploadFileToSignedUrl(uploadUrlResponse.signedUrl, pendingCoverFile);
-
-    return uploadUrlResponse.readUrl;
-  }
-
   async function saveWorkshop(
     status: WorkshopStatus,
     modeToUse: "publish" | "draft" | "autosave",
   ) {
+    const payload = buildPayload(status);
+    const parsed = createWorkshopSchema.safeParse(payload);
+
+    if (!parsed.success) {
+      setDraftStatus("Draft");
+
+      if (modeToUse !== "autosave") {
+        window.alert(parsed.error.issues[0]?.message ?? "Validation error");
+      }
+
+      return false;
+    }
+
     setSaveMode(modeToUse);
 
     try {
-      const uploadedCoverImageUrl = await uploadCoverImageIfNeeded();
-      const payload = buildPayload(status, uploadedCoverImageUrl);
-      const parsed = createWorkshopSchema.safeParse(payload);
-
-      if (!parsed.success) {
-        setDraftStatus("Draft");
-
-        if (modeToUse !== "autosave") {
-          window.alert(parsed.error.issues[0]?.message ?? "Validation error");
-        }
-
-        return false;
-      }
-
       const requestBody: CreateWorkshopRequest = workshopId
         ? ({ ...payload, id: workshopId, status } as CreateWorkshopRequest)
         : payload;
@@ -653,12 +720,6 @@ export default function WorkshopCreateClient() {
       if (savedWorkshop?.id) {
         setWorkshopId(savedWorkshop.id);
       }
-
-      if (uploadedCoverImageUrl) {
-        setCoverImageUrl(uploadedCoverImageUrl);
-      }
-      setPendingCoverFile(null);
-      setCoverFileName(null);
 
       setDraftStatus(status === "published" ? "Ready" : "Draft");
       setLastSavedAt(new Date());
@@ -848,9 +909,9 @@ export default function WorkshopCreateClient() {
 
               <div>
                 <Label>Registration Deadline</Label>
-                <TextInput
+                <NativeDatePickerField
                   value={registrationDeadline}
-                  onChange={(e) => setRegistrationDeadline(e.target.value)}
+                  onChange={setRegistrationDeadline}
                   placeholder="YYYY-MM-DD"
                 />
               </div>
@@ -1023,8 +1084,8 @@ export default function WorkshopCreateClient() {
                           </button>
                         </div>
 
-                        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-                          <div className="md:col-span-2">
+                        <div className="mt-3 space-y-3">
+                          <div>
                             <Label>Course Topic</Label>
                             <TextInput
                               value={segment.topic}
@@ -1036,7 +1097,7 @@ export default function WorkshopCreateClient() {
                             />
                           </div>
 
-                          <div className="md:col-span-2">
+                          <div>
                             <Label>Topic Details</Label>
                             <TextArea
                               value={segment.details}
@@ -1048,43 +1109,45 @@ export default function WorkshopCreateClient() {
                             />
                           </div>
 
-                          <div>
-                            <Label>Date</Label>
-                            <TextInput
-                              value={segment.date}
-                              onChange={(e) =>
-                                updateSegment(day.id, segment.id, {
-                                  date: e.target.value,
-                                })
-                              }
-                              placeholder="MM/DD/YYYY"
-                            />
-                          </div>
+                          <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                            <div>
+                              <Label>Date</Label>
+                              <NativeDatePickerField
+                                value={segment.date}
+                                onChange={(value) =>
+                                  updateSegment(day.id, segment.id, {
+                                    date: value,
+                                  })
+                                }
+                                placeholder="YYYY-MM-DD"
+                              />
+                            </div>
 
-                          <div>
-                            <Label>Start Time</Label>
-                            <TextInput
-                              value={segment.startTime}
-                              onChange={(e) =>
-                                updateSegment(day.id, segment.id, {
-                                  startTime: normalizeTimeDisplay(e.target.value),
-                                })
-                              }
-                              placeholder="08:00 AM"
-                            />
-                          </div>
+                            <div>
+                              <Label>Start Time</Label>
+                              <NativeTimePickerField
+                                value={segment.startTime}
+                                onChange={(value) =>
+                                  updateSegment(day.id, segment.id, {
+                                    startTime: value,
+                                  })
+                                }
+                                placeholder="08:00 AM"
+                              />
+                            </div>
 
-                          <div>
-                            <Label>End Time</Label>
-                            <TextInput
-                              value={segment.endTime}
-                              onChange={(e) =>
-                                updateSegment(day.id, segment.id, {
-                                  endTime: normalizeTimeDisplay(e.target.value),
-                                })
-                              }
-                              placeholder="12:00 PM"
-                            />
+                            <div>
+                              <Label>End Time</Label>
+                              <NativeTimePickerField
+                                value={segment.endTime}
+                                onChange={(value) =>
+                                  updateSegment(day.id, segment.id, {
+                                    endTime: value,
+                                  })
+                                }
+                                placeholder="12:00 PM"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1100,6 +1163,18 @@ export default function WorkshopCreateClient() {
                   </div>
                 </div>
               ))}
+
+
+              <div className="flex justify-center pt-2">
+                <button
+                  type="button"
+                  onClick={addDay}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-slate-900 active:scale-[0.99]"
+                >
+                  <CalendarPlus size={16} />
+                  + Add Day
+                </button>
+              </div>
             </div>
           </WorkshopCard>
 
@@ -1109,16 +1184,18 @@ export default function WorkshopCreateClient() {
             icon={<Search size={16} className="text-[var(--primary)]" />}
           >
             <div className="space-y-4">
-              <div ref={facultySearchRef} className="relative z-30">
+              <div ref={facultySearchRef} className="relative">
                 <Label>Search Faculty</Label>
 
                 {facultyDropdownOpen ? (
                   <div className="absolute bottom-full left-0 z-20 mb-2 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
-                    {facultyResults.length > 0 ? (
-                      <div
-                        className="max-h-64 space-y-1 overflow-y-auto"
-                        onScroll={handleFacultyResultsScroll}
-                      >
+                    {facultySearching ? (
+                      <div className="flex items-center gap-2 px-3 py-2 text-sm text-slate-500">
+                        <Loader2 size={15} className="animate-spin" />
+                        Loading faculty...
+                      </div>
+                    ) : facultyResults.length > 0 ? (
+                      <div className="space-y-1">
                         {facultyResults.map((item) => (
                           <button
                             key={item.id}
@@ -1136,15 +1213,6 @@ export default function WorkshopCreateClient() {
                             </div>
                           </button>
                         ))}
-                        {facultyLoadingMore ? (
-                          <div className="flex items-center justify-center py-2 text-slate-400">
-                            <Loader2 size={16} className="animate-spin" />
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : facultySearching ? (
-                      <div className="flex items-center justify-center py-3 text-slate-400">
-                        <Loader2 size={16} className="animate-spin" />
                       </div>
                     ) : (
                       <p className="px-3 py-2 text-sm text-slate-500">
@@ -1161,8 +1229,16 @@ export default function WorkshopCreateClient() {
                   />
                   <TextInput
                     value={facultyQuery}
-                    onChange={(e) => setFacultyQuery(e.target.value)}
-                    onFocus={handleFacultySearchFocus}
+                    onFocus={() => {
+                      setIsFacultyInputActive(true);
+                      setFacultyDropdownOpen(true);
+                    }}
+                    onChange={(e) => {
+                      setFacultyQuery(e.target.value);
+                      if (!facultyDropdownOpen) {
+                        setFacultyDropdownOpen(true);
+                      }
+                    }}
                     placeholder="Search by faculty name"
                     className="pl-9"
                   />
@@ -1259,9 +1335,9 @@ export default function WorkshopCreateClient() {
 
               <div>
                 <Label>Registration Deadline</Label>
-                <TextInput
+                <NativeDatePickerField
                   value={registrationDeadline}
-                  onChange={(e) => setRegistrationDeadline(e.target.value)}
+                  onChange={setRegistrationDeadline}
                   placeholder="YYYY-MM-DD"
                 />
               </div>
@@ -1383,11 +1459,9 @@ export default function WorkshopCreateClient() {
                       coverPreviewUrlRef.current = previewUrl;
                       setCoverPreviewUrl(previewUrl);
                       setCoverFileName(file.name);
-                      setPendingCoverFile(file);
                     } else {
                       setCoverPreviewUrl(null);
                       setCoverFileName(null);
-                      setPendingCoverFile(null);
                     }
 
                     setCoverImageUrl(null);
