@@ -8,6 +8,7 @@ import { X, Minus, Plus, ShoppingBag, ArrowRight, Lock } from "lucide-react";
 import { DUMMY_UPSELL } from "@/app/public/data/cart.data";
 import { useCart } from "@/app/public/context/cart-context";
 import { calculateCart } from "@/service/public/cart.service";
+import { getProductDetails } from "@/service/public/product.service";
 import type {
   CartCalculateRequest,
   CartCalculateResponse,
@@ -24,7 +25,7 @@ export default function CartSidebar({
 }) {
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
-  const { items, updateQty, removeItem, totalItems } = useCart();
+  const { items, updateQty, removeItem, totalItems, syncItems } = useCart();
   const [calculatedData, setCalculatedData] =
     useState<CartCalculateResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -65,8 +66,47 @@ export default function CartSidebar({
         };
 
         const data = await calculateCart(payload);
-        setCalculatedData(data);
+
+        const validatedItems = await Promise.all(
+          data.items.map(async (item) => {
+            try {
+              await getProductDetails(item.productId);
+              return item;
+            } catch {
+              return null;
+            }
+          }),
+        );
+
+        const filteredItems = validatedItems.filter(
+          (item): item is typeof data.items[number] => item !== null,
+        );
+
+        const newData: CartCalculateResponse = {
+          ...data,
+          items: filteredItems,
+        };
+
+        setCalculatedData(newData);
         hasCalculatedOnceRef.current = true;
+
+        const normalizedItems = filteredItems.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+        }));
+
+        const hasMismatch =
+          normalizedItems.length !== validItems.length ||
+          normalizedItems.some((item) => {
+            const current = validItems.find(
+              (v) => v.productId === item.productId,
+            );
+            return !current || current.quantity !== item.quantity;
+          });
+
+        if (hasMismatch) {
+          syncItems(normalizedItems);
+        }
       } catch (err) {
         console.error("Failed to calculate cart", err);
       } finally {
@@ -75,7 +115,7 @@ export default function CartSidebar({
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [items]);
+  }, [items, syncItems]);
 
   useEffect(() => {
     if (!open) return;
@@ -172,17 +212,31 @@ export default function CartSidebar({
                 </div>
               )}
 
-              {calculatedData?.items.map((it) => (
-                <CartRow
-                  key={it.productId}
-                  it={it}
-                  onRemove={() => removeItem(it.productId)}
-                  onUpdateQty={(q) => updateQty(it.productId, q)}
-                />
-              ))}
+              {items.map((cartItem) => {
+                const it = calculatedData?.items.find(
+                  (i) => i.productId === cartItem.productId,
+                );
+
+                if (!it) return null;
+
+                return (
+                  <CartRow
+                    key={cartItem.productId}
+                    it={it}
+                    quantity={cartItem.quantity}
+                    onRemove={() => removeItem(it.productId)}
+                    onUpdateQty={(q) => updateQty(it.productId, q)}
+                    onOpenDetails={() => {
+                      onClose();
+                      router.push(`/public/store/product-details/${it.productId}`);
+                    }}
+                  />
+                );
+              })}
             </div>
           )}
 
+          {/*
           {items.length > 0 && (
             <div className="mt-10">
               <div className="text-[11px] font-extrabold tracking-widest text-light-slate/70">
@@ -225,6 +279,7 @@ export default function CartSidebar({
               </div>
             </div>
           )}
+          */}
         </div>
 
         <div className="border-t border-light-slate/10 bg-white px-6 pb-6 pt-5">
@@ -287,16 +342,25 @@ export default function CartSidebar({
 
 function CartRow({
   it,
+  quantity,
   onRemove,
   onUpdateQty,
+  onOpenDetails,
 }: {
   it: CartResponseItem;
+  quantity: number;
   onRemove: () => void;
   onUpdateQty: (q: number) => void;
+  onOpenDetails: () => void;
 }) {
   return (
     <div className="flex gap-4">
-      <div className="relative h-20 w-20 overflow-hidden rounded-2xl bg-light-slate/10">
+      <button
+        type="button"
+        onClick={onOpenDetails}
+        className="relative h-20 w-20 overflow-hidden rounded-2xl bg-light-slate/10"
+        aria-label={`Open details for ${it.name}`}
+      >
         <Image
           src={it.photo || "/photos/store_product.png"}
           alt={it.name}
@@ -304,14 +368,21 @@ function CartRow({
           sizes="80px"
           className="object-cover"
         />
-      </div>
+      </button>
 
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="truncate text-sm font-bold text-black">
-              {it.name}
-            </div>
+            <button
+              type="button"
+              onClick={onOpenDetails}
+              className="block max-w-full text-left"
+            >
+              <div className="truncate text-sm font-bold text-black hover:text-primary transition-colors">
+                {it.name}
+              </div>
+            </button>
+
             <div className="mt-1 text-xs font-semibold text-light-slate">
               Ref: {it.sku}
             </div>
@@ -325,12 +396,12 @@ function CartRow({
         <div className="mt-4 flex items-center justify-between">
           <div className="inline-flex items-center gap-2 rounded-full border border-light-slate/15 bg-white px-2 py-1">
             <button
-              onClick={() => onUpdateQty(it.quantity - 1)}
-              disabled={it.quantity <= 1}
+              onClick={() => onUpdateQty(quantity - 1)}
+              disabled={quantity <= 1}
               type="button"
               className={[
                 iconBtn(),
-                it.quantity <= 1
+                quantity <= 1
                   ? "pointer-events-none cursor-not-allowed opacity-50"
                   : "",
               ].join(" ")}
@@ -340,11 +411,11 @@ function CartRow({
             </button>
 
             <div className="w-10 text-center text-sm font-bold text-black">
-              {it.quantity}
+              {quantity}
             </div>
 
             <button
-              onClick={() => onUpdateQty(it.quantity + 1)}
+              onClick={() => onUpdateQty(quantity + 1)}
               type="button"
               className={iconBtn()}
               aria-label="Increase"

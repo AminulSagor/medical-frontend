@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import CheckOutHeader from "@/app/public/(pages)/checkout/_components/checkout-header";
 import OrderReviewCard from "@/app/public/(pages)/checkout/_components/order-review-card";
 // import PaymentMethodCard from "@/app/public/(pages)/checkout/_components/payment-method-card";
@@ -32,7 +32,9 @@ const Page = () => {
         </div>
 
         <div>
-          <OrderReviewCard shippingAddress={shippingAddress} />
+          <Suspense fallback={null}>
+            <OrderReviewCard shippingAddress={shippingAddress} />
+          </Suspense>
         </div>
       </div>
     </div>

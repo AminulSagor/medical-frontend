@@ -23,6 +23,7 @@ import { useCart } from "@/app/public/context/cart-context";
 import { useWishlist } from "@/app/public/context/wishlist-context";
 import { calculateCart } from "@/service/public/cart.service";
 import { reorderBackendCart } from "@/service/public/cart-server.service";
+import { getProductDetails } from "@/service/public/product.service";
 import type {
   CartCalculateRequest,
   CartCalculateResponse,
@@ -106,8 +107,47 @@ export default function CartPage() {
         };
 
         const data = await calculateCart(payload);
-        setCalculatedData(data);
+
+        const validatedItems = await Promise.all(
+          data.items.map(async (item) => {
+            try {
+              await getProductDetails(item.productId);
+              return item;
+            } catch {
+              return null;
+            }
+          }),
+        );
+
+        const filteredItems = validatedItems.filter(
+          (item): item is typeof data.items[number] => item !== null,
+        );
+
+        const newData: CartCalculateResponse = {
+          ...data,
+          items: filteredItems,
+        };
+
+        setCalculatedData(newData);
         hasCalculatedOnceRef.current = true;
+
+        const normalizedItems = filteredItems.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+        }));
+
+        const hasMismatch =
+          normalizedItems.length !== validItems.length ||
+          normalizedItems.some((item) => {
+            const current = validItems.find(
+              (v) => v.productId === item.productId,
+            );
+            return !current || current.quantity !== item.quantity;
+          });
+
+        if (hasMismatch) {
+          syncItems(normalizedItems);
+        }
       } catch (err) {
         console.error("Failed to calculate cart", err);
       } finally {
@@ -116,7 +156,7 @@ export default function CartPage() {
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [items]);
+  }, [items, syncItems]);
 
   return (
     <div className="mt-24 min-h-screen">
@@ -175,115 +215,132 @@ export default function CartPage() {
                   </div>
                 )}
 
-                {calculatedData?.items.map((it) => (
-                  <div
-                    key={it.productId}
-                    className="grid grid-cols-12 gap-3 px-6 py-6"
-                  >
-                    <div className="col-span-7 flex items-start gap-4">
-                      <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-light-slate/10 ring-1 ring-slate-200">
-                        <Image
-                          src={it.photo || "/photos/store_product.png"}
-                          alt={it.name}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
+                {items.map((cartItem) => {
+                  const it = calculatedData?.items.find(
+                    (i) => i.productId === cartItem.productId,
+                  );
+
+                  if (!it) return null;
+
+                  const quantity = cartItem.quantity;
+                  const productDetailsHref = `/public/store/product-details/${it.productId}`;
+
+                  return (
+                    <div
+                      key={cartItem.productId}
+                      className="grid grid-cols-12 gap-3 px-6 py-6"
+                    >
+                      <div className="col-span-7 flex items-start gap-4">
+                        <Link
+                          href={productDetailsHref}
+                          className="relative block h-16 w-16 overflow-hidden rounded-2xl bg-light-slate/10 ring-1 ring-slate-200 transition-opacity hover:opacity-90"
+                        >
+                          <Image
+                            src={it.photo || "/photos/store_product.png"}
+                            alt={it.name}
+                            fill
+                            className="object-cover"
+                            sizes="64px"
+                          />
+                        </Link>
+
+                        <div className="min-w-0">
+                          <Link
+                            href={productDetailsHref}
+                            className="block truncate text-sm font-bold text-black transition-colors hover:text-primary"
+                          >
+                            {it.name}
+                          </Link>
+
+                          <div className="mt-1 text-xs text-light-slate">
+                            SKU: {it.sku}
+                          </div>
+
+                          <div className="mt-2 inline-flex items-center gap-2 text-xs">
+                            <span
+                              className={
+                                it.inStock ? "text-green-500" : "text-orange-500"
+                              }
+                            >
+                              {it.inStock ? "In Stock" : "Out of Stock"}
+                            </span>
+                          </div>
+
+                          <div className="mt-3 flex flex-wrap items-center gap-6 text-xs">
+                            <button
+                              type="button"
+                              onClick={() => removeItem(it.productId)}
+                              className="inline-flex items-center gap-2 text-red-500 hover:opacity-80"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Remove
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                toggleWishlist(it.productId);
+                                removeItem(it.productId);
+                              }}
+                              className="inline-flex items-center gap-2 text-light-slate hover:text-red-400"
+                            >
+                              <Heart className="h-4 w-4" />
+                              Save for Later
+                            </button>
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-bold text-black">
-                          {it.name}
+                      <div className="col-span-2 flex items-center justify-end">
+                        <div className="text-sm text-black">
+                          {money(Number(it.price))}
                         </div>
+                      </div>
 
-                        <div className="mt-1 text-xs text-light-slate">
-                          SKU: {it.sku}
-                        </div>
-
-                        <div className="mt-2 inline-flex items-center gap-2 text-xs">
-                          <span
-                            className={
-                              it.inStock ? "text-green-500" : "text-orange-500"
+                      <div className="col-span-2 flex items-center justify-center">
+                        <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateQty(cartItem.productId, quantity - 1)
                             }
+                            disabled={quantity <= 1}
+                            className={[
+                              "inline-flex h-4 w-4 items-center justify-center rounded-full hover:bg-light-slate/10 transition-all",
+                              quantity <= 1
+                                ? "pointer-events-none cursor-not-allowed opacity-50"
+                                : "active:scale-95",
+                            ].join(" ")}
+                            aria-label="Decrease quantity"
                           >
-                            {it.inStock ? "In Stock" : "Out of Stock"}
-                          </span>
-                        </div>
-
-                        <div className="mt-3 flex flex-wrap items-center gap-6 text-xs">
-                          <button
-                            type="button"
-                            onClick={() => removeItem(it.productId)}
-                            className="inline-flex items-center gap-2 text-red-500 hover:opacity-80"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Remove
+                            <Minus className="h-4 w-4 text-light-slate" />
                           </button>
 
+                          <div className="w-6 text-center text-sm font-bold text-black">
+                            {quantity}
+                          </div>
+
                           <button
                             type="button"
-                            onClick={() => {
-                              toggleWishlist(it.productId);
-                              removeItem(it.productId);
-                            }}
-                            className="inline-flex items-center gap-2 text-light-slate hover:text-red-400"
+                            onClick={() =>
+                              updateQty(cartItem.productId, quantity + 1)
+                            }
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-light-slate/10 active:scale-95"
+                            aria-label="Increase quantity"
                           >
-                            <Heart className="h-4 w-4" />
-                            Save for Later
+                            <Plus className="h-4 w-4 text-light-slate" />
                           </button>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="col-span-2 flex items-center justify-end">
-                      <div className="text-sm text-black">
-                        {money(Number(it.price))}
-                      </div>
-                    </div>
-
-                    <div className="col-span-2 flex items-center justify-center">
-                      <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateQty(it.productId, it.quantity - 1)
-                          }
-                          disabled={it.quantity <= 1}
-                          className={[
-                            "inline-flex h-4 w-4 items-center justify-center rounded-full hover:bg-light-slate/10 transition-all",
-                            it.quantity <= 1
-                              ? "pointer-events-none cursor-not-allowed opacity-50"
-                              : "active:scale-95",
-                          ].join(" ")}
-                          aria-label="Decrease quantity"
-                        >
-                          <Minus className="h-4 w-4 text-light-slate" />
-                        </button>
-
-                        <div className="w-6 text-center text-sm font-bold text-black">
-                          {it.quantity}
+                      <div className="col-span-1 flex items-center justify-end">
+                        <div className="text-sm font-bold text-black">
+                          {money(Number(it.itemTotal))}
                         </div>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateQty(it.productId, it.quantity + 1)
-                          }
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-light-slate/10 active:scale-95"
-                          aria-label="Increase quantity"
-                        >
-                          <Plus className="h-4 w-4 text-light-slate" />
-                        </button>
                       </div>
                     </div>
-
-                    <div className="col-span-1 flex items-center justify-end">
-                      <div className="text-sm font-bold text-black">
-                        {money(Number(it.itemTotal))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
