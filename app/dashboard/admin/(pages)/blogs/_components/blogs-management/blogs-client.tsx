@@ -53,16 +53,20 @@ function mapBlogToRow(blog: BlogItem): BlogManagementRow {
   const firstCategory = blog.categories[0];
   const displayDate = getBlogDisplayDate(blog);
 
+  const heroImage =
+    blog.coverImages?.find((image) => image.imageType === "hero") ||
+    blog.coverImages?.[0];
+
   return {
     id: blog.id,
     title: blog.title,
-    author: firstAuthor?.fullLegalName || "—",
+    author: blog.authorName || firstAuthor?.fullLegalName || "—",
     category: firstCategory?.name || "—",
     status: mapPublishingStatusToUiStatus(blog.publishingStatus),
     dateLabel: formatBlogDate(displayDate),
     dateValue: displayDate,
     views: null,
-    thumbSrc: blog.coverImageUrl,
+    thumbSrc: heroImage?.imageUrl || null,
   };
 }
 
