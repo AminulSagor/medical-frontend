@@ -16,12 +16,10 @@ function FieldBlock({
 }) {
   return (
     <div>
-      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
-        {label}
-      </p>
-      <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <p className="mb-2 text-sm font-medium text-slate-500">{label}</p>
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
         <p
-          className={`text-[15px] text-slate-700 ${italic ? "italic" : "font-medium"}`}
+          className={`text-sm text-slate-700 ${italic ? "italic" : "font-medium"}`}
         >
           {value}
         </p>
@@ -33,10 +31,10 @@ function FieldBlock({
 export default function ScheduledBroadcastContentOverviewCard({ data }: Props) {
   return (
     <ScheduledBroadcastSectionShell title="Content Overview">
-      <div className="space-y-5">
+      <div className="space-y-4">
         <FieldBlock label="Subject Line" value={data.subjectLine || "-"} />
         <FieldBlock
-          label="Pre-Header"
+          label="Pre-header"
           value={data.preheaderText || "-"}
           italic
         />

@@ -23,19 +23,15 @@ function StatCard({
   helper: string;
 }) {
   return (
-    <div className="rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
-      <div className="mb-4 flex items-start justify-between">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
-          {label}
-        </p>
-        <span className="text-[#9de4dc]">{icon}</span>
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <p className="text-sm font-medium text-slate-500">{label}</p>
+        <span className="text-[#18c3b2]">{icon}</span>
       </div>
 
-      <div className="text-[26px] font-semibold leading-tight text-slate-800">
-        {value}
-      </div>
+      <div className="text-base font-semibold text-slate-800">{value}</div>
 
-      <p className="mt-2 text-sm text-slate-500">{helper}</p>
+      <p className="mt-2 text-sm text-slate-400">{helper}</p>
     </div>
   );
 }
