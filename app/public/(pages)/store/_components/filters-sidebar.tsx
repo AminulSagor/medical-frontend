@@ -46,7 +46,9 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <div className="text-sm md:text-base font-bold text-slate-900">{title}</div>
+      <div className="text-sm md:text-base font-bold text-slate-900">
+        {title}
+      </div>
       {right}
     </div>
   );
@@ -183,7 +185,9 @@ function BrandRow({
           checked ? "bg-primary border-primary" : "bg-white border-slate-300",
         ].join(" ")}
       >
-        {checked ? <span className="h-1.5 md:h-2 w-1.5 md:w-2 rounded-full bg-white" /> : null}
+        {checked ? (
+          <span className="h-1.5 md:h-2 w-1.5 md:w-2 rounded-full bg-white" />
+        ) : null}
       </span>
 
       <span className="truncate">{label}</span>
@@ -205,7 +209,7 @@ export default function FiltersSidebar({
       try {
         const data = await getProductFilters();
         setFiltersData(data);
-        // Set initial price range from API
+
         if (data.priceRange) {
           onFiltersChange({
             ...filters,
@@ -219,6 +223,7 @@ export default function FiltersSidebar({
         setLoading(false);
       }
     };
+
     fetchFilters();
   }, []);
 
@@ -233,6 +238,7 @@ export default function FiltersSidebar({
     const newBrands = filters.brands.includes(brand)
       ? filters.brands.filter((b) => b !== brand)
       : [...filters.brands, brand];
+
     onFiltersChange({ ...filters, brands: newBrands });
   };
 

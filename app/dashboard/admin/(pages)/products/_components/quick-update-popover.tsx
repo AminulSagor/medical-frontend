@@ -28,13 +28,10 @@ export default function QuickUpdatePopover({
 
     useEffect(() => {
         if (!open) return;
-        // keep as empty so placeholder shows current values
-        setNextStock("");
-        setNextPrice("");
-
-        // focus after paint
+        setNextStock(String(stock));
+        setNextPrice(price.toFixed(2));
         requestAnimationFrame(() => stockInputRef.current?.focus());
-    }, [open]);
+    }, [open, stock, price]);
 
     useEffect(() => {
         if (!open) return;

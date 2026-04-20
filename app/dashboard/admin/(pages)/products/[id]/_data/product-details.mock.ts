@@ -7,6 +7,7 @@ export const MOCK_PRODUCT_DETAILS: ProductDetails = {
 
     totalUnitsSold: 854,
     totalRevenueLabel: "$33,297.46",
+    totalRevenueSubLabel: "THIS MONTH",
     lastSaleDateLabel: "Oct 24, 2026",
     lastSaleSubLabel: "JUST NOW",
 

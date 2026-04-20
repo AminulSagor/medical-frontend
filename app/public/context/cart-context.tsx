@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import type { CartItem } from "@/types/public/cart/cart.types";
@@ -40,6 +41,9 @@ function mapItemsToCartState(
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const debounceTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
 
   const syncItems = useCallback(
     (newItems: { productId: string; quantity: number }[]) => {
@@ -111,6 +115,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items]);
 
+  useEffect(() => {
+    return () => {
+      debounceTimersRef.current.forEach((timer) => clearTimeout(timer));
+      debounceTimersRef.current.clear();
+    };
+  }, []);
+
   const addItem = useCallback(
     async (productId: string, quantity = 1) => {
       const token = getToken();
@@ -151,58 +162,72 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [syncItems],
   );
 
-  const removeItem = useCallback(
-    (productId: string) => {
-      // Optimistic update
+  const removeItem = useCallback((productId: string) => {
+    const existingTimer = debounceTimersRef.current.get(productId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+      debounceTimersRef.current.delete(productId);
+    }
+
+    setItems((prev) => prev.filter((item) => item.productId !== productId));
+
+    const token = getToken();
+    if (token) {
+      removeBackendCartItem(productId).catch((err) => {
+        console.error("Failed to remove item from backend cart", err);
+      });
+    }
+  }, []);
+
+  const updateQty = useCallback((productId: string, quantity: number) => {
+    const token = getToken();
+
+    if (quantity <= 0) {
+      const existingTimer = debounceTimersRef.current.get(productId);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+        debounceTimersRef.current.delete(productId);
+      }
+
       setItems((prev) => prev.filter((item) => item.productId !== productId));
 
-      // Sync to backend if logged in
-      const token = getToken();
       if (token) {
         removeBackendCartItem(productId).catch((err) => {
           console.error("Failed to remove item from backend cart", err);
         });
       }
-    },
-    [],
-  );
+      return;
+    }
 
-  const updateQty = useCallback(
-    (productId: string, quantity: number) => {
-      if (quantity <= 0) {
-        // Remove instead
-        setItems((prev) =>
-          prev.filter((item) => item.productId !== productId),
-        );
+    // instant UI update
+    setItems((prev) =>
+      prev.map((item) =>
+        item.productId === productId ? { ...item, quantity } : item,
+      ),
+    );
 
-        const token = getToken();
-        if (token) {
-          removeBackendCartItem(productId).catch((err) => {
-            console.error("Failed to remove item from backend cart", err);
-          });
-        }
-        return;
-      }
+    if (!token) return;
 
-      // Optimistic update
-      setItems((prev) =>
-        prev.map((item) =>
-          item.productId === productId ? { ...item, quantity } : item,
-        ),
-      );
+    const existingTimer = debounceTimersRef.current.get(productId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
 
-      // Sync to backend if logged in
-      const token = getToken();
-      if (token) {
-        updateBackendCartItem(productId, quantity).catch((err) => {
-          console.error("Failed to update cart item on backend", err);
-        });
-      }
-    },
-    [],
-  );
+    const timer = setTimeout(() => {
+      updateBackendCartItem(productId, quantity).catch((err) => {
+        console.error("Failed to update cart item on backend", err);
+      });
+
+      debounceTimersRef.current.delete(productId);
+    }, 500);
+
+    debounceTimersRef.current.set(productId, timer);
+  }, []);
 
   const clearCart = useCallback(() => {
+    debounceTimersRef.current.forEach((timer) => clearTimeout(timer));
+    debounceTimersRef.current.clear();
+
     setItems([]);
 
     try {

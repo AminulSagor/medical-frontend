@@ -40,40 +40,63 @@ export default function ProductSection({
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const params: Record<string, any> = {
+
+      const params: Record<string, string | number | string[]> = {
         page,
         limit: PAGE_SIZE,
       };
 
-      // Add search query
       if (searchQuery.trim()) {
         params.search = searchQuery.trim();
       }
 
-      if (filters.categoryId && filters.categoryId !== "All") {
-        params.categoryIds = filters.categoryId;
-      }
       if (filters.brands && filters.brands.length > 0) {
         params.brands = filters.brands;
       }
-      // Send price as strings (backend expects NumberString)
+
       if (filters.minPrice && filters.minPrice > 0) {
         params.minPrice = String(filters.minPrice);
       }
+
       if (filters.maxPrice && filters.maxPrice > 0) {
         params.maxPrice = String(filters.maxPrice);
       }
-      // Use sortBy from props
+
       if (sortBy) {
         params.sortBy = sortBy;
       }
 
       const response = await getPublicProducts(params);
-      setProducts(response.items);
-      setMeta(response.meta);
+
+      let filteredItems = response.items;
+
+      if (filters.categoryId && filters.categoryId !== "All") {
+        filteredItems = response.items.filter((item) =>
+          Array.isArray(item.categoryId)
+            ? item.categoryId.includes(filters.categoryId)
+            : false,
+        );
+      }
+
+      const total = filteredItems.length;
+      const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+      const safePage = Math.min(page, totalPages);
+      const startIndex = (safePage - 1) * PAGE_SIZE;
+      const endIndex = startIndex + PAGE_SIZE;
+      const paginatedItems = filteredItems.slice(startIndex, endIndex);
+
+      setProducts(paginatedItems);
+      setMeta({
+        page: safePage,
+        limit: PAGE_SIZE,
+        total,
+        totalPages,
+      });
+
       if (process.env.NODE_ENV === "development") {
         console.log("Products fetched:", {
-          count: response.items.length,
+          selectedCategory: filters.categoryId,
+          totalFiltered: total,
           response,
         });
       }
@@ -90,12 +113,10 @@ export default function ProductSection({
     fetchProducts();
   }, [fetchProducts]);
 
-  // Reset to page 1 when filters or search change
   useEffect(() => {
     setPage(1);
   }, [searchQuery, sortBy]);
 
-  // Reset to page 1 when filters change
   const handleFiltersChange = (newFilters: ProductFilters) => {
     setFilters(newFilters);
     setPage(1);
@@ -108,7 +129,6 @@ export default function ProductSection({
     <main>
       <div className="py-6 md:py-10">
         <div className="grid gap-4 md:gap-8 grid-cols-1 md:grid-cols-12">
-          {/* Desktop Sidebar - Hidden on mobile */}
           <aside className="hidden md:block md:col-span-4 lg:col-span-3">
             <FiltersSidebar
               filters={filters}
@@ -116,9 +136,7 @@ export default function ProductSection({
             />
           </aside>
 
-          {/* Products Section */}
           <section className="md:col-span-8 lg:col-span-9">
-            {/* Mobile Filter Button */}
             <div className="flex items-center justify-between gap-2 md:hidden mb-4">
               <div className="text-xs md:text-sm font-semibold text-light-slate flex-1">
                 Results:{" "}
@@ -135,7 +153,6 @@ export default function ProductSection({
               </button>
             </div>
 
-            {/* Desktop Results Text */}
             <div className="hidden md:flex items-center justify-between mb-4">
               <div className="text-sm font-semibold text-light-slate">
                 Showing{" "}
@@ -146,7 +163,6 @@ export default function ProductSection({
               </div>
             </div>
 
-            {/* Loading State */}
             {loading ? (
               <div className="mt-10 flex items-center justify-center py-20">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -176,16 +192,13 @@ export default function ProductSection({
         </div>
       </div>
 
-      {/* Mobile Filter Drawer */}
       {mobileFiltersOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/50 transition-opacity"
             onClick={() => setMobileFiltersOpen(false)}
           />
 
-          {/* Drawer */}
           <div className="absolute bottom-0 left-0 right-0 z-50 max-h-[90vh] overflow-y-auto rounded-t-2xl bg-white shadow-lg animate-in slide-in-from-bottom-5">
             <div className="sticky top-0 flex items-center justify-between border-b bg-white p-4">
               <h2 className="text-lg font-bold text-slate-900">Filters</h2>
@@ -202,12 +215,10 @@ export default function ProductSection({
                 filters={filters}
                 onFiltersChange={(newFilters) => {
                   handleFiltersChange(newFilters);
-                  // Keep drawer open so user can adjust multiple filters
                 }}
               />
             </div>
 
-            {/* Close Button at Bottom */}
             <div className="sticky bottom-0 border-t bg-white p-4">
               <button
                 onClick={() => setMobileFiltersOpen(false)}

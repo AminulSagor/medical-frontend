@@ -18,6 +18,7 @@ export interface CartResponseItem {
   price: string;
   quantity: number;
   itemTotal: string;
+  availableQuantity?: number;
 }
 
 export interface CartOrderSummary {

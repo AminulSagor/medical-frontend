@@ -51,14 +51,21 @@ export default function PurchasePanelClient({
   }, [product.rating.value]);
 
   const handleBuyNow = async () => {
-    if (!inStock) return;
-    setIsProcessingPayment(true);
+    if (isProcessingPayment) return;
+
     try {
-      await addItem(product.id, safeQty);
-      router.push("/public/checkout");
+      setIsProcessingPayment(true);
+
+      const params = new URLSearchParams({
+        mode: "buy-now",
+        productId: product.id,
+        quantity: String(qty),
+      });
+
+      router.push(`/public/checkout?${params.toString()}`);
     } catch (error: any) {
       console.error("Buy now error:", error);
-      alert(error.message || "Failed to add item. Please try again.");
+      alert(error.message || "Failed to continue to checkout. Please try again.");
       setIsProcessingPayment(false);
     }
   };
@@ -116,11 +123,10 @@ export default function PurchasePanelClient({
           </div>
 
           <div
-            className={`mt-5 rounded-full px-5 py-3 text-center text-xs font-semibold ${
-              inStock
+            className={`mt-5 rounded-full px-5 py-3 text-center text-xs font-semibold ${inStock
                 ? "bg-primary/10 text-green-600"
                 : "bg-red-50 text-red-600"
-            }`}
+              }`}
           >
             {inStock
               ? stockQty <= 10 && stockQty > 0
@@ -160,7 +166,6 @@ export default function PurchasePanelClient({
                   </button>
                 </div>
 
-                {/* ✅ Wishlist moved here (below quantity) */}
                 <button
                   type="button"
                   onClick={() => toggleWishlist(product.id)}
@@ -175,39 +180,31 @@ export default function PurchasePanelClient({
               </div>
 
               <div className="col-span-7 space-y-3">
-                {/* Buy Now */}
                 <Button
-                  className={`h-14 w-full justify-center shadow-sm ${
-                    inStock
+                  className={`h-14 w-full justify-center shadow-sm ${inStock
                       ? "bg-primary text-white"
                       : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                  }`}
+                    }`}
                   shape="pill"
                   onClick={handleBuyNow}
                   disabled={!inStock || isProcessingPayment}
                 >
                   <CreditCard className="h-5 w-5" />
-                  {!inStock
-                    ? "Out of Stock"
-                    : isProcessingPayment
-                    ? "Processing..."
-                    : "Buy Now"}
+                  {isProcessingPayment ? "Processing..." : "Buy Now"}
                 </Button>
 
-                {/* Add to Cart */}
                 <Button
-                  className={`h-12 w-full justify-center bg-white shadow-sm ${
-                    inStock
+                  className={`h-12 w-full justify-center bg-white shadow-sm ${inStock
                       ? "border border-primary !text-primary"
                       : "border border-slate-200 !text-slate-400 cursor-not-allowed"
-                  }`}
+                    }`}
                   shape="pill"
                   disabled={!inStock || isAddingToCart}
                   onClick={async () => {
                     if (!inStock || isAddingToCart) return;
                     try {
                       setIsAddingToCart(true);
-                      await addItem(product.id, safeQty);
+                      await addItem(product.id, qty);
                     } catch (error) {
                       console.error("Failed to add to cart", error);
                     } finally {
@@ -215,7 +212,7 @@ export default function PurchasePanelClient({
                     }
                   }}
                 >
-                  <ShoppingBag className={`h-5 w-5 ${inStock ? "text-primary" : "text-slate-400"}`} />
+                  <ShoppingBag className="h-5 w-5" />
                   {isAddingToCart ? "Adding..." : "Add to Cart"}
                 </Button>
               </div>

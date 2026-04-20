@@ -83,6 +83,11 @@ export default function PastOrdersTable(props: {
   const showingFrom = items.length === 0 ? 0 : (currentPage - 1) * 10 + 1;
   const showingTo = items.length === 0 ? 0 : showingFrom + items.length - 1;
 
+  const goToOrderDetails = (href?: string) => {
+    if (!href) return;
+    router.push(href);
+  };
+
   return (
     <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.06)]">
       <div className="flex items-center justify-between">
@@ -210,7 +215,11 @@ export default function PastOrdersTable(props: {
             {items.map((o) => (
               <tr key={o.id} className="bg-white">
                 <td className="px-4 py-4">
-                  <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => goToOrderDetails(o.viewHref)}
+                    className="flex items-center gap-3 rounded-lg text-left transition hover:bg-slate-50"
+                  >
                     <div className="relative h-11 w-11 overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200">
                       <Image
                         src={o.imageUrl}
@@ -226,7 +235,7 @@ export default function PastOrdersTable(props: {
                     </div>
 
                     <div className="min-w-0">
-                      <div className="truncate text-[12px] font-semibold text-slate-900">
+                      <div className="truncate text-[12px] font-semibold text-slate-900 hover:text-sky-600">
                         {o.title}
                       </div>
                       <div className="text-[10px] text-slate-500">
@@ -234,7 +243,7 @@ export default function PastOrdersTable(props: {
                         <span className="font-medium">{o.orderNo}</span>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 </td>
 
                 <td className="px-4 py-4 text-[11px] text-slate-600">
@@ -258,7 +267,7 @@ export default function PastOrdersTable(props: {
                     <ActionIconButton
                       label="View"
                       onClick={() => {
-                        if (o.viewHref) router.push(o.viewHref);
+                        goToOrderDetails(o.viewHref);
                       }}
                     >
                       <Eye className="h-4 w-4" />

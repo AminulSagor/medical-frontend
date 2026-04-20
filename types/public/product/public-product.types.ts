@@ -11,7 +11,8 @@ export interface PublicProductItem {
   offerPrice: string;
   bulkPriceTiers: any[];
   sku: string;
-  stockQuantity: number;
+  stockQuantity?: number;
+  inStock?: boolean;
   lowStockAlert: number;
   isActive: boolean;
   backorder: boolean;
@@ -45,7 +46,7 @@ export interface ListProductsPublicParams {
   brands?: string | string[];
   minPrice?: string;
   maxPrice?: string;
-  sortBy?: 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc' | 'newest';
+  sortBy?: "price-asc" | "price-desc" | "name-asc" | "name-desc" | "newest";
 }
 
 // Filter Types
@@ -71,6 +72,7 @@ export interface ProductFilters {
   minPrice: number;
   maxPrice: number;
 }
+
 export interface ClinicalBenefit {
   icon: string;
   title: string;

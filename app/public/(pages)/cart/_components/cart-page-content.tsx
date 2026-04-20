@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -23,6 +23,7 @@ import { useCart } from "@/app/public/context/cart-context";
 import { useWishlist } from "@/app/public/context/wishlist-context";
 import { calculateCart } from "@/service/public/cart.service";
 import { reorderBackendCart } from "@/service/public/cart-server.service";
+import { getProductDetails } from "@/service/public/product.service";
 import type {
   CartCalculateRequest,
   CartCalculateResponse,
@@ -44,6 +45,7 @@ export default function CartPage() {
   const [calculatedData, setCalculatedData] =
     useState<CartCalculateResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const hasCalculatedOnceRef = useRef(false);
 
   useEffect(() => {
     if (!reorderFrom) return;
@@ -77,47 +79,87 @@ export default function CartPage() {
   useEffect(() => {
     if (items.length === 0) {
       setCalculatedData(null);
+      hasCalculatedOnceRef.current = false;
       return;
     }
 
-    const fetchCalculation = async () => {
-      setLoading(true);
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const validItems = items.filter((i) => uuidRegex.test(i.productId));
+
+    if (validItems.length === 0) {
+      setCalculatedData(null);
+      hasCalculatedOnceRef.current = false;
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      if (!hasCalculatedOnceRef.current) {
+        setLoading(true);
+      }
+
       try {
-        const uuidRegex =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        const validItems = items.filter((i) => uuidRegex.test(i.productId));
-
-        if (validItems.length === 0) {
-          setCalculatedData(null);
-          return;
-        }
-
         const payload: CartCalculateRequest = {
           items: validItems.map((i) => ({
             productId: i.productId,
             quantity: i.quantity,
           })),
         };
+
         const data = await calculateCart(payload);
-        setCalculatedData(data);
-        syncItems(
-          data.items.map((i) => ({
-            productId: i.productId,
-            quantity: i.quantity,
-          })),
+
+        const validatedItems = await Promise.all(
+          data.items.map(async (item) => {
+            try {
+              await getProductDetails(item.productId);
+              return item;
+            } catch {
+              return null;
+            }
+          }),
         );
+
+        const filteredItems = validatedItems.filter(
+          (item): item is typeof data.items[number] => item !== null,
+        );
+
+        const newData: CartCalculateResponse = {
+          ...data,
+          items: filteredItems,
+        };
+
+        setCalculatedData(newData);
+        hasCalculatedOnceRef.current = true;
+
+        const normalizedItems = filteredItems.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+        }));
+
+        const hasMismatch =
+          normalizedItems.length !== validItems.length ||
+          normalizedItems.some((item) => {
+            const current = validItems.find(
+              (v) => v.productId === item.productId,
+            );
+            return !current || current.quantity !== item.quantity;
+          });
+
+        if (hasMismatch) {
+          syncItems(normalizedItems);
+        }
       } catch (err) {
         console.error("Failed to calculate cart", err);
       } finally {
         setLoading(false);
       }
-    };
+    }, 300);
 
-    fetchCalculation();
+    return () => clearTimeout(timeout);
   }, [items, syncItems]);
 
   return (
-    <div className="min-h-screen mt-24">
+    <div className="mt-24 min-h-screen">
       <div className="mx-auto max-w-6xl px-4 py-8">
         <Link
           href="/public/store"
@@ -152,7 +194,7 @@ export default function CartPage() {
           </div>
         ) : (
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
-            <div className="lg:col-span-8 overflow-hidden rounded-3xl shadow-sm border border-light-slate/10 bg-white pt-2">
+            <div className="overflow-hidden rounded-3xl border border-light-slate/10 bg-white pt-2 shadow-sm lg:col-span-8">
               <div className="grid grid-cols-12 gap-4 border-b border-slate-100 px-6 py-4 text-[11px] font-bold tracking-widest text-light-slate">
                 <div className="col-span-7">PRODUCT DETAILS</div>
                 <div className="col-span-2 text-right">PRICE</div>
@@ -160,125 +202,170 @@ export default function CartPage() {
                 <div className="col-span-1 text-right">TOTAL</div>
               </div>
 
-              <div className="divide-y divide-slate-100 relative min-h-[200px]">
-                {loading && (
-                  <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              <div className="relative min-h-[200px] divide-y divide-slate-100">
+                {loading && !calculatedData && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 )}
-                {calculatedData?.items.map((it) => (
-                  <div
-                    key={it.productId}
-                    className="grid grid-cols-12 gap-3 px-6 py-6"
-                  >
-                    <div className="col-span-7 flex items-start gap-4">
-                      <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-light-slate/10 ring-1 ring-slate-200">
-                        <Image
-                          src={it.photo || "/photos/store_product.png"}
-                          alt={it.name}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
+
+                {loading && calculatedData && (
+                  <div className="absolute left-1/2 top-6 z-10 -translate-x-1/2">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                )}
+
+                {items.map((cartItem) => {
+                  const it = calculatedData?.items.find(
+                    (i) => i.productId === cartItem.productId,
+                  );
+
+                  if (!it) return null;
+
+                  const quantity = cartItem.quantity;
+                  const productDetailsHref = `/public/store/product-details/${it.productId}`;
+                  const maxAvailableQuantity =
+                    typeof it.availableQuantity === "number" &&
+                      !Number.isNaN(it.availableQuantity)
+                      ? it.availableQuantity
+                      : Number.POSITIVE_INFINITY;
+                  const hasReachedMaxQuantity =
+                    Number.isFinite(maxAvailableQuantity) &&
+                    quantity >= maxAvailableQuantity;
+
+                  return (
+                    <div
+                      key={cartItem.productId}
+                      className="grid grid-cols-12 gap-3 px-6 py-6"
+                    >
+                      <div className="col-span-7 flex items-start gap-4">
+                        <Link
+                          href={productDetailsHref}
+                          className="relative block h-16 w-16 overflow-hidden rounded-2xl bg-light-slate/10 ring-1 ring-slate-200 transition-opacity hover:opacity-90"
+                        >
+                          <Image
+                            src={it.photo || "/photos/store_product.png"}
+                            alt={it.name}
+                            fill
+                            className="object-cover"
+                            sizes="64px"
+                          />
+                        </Link>
+
+                        <div className="min-w-0">
+                          <Link
+                            href={productDetailsHref}
+                            className="block truncate text-sm font-bold text-black transition-colors hover:text-primary"
+                          >
+                            {it.name}
+                          </Link>
+
+                          <div className="mt-1 text-xs text-light-slate">
+                            SKU: {it.sku}
+                          </div>
+
+                          <div className="mt-2 inline-flex items-center gap-2 text-xs">
+                            <span
+                              className={
+                                it.inStock ? "text-green-500" : "text-orange-500"
+                              }
+                            >
+                              {it.inStock ? "In Stock" : "Out of Stock"}
+                            </span>
+                          </div>
+
+                          <div className="mt-3 flex flex-wrap items-center gap-6 text-xs">
+                            <button
+                              type="button"
+                              onClick={() => removeItem(it.productId)}
+                              className="inline-flex items-center gap-2 text-red-500 hover:opacity-80"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Remove
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                toggleWishlist(it.productId);
+                                removeItem(it.productId);
+                              }}
+                              className="inline-flex items-center gap-2 text-light-slate hover:text-red-400"
+                            >
+                              <Heart className="h-4 w-4" />
+                              Save for Later
+                            </button>
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-bold text-black">
-                          {it.name}
+                      <div className="col-span-2 flex items-center justify-end">
+                        <div className="text-sm text-black">
+                          {money(Number(it.price))}
                         </div>
+                      </div>
 
-                        <div className="mt-1 text-xs text-light-slate">
-                          SKU: {it.sku}
-                        </div>
-
-                        <div className="mt-2 inline-flex items-center gap-2 text-xs">
-                          <span
-                            className={
-                              it.inStock ? "text-green-500" : "text-orange-500"
-                            }
-                          >
-                            {it.inStock ? "In Stock" : "Out of Stock"}
-                          </span>
-                        </div>
-
-                        <div className="mt-3 flex flex-wrap items-center gap-6 text-xs">
+                      <div className="col-span-2 flex flex-col items-center justify-center">
+                        <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2">
                           <button
                             type="button"
-                            onClick={() => removeItem(it.productId)}
-                            className="inline-flex items-center gap-2 text-red-500 hover:opacity-80"
+                            onClick={() =>
+                              updateQty(cartItem.productId, quantity - 1)
+                            }
+                            disabled={quantity <= 1}
+                            className={[
+                              "inline-flex h-4 w-4 items-center justify-center rounded-full hover:bg-light-slate/10 transition-all",
+                              quantity <= 1
+                                ? "pointer-events-none cursor-not-allowed opacity-50"
+                                : "active:scale-95",
+                            ].join(" ")}
+                            aria-label="Decrease quantity"
                           >
-                            <Trash2 className="h-4 w-4" />
-                            Remove
+                            <Minus className="h-4 w-4 text-light-slate" />
                           </button>
+
+                          <div className="w-6 text-center text-sm font-bold text-black">
+                            {quantity}
+                          </div>
 
                           <button
                             type="button"
                             onClick={() => {
-                              toggleWishlist(it.productId);
-                              removeItem(it.productId);
+                              if (hasReachedMaxQuantity) return;
+                              updateQty(cartItem.productId, quantity + 1);
                             }}
-                            className="inline-flex items-center gap-2 text-light-slate hover:text-red-400"
+                            disabled={hasReachedMaxQuantity}
+                            className={[
+                              "inline-flex h-8 w-8 items-center justify-center rounded-full transition-all",
+                              hasReachedMaxQuantity
+                                ? "cursor-not-allowed opacity-50"
+                                : "hover:bg-light-slate/10 active:scale-95",
+                            ].join(" ")}
+                            aria-label="Increase quantity"
                           >
-                            <Heart className="h-4 w-4" />
-                            Save for Later
+                            <Plus className="h-4 w-4 text-light-slate" />
                           </button>
                         </div>
+
+                        {hasReachedMaxQuantity ? (
+                          <p className="mt-1 text-[10px] text-red-500">
+                            Max available quantity reached
+                          </p>
+                        ) : null}
                       </div>
-                    </div>
 
-                    <div className="col-span-2 flex items-center justify-end">
-                      <div className="text-sm text-black">
-                        {money(Number(it.price))}
-                      </div>
-                    </div>
-
-                    <div className="col-span-2 flex items-center justify-center">
-                      <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateQty(it.productId, it.quantity - 1)
-                          }
-                          disabled={it.quantity <= 1}
-                          className={[
-                            "inline-flex h-4 w-4 items-center justify-center rounded-full hover:bg-light-slate/10 transition-all",
-                            it.quantity <= 1
-                              ? "opacity-50 cursor-not-allowed pointer-events-none"
-                              : "active:scale-95",
-                          ].join(" ")}
-                          aria-label="Decrease quantity"
-                        >
-                          <Minus className="h-4 w-4 text-light-slate" />
-                        </button>
-
-                        <div className="w-6 text-center text-sm font-bold text-black">
-                          {it.quantity}
+                      <div className="col-span-1 flex items-center justify-end">
+                        <div className="text-sm font-bold text-black">
+                          {money(Number(it.itemTotal))}
                         </div>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateQty(it.productId, it.quantity + 1)
-                          }
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-light-slate/10 active:scale-95"
-                          aria-label="Increase quantity"
-                        >
-                          <Plus className="h-4 w-4 text-light-slate" />
-                        </button>
                       </div>
                     </div>
-
-                    <div className="col-span-1 flex items-center justify-end">
-                      <div className="text-sm font-bold text-black">
-                        {money(Number(it.itemTotal))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
-            <div className="lg:col-span-4 space-y-6">
+            <div className="space-y-6 lg:col-span-4">
               <Card>
                 <div className="text-lg font-bold text-black">
                   Order Summary
@@ -289,9 +376,7 @@ export default function CartPage() {
                   <div className="flex items-center justify-between text-light-slate">
                     <span>Subtotal</span>
                     <span className="font-bold text-black">
-                      {money(
-                        Number(calculatedData?.orderSummary?.subtotal || 0),
-                      )}
+                      {money(Number(calculatedData?.orderSummary?.subtotal || 0))}
                     </span>
                   </div>
 

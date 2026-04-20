@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Zap, Pencil, Trash2 } from "lucide-react";
 import QuickUpdatePopover from "./quick-update-popover";
 import { useRouter } from "next/navigation";
+import { updateProduct } from "@/service/admin/product.service";
 
 export type ProductStatus = "active" | "draft";
 export type StockTone = "good" | "warn" | "bad" | "draft";
@@ -39,8 +40,17 @@ function stockBar(stock: number | null) {
     return "bg-[var(--primary)]";
 }
 
+function getStockTone(stock: number | null): StockTone {
+    if (stock === null) return "draft";
+    if (stock === 0) return "bad";
+    if (stock <= 50) return "warn";
+    return "good";
+}
+
 function pageNumbers(page: number, totalPages: number) {
-    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (totalPages <= 5) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
 
     const nums: (number | "...")[] = [];
     const add = (v: number | "...") => nums.push(v);
@@ -79,6 +89,14 @@ export default function ProductsTable({
     const router = useRouter();
     const [openQuickId, setOpenQuickId] = useState<string | null>(null);
     const [quickAnchor, setQuickAnchor] = useState<HTMLElement | null>(null);
+    const [savingQuickId, setSavingQuickId] = useState<string | null>(null);
+    const [localRows, setLocalRows] = useState<ProductRow[]>(rows);
+
+    useEffect(() => {
+        setLocalRows(rows);
+    }, [rows]);
+
+    const displayRows = useMemo(() => localRows, [localRows]);
 
     const showingLabel = useMemo(() => {
         if (totalCount === 0) return "Showing 0 results";
@@ -107,14 +125,59 @@ export default function ProductsTable({
         router.push(`/dashboard/admin/products/${id}`);
     };
 
+    const handleQuickSave = async (
+        id: string,
+        next: { stock: number; price: number },
+    ) => {
+        try {
+            setSavingQuickId(id);
+
+            const updatedProduct = await updateProduct(id, {
+                offerPrice: next.price.toFixed(2),
+                stockQuantity: next.stock,
+            });
+
+            setLocalRows((prev) =>
+                prev.map((row) => {
+                    if (row.id !== id) return row;
+
+                    const updatedStock = updatedProduct?.stockQuantity ?? next.stock;
+                    const updatedPrice =
+                        updatedProduct?.offerPrice !== undefined
+                            ? Number(updatedProduct.offerPrice)
+                            : next.price;
+
+                    return {
+                        ...row,
+                        stock: updatedStock,
+                        price: updatedPrice,
+                        stockTone: getStockTone(updatedStock),
+                    };
+                }),
+            );
+
+            setOpenQuickId(null);
+            setQuickAnchor(null);
+        } catch (error) {
+            console.error("Failed to quick update product:", error);
+        } finally {
+            setSavingQuickId(null);
+        }
+    };
+
     return (
         <div className="w-full">
             <div className="w-full overflow-x-auto">
                 <table className="min-w-[920px] w-full">
                     <thead className="bg-slate-50">
                         <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-slate-700">
-                            <th className="w-10 px-5 py-3">
-                                <input type="checkbox" className="h-4 w-4 rounded border-slate-300" />
+                            <th className="w-10 px-5 py-3 align-middle">
+                                <div className="flex items-center justify-center">
+                                    <input
+                                        type="checkbox"
+                                        className="h-4 w-4 rounded border-slate-300"
+                                    />
+                                </div>
                             </th>
                             <th className="px-2 py-3">Product</th>
                             <th className="px-2 py-3">Stock</th>
@@ -126,21 +189,31 @@ export default function ProductsTable({
                     </thead>
 
                     <tbody className="divide-y divide-slate-100">
-                        {rows.map((r) => (
+                        {displayRows.map((r) => (
                             <tr key={r.id} className="relative">
-                                <td className="w-10 px-5 py-4 align-top">
-                                    <input type="checkbox" className="h-4 w-4 rounded border-slate-300" />
+                                <td className="w-10 px-5 py-4 align-middle">
+                                    <div className="flex items-center justify-center">
+                                        <input
+                                            type="checkbox"
+                                            className="h-4 w-4 rounded border-slate-300"
+                                        />
+                                    </div>
                                 </td>
 
                                 <td className="px-2 py-4">
                                     <button
                                         type="button"
                                         onClick={() => goToDetails(r.id)}
-                                        className="flex items-start gap-3 text-left w-full rounded-lg hover:bg-slate-50 p-1 transition"
+                                        className="flex w-full items-start gap-3 rounded-lg p-1 text-left transition hover:bg-slate-50"
                                     >
-                                        <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-slate-50 ring-1 ring-slate-100 shrink-0">
+                                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-slate-50 ring-1 ring-slate-100">
                                             {r.imageUrl ? (
-                                                <Image src={r.imageUrl} alt={r.name} fill className="object-cover" />
+                                                <Image
+                                                    src={r.imageUrl}
+                                                    alt={r.name}
+                                                    fill
+                                                    className="object-cover"
+                                                />
                                             ) : (
                                                 <div className="grid h-full w-full place-items-center text-xs font-semibold text-slate-400">
                                                     IMG
@@ -152,8 +225,12 @@ export default function ProductsTable({
                                             <p className="truncate text-sm font-semibold text-slate-900 hover:text-[var(--primary)]">
                                                 {r.name}
                                             </p>
-                                            <p className="truncate text-xs text-slate-500">{r.category}</p>
-                                            <p className="truncate text-[11px] text-slate-400">SKU: {r.sku}</p>
+                                            <p className="truncate text-xs text-slate-500">
+                                                {r.category}
+                                            </p>
+                                            <p className="truncate text-[11px] text-slate-400">
+                                                SKU: {r.sku}
+                                            </p>
                                         </div>
                                     </button>
                                 </td>
@@ -166,7 +243,9 @@ export default function ProductsTable({
                                         <div className="mt-2 h-2 w-full rounded-full bg-slate-100">
                                             {(r.stock ?? 0) > 0 ? (
                                                 <div
-                                                    className={["h-2 rounded-full", stockBar(r.stock)].join(" ")}
+                                                    className={["h-2 rounded-full", stockBar(r.stock)].join(
+                                                        " ",
+                                                    )}
                                                     style={{
                                                         width: `${Math.min(
                                                             100,
@@ -201,7 +280,9 @@ export default function ProductsTable({
                                         <span className="text-slate-500">
                                             {r.sales === null ? "Created:" : "Updated:"}
                                         </span>{" "}
-                                        <span className="text-slate-900 font-medium">{r.updatedLabel}</span>
+                                        <span className="font-medium text-slate-900">
+                                            {r.updatedLabel}
+                                        </span>
                                     </p>
                                 </td>
 
@@ -217,9 +298,13 @@ export default function ProductsTable({
                                             type="button"
                                             className={quickBtnClass(isQuickOpen(r.id))}
                                             onClick={(e) => {
+                                                if (savingQuickId === r.id) return;
+
                                                 const nextId = openQuickId === r.id ? null : r.id;
                                                 setOpenQuickId(nextId);
-                                                setQuickAnchor(nextId ? (e.currentTarget as HTMLElement) : null);
+                                                setQuickAnchor(
+                                                    nextId ? (e.currentTarget as HTMLElement) : null,
+                                                );
                                             }}
                                             aria-label="Quick update"
                                         >
@@ -228,7 +313,9 @@ export default function ProductsTable({
 
                                         <button
                                             type="button"
-                                            onClick={() => router.push(`/dashboard/admin/products/edit/${r.id}`)}
+                                            onClick={() =>
+                                                router.push(`/dashboard/admin/products/edit/${r.id}`)
+                                            }
                                             className="grid h-8 w-8 place-items-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                                             aria-label="Edit"
                                         >
@@ -252,14 +339,11 @@ export default function ProductsTable({
                                                 stock={r.stock ?? 0}
                                                 price={r.price ?? 0}
                                                 onClose={() => {
+                                                    if (savingQuickId === r.id) return;
                                                     setOpenQuickId(null);
                                                     setQuickAnchor(null);
                                                 }}
-                                                onSave={(next) => {
-                                                    console.log("save", r.id, next);
-                                                    setOpenQuickId(null);
-                                                    setQuickAnchor(null);
-                                                }}
+                                                onSave={(next) => handleQuickSave(r.id, next)}
                                             />
                                         </div>
                                     ) : null}
@@ -277,7 +361,9 @@ export default function ProductsTable({
                     <button
                         className={[
                             "px-3 py-2",
-                            canPrev ? "text-slate-600 hover:bg-slate-50" : "text-slate-300 cursor-not-allowed",
+                            canPrev
+                                ? "text-slate-600 hover:bg-slate-50"
+                                : "cursor-not-allowed text-slate-300",
                         ].join(" ")}
                         onClick={() => canPrev && onPageChange(page - 1)}
                         type="button"
@@ -298,7 +384,7 @@ export default function ProductsTable({
                                 className={[
                                     "px-3 py-2",
                                     n === page
-                                        ? "text-[var(--primary)] ring-1 ring-[var(--primary)]/20 bg-[var(--primary)]/10"
+                                        ? "bg-[var(--primary)]/10 text-[var(--primary)] ring-1 ring-[var(--primary)]/20"
                                         : "text-slate-600 hover:bg-slate-50",
                                 ].join(" ")}
                             >
@@ -310,7 +396,9 @@ export default function ProductsTable({
                     <button
                         className={[
                             "px-3 py-2",
-                            canNext ? "text-slate-600 hover:bg-slate-50" : "text-slate-300 cursor-not-allowed",
+                            canNext
+                                ? "text-slate-600 hover:bg-slate-50"
+                                : "cursor-not-allowed text-slate-300",
                         ].join(" ")}
                         onClick={() => canNext && onPageChange(page + 1)}
                         type="button"
