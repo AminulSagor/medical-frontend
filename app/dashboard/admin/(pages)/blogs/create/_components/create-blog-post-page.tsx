@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ArrowLeft, CalendarDays, Save, TriangleAlert } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 import CreateBlogPostEditor from "../helper/create-blog-post-editor";
 import CreateBlogPostPreview from "../helper/create-blog-post-preview";
@@ -10,6 +11,7 @@ import DraftSavedModal from "../modals/draft-saved-modal";
 import LiveNowModal from "../modals/live-now-modal";
 import PublishScheduledModal from "../modals/publish-scheduled-modal";
 import ShareDistributionModal from "../modals/share-distribution-modal";
+import EmailBlastModal from "../modals/email-blast-modal";
 import NewsletterQueueModal from "../modals/newsletter-queue-modal";
 import CohortsModal from "../modals/cohorts-modal";
 import AddedToNewsletterSuccessModal from "../modals/added-to-newsletter-success-modal";
@@ -24,6 +26,7 @@ import type {
   GetBlogDistributionOptionsResponse,
 } from "@/types/admin/blogs/blog-distribution.types";
 import type { DistributionChannel } from "../_utils/create-blog-post.types";
+import { fa } from "zod/locales";
 
 export default function CreateBlogPostPage() {
   const {
@@ -129,6 +132,7 @@ export default function CreateBlogPostPage() {
 
   const [isShareDistributionModalOpen, setIsShareDistributionModalOpen] =
     useState(false);
+  const [isEmailBlastModalOpen, setIsEmailBlastModalOpen] = useState(false);
   const [isNewsletterQueueModalOpen, setIsNewsletterQueueModalOpen] =
     useState(false);
   const [isCohortsModalOpen, setIsCohortsModalOpen] = useState(false);
@@ -151,6 +155,13 @@ export default function CreateBlogPostPage() {
     "id" in createdBlogModalData
       ? String(createdBlogModalData.id)
       : "";
+
+  const liveArticleTitle =
+    createdBlogModalData &&
+    typeof createdBlogModalData === "object" &&
+    "title" in createdBlogModalData
+      ? String(createdBlogModalData.title)
+      : title.trim();
 
   const newsletterName = useMemo(() => {
     return lastNewsletterFrequency === "WEEKLY"
@@ -238,6 +249,7 @@ export default function CreateBlogPostPage() {
 
   const ensureDistributionOptions = async () => {
     if (!createdBlogId) {
+      toast.error("Blog ID is missing.");
       return null;
     }
 
@@ -254,6 +266,9 @@ export default function CreateBlogPostPage() {
       setDistributionOptions(response);
 
       return response;
+    } catch (error) {
+      toast.error("Failed to load distribution options.");
+      return null;
     } finally {
       setIsLoadingDistributionOptions(false);
     }
@@ -277,36 +292,81 @@ export default function CreateBlogPostPage() {
 
   const handleProceedDistribution = async (channel: DistributionChannel) => {
     if (!createdBlogId) {
+      toast.error("Blog ID is missing.");
       return;
     }
 
     if (channel === "email_blast") {
-      setIsDistributionSubmitting(true);
+      const options = await ensureDistributionOptions();
 
-      try {
-        await blogDistributionService.distributeBlast(createdBlogId, {
-          sendAdminCopy: true,
-        });
-
-        setIsShareDistributionModalOpen(false);
-      } finally {
-        setIsDistributionSubmitting(false);
+      if (!options) {
+        return;
       }
 
+      setIsShareDistributionModalOpen(false);
+      setIsEmailBlastModalOpen(true);
       return;
     }
 
     if (channel === "newsletter") {
-      await ensureDistributionOptions();
+      const options = await ensureDistributionOptions();
+
+      if (!options) {
+        return;
+      }
+
       setIsShareDistributionModalOpen(false);
       setIsNewsletterQueueModalOpen(true);
       return;
     }
 
     if (channel === "trainees") {
-      await ensureDistributionOptions();
+      const options = await ensureDistributionOptions();
+
+      if (!options) {
+        return;
+      }
+
       setIsShareDistributionModalOpen(false);
       setIsCohortsModalOpen(true);
+    }
+  };
+
+  const handleCloseEmailBlastModal = () => {
+    setIsEmailBlastModalOpen(false);
+  };
+
+  const handleBackToDistributionFromEmailBlast = () => {
+    setIsEmailBlastModalOpen(false);
+    setIsShareDistributionModalOpen(true);
+  };
+
+  const handleSendEmailBlast = async (sendAdminCopy: boolean) => {
+    if (!createdBlogId) {
+      toast.error("Blog ID is missing.");
+      return;
+    }
+
+    setIsDistributionSubmitting(true);
+
+    try {
+      await blogDistributionService.distributeBlast(createdBlogId, {
+        sendAdminCopy,
+      });
+
+      toast.success("Email blast sent successfully.");
+
+      setIsEmailBlastModalOpen(false);
+      setIsShareDistributionModalOpen(false);
+      setIsNewsletterQueueModalOpen(false);
+      setIsCohortsModalOpen(false);
+      setIsAddedToNewsletterModalOpen(false);
+
+      router.push("/dashboard/admin/blogs");
+    } catch (error) {
+      toast.error("Failed to send email blast.");
+    } finally {
+      setIsDistributionSubmitting(false);
     }
   };
 
@@ -323,6 +383,7 @@ export default function CreateBlogPostPage() {
     frequencyType: BlogNewsletterFrequencyType,
   ) => {
     if (!createdBlogId) {
+      toast.error("Blog ID is missing.");
       return;
     }
 
@@ -333,9 +394,13 @@ export default function CreateBlogPostPage() {
         frequencyType,
       });
 
+      toast.success("Article added to newsletter queue.");
+
       setLastNewsletterFrequency(frequencyType);
       setIsNewsletterQueueModalOpen(false);
       setIsAddedToNewsletterModalOpen(true);
+    } catch (error) {
+      toast.error("Failed to add article to newsletter queue.");
     } finally {
       setIsDistributionSubmitting(false);
     }
@@ -352,6 +417,7 @@ export default function CreateBlogPostPage() {
 
   const handleProceedCohortsBroadcast = async (cohortIds: string[]) => {
     if (!createdBlogId || cohortIds.length === 0) {
+      toast.error("Please select at least one cohort.");
       return;
     }
 
@@ -362,7 +428,11 @@ export default function CreateBlogPostPage() {
         cohortIds,
       });
 
+      toast.success("Cohort distribution completed.");
+
       setIsCohortsModalOpen(false);
+    } catch (error) {
+      toast.error("Failed to distribute to selected cohorts.");
     } finally {
       setIsDistributionSubmitting(false);
     }
@@ -617,6 +687,19 @@ export default function CreateBlogPostPage() {
           }
           onClose={handleCloseShareDistribution}
           onProceed={handleProceedDistribution}
+        />
+      ) : null}
+
+      {isEmailBlastModalOpen ? (
+        <EmailBlastModal
+          title={liveArticleTitle}
+          audienceLabel={distributionOptions?.blastDetails.targetAudience}
+          totalRecipients={distributionOptions?.blastDetails.totalRecipients}
+          subjectPreview={liveArticleTitle}
+          isSubmitting={isDistributionSubmitting}
+          onBack={handleBackToDistributionFromEmailBlast}
+          onClose={handleCloseEmailBlastModal}
+          onSend={handleSendEmailBlast}
         />
       ) : null}
 
