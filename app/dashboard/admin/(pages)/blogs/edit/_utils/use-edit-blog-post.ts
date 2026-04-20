@@ -8,9 +8,22 @@ import toast from "react-hot-toast";
 import { useCreateBlogPost } from "@/app/dashboard/admin/(pages)/blogs/create/_utils/use-create-blog-post";
 import { buildScheduledPublishDateFromInputs } from "@/app/dashboard/admin/(pages)/blogs/create/_utils/create-blog-post.helpers";
 
+type EditCreatedBlogModalData = {
+  id: string;
+  title: string;
+  author: string;
+  category: string;
+  readTime: string;
+};
+
 export function useEditBlogPost(blogId: string) {
   const create = useCreateBlogPost();
   const [loading, setLoading] = useState(true);
+  const [initialPublishingStatus, setInitialPublishingStatus] =
+    useState<BlogCreatePublishingStatus | null>(null);
+  const [isLiveNowModalOpen, setIsLiveNowModalOpen] = useState(false);
+  const [createdBlogModalData, setCreatedBlogModalData] =
+    useState<EditCreatedBlogModalData | null>(null);
 
   const {
     setTitle,
@@ -20,7 +33,6 @@ export function useEditBlogPost(blogId: string) {
     setMetaTitle,
     setMetaDescription,
     setCoverImageUrl,
-    setSecondImageUrl,
     setSelectedCategoryIds,
     setSelectedTagIds,
     setIsFeatured,
@@ -29,6 +41,7 @@ export function useEditBlogPost(blogId: string) {
     setBannerError,
     setIsSubmitting,
     setErrors,
+    setArticleImages,
   } = create;
 
   useEffect(() => {
@@ -51,11 +64,23 @@ export function useEditBlogPost(blogId: string) {
         setSelectedCategoryIds(blog.categories.map((c) => c.id));
         setSelectedTagIds(blog.tags.map((t) => t.id));
 
+        setInitialPublishingStatus(
+          (blog.publishingStatus as BlogCreatePublishingStatus) || "draft",
+        );
+
         const hero = blog.coverImages.find((i) => i.imageType === "hero");
-        const thumb = blog.coverImages.find((i) => i.imageType === "thumbnail");
+        const thumbnail = blog.coverImages.find(
+          (i) => i.imageType === "thumbnail",
+        );
+        const inlineImages = blog.coverImages
+          .filter((i) => i.imageType === "article_inline")
+          .map((i) => i.imageUrl);
 
         setCoverImageUrl(hero?.imageUrl || "");
-        setSecondImageUrl(thumb?.imageUrl || "");
+        setArticleImages([
+          ...(thumbnail?.imageUrl ? [thumbnail.imageUrl] : []),
+          ...inlineImages,
+        ]);
 
         if (blog.scheduledPublishDate) {
           const d = new Date(blog.scheduledPublishDate);
@@ -84,12 +109,12 @@ export function useEditBlogPost(blogId: string) {
     setMetaTitle,
     setMetaDescription,
     setCoverImageUrl,
-    setSecondImageUrl,
     setSelectedCategoryIds,
     setSelectedTagIds,
     setIsFeatured,
     setScheduleDate,
     setScheduleTime,
+    setArticleImages,
   ]);
 
   const validateForEdit = (status: BlogCreatePublishingStatus) => {
@@ -172,8 +197,33 @@ export function useEditBlogPost(blogId: string) {
     return true;
   };
 
+  const handleCloseLiveNowModal = () => {
+    setIsLiveNowModalOpen(false);
+  };
+
+  const handleDoneAfterPublish = () => {
+    setIsLiveNowModalOpen(false);
+    setCreatedBlogModalData(null);
+  };
+
+  const handleViewLiveArticle = () => {
+    if (!createdBlogModalData?.id) return;
+
+    window.location.assign(
+      `/dashboard/admin/blogs/live/${createdBlogModalData.id}`,
+    );
+  };
+
+  const handleShareArticle = () => {
+    if (!createdBlogModalData?.id) return;
+  };
+
   const handleUpdate = async (status: BlogCreatePublishingStatus) => {
-    if (create.isUploadingCoverImage || create.isUploadingSecondImage) {
+    if (
+      create.isUploadingCoverImage ||
+      create.isUploadingSecondImage ||
+      create.uploadingArticleImageIndexes.length > 0
+    ) {
       setBannerError("Please wait for the image upload to finish.");
       toast.error("Please wait for the image upload to finish.");
       return;
@@ -184,7 +234,7 @@ export function useEditBlogPost(blogId: string) {
       create.content.trim() ||
       create.authorName.trim() ||
       create.coverImageUrl ||
-      create.secondImageUrl ||
+      create.articleImages.some(Boolean) ||
       create.excerpt.trim() ||
       create.metaTitle.trim() ||
       create.metaDescription.trim() ||
@@ -207,6 +257,8 @@ export function useEditBlogPost(blogId: string) {
       setIsSubmitting(true);
       setBannerError("");
 
+      const normalizedArticleImages = create.articleImages.filter(Boolean);
+
       const payload = {
         title: create.title.trim(),
         content: create.content.trim(),
@@ -215,14 +267,18 @@ export function useEditBlogPost(blogId: string) {
           ...(create.coverImageUrl
             ? [{ imageUrl: create.coverImageUrl, imageType: "hero" as const }]
             : []),
-          ...(create.secondImageUrl
+          ...(normalizedArticleImages[0]
             ? [
                 {
-                  imageUrl: create.secondImageUrl,
+                  imageUrl: normalizedArticleImages[0],
                   imageType: "thumbnail" as const,
                 },
               ]
             : []),
+          ...normalizedArticleImages.slice(1).map((imageUrl) => ({
+            imageUrl,
+            imageType: "article_inline" as const,
+          })),
         ],
         categoryIds: create.selectedCategoryIds,
         tagIds: create.selectedTagIds,
@@ -242,6 +298,30 @@ export function useEditBlogPost(blogId: string) {
 
       await updateBlogPost(blogId, payload);
 
+      const shouldOpenPublishFlow =
+        status === "published" &&
+        (initialPublishingStatus === "draft" ||
+          initialPublishingStatus === "scheduled");
+
+      if (shouldOpenPublishFlow) {
+        setInitialPublishingStatus("published");
+        const modalCategory =
+          create.categoryOptions.find((category) =>
+            create.selectedCategoryIds.includes(category.id),
+          )?.name || "Uncategorized";
+
+        setCreatedBlogModalData({
+          id: blogId,
+          title: create.title.trim(),
+          author: create.authorName.trim(),
+          category: modalCategory,
+          readTime: create.readTimeLabel,
+        });
+        setIsLiveNowModalOpen(true);
+        // toast.success("Blog published successfully");
+        return;
+      }
+
       toast.success("Blog updated successfully");
     } catch (err) {
       console.error(err);
@@ -255,6 +335,13 @@ export function useEditBlogPost(blogId: string) {
   return {
     loading,
     ...create,
+    initialPublishingStatus,
+    isLiveNowModalOpen,
+    createdBlogModalData,
+    handleCloseLiveNowModal,
     handleSubmit: handleUpdate,
+    handleViewLiveArticle,
+    handleShareArticle,
+    handleDoneAfterPublish,
   };
 }

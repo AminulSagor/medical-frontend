@@ -34,7 +34,7 @@ export interface BlogLiveTag {
 
 export interface BlogLiveCoverImage {
   imageUrl: string;
-  imageType: "hero" | "thumbnail";
+  imageType: "hero" | "thumbnail" | "article_inline";
 }
 
 export interface BlogLivePost {

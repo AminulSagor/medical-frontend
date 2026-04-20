@@ -1,11 +1,28 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { ArrowLeft, CalendarDays, Save, TriangleAlert } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 import { useEditBlogPost } from "../_utils/use-edit-blog-post";
 import CreateBlogPostEditor from "@/app/dashboard/admin/(pages)/blogs/create/helper/create-blog-post-editor";
 import CreateBlogPostPreview from "@/app/dashboard/admin/(pages)/blogs/create/helper/create-blog-post-preview";
 import CreateBlogPostSettingsSidebar from "@/app/dashboard/admin/(pages)/blogs/create/helper/create-blog-post-settings-sidebar";
+import LiveNowModal from "@/app/dashboard/admin/(pages)/blogs/create/modals/live-now-modal";
+import ShareDistributionModal from "@/app/dashboard/admin/(pages)/blogs/create/modals/share-distribution-modal";
+import EmailBlastModal from "@/app/dashboard/admin/(pages)/blogs/create/modals/email-blast-modal";
+import NewsletterQueueModal from "@/app/dashboard/admin/(pages)/blogs/create/modals/newsletter-queue-modal";
+import CohortsModal from "@/app/dashboard/admin/(pages)/blogs/create/modals/cohorts-modal";
+import AddedToNewsletterSuccessModal from "@/app/dashboard/admin/(pages)/blogs/create/modals/added-to-newsletter-success-modal";
+import { blogDistributionService } from "@/service/admin/blogs/blog-distribution.service";
+import { useBlogPreviewStore } from "@/store/blog-preview.store";
+
+import type {
+  BlogNewsletterFrequencyType,
+  GetBlogDistributionOptionsResponse,
+} from "@/types/admin/blogs/blog-distribution.types";
+import type { DistributionChannel } from "@/app/dashboard/admin/(pages)/blogs/create/_utils/create-blog-post.types";
+import { useRouter } from "next/navigation";
 
 const BLOG_MANAGEMENT_PATH = "/dashboard/admin/blogs";
 
@@ -31,6 +48,10 @@ export default function EditBlogPostPage({ blogId }: { blogId: string }) {
 
     coverImageUrl,
     secondImageUrl,
+
+    articleImages,
+    uploadingArticleImageIndexes,
+    articleImageError,
 
     isUploadingCoverImage,
     isUploadingSecondImage,
@@ -71,14 +92,24 @@ export default function EditBlogPostPage({ blogId }: { blogId: string }) {
     wordCount,
     readTimeLabel,
 
+    isLiveNowModalOpen,
+    createdBlogModalData,
+
     handleSelectCoverImage,
     handleSelectSecondImage,
+    handleSelectArticleImage,
     handleRemoveCoverImage,
     handleRemoveSecondImage,
+    handleRemoveArticleImage,
+    handleAddArticleImage,
 
     handleAddTag,
     handleCreateCategory,
     handleSubmit,
+
+    handleViewLiveArticle,
+    handleShareArticle,
+    handleDoneAfterPublish,
 
     clearAuthorError,
     clearTitleError,
@@ -92,6 +123,50 @@ export default function EditBlogPostPage({ blogId }: { blogId: string }) {
     clearMetaDescriptionError,
     clearCreateTagError,
   } = useEditBlogPost(blogId);
+
+  const setDraftPreview = useBlogPreviewStore((state) => state.setDraftPreview);
+
+  const router = useRouter();
+
+  const [isShareDistributionModalOpen, setIsShareDistributionModalOpen] =
+    useState(false);
+  const [isEmailBlastModalOpen, setIsEmailBlastModalOpen] = useState(false);
+  const [isNewsletterQueueModalOpen, setIsNewsletterQueueModalOpen] =
+    useState(false);
+  const [isCohortsModalOpen, setIsCohortsModalOpen] = useState(false);
+  const [isAddedToNewsletterModalOpen, setIsAddedToNewsletterModalOpen] =
+    useState(false);
+
+  const [distributionOptions, setDistributionOptions] =
+    useState<GetBlogDistributionOptionsResponse | null>(null);
+  const [isLoadingDistributionOptions, setIsLoadingDistributionOptions] =
+    useState(false);
+  const [isDistributionSubmitting, setIsDistributionSubmitting] =
+    useState(false);
+
+  const [lastNewsletterFrequency, setLastNewsletterFrequency] =
+    useState<BlogNewsletterFrequencyType>("MONTHLY");
+
+  const liveArticleTitle = createdBlogModalData?.title || title.trim();
+
+  const newsletterName = useMemo(() => {
+    return lastNewsletterFrequency === "WEEKLY"
+      ? "Weekly Clinical Digest"
+      : "Monthly Clinical Digest";
+  }, [lastNewsletterFrequency]);
+
+  const queuePosition = useMemo(() => {
+    if (!distributionOptions) {
+      return 1;
+    }
+
+    const queueInfo =
+      lastNewsletterFrequency === "WEEKLY"
+        ? distributionOptions.newsletterQueueDetails.weekly
+        : distributionOptions.newsletterQueueDetails.monthly;
+
+    return queueInfo.articlesInQueue + 1;
+  }, [distributionOptions, lastNewsletterFrequency]);
 
   if (loading) {
     return (
@@ -127,6 +202,273 @@ export default function EditBlogPostPage({ blogId }: { blogId: string }) {
 
   const handleUpdateAsPublished = async () => {
     await handleSubmit("published");
+  };
+
+  const ensureDistributionOptions = async () => {
+    if (!blogId) {
+      toast.error("Blog ID is missing.");
+      return null;
+    }
+
+    if (distributionOptions) {
+      return distributionOptions;
+    }
+
+    setIsLoadingDistributionOptions(true);
+
+    try {
+      const response =
+        await blogDistributionService.getDistributionOptions(blogId);
+
+      setDistributionOptions(response);
+
+      return response;
+    } catch (error) {
+      toast.error("Failed to load distribution options.");
+      return null;
+    } finally {
+      setIsLoadingDistributionOptions(false);
+    }
+  };
+
+  const handleOpenShareDistribution = async () => {
+    handleShareArticle();
+
+    const options = await ensureDistributionOptions();
+
+    if (!options) {
+      return;
+    }
+
+    setIsShareDistributionModalOpen(true);
+  };
+
+  const handleCloseShareDistribution = () => {
+    setIsShareDistributionModalOpen(false);
+  };
+
+  const handleProceedDistribution = async (channel: DistributionChannel) => {
+    if (!blogId) {
+      toast.error("Blog ID is missing.");
+      return;
+    }
+
+    if (channel === "email_blast") {
+      const options = await ensureDistributionOptions();
+
+      if (!options) {
+        return;
+      }
+
+      setIsShareDistributionModalOpen(false);
+      setIsEmailBlastModalOpen(true);
+      return;
+    }
+
+    if (channel === "newsletter") {
+      const options = await ensureDistributionOptions();
+
+      if (!options) {
+        return;
+      }
+
+      setIsShareDistributionModalOpen(false);
+      setIsNewsletterQueueModalOpen(true);
+      return;
+    }
+
+    if (channel === "trainees") {
+      const options = await ensureDistributionOptions();
+
+      if (!options) {
+        return;
+      }
+
+      setIsShareDistributionModalOpen(false);
+      setIsCohortsModalOpen(true);
+    }
+  };
+
+  const handleCloseEmailBlastModal = () => {
+    setIsEmailBlastModalOpen(false);
+  };
+
+  const handleBackToDistributionFromEmailBlast = () => {
+    setIsEmailBlastModalOpen(false);
+    setIsShareDistributionModalOpen(true);
+  };
+
+  const handleSendEmailBlast = async (sendAdminCopy: boolean) => {
+    if (!blogId) {
+      toast.error("Blog ID is missing.");
+      return;
+    }
+
+    setIsDistributionSubmitting(true);
+
+    try {
+      await blogDistributionService.distributeBlast(blogId, {
+        sendAdminCopy,
+      });
+
+      toast.success("Email blast sent successfully.");
+
+      setIsEmailBlastModalOpen(false);
+      setIsShareDistributionModalOpen(false);
+      setIsNewsletterQueueModalOpen(false);
+      setIsCohortsModalOpen(false);
+      setIsAddedToNewsletterModalOpen(false);
+
+      window.location.assign("/dashboard/admin/blogs");
+    } catch (error) {
+      toast.error("Failed to send email blast.");
+    } finally {
+      setIsDistributionSubmitting(false);
+    }
+  };
+
+  const handleCloseNewsletterQueueModal = () => {
+    setIsNewsletterQueueModalOpen(false);
+  };
+
+  const handleBackToDistributionFromNewsletter = () => {
+    setIsNewsletterQueueModalOpen(false);
+    setIsShareDistributionModalOpen(true);
+  };
+
+  const handleConfirmNewsletterQueue = async (
+    frequencyType: BlogNewsletterFrequencyType,
+  ) => {
+    if (!blogId) {
+      toast.error("Blog ID is missing.");
+      return;
+    }
+
+    setIsDistributionSubmitting(true);
+
+    try {
+      await blogDistributionService.distributeNewsletter(blogId, {
+        frequencyType,
+      });
+
+      toast.success("Article added to newsletter queue.");
+
+      setLastNewsletterFrequency(frequencyType);
+      setIsNewsletterQueueModalOpen(false);
+      setIsAddedToNewsletterModalOpen(true);
+    } catch (error) {
+      toast.error("Failed to add article to newsletter queue.");
+    } finally {
+      setIsDistributionSubmitting(false);
+    }
+  };
+
+  const handleCloseCohortsModal = () => {
+    setIsCohortsModalOpen(false);
+  };
+
+  const handleBackToDistributionFromCohorts = () => {
+    setIsCohortsModalOpen(false);
+    setIsShareDistributionModalOpen(true);
+  };
+
+  const handleProceedCohortsBroadcast = async (cohortIds: string[]) => {
+    if (!blogId || cohortIds.length === 0) {
+      toast.error("Please select at least one cohort.");
+      return;
+    }
+
+    setIsDistributionSubmitting(true);
+
+    try {
+      await blogDistributionService.distributeCohorts(blogId, {
+        cohortIds,
+      });
+
+      toast.success("Cohort distribution completed.");
+
+      setIsCohortsModalOpen(false);
+    } catch (error) {
+      toast.error("Failed to distribute to selected cohorts.");
+    } finally {
+      setIsDistributionSubmitting(false);
+    }
+  };
+
+  const handleCloseAddedToNewsletterModal = () => {
+    setIsAddedToNewsletterModalOpen(false);
+  };
+
+  const handleGoToNewsletterManager = () => {
+    window.location.assign("/dashboard/admin/newsletters/general-newsletter");
+  };
+
+  const handlePreview = () => {
+    if (
+      !title.trim() ||
+      !content.trim() ||
+      !authorName.trim() ||
+      selectedCategoryIds.length === 0
+    ) {
+      return;
+    }
+
+    const selectedCategories = categoryOptions.filter((category) =>
+      selectedCategoryIds.includes(category.id),
+    );
+
+    setDraftPreview({
+      id: "",
+      title: title.trim(),
+      content,
+      authorName: authorName.trim(),
+      coverImages: [
+        ...(coverImageUrl
+          ? [{ imageUrl: coverImageUrl, imageType: "hero" as const }]
+          : []),
+        ...(secondImageUrl
+          ? [{ imageUrl: secondImageUrl, imageType: "thumbnail" as const }]
+          : []),
+      ],
+      publishingStatus: "draft",
+      scheduledPublishDate:
+        scheduleDate && scheduleTime
+          ? new Date(`${scheduleDate}T${scheduleTime}:00`).toISOString()
+          : null,
+      isFeatured,
+      excerpt,
+      readTimeMinutes: Number.parseInt(readTimeLabel, 10) || 0,
+      publishedAt: null,
+      seo: {
+        id: "",
+        postId: "",
+        metaTitle,
+        metaDescription,
+        createdAt: "",
+        updatedAt: "",
+      },
+      categories: selectedCategories.map((category) => ({
+        id: category.id,
+        name: category.name,
+        slug: "",
+        description: null,
+        isActive: true,
+        createdAt: "",
+        updatedAt: "",
+      })),
+      tags: tagOptions
+        .filter((tag) => selectedTagIds.includes(tag.id))
+        .map((tag) => ({
+          id: tag.id,
+          name: tag.name,
+          slug: "",
+          createdAt: "",
+        })),
+      createdAt: "",
+      updatedAt: "",
+    });
+
+    router.push("/dashboard/admin/blogs/preview?source=draft");
   };
 
   return (
@@ -198,10 +540,13 @@ export default function EditBlogPostPage({ blogId }: { blogId: string }) {
             excerpt={excerpt}
             coverImageUrl={coverImageUrl}
             secondImageUrl={secondImageUrl}
+            articleImages={articleImages}
+            uploadingArticleImageIndexes={uploadingArticleImageIndexes}
             isUploadingCoverImage={isUploadingCoverImage}
             isUploadingSecondImage={isUploadingSecondImage}
             coverImageError={coverImageError || errors.coverImage}
             secondImageError={secondImageError || errors.secondImage}
+            articleImageError={articleImageError}
             titleError={errors.title}
             contentError={errors.content}
             onTitleChange={(value) => {
@@ -218,8 +563,11 @@ export default function EditBlogPostPage({ blogId }: { blogId: string }) {
             }}
             onSelectCoverImage={handleSelectCoverImage}
             onSelectSecondImage={handleSelectSecondImage}
+            onSelectArticleImage={handleSelectArticleImage}
             onRemoveCoverImage={handleRemoveCoverImage}
             onRemoveSecondImage={handleRemoveSecondImage}
+            onRemoveArticleImage={handleRemoveArticleImage}
+            onAddArticleImage={handleAddArticleImage}
           />
 
           <aside className="min-w-0 xl:w-[320px]">
@@ -231,7 +579,7 @@ export default function EditBlogPostPage({ blogId }: { blogId: string }) {
                   !authorName.trim() ||
                   selectedCategoryIds.length === 0
                 }
-                onClick={() => {}}
+                onClick={handlePreview}
               />
 
               <CreateBlogPostSettingsSidebar
@@ -328,6 +676,73 @@ export default function EditBlogPostPage({ blogId }: { blogId: string }) {
           </aside>
         </div>
       </div>
+
+      {isLiveNowModalOpen && createdBlogModalData ? (
+        <LiveNowModal
+          title={createdBlogModalData.title}
+          author={createdBlogModalData.author}
+          category={createdBlogModalData.category}
+          readTime={createdBlogModalData.readTime}
+          onClose={handleDoneAfterPublish}
+          onViewLive={handleViewLiveArticle}
+          onShare={handleOpenShareDistribution}
+          onDone={handleDoneAfterPublish}
+        />
+      ) : null}
+
+      {isShareDistributionModalOpen ? (
+        <ShareDistributionModal
+          options={distributionOptions}
+          isLoadingOptions={
+            isLoadingDistributionOptions || isDistributionSubmitting
+          }
+          onClose={handleCloseShareDistribution}
+          onProceed={handleProceedDistribution}
+        />
+      ) : null}
+
+      {isEmailBlastModalOpen ? (
+        <EmailBlastModal
+          title={liveArticleTitle}
+          audienceLabel={distributionOptions?.blastDetails.targetAudience}
+          totalRecipients={distributionOptions?.blastDetails.totalRecipients}
+          subjectPreview={liveArticleTitle}
+          isSubmitting={isDistributionSubmitting}
+          onBack={handleBackToDistributionFromEmailBlast}
+          onClose={handleCloseEmailBlastModal}
+          onSend={handleSendEmailBlast}
+        />
+      ) : null}
+
+      {isNewsletterQueueModalOpen && distributionOptions ? (
+        <NewsletterQueueModal
+          options={distributionOptions}
+          isSubmitting={isDistributionSubmitting}
+          onBack={handleBackToDistributionFromNewsletter}
+          onClose={handleCloseNewsletterQueueModal}
+          onConfirm={handleConfirmNewsletterQueue}
+        />
+      ) : null}
+
+      {isCohortsModalOpen && distributionOptions ? (
+        <CohortsModal
+          cohorts={distributionOptions.courseCohorts}
+          isSubmitting={isDistributionSubmitting}
+          onBack={handleBackToDistributionFromCohorts}
+          onClose={handleCloseCohortsModal}
+          onProceed={handleProceedCohortsBroadcast}
+        />
+      ) : null}
+
+      {isAddedToNewsletterModalOpen && createdBlogModalData ? (
+        <AddedToNewsletterSuccessModal
+          articleTitle={createdBlogModalData.title}
+          newsletterName={newsletterName}
+          queuePosition={queuePosition}
+          onGoToNewsletterManager={handleGoToNewsletterManager}
+          onDone={handleCloseAddedToNewsletterModal}
+        />
+      ) : null}
     </div>
   );
 }
