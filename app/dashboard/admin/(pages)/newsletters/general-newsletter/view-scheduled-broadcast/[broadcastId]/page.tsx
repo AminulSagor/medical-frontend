@@ -33,7 +33,7 @@ export default function Page() {
       setIsError(false);
 
       const response =
-        await generalBroadcastGetService.getBroadcastById(broadcastId);
+        await generalBroadcastGetService.getBroadcastByIdUiView(broadcastId);
 
       setData(response);
     } catch (error) {
