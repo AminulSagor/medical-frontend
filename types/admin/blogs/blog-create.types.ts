@@ -10,7 +10,7 @@ export type BlogTagOption = {
   name: string;
 };
 
-export type BlogCoverImageType = "hero" | "thumbnail";
+export type BlogCoverImageType = "hero" | "thumbnail" | "article_inline";
 
 export type BlogCoverImagePayloadItem = {
   imageUrl: string;

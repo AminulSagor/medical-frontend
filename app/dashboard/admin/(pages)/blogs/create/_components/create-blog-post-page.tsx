@@ -126,6 +126,13 @@ export default function CreateBlogPostPage() {
     clearMetaTitleError,
     clearMetaDescriptionError,
     clearCreateTagError,
+
+    articleImages,
+    uploadingArticleImageIndexes,
+    articleImageError,
+    handleAddArticleImage,
+    handleSelectArticleImage,
+    handleRemoveArticleImage,
   } = useCreateBlogPost();
 
   const setDraftPreview = useBlogPreviewStore((state) => state.setDraftPreview);
@@ -537,6 +544,12 @@ export default function CreateBlogPostPage() {
             onSelectSecondImage={handleSelectSecondImage}
             onRemoveCoverImage={handleRemoveCoverImage}
             onRemoveSecondImage={handleRemoveSecondImage}
+            articleImages={articleImages}
+            uploadingArticleImageIndexes={uploadingArticleImageIndexes}
+            articleImageError={articleImageError}
+            onAddArticleImage={handleAddArticleImage}
+            onSelectArticleImage={handleSelectArticleImage}
+            onRemoveArticleImage={handleRemoveArticleImage}
           />
 
           <aside className="min-w-0 xl:w-[320px]">

@@ -121,6 +121,32 @@ function extractImageUrlByType(
   return images?.find((item) => item.imageType === type)?.imageUrl || "";
 }
 
+function extractArticleImages(
+  images:
+    | Array<{
+        imageUrl: string;
+        imageType: string;
+      }>
+    | undefined,
+) {
+  if (!images?.length) {
+    return [];
+  }
+
+  const thumbnailImage = images.find(
+    (item) => item.imageType === "thumbnail" && item.imageUrl,
+  );
+
+  const inlineImages = images.filter(
+    (item) => item.imageType === "article_inline" && item.imageUrl,
+  );
+
+  return [
+    ...(thumbnailImage ? [thumbnailImage.imageUrl] : []),
+    ...inlineImages.map((item) => item.imageUrl),
+  ];
+}
+
 export function useCreateBlogPost() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -140,13 +166,14 @@ export function useCreateBlogPost() {
   );
 
   const [coverImageUrl, setCoverImageUrl] = useState("");
-  const [secondImageUrl, setSecondImageUrl] = useState("");
+  const [articleImages, setArticleImages] = useState<string[]>([]);
 
   const [isUploadingCoverImage, setIsUploadingCoverImage] = useState(false);
-  const [isUploadingSecondImage, setIsUploadingSecondImage] = useState(false);
+  const [uploadingArticleImageIndexes, setUploadingArticleImageIndexes] =
+    useState<number[]>([]);
 
   const [coverImageError, setCoverImageError] = useState("");
-  const [secondImageError, setSecondImageError] = useState("");
+  const [articleImageError, setArticleImageError] = useState("");
 
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
@@ -204,13 +231,17 @@ export function useCreateBlogPost() {
     return Number.isNaN(parsed) ? 0 : parsed;
   }, [readTimeLabel]);
 
+  const secondImageUrl = articleImages[0] || "";
+  const isUploadingSecondImage = uploadingArticleImageIndexes.includes(0);
+  const secondImageError = articleImageError;
+
   const isPublishReady = useMemo(() => {
     return Boolean(
       title.trim() &&
       content.trim() &&
       authorName.trim() &&
       coverImageUrl &&
-      secondImageUrl &&
+      articleImages.filter(Boolean).length > 0 &&
       excerpt.trim() &&
       metaTitle.trim() &&
       metaDescription.trim() &&
@@ -221,7 +252,7 @@ export function useCreateBlogPost() {
     content,
     authorName,
     coverImageUrl,
-    secondImageUrl,
+    articleImages,
     excerpt,
     metaTitle,
     metaDescription,
@@ -236,9 +267,9 @@ export function useCreateBlogPost() {
     setMetaDescription(DEFAULT_BLOG_CREATE_META_DESCRIPTION);
 
     setCoverImageUrl("");
-    setSecondImageUrl("");
+    setArticleImages([]);
     setCoverImageError("");
-    setSecondImageError("");
+    setArticleImageError("");
 
     setScheduleDate("");
     setScheduleTime("");
@@ -393,9 +424,7 @@ export function useCreateBlogPost() {
     setSelectedTagIds(previewBlog.tags?.map((tag) => tag.id) || []);
 
     setCoverImageUrl(extractImageUrlByType(previewBlog.coverImages, "hero"));
-    setSecondImageUrl(
-      extractImageUrlByType(previewBlog.coverImages, "thumbnail"),
-    );
+    setArticleImages(extractArticleImages(previewBlog.coverImages));
 
     setScheduleDate(
       buildLocalDateInputValue(previewBlog.scheduledPublishDate || null),
@@ -405,31 +434,17 @@ export function useCreateBlogPost() {
     );
   }, [previewBlog]);
 
-  const uploadImage = async (
-    file: File,
-    type: "hero" | "thumbnail",
-  ): Promise<void> => {
+  const uploadImage = async (file: File, type: "hero"): Promise<void> => {
     if (!file.type.startsWith("image/")) {
       const message = "Please select a valid image file.";
-
-      if (type === "hero") {
-        setCoverImageError(message);
-      } else {
-        setSecondImageError(message);
-      }
-
+      setCoverImageError(message);
       toast.error(message);
       return;
     }
 
     try {
-      if (type === "hero") {
-        setIsUploadingCoverImage(true);
-        setCoverImageError("");
-      } else {
-        setIsUploadingSecondImage(true);
-        setSecondImageError("");
-      }
+      setIsUploadingCoverImage(true);
+      setCoverImageError("");
 
       const uploadMeta = await getUploadUrl({
         fileName: file.name,
@@ -439,31 +454,71 @@ export function useCreateBlogPost() {
 
       await uploadFileToSignedUrl(uploadMeta.signedUrl, file);
 
-      if (type === "hero") {
-        setCoverImageUrl(uploadMeta.readUrl);
-        clearCoverImageError();
-        toast.success("Cover image uploaded.");
-      } else {
-        setSecondImageUrl(uploadMeta.readUrl);
-        clearSecondImageError();
-        toast.success("Article image uploaded.");
-      }
+      setCoverImageUrl(uploadMeta.readUrl);
+      clearCoverImageError();
+      toast.success("Cover image uploaded.");
     } catch (error) {
       console.error("Failed to upload image:", error);
-
-      if (type === "hero") {
-        setCoverImageError("Failed to upload cover image. Please try again.");
-        toast.error("Failed to upload cover image.");
-      } else {
-        setSecondImageError("Failed to upload image. Please try again.");
-        toast.error("Failed to upload article image.");
-      }
+      setCoverImageError("Failed to upload cover image. Please try again.");
+      toast.error("Failed to upload cover image.");
     } finally {
-      if (type === "hero") {
-        setIsUploadingCoverImage(false);
-      } else {
-        setIsUploadingSecondImage(false);
-      }
+      setIsUploadingCoverImage(false);
+    }
+  };
+
+  const uploadArticleImage = async (
+    file: File,
+    index: number,
+  ): Promise<void> => {
+    if (!file.type.startsWith("image/")) {
+      const message = "Please select a valid image file.";
+      setArticleImageError(message);
+      toast.error(message);
+      return;
+    }
+
+    try {
+      setUploadingArticleImageIndexes((prev) =>
+        prev.includes(index) ? prev : [...prev, index],
+      );
+      setArticleImageError("");
+
+      const uploadMeta = await getUploadUrl({
+        fileName: file.name,
+        contentType: file.type || "application/octet-stream",
+        folder: BLOG_COVER_UPLOAD_FOLDER,
+      });
+
+      await uploadFileToSignedUrl(uploadMeta.signedUrl, file);
+
+      setArticleImages((prev) => {
+        const next = [...prev];
+
+        while (next.length <= index) {
+          next.push("");
+        }
+
+        next[index] = uploadMeta.readUrl;
+
+        return next;
+      });
+
+      clearSecondImageError();
+      toast.success(
+        index === 0 ? "Article image uploaded." : "Image uploaded.",
+      );
+    } catch (error) {
+      console.error("Failed to upload article image:", error);
+      setArticleImageError("Failed to upload image. Please try again.");
+      toast.error(
+        index === 0
+          ? "Failed to upload article image."
+          : "Failed to upload image.",
+      );
+    } finally {
+      setUploadingArticleImageIndexes((prev) =>
+        prev.filter((i) => i !== index),
+      );
     }
   };
 
@@ -472,7 +527,15 @@ export function useCreateBlogPost() {
   };
 
   const handleSelectSecondImage = async (file: File) => {
-    await uploadImage(file, "thumbnail");
+    await uploadArticleImage(file, 0);
+  };
+
+  const handleAddArticleImage = () => {
+    setArticleImages((prev) => [...prev, ""]);
+  };
+
+  const handleSelectArticleImage = async (file: File, index: number) => {
+    await uploadArticleImage(file, index);
   };
 
   const handleRemoveCoverImage = () => {
@@ -483,10 +546,23 @@ export function useCreateBlogPost() {
   };
 
   const handleRemoveSecondImage = () => {
-    setSecondImageUrl("");
-    setSecondImageError("");
+    setArticleImages((prev) => prev.filter((_, index) => index !== 0));
+    setArticleImageError("");
     clearSecondImageError();
     toast.success("Article image removed.");
+  };
+
+  const handleRemoveArticleImage = (index: number) => {
+    setArticleImages((prev) =>
+      prev.filter((_, itemIndex) => itemIndex !== index),
+    );
+    setArticleImageError("");
+    if (index === 0) {
+      clearSecondImageError();
+      toast.success("Article image removed.");
+      return;
+    }
+    toast.success("Image removed.");
   };
 
   const handleAddTag = async () => {
@@ -627,10 +703,6 @@ export function useCreateBlogPost() {
         nextErrors.coverImage = "Cover image is required";
       }
 
-      // if (!secondImageUrl) {
-      //   nextErrors.secondImage = "Second image is required";
-      // }
-
       if (selectedCategoryIds.length === 0) {
         nextErrors.categories = "At least one category must be selected";
       }
@@ -638,14 +710,6 @@ export function useCreateBlogPost() {
       if (!excerpt.trim()) {
         nextErrors.excerpt = "Excerpt is required";
       }
-
-      // if (!metaTitle.trim()) {
-      //   nextErrors.metaTitle = "Meta title is required";
-      // }
-
-      // if (!metaDescription.trim()) {
-      //   nextErrors.metaDescription = "Meta description is required";
-      // }
     }
 
     setErrors(nextErrors);
@@ -722,7 +786,7 @@ export function useCreateBlogPost() {
   };
 
   const handleSubmit = async (status: BlogCreatePublishingStatus) => {
-    if (isUploadingCoverImage || isUploadingSecondImage) {
+    if (isUploadingCoverImage || uploadingArticleImageIndexes.length > 0) {
       setBannerError("Please wait for the image upload to finish.");
       toast.error("Please wait for the image upload to finish.");
       return;
@@ -733,7 +797,7 @@ export function useCreateBlogPost() {
       content.trim() ||
       authorName.trim() ||
       coverImageUrl ||
-      secondImageUrl ||
+      articleImages.some(Boolean) ||
       excerpt.trim() ||
       metaTitle.trim() ||
       metaDescription.trim() ||
@@ -756,6 +820,8 @@ export function useCreateBlogPost() {
       setIsSubmitting(true);
       setBannerError("");
 
+      const normalizedArticleImages = articleImages.filter(Boolean);
+
       const payload = {
         title: title.trim(),
         content: buildBlogContentHtml(content),
@@ -764,9 +830,18 @@ export function useCreateBlogPost() {
           ...(coverImageUrl
             ? [{ imageUrl: coverImageUrl, imageType: "hero" as const }]
             : []),
-          ...(secondImageUrl
-            ? [{ imageUrl: secondImageUrl, imageType: "thumbnail" as const }]
+          ...(normalizedArticleImages[0]
+            ? [
+                {
+                  imageUrl: normalizedArticleImages[0],
+                  imageType: "thumbnail" as const,
+                },
+              ]
             : []),
+          ...normalizedArticleImages.slice(1).map((imageUrl) => ({
+            imageUrl,
+            imageType: "article_inline" as const,
+          })),
         ],
         categoryIds: selectedCategoryIds,
         tagIds: selectedTagIds,
@@ -855,14 +930,17 @@ export function useCreateBlogPost() {
 
     coverImageUrl,
     secondImageUrl,
+    articleImages,
     setCoverImageUrl,
-    setSecondImageUrl,
+    setArticleImages,
 
     isUploadingCoverImage,
     isUploadingSecondImage,
+    uploadingArticleImageIndexes,
 
     coverImageError,
     secondImageError,
+    articleImageError,
 
     scheduleDate,
     setScheduleDate,
@@ -913,8 +991,11 @@ export function useCreateBlogPost() {
 
     handleSelectCoverImage,
     handleSelectSecondImage,
+    handleSelectArticleImage,
     handleRemoveCoverImage,
     handleRemoveSecondImage,
+    handleRemoveArticleImage,
+    handleAddArticleImage,
 
     handleAddTag,
     handleCreateCategory,
