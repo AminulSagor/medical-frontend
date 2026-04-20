@@ -67,6 +67,7 @@ export interface BroadcastUIEmailPreview {
   subject: string;
   fromLabel: string;
   article: {
+    id: string;
     title: string;
     excerpt: string;
     heroImageUrl: string;

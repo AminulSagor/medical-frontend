@@ -11,6 +11,13 @@ export default function ScheduledBroadcastAudienceTargetCard({
 }: Props) {
   const items = getAudienceItems(audience);
 
+  if (items.length === 0) {
+    return (
+      <ScheduledBroadcastSectionShell title="Audience & Target">
+        <p className="flex flex-wrap gap-2 text-slate-700">{audience.mode}</p>
+      </ScheduledBroadcastSectionShell>
+    );
+  }
   return (
     <ScheduledBroadcastSectionShell title="Audience & Target">
       <div className="flex flex-wrap gap-2">
