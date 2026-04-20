@@ -1,30 +1,15 @@
 "use client";
 
-import {
-  Bold,
-  CheckCircle2,
-  FileText,
-  Italic,
-  Link2,
-  List,
-  ListOrdered,
-  Search,
-  UploadCloud,
-  X,
-} from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  applyEditorCommand,
-  htmlToPlainText,
-  normalizeEditorHtml,
-  sanitizeBroadcastHtml,
-} from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/create-broadcast/_utils/create-broadcast-editor.utils";
+import { CheckCircle2, FileText, Link2, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 import { generalBroadcastCreateService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-create.service";
 import type {
   CreateBroadcastFormErrors,
   CreateBroadcastFormState,
   GeneralBroadcastArticleSourceItem,
 } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-create.types";
+import CreateBroadcastAttachmentsSection from "./create-broadcast-attachments-section";
+import CreateBroadcastMessageBodySection from "./create-broadcast-message-body-section";
 
 type Props = {
   mode: "create" | "edit";
@@ -48,8 +33,6 @@ export default function CreateBroadcastContentSection({
 }: Props) {
   const isCustomMessage = form.contentType === "CUSTOM_MESSAGE";
   const isEditMode = mode === "edit";
-  const editorRef = useRef<HTMLDivElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [articleOptions, setArticleOptions] = useState<
     GeneralBroadcastArticleSourceItem[]
@@ -92,95 +75,6 @@ export default function CreateBroadcastContentSection({
 
     return () => clearTimeout(timeout);
   }, [form.articleSearch, form.contentType]);
-
-  useEffect(() => {
-    if (!isCustomMessage || !editorRef.current) return;
-
-    const sanitizedHtml = sanitizeBroadcastHtml(form.messageBodyHtml || "");
-
-    if (editorRef.current.innerHTML !== sanitizedHtml) {
-      editorRef.current.innerHTML = sanitizedHtml;
-    }
-  }, [form.messageBodyHtml, isCustomMessage]);
-
-  const attachmentSummary = useMemo(() => {
-    return form.attachments.map((item) => ({
-      fileKey: item.fileKey,
-      fileName: item.fileName,
-      sizeLabel:
-        item.fileSizeBytes >= 1024 * 1024
-          ? `${(item.fileSizeBytes / (1024 * 1024)).toFixed(2)} MB`
-          : `${Math.ceil(item.fileSizeBytes / 1024)} KB`,
-    }));
-  }, [form.attachments]);
-
-  const syncEditorValue = () => {
-    if (!editorRef.current) return;
-
-    const rawHtml = editorRef.current.innerHTML || "";
-    const sanitizedHtml = normalizeEditorHtml(rawHtml);
-
-    if (form.messageBodyHtml !== sanitizedHtml) {
-      onChange("messageBodyHtml", sanitizedHtml);
-      onChange("messageBodyText", htmlToPlainText(sanitizedHtml));
-    }
-  };
-
-  const handleToolbarCommand = (command: string) => {
-    editorRef.current?.focus();
-    applyEditorCommand(command);
-    syncEditorValue();
-  };
-
-  const handleInsertLink = () => {
-    const url = window.prompt("Enter link URL");
-    if (!url) return;
-
-    const textarea = document.querySelector(
-      "#message-body-textarea",
-    ) as HTMLTextAreaElement;
-
-    if (textarea) {
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const text = textarea.value;
-      const selectedText = text.substring(start, end);
-      const before = text.substring(0, start);
-      const after = text.substring(end);
-      const linkText = selectedText || "link text";
-      const linkMarkdown = `[${linkText}](${url.trim()})`;
-
-      textarea.value = before + linkMarkdown + after;
-      onChange("messageBodyText", textarea.value);
-      onChange("messageBodyHtml", textarea.value);
-      textarea.focus();
-      textarea.setSelectionRange(
-        start + linkMarkdown.length,
-        start + linkMarkdown.length,
-      );
-    }
-  };
-
-  const handleInsertTag = () => {
-    const textarea = document.querySelector(
-      "#message-body-textarea",
-    ) as HTMLTextAreaElement;
-
-    if (textarea) {
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const text = textarea.value;
-      const before = text.substring(0, start);
-      const after = text.substring(end);
-      const tag = "{{Student_Name}}";
-
-      textarea.value = before + tag + after;
-      onChange("messageBodyText", textarea.value);
-      onChange("messageBodyHtml", textarea.value);
-      textarea.focus();
-      textarea.setSelectionRange(start + tag.length, start + tag.length);
-    }
-  };
 
   const handleSelectArticle = (article: GeneralBroadcastArticleSourceItem) => {
     onChange("selectedArticle", article);
@@ -356,226 +250,19 @@ export default function CreateBroadcastContentSection({
       </section>
 
       {isCustomMessage && (
-        <section className="rounded-[28px] bg-[#f8fafc] p-5 shadow-sm ring-1 ring-slate-200 sm:p-7">
-          <div className="mb-5 flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-sm font-semibold text-slate-800">
-                Message Body
-              </h2>
-              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-                Compose your custom clinical message
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleInsertTag}
-              className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-500 shadow-sm hover:bg-slate-50"
-            >
-              @ Insert Personalization Tag
-            </button>
-          </div>
-
-          <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
-            <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 px-4 py-4">
-              <button
-                type="button"
-                onClick={() => {
-                  const textarea = document.querySelector(
-                    "#message-body-textarea",
-                  ) as HTMLTextAreaElement;
-                  if (textarea) {
-                    const start = textarea.selectionStart;
-                    const text = textarea.value;
-                    const before = text.substring(0, start);
-                    const after = text.substring(textarea.selectionEnd);
-
-                    textarea.value = before + "**bold**" + after;
-                    onChange("messageBodyText", textarea.value);
-                    onChange("messageBodyHtml", textarea.value);
-                    textarea.focus();
-                    textarea.setSelectionRange(start + 7, start + 7);
-                  }
-                }}
-                className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
-              >
-                <Bold size={15} />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const textarea = document.querySelector(
-                    "#message-body-textarea",
-                  ) as HTMLTextAreaElement;
-                  if (textarea) {
-                    const start = textarea.selectionStart;
-                    const text = textarea.value;
-                    const before = text.substring(0, start);
-                    const after = text.substring(textarea.selectionEnd);
-
-                    textarea.value = before + "*italic*" + after;
-                    onChange("messageBodyText", textarea.value);
-                    onChange("messageBodyHtml", textarea.value);
-                    textarea.focus();
-                    textarea.setSelectionRange(start + 8, start + 8);
-                  }
-                }}
-                className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
-              >
-                <Italic size={15} />
-              </button>
-
-              <div className="mx-1 h-5 w-px bg-slate-200" />
-
-              <button
-                type="button"
-                onClick={() => {
-                  const textarea = document.querySelector(
-                    "#message-body-textarea",
-                  ) as HTMLTextAreaElement;
-                  if (textarea) {
-                    const start = textarea.selectionStart;
-                    const text = textarea.value;
-                    const before = text.substring(0, start);
-                    const after = text.substring(textarea.selectionEnd);
-
-                    textarea.value = before + "\n- item\n- item\n" + after;
-                    onChange("messageBodyText", textarea.value);
-                    onChange("messageBodyHtml", textarea.value);
-                  }
-                }}
-                className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
-              >
-                <List size={15} />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const textarea = document.querySelector(
-                    "#message-body-textarea",
-                  ) as HTMLTextAreaElement;
-                  if (textarea) {
-                    const start = textarea.selectionStart;
-                    const text = textarea.value;
-                    const before = text.substring(0, start);
-                    const after = text.substring(textarea.selectionEnd);
-
-                    textarea.value = before + "\n1. item\n2. item\n" + after;
-                    onChange("messageBodyText", textarea.value);
-                    onChange("messageBodyHtml", textarea.value);
-                  }
-                }}
-                className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
-              >
-                <ListOrdered size={15} />
-              </button>
-
-              <div className="mx-1 h-5 w-px bg-slate-200" />
-
-              <button
-                type="button"
-                onClick={handleInsertLink}
-                className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
-              >
-                <Link2 size={15} />
-              </button>
-
-              <div className="ml-auto rounded-md bg-[#eafbf8] px-2.5 py-1 text-xs font-semibold text-[#14b8a6]">
-                {`{{Student_Name}}`} Tag
-              </div>
-            </div>
-
-            <textarea
-              id="message-body-textarea"
-              value={form.messageBodyText || ""}
-              onChange={(e) => {
-                onChange("messageBodyText", e.target.value);
-                onChange("messageBodyHtml", e.target.value);
-              }}
-              placeholder="Write your message here..."
-              className="min-h-[300px] w-full resize-y px-5 py-6 text-sm leading-8 text-slate-600 outline-none focus:ring-0"
-            />
-          </div>
-
-          {errors.messageBody ? (
-            <p className="mt-2 text-xs text-red-500">{errors.messageBody}</p>
-          ) : null}
-        </section>
+        <CreateBroadcastMessageBodySection
+          form={form}
+          errors={errors}
+          onChange={onChange}
+        />
       )}
 
       {isCustomMessage && (
-        <section className="rounded-[28px] bg-white p-5 shadow-sm sm:p-7">
-          <div className="mb-5">
-            <h2 className="text-sm font-semibold text-slate-800">
-              Attachments
-            </h2>
-            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-              Upload clinical reports and references
-            </p>
-          </div>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            className="hidden"
-            accept=".pdf,.jpeg,.jpg,.png"
-            onChange={(e) => {
-              void onUploadAttachments(e.target.files);
-              e.currentTarget.value = "";
-            }}
-          />
-
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full rounded-[24px] border border-dashed border-slate-300 px-6 py-12 text-center transition hover:bg-slate-50"
-          >
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-50 text-[#18c3b2]">
-              <UploadCloud size={24} />
-            </div>
-
-            <p className="text-sm font-semibold text-slate-700">
-              Drag and drop clinical reports, PDFs, or images here, or{" "}
-              <span className="text-[#18c3b2]">click to browse</span>
-            </p>
-            <p className="mt-2 text-xs text-slate-400">
-              Supported formats: PDF, JPEG, PNG (Max 10MB per file)
-            </p>
-          </button>
-
-          {attachmentSummary.length ? (
-            <div className="mt-4 space-y-3">
-              {attachmentSummary.map((attachment) => (
-                <div
-                  key={attachment.fileKey}
-                  className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-700">
-                      {attachment.fileName}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {attachment.sizeLabel}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void onRemoveAttachment(attachment.fileKey);
-                    }}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </section>
+        <CreateBroadcastAttachmentsSection
+          form={form}
+          onUploadAttachments={onUploadAttachments}
+          onRemoveAttachment={onRemoveAttachment}
+        />
       )}
     </>
   );
