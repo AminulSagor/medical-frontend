@@ -26,7 +26,6 @@ import type {
   GetBlogDistributionOptionsResponse,
 } from "@/types/admin/blogs/blog-distribution.types";
 import type { DistributionChannel } from "../_utils/create-blog-post.types";
-import { fa } from "zod/locales";
 
 export default function CreateBlogPostPage() {
   const {
@@ -217,7 +216,10 @@ export default function CreateBlogPostPage() {
           : []),
       ],
       publishingStatus: "draft",
-      scheduledPublishDate: null,
+      scheduledPublishDate:
+        scheduleDate && scheduleTime
+          ? new Date(`${scheduleDate}T${scheduleTime}:00`).toISOString()
+          : null,
       isFeatured,
       excerpt,
       readTimeMinutes: Number.parseInt(readTimeLabel, 10) || 0,
