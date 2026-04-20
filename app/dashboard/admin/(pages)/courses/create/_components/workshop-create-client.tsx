@@ -24,6 +24,10 @@ import ManageClinicalLocationsModal from "../../_components/manage-clinical-loca
 import { searchFaculty } from "@/service/admin/faculty.service";
 import { listFacilities } from "@/service/admin/facility.service";
 import { createWorkshop, getWorkshopById } from "@/service/admin/workshop.service";
+import {
+  getUploadUrl,
+  uploadFileToSignedUrl,
+} from "@/service/upload/upload.service";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   createWorkshopSchema,
@@ -248,6 +252,7 @@ export default function WorkshopCreateClient() {
   const [isHydrating, setIsHydrating] = useState(true);
   const hasMountedRef = useRef(false);
   const coverPreviewUrlRef = useRef<string | null>(null);
+  const suppressDirtyRef = useRef(false);
 
   const [mode, setMode] = useState<DeliveryMode>("in_person");
   const isOnline = mode === "online";
@@ -263,6 +268,7 @@ export default function WorkshopCreateClient() {
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
   const [coverFileName, setCoverFileName] = useState<string | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const [pendingCoverFile, setPendingCoverFile] = useState<File | null>(null);
   const [learningObjectives, setLearningObjectives] = useState("");
   const [cme, setCme] = useState(false);
   const [cmeCreditsCount, setCmeCreditsCount] = useState("");
@@ -310,6 +316,7 @@ export default function WorkshopCreateClient() {
     setCoverImageUrl(workshop.coverImageUrl ?? null);
     setCoverPreviewUrl(workshop.coverImageUrl ?? null);
     setCoverFileName(null);
+    setPendingCoverFile(null);
     setLearningObjectives(workshop.learningObjectives ?? "");
     setCme(Boolean(workshop.offersCmeCredits));
     setCmeCreditsCount(workshop.cmeCreditsCount ?? "");
@@ -548,6 +555,11 @@ export default function WorkshopCreateClient() {
       return;
     }
 
+    if (suppressDirtyRef.current) {
+      suppressDirtyRef.current = false;
+      return;
+    }
+
     setHasPendingChanges(true);
     setChangeVersion((prev) => prev + 1);
   }, [autosaveSnapshot, isHydrating]);
@@ -665,12 +677,12 @@ export default function WorkshopCreateClient() {
     router.push(COURSES_LIST_ROUTE);
   }
 
-  function buildPayload(status: WorkshopStatus) {
+  function buildPayload(status: WorkshopStatus, nextCoverImageUrl: string | null = coverImageUrl) {
     return buildWorkshopPayload({
       mode,
       title,
       blurb,
-      coverImageUrl,
+      coverImageUrl: nextCoverImageUrl,
       learningObjectives,
       cme,
       cmeCreditsCount,
@@ -691,11 +703,57 @@ export default function WorkshopCreateClient() {
     });
   }
 
+  async function uploadCoverImageIfNeeded() {
+    if (!pendingCoverFile) {
+      return coverImageUrl;
+    }
+
+    const uploadMeta = await getUploadUrl({
+      fileName: pendingCoverFile.name,
+      contentType: pendingCoverFile.type || "application/octet-stream",
+      folder: "courses",
+    });
+
+    await uploadFileToSignedUrl(uploadMeta.signedUrl, pendingCoverFile);
+
+    suppressDirtyRef.current = true;
+
+    if (coverPreviewUrlRef.current) {
+      URL.revokeObjectURL(coverPreviewUrlRef.current);
+      coverPreviewUrlRef.current = null;
+    }
+
+    setCoverImageUrl(uploadMeta.readUrl);
+    setCoverPreviewUrl(uploadMeta.readUrl);
+    setCoverFileName(pendingCoverFile.name);
+    setPendingCoverFile(null);
+
+    return uploadMeta.readUrl;
+  }
+
   async function saveWorkshop(
     status: WorkshopStatus,
     modeToUse: "publish" | "draft" | "autosave",
   ) {
-    const payload = buildPayload(status);
+    setSaveMode(modeToUse);
+
+    let resolvedCoverImageUrl = coverImageUrl;
+
+    try {
+      resolvedCoverImageUrl = await uploadCoverImageIfNeeded();
+    } catch (error: any) {
+      console.error("Failed to upload workshop cover image:", error);
+      if (modeToUse !== "autosave") {
+        window.alert(
+          error?.response?.data?.message ||
+            "Failed to upload cover image. Please try again.",
+        );
+      }
+      setSaveMode(null);
+      return false;
+    }
+
+    const payload = buildPayload(status, resolvedCoverImageUrl);
     const parsed = createWorkshopSchema.safeParse(payload);
 
     if (!parsed.success) {
@@ -707,8 +765,6 @@ export default function WorkshopCreateClient() {
 
       return false;
     }
-
-    setSaveMode(modeToUse);
 
     try {
       const requestBody: CreateWorkshopRequest = workshopId
@@ -903,7 +959,7 @@ export default function WorkshopCreateClient() {
                 <TextArea
                   value={blurb}
                   onChange={(e) => setBlurb(e.target.value)}
-                  placeholder="Leave empty to use short API"
+                  placeholder="Brief description for the course catalog..."
                 />
               </div>
 
@@ -1459,9 +1515,11 @@ export default function WorkshopCreateClient() {
                       coverPreviewUrlRef.current = previewUrl;
                       setCoverPreviewUrl(previewUrl);
                       setCoverFileName(file.name);
+                      setPendingCoverFile(file);
                     } else {
                       setCoverPreviewUrl(null);
                       setCoverFileName(null);
+                      setPendingCoverFile(null);
                     }
 
                     setCoverImageUrl(null);

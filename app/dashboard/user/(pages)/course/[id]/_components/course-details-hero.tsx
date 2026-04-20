@@ -14,15 +14,14 @@ export default function CourseDetailsHero({
   return (
     <section className="relative overflow-hidden rounded-2xl shadow-[0_10px_22px_rgba(15,23,42,0.10)]">
       <div className="relative h-[150px] w-full bg-slate-900 md:h-[180px]">
-        {imageSrc ? (
-          <NetworkImageFallback
-            src={imageSrc}
-            alt={title}
-            className="h-full w-full object-cover"
-            fallbackClassName="flex h-full w-full items-center justify-center bg-slate-800 text-slate-400"
-            iconClassName="h-10 w-10"
-          />
-        ) : null}
+        <NetworkImageFallback
+          src={imageSrc}
+          alt={title}
+          className="h-full w-full object-cover"
+          fallbackVariant="cover"
+          fallbackClassName="h-full w-full"
+          iconClassName="h-10 w-10"
+        />
 
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-900/55 to-slate-900/15" />
         <div className="absolute -top-10 left-10 h-24 w-24 rounded-full bg-white/10 blur-2xl" />

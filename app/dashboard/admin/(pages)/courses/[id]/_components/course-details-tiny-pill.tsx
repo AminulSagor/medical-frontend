@@ -6,7 +6,7 @@ export default function CourseDetailsTinyPill({
     children: ReactNode;
 }) {
     return (
-        <span className="rounded-full bg-[var(--primary-50)] px-2 py-0.5 text-[11px] font-semibold text-[var(--primary)] ring-1 ring-[var(--primary)]/15">
+        <span className="inline-flex items-center rounded-full border border-[#cfeef5] bg-[#eef9ff] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#2f8fc1]">
             {children}
         </span>
     );

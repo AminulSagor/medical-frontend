@@ -11,13 +11,26 @@ function iconOf(key: "location" | "dates" | "time") {
 }
 
 export default function CourseAboutAndInfo({ data }: { data: CourseDetails }) {
+  const learningObjectives = data.about.learningObjectives ?? [];
+
   return (
     <div className="space-y-6">
       <Card shape="soft" className="border border-light-slate/15 shadow-sm">
         <h2 className="text-2xl font-bold text-black">{data.about.title}</h2>
-        <p className="mt-4 text-base text-light-slate">
-          {data.about.description}
-        </p>
+        <p className="mt-4 text-base text-light-slate">{data.about.description}</p>
+
+        {learningObjectives.length > 0 ? (
+          <div className="mt-6 border-t border-light-slate/10 pt-5">
+            <p className="text-xs font-extrabold tracking-[0.18em] text-light-slate">
+              LEARNING OBJECTIVES
+            </p>
+            <div className="mt-3 space-y-2 text-sm leading-relaxed text-light-slate">
+              {learningObjectives.map((objective, index) => (
+                <p key={`${objective}-${index}`}>{objective}</p>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </Card>
 
       <div className="grid gap-6 md:grid-cols-3">
