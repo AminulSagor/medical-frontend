@@ -13,7 +13,7 @@ import type {
 } from "@/types/admin/newsletter/dashboard/transmission-history.types";
 import { archiveTransmissions } from "@/service/admin/newsletter/dashboard/archive-transmissions.service";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 6;
 
 export default function TransmissionHistoryPage() {
   const [data, setData] = useState<TransmissionHistoryResponse | null>(null);
