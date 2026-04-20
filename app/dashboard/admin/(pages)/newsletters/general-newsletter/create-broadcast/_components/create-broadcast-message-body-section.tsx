@@ -1,7 +1,7 @@
 "use client";
 
 import { Bold, Italic, Link2, List, ListOrdered } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   CreateBroadcastFormErrors,
   CreateBroadcastFormState,
@@ -23,55 +23,64 @@ export default function CreateBroadcastMessageBodySection({
 }: Props) {
   const editorRef = useRef<HTMLDivElement | null>(null);
 
+  const [isBold, setIsBold] = useState(false);
+  const [isItalic, setIsItalic] = useState(false);
+
+  // sync html → editor
+  useEffect(() => {
+    if (!editorRef.current) return;
+
+    if (editorRef.current.innerHTML !== (form.messageBodyHtml || "")) {
+      editorRef.current.innerHTML = form.messageBodyHtml || "";
+    }
+  }, [form.messageBodyHtml]);
+
+  // sync editor → state
+  const syncValue = () => {
+    if (!editorRef.current) return;
+
+    const html = editorRef.current.innerHTML;
+    const text = editorRef.current.innerText;
+
+    onChange("messageBodyHtml", html);
+    onChange("messageBodyText", text);
+  };
+
+  // apply formatting
+  const applyCommand = (command: string) => {
+    editorRef.current?.focus();
+    document.execCommand(command);
+    syncValue();
+  };
+
   const handleInsertLink = () => {
     const url = window.prompt("Enter link URL");
     if (!url) return;
 
-    const textarea = document.querySelector(
-      "#message-body-textarea",
-    ) as HTMLTextAreaElement;
-
-    if (textarea) {
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const text = textarea.value;
-      const selectedText = text.substring(start, end);
-      const before = text.substring(0, start);
-      const after = text.substring(end);
-      const linkText = selectedText || "link text";
-      const linkMarkdown = `[${linkText}](${url.trim()})`;
-
-      textarea.value = before + linkMarkdown + after;
-      onChange("messageBodyText", textarea.value);
-      onChange("messageBodyHtml", textarea.value);
-      textarea.focus();
-      textarea.setSelectionRange(
-        start + linkMarkdown.length,
-        start + linkMarkdown.length,
-      );
-    }
+    editorRef.current?.focus();
+    document.execCommand("createLink", false, url);
+    syncValue();
   };
 
   const handleInsertTag = () => {
-    const textarea = document.querySelector(
-      "#message-body-textarea",
-    ) as HTMLTextAreaElement;
-
-    if (textarea) {
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const text = textarea.value;
-      const before = text.substring(0, start);
-      const after = text.substring(end);
-      const tag = "{{Student_Name}}";
-
-      textarea.value = before + tag + after;
-      onChange("messageBodyText", textarea.value);
-      onChange("messageBodyHtml", textarea.value);
-      textarea.focus();
-      textarea.setSelectionRange(start + tag.length, start + tag.length);
-    }
+    editorRef.current?.focus();
+    document.execCommand("insertText", false, "{{Student_Name}}");
+    syncValue();
   };
+
+  // 🔥 active state tracking
+  useEffect(() => {
+    const updateState = () => {
+      setIsBold(document.queryCommandState("bold"));
+      setIsItalic(document.queryCommandState("italic"));
+    };
+
+    document.addEventListener("selectionchange", updateState);
+
+    return () => {
+      document.removeEventListener("selectionchange", updateState);
+    };
+  }, []);
 
   return (
     <section className="rounded-[28px] bg-[#f8fafc] p-5 shadow-sm ring-1 ring-slate-200 sm:p-7">
@@ -94,106 +103,55 @@ export default function CreateBroadcastMessageBodySection({
 
       <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
         <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 px-4 py-4">
+          {/* Bold */}
           <button
             type="button"
-            onClick={() => {
-              const textarea = document.querySelector(
-                "#message-body-textarea",
-              ) as HTMLTextAreaElement;
-              if (textarea) {
-                const start = textarea.selectionStart;
-                const text = textarea.value;
-                const before = text.substring(0, start);
-                const after = text.substring(textarea.selectionEnd);
-
-                textarea.value = before + "**bold**" + after;
-                onChange("messageBodyText", textarea.value);
-                onChange("messageBodyHtml", textarea.value);
-                textarea.focus();
-                textarea.setSelectionRange(start + 7, start + 7);
-              }
-            }}
-            className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
+            onClick={() => applyCommand("bold")}
+            className={`inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 transition
+              ${isBold ? "bg-slate-200 text-black" : "text-slate-500 hover:bg-slate-100"}
+            `}
           >
             <Bold size={15} />
           </button>
 
+          {/* Italic */}
           <button
             type="button"
-            onClick={() => {
-              const textarea = document.querySelector(
-                "#message-body-textarea",
-              ) as HTMLTextAreaElement;
-              if (textarea) {
-                const start = textarea.selectionStart;
-                const text = textarea.value;
-                const before = text.substring(0, start);
-                const after = text.substring(textarea.selectionEnd);
-
-                textarea.value = before + "*italic*" + after;
-                onChange("messageBodyText", textarea.value);
-                onChange("messageBodyHtml", textarea.value);
-                textarea.focus();
-                textarea.setSelectionRange(start + 8, start + 8);
-              }
-            }}
-            className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
+            onClick={() => applyCommand("italic")}
+            className={`inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 transition
+              ${isItalic ? "bg-slate-200 text-black" : "text-slate-500 hover:bg-slate-100"}
+            `}
           >
             <Italic size={15} />
           </button>
 
           <div className="mx-1 h-5 w-px bg-slate-200" />
 
+          {/* Bullet */}
           <button
             type="button"
-            onClick={() => {
-              const textarea = document.querySelector(
-                "#message-body-textarea",
-              ) as HTMLTextAreaElement;
-              if (textarea) {
-                const start = textarea.selectionStart;
-                const text = textarea.value;
-                const before = text.substring(0, start);
-                const after = text.substring(textarea.selectionEnd);
-
-                textarea.value = before + "\n- item\n- item\n" + after;
-                onChange("messageBodyText", textarea.value);
-                onChange("messageBodyHtml", textarea.value);
-              }
-            }}
-            className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
+            onClick={() => applyCommand("insertUnorderedList")}
+            className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 hover:bg-slate-100"
           >
             <List size={15} />
           </button>
 
+          {/* Numbered */}
           <button
             type="button"
-            onClick={() => {
-              const textarea = document.querySelector(
-                "#message-body-textarea",
-              ) as HTMLTextAreaElement;
-              if (textarea) {
-                const start = textarea.selectionStart;
-                const text = textarea.value;
-                const before = text.substring(0, start);
-                const after = text.substring(textarea.selectionEnd);
-
-                textarea.value = before + "\n1. item\n2. item\n" + after;
-                onChange("messageBodyText", textarea.value);
-                onChange("messageBodyHtml", textarea.value);
-              }
-            }}
-            className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
+            onClick={() => applyCommand("insertOrderedList")}
+            className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 hover:bg-slate-100"
           >
             <ListOrdered size={15} />
           </button>
 
           <div className="mx-1 h-5 w-px bg-slate-200" />
 
+          {/* Link */}
           <button
             type="button"
             onClick={handleInsertLink}
-            className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 transition hover:bg-slate-100"
+            className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-slate-500 hover:bg-slate-100"
           >
             <Link2 size={15} />
           </button>
@@ -203,15 +161,13 @@ export default function CreateBroadcastMessageBodySection({
           </div>
         </div>
 
-        <textarea
-          id="message-body-textarea"
-          value={form.messageBodyText || ""}
-          onChange={(e) => {
-            onChange("messageBodyText", e.target.value);
-            onChange("messageBodyHtml", e.target.value);
-          }}
-          placeholder="Write your message here..."
-          className="min-h-[300px] w-full resize-y px-5 py-6 text-sm leading-8 text-slate-600 outline-none focus:ring-0"
+        {/* Editor */}
+        <div
+          ref={editorRef}
+          contentEditable
+          onInput={syncValue}
+          className="min-h-[300px] px-5 py-6 text-sm leading-8 text-slate-600 outline-none"
+          suppressContentEditableWarning
         />
       </div>
 
