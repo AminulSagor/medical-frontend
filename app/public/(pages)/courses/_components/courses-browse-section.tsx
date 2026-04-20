@@ -22,9 +22,20 @@ function inCreditsRange(cme: number, range: CreditsRange) {
   return cme >= 8;
 }
 
+function formatWebinarPlatform(value?: string | null) {
+  if (!value) return "";
+
+  return value
+    .replace(/[_-]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
 function resolveLocation(workshop: PublicWorkshop) {
   if (workshop.deliveryMode === "online") {
-    return workshop.webinarPlatform || "Online Course";
+    return formatWebinarPlatform(workshop.webinarPlatform) || "Online Course";
   }
 
   if (workshop.facilities?.length) {

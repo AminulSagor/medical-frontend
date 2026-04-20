@@ -1,10 +1,10 @@
-import { Check } from "lucide-react";
 import type { OnlineAboutCardProps } from "@/types/user/course/course-online-details-type";
 
 export default function OnlineAboutCard({
   heading,
   paragraph,
-  highlights,
+  learningObjectivesTitle,
+  learningObjectivesHtml,
 }: OnlineAboutCardProps) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
@@ -12,23 +12,21 @@ export default function OnlineAboutCard({
         {heading}
       </div>
 
-      <p className="mt-4 text-[12px] leading-relaxed text-slate-600">
-        {paragraph}
-      </p>
+      {paragraph ? (
+        <p className="mt-4 text-[12px] leading-relaxed text-slate-600">{paragraph}</p>
+      ) : null}
 
-      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {highlights.map((h, idx) => (
-          <div
-            key={idx}
-            className="flex items-start gap-2 text-[12px] text-slate-600"
-          >
-            <span className="mt-[2px] grid h-5 w-5 place-items-center rounded-full bg-sky-50 text-sky-600 ring-1 ring-sky-100">
-              <Check className="h-3.5 w-3.5" />
-            </span>
-            <span className="font-medium">{h.text}</span>
+      {learningObjectivesHtml ? (
+        <div className="mt-5">
+          <div className="text-[10px] font-extrabold tracking-[0.18em] text-slate-300">
+            {learningObjectivesTitle || "LEARNING OBJECTIVES"}
           </div>
-        ))}
-      </div>
+          <div
+            className="mt-3 text-[12px] leading-relaxed text-slate-600 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_li]:pl-1 [&_a]:text-sky-600 [&_a]:underline"
+            dangerouslySetInnerHTML={{ __html: learningObjectivesHtml }}
+          />
+        </div>
+      ) : null}
     </section>
   );
 }

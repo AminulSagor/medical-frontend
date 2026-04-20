@@ -40,7 +40,8 @@ export default function BrowseCourseCard({
           src={coverImageUrl}
           alt={title}
           className="h-full w-full object-cover"
-          fallbackClassName="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400"
+          fallbackVariant="cover"
+          fallbackClassName="h-full w-full"
           iconClassName="h-8 w-8"
         />
 

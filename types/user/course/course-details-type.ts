@@ -25,6 +25,8 @@ export type CourseDetailsSummaryProps = {
 export type CourseAboutCardProps = {
   title: string;
   paragraphs: string[];
+  learningObjectivesTitle?: string;
+  learningObjectivesHtml?: string;
 };
 
 export type CourseRefundUi = {

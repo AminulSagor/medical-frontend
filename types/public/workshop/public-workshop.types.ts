@@ -64,6 +64,7 @@ export interface FeaturedPublicWorkshop {
   location: string;
   cmeCredits: number;
   offersCmeCredits: boolean;
+  cmeCreditsCount?: number | string | null;
   isFeatured: boolean;
 }
 
@@ -139,6 +140,7 @@ export interface PublicWorkshopDetails {
   totalHours: string;
   totalMinutes: number;
   offersCmeCredits: boolean;
+  cmeCreditsCount?: number | string | null;
   totalCapacity: number;
   reservedSeats: number;
   availableSeats: number;

@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import { CourseDetails } from "@/app/public/types/course.details.types";
 import Card from "@/components/cards/card";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 
 export default function CourseInstructors({ data }: { data: CourseDetails }) {
   return (
@@ -21,11 +21,13 @@ export default function CourseInstructors({ data }: { data: CourseDetails }) {
           >
             <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
               <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-light-slate/10">
-                <Image
+                <NetworkImageFallback
                   src={i.avatarSrc}
                   alt={i.avatarAlt}
-                  fill
-                  className="object-cover"
+                  className="h-full w-full object-cover"
+                  fallbackVariant="avatar"
+                  fallbackClassName="h-full w-full"
+                  iconClassName="h-8 w-8"
                 />
               </div>
 
@@ -34,7 +36,7 @@ export default function CourseInstructors({ data }: { data: CourseDetails }) {
                 <p className="mt-1 text-sm font-extrabold text-primary">
                   {i.role}
                 </p>
-                <p className="mt-3 text-sm leading-relaxed text-light-slate italic">
+                <p className="mt-3 text-sm italic leading-relaxed text-light-slate">
                   “{i.quote}”
                 </p>
               </div>

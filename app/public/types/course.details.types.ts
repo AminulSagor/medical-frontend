@@ -54,7 +54,7 @@ export type CourseInstructor = {
   name: string;
   role: string;
   quote: string;
-  avatarSrc: string;
+  avatarSrc?: string | null;
   avatarAlt: string;
 };
 
@@ -64,13 +64,14 @@ export type CourseDetails = {
   hero: {
     title: string;
     badges: { label: string; tone?: "primary" | "muted" }[];
-    backgroundSrc: string;
+    backgroundSrc?: string | null;
     backgroundAlt?: string;
   };
 
   about: {
     title: string;
     description: string;
+    learningObjectives?: string[];
   };
 
   info: CourseDetailInfoItem[];

@@ -34,7 +34,8 @@ export default function BrowseFeaturedBanner({
           src={course.coverImageUrl}
           alt={course.title}
           className="h-full w-full object-cover"
-          fallbackClassName="flex h-full w-full items-center justify-center bg-slate-800 text-slate-400"
+          fallbackVariant="cover"
+          fallbackClassName="h-full w-full"
           iconClassName="h-10 w-10"
         />
 

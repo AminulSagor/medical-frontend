@@ -262,7 +262,6 @@ function ToastMessage({
 
 export default function CoursesPage() {
     const router = useRouter();
-    const [didInitialLoad, setDidInitialLoad] = useState(false);
 
     const [tab, setTab] = useState<CourseTabKey>("upcoming");
     const [query, setQuery] = useState("");
@@ -293,29 +292,6 @@ export default function CoursesPage() {
     useEffect(() => {
         setPage(1);
     }, [tab, debouncedQuery, deliveryMode]);
-
-    useEffect(() => {
-        setDidInitialLoad(false);
-    }, [debouncedQuery, deliveryMode, refreshKey]);
-
-    useEffect(() => {
-        let isMounted = true;
-
-        void getWorkshopStats()
-            .then((response) => {
-                if (!isMounted) return;
-                setStats(response);
-            })
-            .catch((error) => {
-                console.error("Failed to load workshop stats:", error);
-                if (!isMounted) return;
-                setStats(null);
-            });
-
-        return () => {
-            isMounted = false;
-        };
-    }, [refreshKey]);
 
     useEffect(() => {
         if (!toast) return;
@@ -359,43 +335,30 @@ export default function CoursesPage() {
                     sortOrder: "desc" as const,
                 };
 
-                const shouldLoadAllTabs = !didInitialLoad;
-
-                if (shouldLoadAllTabs) {
-                    const [upcomingCountResponse, pastCountResponse, draftCountResponse, refundCountResponse, activeResponse] = await Promise.all([
-                        fetchTabData("upcoming", 1, 1, baseParams),
-                        fetchTabData("past", 1, 1, baseParams),
-                        fetchTabData("drafts", 1, 1, baseParams),
-                        fetchTabData("refund_requests", 1, 1, baseParams),
-                        fetchTabData(tab, page, PAGE_SIZE, baseParams),
-                    ]);
-
-                    if (!isMounted) return;
-
-                    setCounts({
-                        upcoming: upcomingCountResponse.meta.total,
-                        past: pastCountResponse.meta.total,
-                        drafts: draftCountResponse.meta.total,
-                        refund_requests: refundCountResponse.meta.total,
-                    });
-                    setItems(activeResponse.data.map((item) => mapWorkshopToCourseItem(item, tab)));
-                    setTotalItems(activeResponse.meta.total);
-                    setTotalPages(Math.max(1, activeResponse.meta.totalPages));
-                    setDidInitialLoad(true);
-
-                    if (page > Math.max(1, activeResponse.meta.totalPages)) {
-                        setPage(Math.max(1, activeResponse.meta.totalPages));
-                    }
-                    return;
-                }
-
-                const activeResponse = await fetchTabData(tab, page, PAGE_SIZE, baseParams);
+                const [upcomingCountResponse, pastCountResponse, draftCountResponse, refundCountResponse, activeResponse, statsResponse] = await Promise.all([
+                    fetchTabData("upcoming", 1, 1, baseParams),
+                    fetchTabData("past", 1, 1, baseParams),
+                    fetchTabData("drafts", 1, 1, baseParams),
+                    fetchTabData("refund_requests", 1, 1, baseParams),
+                    fetchTabData(tab, page, PAGE_SIZE, baseParams),
+                    getWorkshopStats().catch((error) => {
+                        console.error("Failed to load workshop stats:", error);
+                        return null;
+                    }),
+                ]);
 
                 if (!isMounted) return;
 
+                setCounts({
+                    upcoming: upcomingCountResponse.meta.total,
+                    past: pastCountResponse.meta.total,
+                    drafts: draftCountResponse.meta.total,
+                    refund_requests: refundCountResponse.meta.total,
+                });
                 setItems(activeResponse.data.map((item) => mapWorkshopToCourseItem(item, tab)));
                 setTotalItems(activeResponse.meta.total);
                 setTotalPages(Math.max(1, activeResponse.meta.totalPages));
+                setStats(statsResponse);
 
                 if (page > Math.max(1, activeResponse.meta.totalPages)) {
                     setPage(Math.max(1, activeResponse.meta.totalPages));
@@ -404,11 +367,10 @@ export default function CoursesPage() {
                 console.error("Failed to load workshops:", error);
                 if (!isMounted) return;
                 setItems([]);
-                if (!didInitialLoad || page === 1) {
-                    setCounts({ upcoming: 0, past: 0, drafts: 0, refund_requests: 0 });
-                }
+                setCounts({ upcoming: 0, past: 0, drafts: 0, refund_requests: 0 });
                 setTotalItems(0);
                 setTotalPages(1);
+                setStats(null);
             } finally {
                 if (isMounted) setLoading(false);
             }

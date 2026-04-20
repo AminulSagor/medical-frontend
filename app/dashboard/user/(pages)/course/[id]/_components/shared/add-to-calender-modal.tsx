@@ -91,7 +91,8 @@ export default function AddToCalendarModalClient({
                 src={event.imageSrc}
                 alt={event.title}
                 className="h-full w-full object-cover"
-                fallbackClassName="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400"
+                fallbackVariant="cover"
+                fallbackClassName="h-full w-full"
                 iconClassName="h-8 w-8"
               />
             </div>

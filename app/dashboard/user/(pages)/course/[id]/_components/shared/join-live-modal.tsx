@@ -4,6 +4,17 @@ import { useState } from "react";
 import { AlertCircle, Copy, ExternalLink, Video, X } from "lucide-react";
 import type { CourseMeetingInfoResponse } from "@/types/user/course/course-detail-api.types";
 
+function formatMeetingPlatform(value?: string | null) {
+  if (!value) return "";
+
+  return value
+    .replace(/[_-]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
 export default function JoinLiveModalClient({
   open,
   onClose,
@@ -56,7 +67,7 @@ export default function JoinLiveModalClient({
                 {data.title}
               </div>
               <div className="mt-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-slate-400">
-                <Video className="h-3.5 w-3.5" /> Powered by {data.meetingDetails.platform}
+                <Video className="h-3.5 w-3.5" /> Powered by {formatMeetingPlatform(data.meetingDetails.platform) || data.meetingDetails.platform}
               </div>
 
               <div className="mt-5 rounded-2xl bg-slate-50 p-4">

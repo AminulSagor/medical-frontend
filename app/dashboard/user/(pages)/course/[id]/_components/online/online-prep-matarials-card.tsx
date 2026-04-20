@@ -11,14 +11,37 @@ export default function OnlinePrepMaterialsCard({
       </div>
 
       <div className="mt-4 space-y-3">
-        {items.map((it, idx) => (
-          <div
-            key={idx}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-[12px] font-semibold text-slate-700"
-          >
-            {it.title}
-          </div>
-        ))}
+        {items.map((it, idx) => {
+          const content = (
+            <>
+              <div className="text-[12px] font-semibold text-slate-700">{it.title}</div>
+              {it.sub ? <div className="mt-1 text-[11px] text-slate-500">{it.sub}</div> : null}
+            </>
+          );
+
+          if (it.href) {
+            return (
+              <a
+                key={idx}
+                href={it.href}
+                target="_blank"
+                rel="noreferrer"
+                className="block rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 hover:border-sky-200 hover:bg-sky-50/50"
+              >
+                {content}
+              </a>
+            );
+          }
+
+          return (
+            <div
+              key={idx}
+              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+            >
+              {content}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

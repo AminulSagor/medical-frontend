@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { Search, SlidersHorizontal, Eye, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 import type { CourseItem, DeliveryMode } from "./courses.types";
 import { useEffect, useRef, useState } from "react";
 
@@ -288,11 +288,13 @@ export default function CoursesTable({
                                 <td className="px-5 py-4">
                                     <div className="flex items-center gap-3">
                                         <div className="relative h-8 w-8 overflow-hidden rounded-full ring-1 ring-slate-200">
-                                            <Image
-                                                src={c.instructorAvatarUrl || "/photos/image.png"}
+                                            <NetworkImageFallback
+                                                src={c.instructorAvatarUrl}
                                                 alt={c.instructorName}
-                                                fill
-                                                className="object-cover"
+                                                className="h-full w-full object-cover"
+                                                fallbackVariant="avatar"
+                                                fallbackClassName="h-full w-full"
+                                                iconClassName="h-4 w-4"
                                             />
                                         </div>
                                         <div className="min-w-0">

@@ -125,6 +125,23 @@ export interface CourseDetailResponse {
     onlineDetails: {
       title?: string | null;
       message?: string | null;
+      registrationReference?: string | null;
+      technicalRequirements?: Array<
+        | string
+        | {
+            title?: string | null;
+            description?: string | null;
+          }
+      > | null;
+      prepMaterials?: Array<
+        | string
+        | {
+            title?: string | null;
+            name?: string | null;
+            description?: string | null;
+            url?: string | null;
+          }
+      > | null;
     } | null;
     inPersonDetails: {
       ticketId: string;
