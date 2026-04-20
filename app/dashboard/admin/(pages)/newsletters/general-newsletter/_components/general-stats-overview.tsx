@@ -300,8 +300,8 @@ export default function GeneralStatOverview() {
                 disabled={!cadence?.weeklyEnabled}
                 className={
                   activeFrequency === "WEEKLY"
-                    ? "min-w-[112px] rounded-lg bg-white px-5 py-2 text-xs font-bold uppercase tracking-wide text-teal-500 shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
-                    : "min-w-[112px] rounded-lg px-5 py-2 text-xs font-bold uppercase tracking-wide text-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+                    ? "min-w-[105px] rounded-lg bg-white px-5 py-2 text-xs font-bold uppercase tracking-wide text-teal-500 shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+                    : "min-w-[105px] rounded-lg px-5 py-2 text-xs font-bold uppercase tracking-wide text-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
                 }
               >
                 Weekly
@@ -313,8 +313,8 @@ export default function GeneralStatOverview() {
                 disabled={!cadence?.monthlyEnabled}
                 className={
                   activeFrequency === "MONTHLY"
-                    ? "min-w-[112px] rounded-lg bg-white px-5 py-2 text-xs font-bold uppercase tracking-wide text-teal-500 shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
-                    : "min-w-[112px] rounded-lg px-5 py-2 text-xs font-bold uppercase tracking-wide text-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+                    ? "min-w-[105px] rounded-lg bg-white px-5 py-2 text-xs font-bold uppercase tracking-wide text-teal-500 shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+                    : "min-w-[105px] rounded-lg px-5 py-2 text-xs font-bold uppercase tracking-wide text-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
                 }
               >
                 Monthly

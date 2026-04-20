@@ -86,7 +86,7 @@ export default function NewsletterTabs({ value, onChange, className }: Props) {
               onClick={() => onChange(t.key)}
               onKeyDown={(e) => handleKeyDown(e, index)}
               className={cx(
-                "min-w-[190px]",
+                "min-w-[160px]",
                 "flex items-center justify-center gap-2",
                 "h-12 px-6",
                 "rounded-xl",
