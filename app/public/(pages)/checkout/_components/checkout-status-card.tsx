@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { CheckCircle2, CircleAlert } from "lucide-react";
+import { useCart } from "@/app/public/context/cart-context";
+import { getCartList } from "@/service/public/cart-server.service";
+import { getToken } from "@/utils/token/cookie_utils";
 
 type ActionButton = {
     label: string;
@@ -45,6 +49,38 @@ export default function CheckoutStatusCard({
     secondaryAction,
 }: CheckoutStatusCardProps) {
     const isSuccess = variant === "success";
+    const hasSyncedCartRef = useRef(false);
+    const { syncItems, clearCart } = useCart();
+
+    useEffect(() => {
+        if (!isSuccess || hasSyncedCartRef.current) return;
+
+        hasSyncedCartRef.current = true;
+
+        const syncCartAfterSuccess = async () => {
+            const token = getToken();
+
+            if (!token) {
+                clearCart();
+                return;
+            }
+
+            try {
+                const data = await getCartList();
+
+                syncItems(
+                    data.items.map((item) => ({
+                        productId: item.productId,
+                        quantity: item.quantity,
+                    })),
+                );
+            } catch (error) {
+                console.error("Failed to refresh cart after checkout", error);
+            }
+        };
+
+        syncCartAfterSuccess();
+    }, [isSuccess, syncItems, clearCart]);
 
     return (
         <section className="padding py-10 md:py-14">

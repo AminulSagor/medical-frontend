@@ -21,10 +21,10 @@ const BlogsPage = async () => {
       getTrendingPublicBlogs({ limit: 5 }),
     ]);
 
-    if (featuredResponse.items[0]) {
+    if (featuredResponse.items?.[0]) {
       featuredPost = mapApiBlogToUiBlog(featuredResponse.items[0]);
     }
-    trendingItems = trendingResponse.items.map(mapApiBlogToTrendingItem);
+    trendingItems = (trendingResponse.items ?? []).map(mapApiBlogToTrendingItem);
   } catch (error) {
     console.error("Failed to load public blog page data", error);
   }

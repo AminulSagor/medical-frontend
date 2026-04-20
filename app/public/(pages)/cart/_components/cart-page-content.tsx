@@ -224,6 +224,14 @@ export default function CartPage() {
 
                   const quantity = cartItem.quantity;
                   const productDetailsHref = `/public/store/product-details/${it.productId}`;
+                  const maxAvailableQuantity =
+                    typeof it.availableQuantity === "number" &&
+                      !Number.isNaN(it.availableQuantity)
+                      ? it.availableQuantity
+                      : Number.POSITIVE_INFINITY;
+                  const hasReachedMaxQuantity =
+                    Number.isFinite(maxAvailableQuantity) &&
+                    quantity >= maxAvailableQuantity;
 
                   return (
                     <div
@@ -297,7 +305,7 @@ export default function CartPage() {
                         </div>
                       </div>
 
-                      <div className="col-span-2 flex items-center justify-center">
+                      <div className="col-span-2 flex flex-col items-center justify-center">
                         <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2">
                           <button
                             type="button"
@@ -322,15 +330,28 @@ export default function CartPage() {
 
                           <button
                             type="button"
-                            onClick={() =>
-                              updateQty(cartItem.productId, quantity + 1)
-                            }
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-light-slate/10 active:scale-95"
+                            onClick={() => {
+                              if (hasReachedMaxQuantity) return;
+                              updateQty(cartItem.productId, quantity + 1);
+                            }}
+                            disabled={hasReachedMaxQuantity}
+                            className={[
+                              "inline-flex h-8 w-8 items-center justify-center rounded-full transition-all",
+                              hasReachedMaxQuantity
+                                ? "cursor-not-allowed opacity-50"
+                                : "hover:bg-light-slate/10 active:scale-95",
+                            ].join(" ")}
                             aria-label="Increase quantity"
                           >
                             <Plus className="h-4 w-4 text-light-slate" />
                           </button>
                         </div>
+
+                        {hasReachedMaxQuantity ? (
+                          <p className="mt-1 text-[10px] text-red-500">
+                            Max available quantity reached
+                          </p>
+                        ) : null}
                       </div>
 
                       <div className="col-span-1 flex items-center justify-end">
