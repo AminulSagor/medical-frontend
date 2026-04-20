@@ -1,33 +1,33 @@
-import type { GetGeneralBroadcastResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
 import ScheduledBroadcastSectionShell from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_components/scheduled-broadcast-section-shell";
+import type { BroadcastUIEmailPreview } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-ui-view.types";
 
 type Props = {
-  data: GetGeneralBroadcastResponse;
+  emailPreview?: BroadcastUIEmailPreview | null;
 };
 
 export default function ScheduledBroadcastArticleLinkPreviewCard({
-  data,
+  emailPreview,
 }: Props) {
-  const article = data.articleLink;
+  const article = emailPreview?.article;
 
-  if (!article) return null;
+  if (!emailPreview || !article) return null;
 
   return (
     <ScheduledBroadcastSectionShell title="Email Content Preview">
-      <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div className="flex items-start justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
           <div className="space-y-1">
             <div className="flex gap-3 text-xs">
               <span className="font-semibold text-slate-400">Subject:</span>
               <span className="font-semibold text-slate-800">
-                {data.subjectLine}
+                {emailPreview.subject}
               </span>
             </div>
 
             <div className="flex gap-3 text-xs">
               <span className="font-semibold text-slate-400">From:</span>
               <span className="text-slate-500">
-                {article.sourceAuthorSnapshot || "System"}
+                {emailPreview.fromLabel || "System"}
               </span>
             </div>
           </div>
@@ -38,20 +38,20 @@ export default function ScheduledBroadcastArticleLinkPreviewCard({
         </div>
 
         <div className="bg-white px-5 py-6">
-          {!!article.sourceHeroImageUrlSnapshot && (
+          {!!article.heroImageUrl && (
             <img
-              src={article.sourceHeroImageUrlSnapshot}
-              alt={article.sourceTitleSnapshot}
+              src={article.heroImageUrl}
+              alt={article.title}
               className="mb-6 h-[220px] w-full rounded-2xl object-cover"
             />
           )}
 
           <h3 className="max-w-[680px] text-[22px] font-semibold leading-tight text-slate-900">
-            {article.sourceTitleSnapshot}
+            {article.title}
           </h3>
 
           <p className="mt-5 max-w-[620px] text-[15px] leading-8 text-slate-600">
-            {article.sourceExcerptSnapshot}
+            {article.excerpt}
           </p>
 
           {/* <button

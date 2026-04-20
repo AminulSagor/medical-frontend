@@ -1,9 +1,9 @@
 import ScheduledBroadcastSectionShell from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_components/scheduled-broadcast-section-shell";
 import { getAudienceItems } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_utils/scheduled-broadcast-view.utils";
-import type { BroadcastAudience } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
+import type { BroadcastUIAudience } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-ui-view.types";
 
 type Props = {
-  audience: BroadcastAudience;
+  audience: BroadcastUIAudience;
 };
 
 export default function ScheduledBroadcastAudienceTargetCard({

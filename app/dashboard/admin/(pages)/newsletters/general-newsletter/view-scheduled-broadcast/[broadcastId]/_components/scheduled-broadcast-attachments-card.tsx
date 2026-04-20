@@ -11,17 +11,13 @@ import {
   getAttachmentKind,
   getAttachmentMeta,
 } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_utils/scheduled-broadcast-view.utils";
-import type { BroadcastAttachment } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
+import type { BroadcastUIAttachment } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-ui-view.types";
 
 type Props = {
-  items: BroadcastAttachment[];
+  items: BroadcastUIAttachment[];
 };
 
-function AttachmentTypeIcon({
-  mimeType,
-}: {
-  mimeType: BroadcastAttachment["mimeType"];
-}) {
+function AttachmentTypeIcon({ mimeType }: { mimeType: string }) {
   const type = getAttachmentKind(mimeType);
 
   if (type === "pdf") {
@@ -48,6 +44,16 @@ function AttachmentTypeIcon({
 }
 
 export default function ScheduledBroadcastAttachmentsCard({ items }: Props) {
+  const handleDownload = (url: string, filename: string) => {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <ScheduledBroadcastSectionShell title="Attachments">
       {items.length === 0 ? (
@@ -74,6 +80,7 @@ export default function ScheduledBroadcastAttachmentsCard({ items }: Props) {
 
               <button
                 type="button"
+                onClick={() => handleDownload(item.downloadUrl, item.filename)}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
                 aria-label={`Download ${item.filename}`}
               >

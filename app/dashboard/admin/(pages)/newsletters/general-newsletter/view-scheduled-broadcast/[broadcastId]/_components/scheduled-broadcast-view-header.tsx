@@ -8,19 +8,19 @@ import {
   BroadcastCancelledSuccessDialog,
   CancelScheduledBroadcastDialog,
 } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_components/cancel-scheduled-broadcast-dialogs";
-import {
-  formatBroadcastStatus,
-  formatDateOnly,
-} from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_utils/scheduled-broadcast-view.utils";
+
+import { formatBroadcastStatus } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_utils/scheduled-broadcast-view.utils";
+
 import { generalBroadcastGetService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.service";
-import type { GetGeneralBroadcastResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
+
+import type { GetGeneralBroadcastUIViewResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-ui-view.types";
 
 type Props = {
-  data: GetGeneralBroadcastResponse;
+  data: GetGeneralBroadcastUIViewResponse;
   onCancelled?: () => Promise<void> | void;
 };
 
-function statusStyles(status: GetGeneralBroadcastResponse["status"]) {
+function statusStyles(status: string) {
   if (status === "SCHEDULED") {
     return "border-[#b7efe9] bg-[#e8fbf8] text-[#14b8ad]";
   }
@@ -46,33 +46,33 @@ export default function ScheduledBroadcastViewHeader({
   const [openCancelSuccess, setOpenCancelSuccess] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
-  const statusLabel = formatBroadcastStatus(data.status);
+  // 🔥 NEW DATA MAPPING
+  const { header, summaryCards, viewType } = data;
+
+  const statusLabel = formatBroadcastStatus(header.status);
 
   const subtitle =
-    data.internalName ||
-    `${data.contentType === "CUSTOM_MESSAGE" ? "Custom message" : "Article link"} broadcast`;
+    viewType === "CUSTOM_MESSAGE"
+      ? "Custom message broadcast"
+      : "Article link broadcast";
 
   const scheduledDateLabel = useMemo(() => {
-    return formatDateOnly(data.scheduledAt);
-  }, [data.scheduledAt]);
+    return summaryCards.scheduledForDisplay;
+  }, [summaryCards.scheduledForDisplay]);
 
-  const editHref = `/dashboard/admin/newsletters/general-newsletter/cadence-broadcast-edit/${data.id}`;
+  const editHref = `/dashboard/admin/newsletters/general-newsletter/cadence-broadcast-edit/${header.id}`;
 
   async function handleConfirmCancel(reason: string) {
     try {
       setIsCancelling(true);
-      await generalBroadcastGetService.cancelBroadcast(data.id, reason);
+      await generalBroadcastGetService.cancelBroadcast(header.id, reason);
 
-      // Close the cancel confirmation dialog first
       setOpenCancelConfirm(false);
 
-      // Wait for the dialog to close animation/state to settle
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Then open the success dialog
       setOpenCancelSuccess(true);
 
-      // Call onCancelled callback if provided
       if (onCancelled) {
         await onCancelled();
       }
@@ -104,12 +104,12 @@ export default function ScheduledBroadcastViewHeader({
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="truncate text-[18px] font-semibold text-slate-800 md:text-[20px]">
-                  {data.subjectLine}
+                  {header.title}
                 </h1>
 
                 <span
                   className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${statusStyles(
-                    data.status,
+                    header.status,
                   )}`}
                 >
                   {statusLabel}
@@ -121,7 +121,7 @@ export default function ScheduledBroadcastViewHeader({
           </div>
 
           <div className="flex shrink-0 items-center gap-3">
-            {data.actionsAllowed.cancel && data.status === "SCHEDULED" && (
+            {header.actionsAllowed.cancel && header.status === "SCHEDULED" && (
               <button
                 type="button"
                 onClick={() => setOpenCancelConfirm(true)}
@@ -132,7 +132,7 @@ export default function ScheduledBroadcastViewHeader({
               </button>
             )}
 
-            {data.actionsAllowed.edit && (
+            {header.actionsAllowed.edit && (
               <button
                 type="button"
                 onClick={() => router.push(editHref)}
@@ -149,9 +149,9 @@ export default function ScheduledBroadcastViewHeader({
       <CancelScheduledBroadcastDialog
         open={openCancelConfirm}
         onOpenChange={setOpenCancelConfirm}
-        recipientCount={data.estimatedRecipientsCount}
+        recipientCount={summaryCards.recipients}
         scheduledDateLabel={scheduledDateLabel}
-        articleTitle={data.subjectLine}
+        articleTitle={header.title}
         onConfirmCancel={handleConfirmCancel}
         onKeepScheduled={() => {}}
         isSubmitting={isCancelling}
@@ -161,7 +161,7 @@ export default function ScheduledBroadcastViewHeader({
         open={openCancelSuccess}
         onOpenChange={setOpenCancelSuccess}
         scheduledDateLabel={scheduledDateLabel}
-        articleTitle={data.subjectLine}
+        articleTitle={header.title}
         onReturnToQueue={handleReturnToQueue}
       />
     </>

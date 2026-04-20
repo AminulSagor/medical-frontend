@@ -11,15 +11,17 @@ import ScheduledBroadcastMessageContentCard from "@/app/dashboard/admin/(pages)/
 import ScheduledBroadcastViewHeader from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_components/scheduled-broadcast-view-header";
 import ScheduledBroadcastViewStatsOverview from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_components/scheduled-broadcast-view-stats-overview";
 import ScheduledBroadcastArticleLinkPreviewCard from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_components/scheduled-broadcast-article-link-preview-card";
-import { generalBroadcastGetService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.service";
-import type { GetGeneralBroadcastResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
 import ViewScheduledBroadcastPageSkeleton from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_components/ViewScheduledBroadcastPageSkeleton";
+import { generalBroadcastGetService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.service";
+import type { GetGeneralBroadcastUIViewResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-ui-view.types";
 
 export default function Page() {
   const params = useParams<{ broadcastId: string }>();
   const broadcastId = params?.broadcastId;
 
-  const [data, setData] = useState<GetGeneralBroadcastResponse | null>(null);
+  const [data, setData] = useState<GetGeneralBroadcastUIViewResponse | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
@@ -60,9 +62,10 @@ export default function Page() {
     );
   }
 
-  const isCustomMessage = data.contentType === "CUSTOM_MESSAGE";
-  const isArticleLink = data.contentType === "ARTICLE_LINK";
-  const hasAttachments = isCustomMessage && data.attachments.length > 0;
+  const isCustomMessage = data.viewType === "CUSTOM_MESSAGE";
+  const isArticleLink = data.viewType === "ARTICLE_LINK";
+  const attachments = data.attachments ?? [];
+  const hasAttachments = isCustomMessage && attachments.length > 0;
 
   return (
     <div>
@@ -74,26 +77,34 @@ export default function Page() {
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1fr]">
             <div className="space-y-6">
-              {isCustomMessage && (
-                <>
-                  <ScheduledBroadcastContentOverviewCard data={data} />
-                  <ScheduledBroadcastMessageContentCard
-                    customContent={data.customContent}
-                  />
-                </>
-              )}
+              {isCustomMessage &&
+                data.contentOverview &&
+                data.messageContent && (
+                  <>
+                    <ScheduledBroadcastContentOverviewCard
+                      data={data.contentOverview}
+                    />
+                    <ScheduledBroadcastMessageContentCard
+                      messageContent={data.messageContent}
+                    />
+                  </>
+                )}
 
-              {isArticleLink && (
-                <ScheduledBroadcastArticleLinkPreviewCard data={data} />
+              {isArticleLink && data.emailPreview && (
+                <ScheduledBroadcastArticleLinkPreviewCard
+                  emailPreview={data.emailPreview}
+                />
               )}
             </div>
 
             <div className="space-y-6">
-              <ScheduledBroadcastDeliveryLogisticsCard data={data} />
+              <ScheduledBroadcastDeliveryLogisticsCard
+                data={data.deliveryLogistics}
+              />
               <ScheduledBroadcastAudienceTargetCard audience={data.audience} />
 
               {hasAttachments && (
-                <ScheduledBroadcastAttachmentsCard items={data.attachments} />
+                <ScheduledBroadcastAttachmentsCard items={attachments} />
               )}
             </div>
           </div>
