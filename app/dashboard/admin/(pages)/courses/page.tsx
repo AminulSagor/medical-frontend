@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import CoursesHeader from "./_components/courses-header";
 import CourseStatsRow from "./_components/course-stats-row";
 import CoursesTabs from "./_components/courses-tabs";
 import CoursesTable from "./_components/courses-table";
 import type { CourseItem, CourseTabKey, DeliveryMode } from "./_components/courses.types";
 import { useRouter } from "next/navigation";
-import { deleteWorkshop, getWorkshopStats, listWorkshops, updateWorkshop } from "@/service/admin/workshop.service";
+import { deleteWorkshop, getWorkshopStats, listWorkshops, updateWorkshopStatus } from "@/service/admin/workshop.service";
 import type { ListWorkshopsParams, WorkshopDay, WorkshopListItem, WorkshopStatsResponse } from "@/types/admin/workshop.types";
 import { AlertTriangle, Loader2, Trash2, X } from "lucide-react";
 
@@ -37,31 +37,6 @@ function formatTimeLabel(value?: string) {
         hour: "2-digit",
         minute: "2-digit",
     });
-}
-
-function formatStatDate(value?: string) {
-    if (!value) return "—";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-    });
-}
-
-function getDaysAwayLabel(value?: string) {
-    if (!value) return "—";
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const target = new Date(value);
-    if (Number.isNaN(target.getTime())) return "—";
-    target.setHours(0, 0, 0, 0);
-    const diffMs = target.getTime() - today.getTime();
-    const diffDays = Math.round(diffMs / 86400000);
-    if (diffDays <= 0) return "Today";
-    if (diffDays === 1) return "In 1 Day";
-    return `In ${diffDays} Days`;
 }
 
 function sortDays(days: WorkshopDay[]) {
@@ -233,6 +208,58 @@ function DeleteConfirmationDialog({
     );
 }
 
+type ToastState = {
+    id: number;
+    message: string;
+    tone: "success" | "error";
+};
+
+function ToastMessage({
+    toast,
+    onClose,
+}: {
+    toast: ToastState;
+    onClose: () => void;
+}) {
+    return (
+        <div className="fixed bottom-4 right-4 z-[60] w-full max-w-sm">
+            <div
+                className={[
+                    "flex items-start gap-3 rounded-2xl border px-4 py-3 shadow-2xl",
+                    toast.tone === "error"
+                        ? "border-rose-200 bg-white text-rose-700"
+                        : "border-emerald-200 bg-white text-emerald-700",
+                ].join(" ")}
+                role="status"
+                aria-live="polite"
+            >
+                <div
+                    className={[
+                        "mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full",
+                        toast.tone === "error" ? "bg-rose-50" : "bg-emerald-50",
+                    ].join(" ")}
+                >
+                    <AlertTriangle size={16} />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold">
+                        {toast.tone === "error" ? "Action failed" : "Success"}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">{toast.message}</p>
+                </div>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                    aria-label="Dismiss notification"
+                >
+                    <X size={14} />
+                </button>
+            </div>
+        </div>
+    );
+}
+
 export default function CoursesPage() {
     const router = useRouter();
     const [didInitialLoad, setDidInitialLoad] = useState(false);
@@ -256,6 +283,7 @@ export default function CoursesPage() {
     const [stats, setStats] = useState<WorkshopStatsResponse | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<CourseItem | null>(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
+    const [toast, setToast] = useState<ToastState | null>(null);
 
     useEffect(() => {
         const handle = window.setTimeout(() => setDebouncedQuery(query.trim()), SEARCH_DEBOUNCE_MS);
@@ -288,6 +316,16 @@ export default function CoursesPage() {
             isMounted = false;
         };
     }, [refreshKey]);
+
+    useEffect(() => {
+        if (!toast) return;
+
+        const timeout = window.setTimeout(() => {
+            setToast((current) => (current?.id === toast.id ? null : current));
+        }, 4000);
+
+        return () => window.clearTimeout(timeout);
+    }, [toast]);
 
     useEffect(() => {
         let isMounted = true;
@@ -382,24 +420,12 @@ export default function CoursesPage() {
         };
     }, [tab, page, debouncedQuery, deliveryMode, refreshKey]);
 
-    const nextStatsWorkshop = useMemo(() => {
-        const workshops = [...(stats?.workshops ?? [])];
-        workshops.sort((a, b) => (a.startDate || "").localeCompare(b.startDate || ""));
-        return workshops[0] ?? null;
-    }, [stats]);
 
-    const nextWorkshopValue = nextStatsWorkshop?.startDate
-        ? getDaysAwayLabel(nextStatsWorkshop.startDate)
-        : "—";
-    const nextWorkshopDate = nextStatsWorkshop?.startDate
-        ? formatStatDate(nextStatsWorkshop.startDate)
-        : "—";
-    const openSeats = Math.max(
-        0,
-        (stats?.summary.totalActiveSeats ?? 0) - (stats?.summary.totalFilledSeats ?? 0),
-    );
-    const filledSeats = stats?.summary.totalFilledSeats ?? 0;
-    const refundPending = stats?.summary.totalRefundRequests ?? 0;
+    const nextWorkshopValue = stats?.data.nextWorkshop?.label ?? "—";
+    const nextWorkshopDate = stats?.data.nextWorkshop?.targetDate ?? "—";
+    const openSeats = stats?.data.activeSeats?.open ?? 0;
+    const filledSeats = stats?.data.activeSeats?.filled ?? 0;
+    const refundPending = stats?.data.refundRequests?.pendingReview ?? 0;
 
     function buildRowQuery(id: string) {
         const course = items.find((item) => item.id === id);
@@ -420,11 +446,35 @@ export default function CoursesPage() {
 
     async function handleToggleActive(id: string, next: boolean) {
         try {
-            await updateWorkshop(id, { status: next ? "published" : "draft" });
+            await updateWorkshopStatus(id, next ? "published" : "draft");
+            showToast(`Course ${next ? "published" : "moved to draft"} successfully.`, "success");
             setRefreshKey((value) => value + 1);
         } catch (error) {
             console.error("Failed to update workshop status:", error);
+            showToast(getErrorMessage(error, "Failed to update course status."), "error");
         }
+    }
+
+    function showToast(message: string, tone: ToastState["tone"] = "error") {
+        setToast({
+            id: Date.now(),
+            message,
+            tone,
+        });
+    }
+
+    function getErrorMessage(error: any, fallback: string) {
+        const responseMessage = error?.response?.data?.message;
+        if (Array.isArray(responseMessage)) {
+            return responseMessage[0] ?? fallback;
+        }
+        if (typeof responseMessage === "string" && responseMessage.trim()) {
+            return responseMessage;
+        }
+        if (typeof error?.message === "string" && error.message.trim()) {
+            return error.message;
+        }
+        return fallback;
     }
 
     async function handleDeleteConfirm() {
@@ -441,6 +491,14 @@ export default function CoursesPage() {
             }
         } catch (error) {
             console.error("Failed to delete workshop:", error);
+            setDeleteTarget(null);
+            showToast(
+                getErrorMessage(
+                    error,
+                    "Failed to delete workshop. Please try again.",
+                ),
+                "error",
+            );
         } finally {
             setDeleteLoading(false);
         }
@@ -495,6 +553,10 @@ export default function CoursesPage() {
                     }}
                     onConfirm={handleDeleteConfirm}
                 />
+            ) : null}
+
+            {toast ? (
+                <ToastMessage toast={toast} onClose={() => setToast(null)} />
             ) : null}
         </>
     );

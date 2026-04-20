@@ -62,15 +62,18 @@ function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
   const isRegistrationClosed = isRegistrationDeadlineExpired(
     workshop.registrationDeadline,
   );
+  const isSoldOut = workshop.isFullyBooked || availableSeats <= 0;
   const percentFilled =
     totalCapacity > 0
       ? ((totalCapacity - availableSeats) / totalCapacity) * 100
       : 0;
-  const isAvailable = !workshop.isFullyBooked && availableSeats > 0;
+  const isAvailable = !isSoldOut;
 
-  const action: CourseCardModel["action"] = !isAvailable
-    ? { kind: "waitlist", label: "Join Waitlist" }
-    : { kind: "reserve", label: "Reserve Seat" };
+  const action: CourseCardModel["action"] = isRegistrationClosed
+    ? { kind: "disabled", label: "Expired" }
+    : isSoldOut
+      ? { kind: "disabled", label: "Sold Out" }
+      : { kind: "reserve", label: "Reserve Seat" };
 
   const metaTop: CourseCardModel["metaTop"] = [];
   if (workshop.totalHours) {
@@ -95,15 +98,17 @@ function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
     });
   }
 
+  const isLowAvailability = isAvailable && availableSeats <= 5;
+
   const availability: CourseCardModel["availability"] = {
     label: "AVAILABILITY",
-    note: !isAvailable
-      ? "Sold Out - Join Waitlist"
-      : availableSeats <= 5
-        ? `Only ${availableSeats} seats left!`
+    note: isSoldOut
+      ? "Sold Out"
+      : isLowAvailability
+        ? `Only ${availableSeats} seats available`
         : `${availableSeats} seats available`,
     percent: percentFilled,
-    tone: !isAvailable || availableSeats <= 3 ? "danger" : "primary",
+    tone: isSoldOut || isLowAvailability ? "danger" : "primary",
   };
 
   const currentPrice = Number(workshop.offerPrice ?? workshop.price) || 0;
@@ -126,6 +131,7 @@ function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
     cmeCredits: cmeCreditsCount,
     isAvailable,
     isRegistrationClosed,
+    isSoldOut,
   };
 }
 

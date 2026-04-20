@@ -37,11 +37,15 @@ export default function CourseDetailsStats({
     capacityUsed,
     capacityTotal,
     refundRequests,
+    revenueGenerated,
 }: {
     capacityUsed: number;
     capacityTotal: number;
     refundRequests: number;
+    revenueGenerated: number;
 }) {
+    const safeRevenueGenerated = Number(revenueGenerated ?? 0);
+
     const pct =
         capacityTotal <= 0
             ? 0
@@ -65,7 +69,7 @@ export default function CourseDetailsStats({
 
             <StatCard
                 label="Revenue Generated"
-                value="$—"
+                value={`$${safeRevenueGenerated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 sub="Processed"
                 icon={<span className="text-sm font-bold">$</span>}
             />

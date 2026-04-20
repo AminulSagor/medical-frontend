@@ -15,7 +15,7 @@ export default function CourseItinerary({ data }: { data: CourseDetails }) {
       <h2 className="text-xl font-bold text-black">{data.itinerary.title}</h2>
 
       <div className="mt-6 relative">
-        <div className="absolute `left-4.5 top-2 bottom-2 w-0.5 bg-primary/40" />
+        <div className="absolute left-5 top-0 bottom-0 w-0.5 -translate-x-1/2 bg-primary/35" />
 
         <div className="space-y-8">
           {data.itinerary.days.map((d) => {
@@ -23,7 +23,7 @@ export default function CourseItinerary({ data }: { data: CourseDetails }) {
 
             return (
               <div key={d.dayNumber} className="relative pl-14">
-                <div className="absolute left-0 top-6 grid h-10 w-10 place-items-center rounded-full bg-primary text-white text-sm font-extrabold">
+                <div className="absolute left-0 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-primary text-white text-sm font-extrabold">
                   {d.dayNumber}
                 </div>
 

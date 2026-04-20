@@ -7,9 +7,7 @@ export type CourseBadge = {
 };
 
 export type CourseAction =
-  | { kind: "reserve"; label: "Reserve Seat" }
-  | { kind: "start"; label: "Start Learning" }
-  | { kind: "waitlist"; label: "Join Waitlist" };
+  | { kind: "reserve" | "start" | "waitlist" | "disabled"; label: string };
 
 export type CourseCardModel = {
   id: string;
@@ -45,5 +43,6 @@ export type CourseCardModel = {
   // for filtering
   cmeCredits: number; // numeric, we’ll map to ranges
   isAvailable: boolean;
+  isSoldOut?: boolean;
   isRegistrationClosed?: boolean;
 };

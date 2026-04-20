@@ -15,6 +15,10 @@ type BlogDetailsPageProps = {
   params: Promise<{ slug: string }>;
 };
 
+function getSafeString(value: unknown, fallback = ""): string {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
 export async function generateMetadata({
   params,
 }: BlogDetailsPageProps): Promise<Metadata> {
@@ -24,8 +28,11 @@ export async function generateMetadata({
     const blog = await getBlogById(slug);
 
     return {
-      title: blog.seo?.metaTitle || blog.title,
-      description: blog.seo?.metaDescription || blog.description,
+      title: getSafeString(blog.seo?.metaTitle, getSafeString(blog.title, "Blog Details")),
+      description: getSafeString(
+        blog.seo?.metaDescription,
+        getSafeString(blog.description ?? blog.excerpt, "Read the latest article."),
+      ),
     };
   } catch {
     return {
@@ -50,7 +57,7 @@ export default async function BlogDetailsPage({
 
   try {
     const trendingResponse = await getTrendingPublicBlogs({ limit: 3 });
-    trendingItems = trendingResponse.items
+    trendingItems = (trendingResponse.items ?? [])
       .filter((item) => item.id !== blog.id)
       .slice(0, 3)
       .map(mapApiBlogToTrendingItem);
@@ -74,7 +81,7 @@ export default async function BlogDetailsPage({
 
           <div className="lg:pt-4">
             <BlogDetailsSidebar
-              author={blog.authors[0]}
+              author={Array.isArray(blog.authors) ? blog.authors[0] : undefined}
               trendingItems={trendingItems}
             />
           </div>

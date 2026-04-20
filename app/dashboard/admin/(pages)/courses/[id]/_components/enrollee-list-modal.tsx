@@ -58,11 +58,13 @@ export default function EnrolleeListModal({
     workshopId,
     onClose,
     onProcessRefund,
+    refreshKey,
 }: {
     open: boolean;
     workshopId: string;
     onClose: () => void;
     onProcessRefund: (reservationId: string) => void;
+    refreshKey: number;
 }) {
     const [initialLoading, setInitialLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -135,7 +137,7 @@ export default function EnrolleeListModal({
                     setInitialLoading(false);
                 }
             });
-    }, [open, workshopId, page, debouncedSearch, statusFilter]);
+    }, [open, workshopId, page, debouncedSearch, statusFilter, refreshKey]);
 
     const filteredItems = useMemo(() => response?.data.items ?? [], [response]);
 

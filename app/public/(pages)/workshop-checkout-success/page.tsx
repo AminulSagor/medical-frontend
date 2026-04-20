@@ -45,6 +45,44 @@ type PageState =
   | "payment_pending"
   | "error";
 
+function getLatestCreatedAttendeeBatch(
+  attendees?: WorkshopReservationData["attendees"] | null,
+) {
+  if (!Array.isArray(attendees) || attendees.length === 0) {
+    return {
+      attendees: [] as NonNullable<WorkshopReservationData["attendees"]>,
+      createdAt: null as string | null,
+    };
+  }
+
+  const lastAttendee = attendees[attendees.length - 1];
+  const latestCreatedAt = lastAttendee?.createdAt ?? null;
+
+  if (!latestCreatedAt) {
+    return {
+      attendees,
+      createdAt: null,
+    };
+  }
+
+  const latestBatch: NonNullable<WorkshopReservationData["attendees"]> = [];
+
+  for (let index = attendees.length - 1; index >= 0; index -= 1) {
+    const attendee = attendees[index];
+
+    if (attendee?.createdAt !== latestCreatedAt) {
+      break;
+    }
+
+    latestBatch.unshift(attendee);
+  }
+
+  return {
+    attendees: latestBatch,
+    createdAt: latestCreatedAt,
+  };
+}
+
 function WorkshopCheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
@@ -218,29 +256,72 @@ function WorkshopCheckoutSuccessContent() {
   };
 
   const workshopTitle = checkoutContext?.workshopTitle || "Workshop";
+  const latestReservationBatch = getLatestCreatedAttendeeBatch(
+    reservationData?.attendees,
+  );
+  const currentCheckoutAttendees =
+    latestReservationBatch.attendees.length > 0
+      ? latestReservationBatch.attendees
+      : reservationData?.attendees || [];
   const numberOfAttendees =
+    latestReservationBatch.attendees.length ||
+    checkoutContext?.numberOfAttendees ||
     reservationData?.attendeesCount ||
     reservationData?.attendees?.length ||
-    checkoutContext?.numberOfAttendees ||
     0;
-  const totalPrice = reservationData?.totalPrice || checkoutContext?.totalPrice || "0.00";
+  const numericPricePerSeat = Number.parseFloat(
+    reservationData?.pricePerSeat || "",
+  );
+  const calculatedBatchTotal =
+    numberOfAttendees > 0 &&
+    Number.isFinite(numericPricePerSeat) &&
+    numericPricePerSeat > 0
+      ? (numberOfAttendees * numericPricePerSeat).toFixed(2)
+      : null;
+  const totalPrice =
+    calculatedBatchTotal ||
+    checkoutContext?.totalPrice ||
+    reservationData?.totalPrice ||
+    "0.00";
+  const pricePerSeat =
+    reservationData?.pricePerSeat ||
+    (numberOfAttendees > 0
+      ? (Number.parseFloat(totalPrice || "0") / numberOfAttendees).toFixed(2)
+      : "");
 
   const handleDownloadReceipt = () => {
+    const primaryAttendee = currentCheckoutAttendees[0];
+
     const params = new URLSearchParams({
       workshopTitle,
       attendees: String(numberOfAttendees),
       totalPrice: String(totalPrice),
       reservationId: reservationId || reservationData?.reservationId || "",
       sessionId: sessionId || "",
-      pricePerSeat: reservationData?.pricePerSeat || "",
+      pricePerSeat: pricePerSeat || "",
       reservationCreatedAt:
-        reservationData?.updatedAt || reservationData?.createdAt || "",
+        latestReservationBatch.createdAt ||
+        reservationData?.updatedAt ||
+        reservationData?.createdAt ||
+        "",
       workshopStartDate: checkoutContext?.workshopStartDate || "",
       workshopEndDate: checkoutContext?.workshopEndDate || "",
       workshopLocation: checkoutContext?.workshopLocation || "",
-      primaryName: checkoutContext?.primaryAttendee?.fullName || reservationData?.attendees?.[0]?.fullName || "",
-      primaryRole: checkoutContext?.primaryAttendee?.role || reservationData?.attendees?.[0]?.professionalRole || "",
-      primaryEmail: checkoutContext?.primaryAttendee?.email || reservationData?.attendees?.[0]?.email || "",
+      primaryName:
+        primaryAttendee?.fullName ||
+        checkoutContext?.primaryAttendee?.fullName ||
+        reservationData?.attendees?.[0]?.fullName ||
+        "",
+      primaryRole:
+        primaryAttendee?.professionalRole ||
+        checkoutContext?.primaryAttendee?.role ||
+        reservationData?.attendees?.[0]?.professionalRole ||
+        "",
+      primaryEmail:
+        primaryAttendee?.email ||
+        checkoutContext?.primaryAttendee?.email ||
+        reservationData?.attendees?.[0]?.email ||
+        "",
       attendeesJson: encodeURIComponent(JSON.stringify(reservationData?.attendees || [])),
     });
 

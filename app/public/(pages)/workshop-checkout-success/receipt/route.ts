@@ -11,6 +11,7 @@ type ReceiptAttendee = {
   fullName?: string;
   professionalRole?: string;
   email?: string;
+  createdAt?: string;
 };
 
 const COLORS = {
@@ -264,6 +265,42 @@ function parseAttendees(raw: string | null): ReceiptAttendee[] {
   }
 }
 
+function getLatestCreatedAttendeeBatch(attendees: ReceiptAttendee[]) {
+  if (!Array.isArray(attendees) || attendees.length === 0) {
+    return {
+      attendees: [] as ReceiptAttendee[],
+      createdAt: null as string | null,
+    };
+  }
+
+  const lastAttendee = attendees[attendees.length - 1];
+  const latestCreatedAt = lastAttendee?.createdAt ?? null;
+
+  if (!latestCreatedAt) {
+    return {
+      attendees,
+      createdAt: null,
+    };
+  }
+
+  const latestBatch: ReceiptAttendee[] = [];
+
+  for (let index = attendees.length - 1; index >= 0; index -= 1) {
+    const attendee = attendees[index];
+
+    if (attendee?.createdAt !== latestCreatedAt) {
+      break;
+    }
+
+    latestBatch.unshift(attendee);
+  }
+
+  return {
+    attendees: latestBatch,
+    createdAt: latestCreatedAt,
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const params = request.nextUrl.searchParams;
@@ -276,13 +313,25 @@ export async function GET(request: NextRequest) {
     const totalPrice = params.get("totalPrice") || "0";
     const pricePerSeat = params.get("pricePerSeat") || "0";
     const attendees = parseAttendees(params.get("attendeesJson"));
-    const primaryName = params.get("primaryName") || attendees[0]?.fullName || "—";
-    const primaryRole = params.get("primaryRole") || attendees[0]?.professionalRole || "—";
-    const primaryEmail = params.get("primaryEmail") || attendees[0]?.email || "—";
-
+    const latestAttendeeBatch = getLatestCreatedAttendeeBatch(attendees);
     const normalizedAttendees =
-      attendees.length > 0
-        ? attendees
+      latestAttendeeBatch.attendees.length > 0
+        ? latestAttendeeBatch.attendees
+        : attendees.length > 0
+          ? attendees
+          : [];
+    const primaryName =
+      params.get("primaryName") || normalizedAttendees[0]?.fullName || "—";
+    const primaryRole =
+      params.get("primaryRole") ||
+      normalizedAttendees[0]?.professionalRole ||
+      "—";
+    const primaryEmail =
+      params.get("primaryEmail") || normalizedAttendees[0]?.email || "—";
+
+    const finalAttendees =
+      normalizedAttendees.length > 0
+        ? normalizedAttendees
         : [
             {
               fullName: primaryName,
@@ -290,6 +339,24 @@ export async function GET(request: NextRequest) {
               email: primaryEmail,
             },
           ];
+    const numericPricePerSeat = Number.parseFloat(pricePerSeat || "0");
+    const fallbackTotalPrice = Number.parseFloat(totalPrice || "0");
+    const resolvedPricePerSeat =
+      Number.isFinite(numericPricePerSeat) && numericPricePerSeat > 0
+        ? numericPricePerSeat.toFixed(2)
+        : finalAttendees.length > 0 && Number.isFinite(fallbackTotalPrice)
+          ? (fallbackTotalPrice / finalAttendees.length).toFixed(2)
+          : "0.00";
+    const resolvedTotalPrice =
+      Number.isFinite(numericPricePerSeat) &&
+      numericPricePerSeat > 0 &&
+      finalAttendees.length > 0
+        ? (numericPricePerSeat * finalAttendees.length).toFixed(2)
+        : Number.isFinite(fallbackTotalPrice)
+          ? fallbackTotalPrice.toFixed(2)
+          : "0.00";
+    const resolvedReservationCreatedAt =
+      latestAttendeeBatch.createdAt || reservationCreatedAt;
 
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([595, 842]);
@@ -343,7 +410,7 @@ export async function GET(request: NextRequest) {
     drawText(page, "ORDER DATE", orderDateX + 14, y - 16, fontBold, 9, COLORS.muted);
     drawText(
       page,
-      formatLongDate(reservationCreatedAt),
+      formatLongDate(resolvedReservationCreatedAt),
       orderDateX + 14,
       y - 42,
       fontBold,
@@ -356,7 +423,7 @@ export async function GET(request: NextRequest) {
     drawText(page, "FULL PAID", paymentCardX + 14, y - 38, fontBold, 11.5, COLORS.success);
     drawText(
       page,
-      `Paid Amount: ${money(totalPrice)}`,
+      `Paid Amount: ${money(resolvedTotalPrice)}`,
       paymentCardX + 14,
       y - 54,
       fontRegular,
@@ -414,7 +481,7 @@ export async function GET(request: NextRequest) {
 
     y -= headerH;
 
-    for (const attendee of normalizedAttendees) {
+    for (const attendee of finalAttendees) {
       drawBox(page, tableX, y, tableW, rowH, COLORS.white, COLORS.border);
       drawWrappedText(
         page,
@@ -454,8 +521,8 @@ export async function GET(request: NextRequest) {
         COLORS.text,
         2,
       );
-      drawRightText(page, money(pricePerSeat), colPriceRight, y - 22, fontRegular, 10, COLORS.text);
-      drawRightText(page, money(pricePerSeat), colTotalRight, y - 22, fontBold, 10, COLORS.text);
+      drawRightText(page, money(resolvedPricePerSeat), colPriceRight, y - 22, fontRegular, 10, COLORS.text);
+      drawRightText(page, money(resolvedPricePerSeat), colTotalRight, y - 22, fontBold, 10, COLORS.text);
       y -= rowH;
     }
 
@@ -471,14 +538,14 @@ export async function GET(request: NextRequest) {
     const summaryValueRight = summaryX + summaryW - 16;
 
     drawText(page, "Subtotal", summaryLabelX, y - 22, fontRegular, 10.5, COLORS.text);
-    drawRightText(page, money(totalPrice), summaryValueRight, y - 22, fontBold, 10.5, COLORS.text);
+    drawRightText(page, money(resolvedTotalPrice), summaryValueRight, y - 22, fontBold, 10.5, COLORS.text);
     drawText(page, "Shipping", summaryLabelX, y - 44, fontRegular, 10.5, COLORS.text);
     drawRightText(page, "$0.00", summaryValueRight, y - 44, fontBold, 10.5, COLORS.text);
     drawText(page, "Tax", summaryLabelX, y - 66, fontRegular, 10.5, COLORS.text);
     drawRightText(page, "$0.00", summaryValueRight, y - 66, fontBold, 10.5, COLORS.text);
     drawLine(page, summaryX + 16, y - 80, summaryX + summaryW - 16, y - 80, 1, COLORS.border);
     drawText(page, "Grand Total", summaryLabelX, y - 104, fontBold, 11.5, COLORS.text);
-    drawRightText(page, money(totalPrice), summaryValueRight, y - 104, fontBold, 15, COLORS.primary);
+    drawRightText(page, money(resolvedTotalPrice), summaryValueRight, y - 104, fontBold, 15, COLORS.primary);
 
     const footerY = 38;
     drawLine(page, left, footerY + 12, right, footerY + 12, 1, COLORS.border);
