@@ -1,5 +1,3 @@
-// types/product-details.ts
-
 export type ProductBadge = {
   id: string;
   label: string;
@@ -45,6 +43,10 @@ export type ProductDetails = {
   title: string;
   sku: string;
   categoryLabel: string;
+
+  stockQuantity?: number;
+  inStock?: boolean;
+  backorder?: boolean;
 
   badges: ProductBadge[];
 

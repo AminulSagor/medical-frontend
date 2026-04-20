@@ -181,7 +181,7 @@ export default function RichTextEditor({
                     ref={ref}
                     contentEditable
                     suppressContentEditableWarning
-                    className="min-h-[150px] px-4 py-4 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-[var(--primary)]/15"
+                    className="min-h-[150px] px-4 py-4 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-[var(--primary)]/15 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_li]:pl-1"
                     onInput={() => onChange(ref.current?.innerHTML ?? "")}
                     onKeyUp={refreshActive}
                     onMouseUp={refreshActive}

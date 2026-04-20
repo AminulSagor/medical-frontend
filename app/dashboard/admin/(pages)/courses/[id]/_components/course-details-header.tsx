@@ -7,9 +7,11 @@ import type { WorkshopStatus } from "@/types/admin/workshop.types";
 export default function CourseDetailsHeader({
     title,
     status,
+    workshopId,
 }: {
     title: string;
     status: WorkshopStatus;
+    workshopId: string;
 }) {
     return (
         <div className="flex items-start justify-between gap-4">
@@ -37,13 +39,12 @@ export default function CourseDetailsHeader({
                     Back
                 </Link>
 
-                <button
-                    type="button"
+                <Link
+                    href={`/dashboard/admin/courses/create?id=${encodeURIComponent(workshopId)}`}
                     className="inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[var(--primary-hover)] active:scale-[0.99]"
-                    onClick={() => alert("Edit (UI only)")}
                 >
                     Edit Course
-                </button>
+                </Link>
             </div>
         </div>
     );

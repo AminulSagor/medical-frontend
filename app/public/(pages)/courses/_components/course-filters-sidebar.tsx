@@ -25,7 +25,7 @@ export default function CourseFiltersSidebar({
   onReset: () => void;
 }) {
   return (
-    <aside className="rounded-3xl bg-white shadow-sm border border-light-slate/15 p-6">
+    <aside className="sticky top-24 self-start h-fit max-h-[calc(100vh-7rem)] overflow-y-auto rounded-3xl bg-white p-6 shadow-sm border border-light-slate/15">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-base font-extrabold text-black">
           <SlidersHorizontal size={18} className="text-primary" />

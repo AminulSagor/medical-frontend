@@ -1,20 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+
 import ProductGalleryClient from "../_components/product-gallery.client";
 import PurchasePanelClient from "../_components/purchase-panel.client";
 import OverviewSection from "../_components/overview-section";
 import SpecsTable from "../_components/specs-table";
-import { ProductDetails } from "@/app/public/types/product.details";
-
 import ReviewSection from "../_components/review-section";
-import { getProductDetails } from "@/service/public/product.service";
-import type { ProductDetailResponse } from "@/types/public/product/public-product.types";
-import { use } from "react";
 import Breadcrumb from "@/app/public/(pages)/store/product-details/_components/breadcrumb";
 import FrequentlyBoughtTogether from "@/app/public/(pages)/store/product-details/_components/frequently-bought-together";
+
+import { ProductDetails } from "@/app/public/types/product.details";
+import { getProductDetails } from "@/service/public/product.service";
+import type { ProductDetailResponse } from "@/types/public/product/public-product.types";
 
 function transformApiToProductDetails(
   apiData: ProductDetailResponse,
@@ -26,11 +26,11 @@ function transformApiToProductDetails(
       { label: "Shop", href: "/public/store" },
       ...(apiData.categories.length > 0
         ? [
-            {
-              label: apiData.categories[0].name,
-              href: `/public/store?category=${apiData.categories[0].name}`,
-            },
-          ]
+          {
+            label: apiData.categories[0].name,
+            href: `/public/store?category=${apiData.categories[0].name}`,
+          },
+        ]
         : []),
       { label: apiData.name },
     ],
@@ -38,6 +38,11 @@ function transformApiToProductDetails(
     sku: apiData.sku,
     categoryLabel:
       apiData.categories.map((c: any) => c.name).join(", ") || "Uncategorized",
+
+    stockQuantity: apiData.stockQuantity,
+    inStock: apiData.inStock,
+    backorder: apiData.backorder,
+
     badges: apiData.frontendBadges.map((badge: any, idx: number) => ({
       id: `badge-${idx}`,
       label: badge.toUpperCase().replace(/-/g, " "),
@@ -80,7 +85,7 @@ function transformApiToProductDetails(
         discountLabel: `(-${Math.round(
           ((parseFloat(apiData.actualPrice) - parseFloat(tier.price)) /
             parseFloat(apiData.actualPrice)) *
-            100,
+          100,
         )}%)`,
       })),
     },
@@ -122,6 +127,7 @@ export default function ProductDetailsPage({
   const { productId } = use(params);
   const router = useRouter();
   const [product, setProduct] = useState<ProductDetails | null>(null);
+  const [productCategoryId, setProductCategoryId] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -130,9 +136,12 @@ export default function ProductDetailsPage({
       try {
         setLoading(true);
         setError(null);
+
         const apiData = await getProductDetails(productId);
         const transformedProduct = transformApiToProductDetails(apiData);
+
         setProduct(transformedProduct);
+        setProductCategoryId(apiData.categories[0]?.id);
       } catch (err: any) {
         console.error("Failed to fetch product details:", err);
         if (err?.response?.status === 404) {
@@ -182,7 +191,7 @@ export default function ProductDetailsPage({
         <Breadcrumb items={product.breadcrumbs} />
 
         <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-12">
-          <div className="lg:col-span-7 space-y-5">
+          <div className="space-y-5 lg:col-span-7">
             <ProductGalleryClient product={product} />
           </div>
 
@@ -190,12 +199,17 @@ export default function ProductDetailsPage({
             <PurchasePanelClient product={product} />
           </div>
         </div>
+
         <div className="mx-auto max-w-5xl space-y-5">
           <OverviewSection product={product} />
           <SpecsTable product={product} />
           <ReviewSection productId={productId} />
         </div>
-        <FrequentlyBoughtTogether />
+
+        <FrequentlyBoughtTogether
+          categoryId={productCategoryId}
+          currentProductId={productId}
+        />
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ export interface ServerCartItem {
   imageUrl: string | null;
   unitPrice: string;
   quantity: number;
+  availableQuantity?: number;
   lineTotal: string;
   inStock: boolean;
 }

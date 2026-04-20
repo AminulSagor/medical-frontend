@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { Clock, MapPin, Layers, BadgeCheck } from "lucide-react";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 import { CourseCardModel } from "@/app/public/types/course-browse.types";
 import { useRouter } from "next/navigation";
 
@@ -22,24 +22,38 @@ export default function CourseBrowseCard({
   course: CourseCardModel;
 }) {
   const isOnDemand = !!course.imageSrc;
+  const isRegistrationClosed = !!course.isRegistrationClosed;
+  const isSoldOut = !!course.isSoldOut;
+  const isDisabled = isRegistrationClosed || isSoldOut;
   const router = useRouter();
 
   return (
     <div
-      onClick={() => router.push(`/public/courses/details/${course.id}`)}
+      onClick={() => {
+        if (isDisabled) return;
+        router.push(`/public/courses/details/${course.id}`);
+      }}
+      aria-disabled={isDisabled}
       className={[
-        "rounded-3xl bg-white border border-light-slate/15 shadow-sm overflow-hidden cursor-pointer",
-        "flex flex-col",
-        course.action.kind === "reserve" ? "ring-2 ring-primary/30" : "",
+        "h-full min-h-[450px] rounded-3xl bg-white border border-light-slate/15 shadow-sm overflow-hidden",
+        "flex flex-col transition",
+        isDisabled
+          ? "cursor-not-allowed bg-slate-50 grayscale-[0.55] opacity-70"
+          : "cursor-pointer hover:shadow-md",
+        course.action.kind === "reserve" && !isDisabled
+          ? "ring-2 ring-primary/30"
+          : "",
       ].join(" ")}
     >
       {/* Top */}
       {isOnDemand ? (
-        <div className="relative h-40 w-full">
-          <img
+        <div className="relative h-32 w-full overflow-hidden">
+          <NetworkImageFallback
             src={course.imageSrc!}
             alt={course.imageAlt || course.title}
-            className="object-cover"
+            className="h-full w-full object-cover"
+            fallbackClassName="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400"
+            iconClassName="h-8 w-8"
           />
           {course.badge ? (
             <span
@@ -56,7 +70,7 @@ export default function CourseBrowseCard({
         </div>
       ) : null}
 
-      <div className="p-6 flex-1 flex flex-col">
+      <div className="p-5 flex-1 flex flex-col">
         {/* Top row: date pill (scheduled cards) */}
         {!isOnDemand && course.date ? (
           <div className="flex items-start justify-between gap-4">
@@ -69,44 +83,37 @@ export default function CourseBrowseCard({
               </p>
             </div>
 
-            <h3 className="flex-1 text-lg font-semibold leading-snug text-black">
+            <h3 className="flex-1 min-h-[3.5rem] line-clamp-2 text-lg font-semibold leading-snug text-black">
               {course.title}
             </h3>
           </div>
         ) : (
-          <h3 className="text-lg font-semibold leading-snug text-black">
+          <h3 className="min-h-[3.5rem] line-clamp-2 text-lg font-semibold leading-snug text-black">
             {course.title}
           </h3>
         )}
 
         {course.description ? (
-          <p
-            className="mt-3 text-sm leading-relaxed text-light-slate"
-            style={{
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
-          >
+          <p className="mt-3 min-h-[3rem] line-clamp-2 text-sm leading-relaxed text-light-slate">
             {course.description}
           </p>
         ) : null}
 
         {/* meta rows */}
-        <div className="mt-5 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-light-slate">
+        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm font-semibold text-light-slate">
           {(course.metaTop || []).map((m) => {
             const Icon = metaIcon(m.icon);
+            const isPin = m.icon === "pin";
             return (
-              <div key={m.label} className="flex items-center gap-2">
-                <Icon size={16} className="text-primary" />
-                {m.label}
+              <div key={m.label} className="flex min-w-0 items-center gap-2">
+                <Icon size={16} className="shrink-0 text-primary" />
+                <span className={isPin ? "truncate" : ""}>{m.label}</span>
               </div>
             );
           })}
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="mt-4 flex flex-wrap gap-2.5">
           {(course.metaBottom || []).map((m) => (
             <span
               key={m.label}
@@ -117,40 +124,42 @@ export default function CourseBrowseCard({
           ))}
         </div>
 
-        {/* availability bar */}
-        {course.availability ? (
-          <div className="mt-6">
-            <div className="flex items-center justify-between text-[11px] font-bold tracking-[0.18em]">
-              <span className="text-light-slate">
-                {course.availability.label}
-              </span>
-              <span
-                className={
-                  course.availability.tone === "danger"
-                    ? "text-red"
-                    : "text-primary"
-                }
-              >
-                {course.availability.note}
-              </span>
-            </div>
+        <div className="mt-auto pt-8">
+          {/* availability bar */}
+          {course.availability ? (
+            <div>
+              <div className="flex items-center justify-between gap-3 text-[11px] font-bold tracking-[0.18em]">
+                <span className="uppercase text-light-slate">
+                  {course.availability.label}
+                </span>
+                <span
+                  className={[
+                    "text-right text-sm font-extrabold tracking-normal",
+                    course.availability.tone === "danger"
+                      ? "text-red"
+                      : "text-primary",
+                  ].join(" ")}
+                >
+                  {course.availability.note}
+                </span>
+              </div>
 
-            <div className="mt-3 h-2 w-full rounded-full bg-light-slate/15 overflow-hidden">
-              <div
-                className={[
-                  "h-full rounded-full",
-                  course.availability.tone === "danger"
-                    ? "bg-red"
-                    : "bg-primary",
-                ].join(" ")}
-                style={{ width: `${course.availability.percent}%` }}
-              />
+              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-light-slate/15">
+                <div
+                  className={[
+                    "h-full rounded-full",
+                    course.availability.tone === "danger"
+                      ? "bg-red"
+                      : "bg-primary",
+                  ].join(" ")}
+                  style={{ width: `${Math.max(0, Math.min(100, course.availability.percent))}%` }}
+                />
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        {/* bottom row always aligned */}
-        <div className="mt-auto pt-6 flex items-center justify-between">
+          {/* bottom row always aligned */}
+          <div className="mt-6 flex items-center justify-between gap-3 border-t border-light-slate/10 pt-6">
           <div>
             {course.oldPrice ? (
               <p className="text-xs font-semibold text-light-slate line-through">
@@ -164,17 +173,19 @@ export default function CourseBrowseCard({
 
           <button
             type="button"
+            disabled={isDisabled}
             className={[
-              "h-11 rounded-full px-5 text-sm font-extrabold transition active:scale-95",
+              "h-11 shrink-0 rounded-full px-5 text-sm font-extrabold transition active:scale-95 disabled:pointer-events-none disabled:opacity-70",
               course.action.kind === "reserve"
                 ? "border border-primary/30 bg-white text-primary hover:bg-primary/10"
                 : course.action.kind === "start"
                   ? "bg-primary text-white hover:opacity-90"
-                  : "bg-light-slate/10 text-light-slate hover:bg-light-slate/15",
+                  : "border border-red/20 bg-red/5 text-red",
             ].join(" ")}
           >
             {course.action.label}
           </button>
+          </div>
         </div>
       </div>
     </div>

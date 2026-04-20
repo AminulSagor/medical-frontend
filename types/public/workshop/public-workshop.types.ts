@@ -30,11 +30,12 @@ export interface PublicWorkshop {
   date: string;
   title: string;
   description: string;
+  registrationDeadline: string | null;
   deliveryMode: PublicWorkshopDeliveryMode;
   workshopPhoto: string | null;
   totalHours: string;
   cmeCredits?: boolean;
-  cmeCreditsCount?: number;
+  cmeCreditsCount?: number | string;
   cmeFredits?: boolean;
   availableSeats: number;
   totalCapacity: number;
@@ -63,6 +64,7 @@ export interface FeaturedPublicWorkshop {
   location: string;
   cmeCredits: number;
   offersCmeCredits: boolean;
+  cmeCreditsCount?: number | string | null;
   isFeatured: boolean;
 }
 
@@ -112,14 +114,16 @@ export interface PublicWorkshopDay {
 
 export interface PublicWorkshopGroupDiscount {
   minimumAttendees: number;
-  pricePerPerson: string;
-  savingsPerPerson: string;
+  pricePerPerson?: string;
+  ratePerPerson?: string;
+  savingsPerPerson?: string;
 }
 
 export interface PublicWorkshopDetails {
   id: string;
   title: string;
   description: string;
+  registrationDeadline: string | null;
   learningObjectives: string;
   deliveryMode: PublicWorkshopDeliveryMode;
   status: string;
@@ -127,6 +131,7 @@ export interface PublicWorkshopDetails {
   endDate: string;
   numberOfDays: number;
   facility: string;
+  facilities?: PublicWorkshopFacility[];
   facilityIds: string[];
   webinarPlatform: string | null;
   meetingLink: string | null;
@@ -135,6 +140,7 @@ export interface PublicWorkshopDetails {
   totalHours: string;
   totalMinutes: number;
   offersCmeCredits: boolean;
+  cmeCreditsCount?: number | string | null;
   totalCapacity: number;
   reservedSeats: number;
   availableSeats: number;

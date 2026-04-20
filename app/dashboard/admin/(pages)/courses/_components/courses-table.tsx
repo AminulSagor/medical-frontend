@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { Search, SlidersHorizontal, Eye, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 import type { CourseItem, DeliveryMode } from "./courses.types";
 import { useEffect, useRef, useState } from "react";
 
@@ -137,6 +137,7 @@ function Pagination({ page, totalPages, onPageChange }: { page: number; totalPag
 
 export default function CoursesTable({
     items,
+    loading,
     query,
     onQueryChange,
     selectedDeliveryMode,
@@ -152,6 +153,7 @@ export default function CoursesTable({
     onPageChange,
 }: {
     items: CourseItem[];
+    loading: boolean;
     query: string;
     onQueryChange: (v: string) => void;
     selectedDeliveryMode: DeliveryMode | "all";
@@ -286,11 +288,13 @@ export default function CoursesTable({
                                 <td className="px-5 py-4">
                                     <div className="flex items-center gap-3">
                                         <div className="relative h-8 w-8 overflow-hidden rounded-full ring-1 ring-slate-200">
-                                            <Image
-                                                src={c.instructorAvatarUrl || "/photos/image.png"}
+                                            <NetworkImageFallback
+                                                src={c.instructorAvatarUrl}
                                                 alt={c.instructorName}
-                                                fill
-                                                className="object-cover"
+                                                className="h-full w-full object-cover"
+                                                fallbackVariant="avatar"
+                                                fallbackClassName="h-full w-full"
+                                                iconClassName="h-4 w-4"
                                             />
                                         </div>
                                         <div className="min-w-0">
@@ -350,7 +354,16 @@ export default function CoursesTable({
                             </tr>
                         ))}
 
-                        {items.length === 0 ? (
+                        {loading ? (
+                            <tr>
+                                <td colSpan={7} className="px-5 py-10 text-center text-slate-500">
+                                    <div className="inline-flex items-center gap-3">
+                                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--primary)]" />
+                                        <span>Loading courses...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : items.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="px-5 py-10 text-center text-slate-500">
                                     No courses found.

@@ -17,8 +17,8 @@ export type RefundSubmittedModalProps = {
   expectedRefundLabel?: string; // "EXPECTED REFUND"
   expectedRefundValue: string; // "$650.00"
 
-  confirmationText: string; // "A confirmation email has been sent to ..."
-  footnoteText: string; // "Refunds typically take 5–7 business days..."
+  confirmationText?: string; // optional helper line
+  footnoteText?: string; // "Refunds typically take 5–7 business days..."
 
   ctaLabel: string; // "Back to Dashboard"
   onCta?: () => void; // backend later
@@ -120,11 +120,14 @@ export default function RefundSubmittedModalClient(props: RefundSubmittedModalPr
           </div>
 
           {/* confirmation */}
-          <div className="mt-6 text-center text-[12px] text-slate-500">
-            {confirmationText}
-          </div>
+          {confirmationText ? (
+            <div className="mt-6 text-center text-[12px] text-slate-500">
+              {confirmationText}
+            </div>
+          ) : null}
 
           {/* footnote */}
+          {footnoteText ? (
           <div className="mt-6 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
             <div className="mt-0.5 text-slate-400">
               <Clock className="h-5 w-5" />
@@ -143,6 +146,7 @@ export default function RefundSubmittedModalClient(props: RefundSubmittedModalPr
               )}
             </div>
           </div>
+          ) : null}
 
           {/* CTA */}
           <button

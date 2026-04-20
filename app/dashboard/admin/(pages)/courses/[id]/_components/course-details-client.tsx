@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import {
@@ -40,6 +40,8 @@ export default function CourseDetailsClient({
     );
     const [loading, setLoading] = useState(!fallbackModel);
     const [error, setError] = useState<string | null>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [enrolleeListRefreshKey, setEnrolleeListRefreshKey] = useState(0);
 
     const [isEnrolleeModalOpen, setIsEnrolleeModalOpen] = useState(false);
     const [refundReservationId, setRefundReservationId] = useState<string | null>(
@@ -48,38 +50,54 @@ export default function CourseDetailsClient({
     const [refundSuccessData, setRefundSuccessData] =
         useState<RefundSuccessData | null>(null);
 
-    useEffect(() => {
-        if (!workshopId) {
-            setError("No workshop ID provided.");
-            setLoading(false);
-            return;
-        }
+    const fetchCourseDetails = useCallback(
+        async ({ preserveCurrentView = false }: { preserveCurrentView?: boolean } = {}) => {
+            if (!workshopId) {
+                setError("No workshop ID provided.");
+                setLoading(false);
+                setIsRefreshing(false);
+                return;
+            }
 
-        setLoading(true);
-        setError(null);
+            if (preserveCurrentView) {
+                setIsRefreshing(true);
+            } else {
+                setLoading(true);
+            }
 
-        Promise.all([
-            getWorkshopById(workshopId),
-            getWorkshopEnrollees(workshopId, { page: 1, limit: 10 }),
-        ])
-            .then(([workshop, enrollees]) => {
+            setError(null);
+
+            try {
+                const [workshop, enrollees] = await Promise.all([
+                    getWorkshopById(workshopId),
+                    getWorkshopEnrollees(workshopId, { page: 1, limit: 10 }),
+                ]);
+
                 const mapped = mapWorkshopToCourseDetailsModel(workshop);
 
                 mapped.capacityUsed = enrollees.data.overview.totalEnrolled;
                 mapped.refundRequests = enrollees.data.overview.refundRequested;
 
                 setModel(mapped);
-            })
-            .catch((err) => {
+            } catch (err) {
                 setError(
                     err instanceof Error ? err.message : "Failed to load workshop.",
                 );
-                setModel(null);
-            })
-            .finally(() => {
+
+                if (!preserveCurrentView) {
+                    setModel(null);
+                }
+            } finally {
                 setLoading(false);
-            });
-    }, [workshopId]);
+                setIsRefreshing(false);
+            }
+        },
+        [workshopId],
+    );
+
+    useEffect(() => {
+        void fetchCourseDetails();
+    }, [fetchCourseDetails]);
 
     if (loading) {
         return (
@@ -104,12 +122,13 @@ export default function CourseDetailsClient({
     return (
         <>
             <div className="space-y-5">
-                <CourseDetailsHeader title={model.title} status={model.status} />
+                <CourseDetailsHeader title={model.title} status={model.status} workshopId={workshopId} />
 
                 <CourseDetailsStats
                     capacityUsed={model.capacityUsed}
                     capacityTotal={model.capacityTotal}
                     refundRequests={model.refundRequests}
+                    revenueGenerated={model.revenueGenerated}
                 />
 
                 <div className="flex justify-end">
@@ -118,6 +137,9 @@ export default function CourseDetailsClient({
                         onClick={() => setIsEnrolleeModalOpen(true)}
                         className="inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[var(--primary-hover)] active:scale-[0.99]"
                     >
+                        {isRefreshing ? (
+                            <Loader2 size={14} className="animate-spin" />
+                        ) : null}
                         View Enrollees
                     </button>
                 </div>
@@ -141,6 +163,7 @@ export default function CourseDetailsClient({
             <EnrolleeListModal
                 open={isEnrolleeModalOpen}
                 workshopId={workshopId}
+                refreshKey={enrolleeListRefreshKey}
                 onClose={() => setIsEnrolleeModalOpen(false)}
                 onProcessRefund={(reservationId) => {
                     setRefundReservationId(reservationId);
@@ -155,6 +178,8 @@ export default function CourseDetailsClient({
                 onSuccess={(data) => {
                     setRefundReservationId(null);
                     setRefundSuccessData(data);
+                    setEnrolleeListRefreshKey((prev) => prev + 1);
+                    void fetchCourseDetails({ preserveCurrentView: true });
                 }}
             />
 

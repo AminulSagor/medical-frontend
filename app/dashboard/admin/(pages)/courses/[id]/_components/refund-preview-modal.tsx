@@ -136,7 +136,7 @@ export default function RefundPreviewModal({
 
     return (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-            <div className="max-h-[92vh] w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" style={{ maxHeight: "88vh" }}>
                 <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
                     <div>
                         <h2 className="text-2xl font-bold text-slate-900">Process Refund</h2>
@@ -285,7 +285,7 @@ export default function RefundPreviewModal({
                                     value={adjustmentNote}
                                     onChange={(e) => setAdjustmentNote(e.target.value)}
                                     placeholder="Reason for refund or adjustment details..."
-                                    className="min-h-[96px] w-full rounded-lg border border-slate-200 px-3 py-3 text-sm outline-none transition focus:border-[var(--primary)]"
+                                    className="min-h-[96px] w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[var(--primary)]"
                                 />
                             </div>
 
@@ -298,7 +298,7 @@ export default function RefundPreviewModal({
                                         value={paymentGateway}
                                         onChange={(e) => setPaymentGateway(e.target.value)}
                                         placeholder="e.g. Stripe"
-                                        className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-[var(--primary)]"
+                                        className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[var(--primary)]"
                                     />
                                 </div>
 
@@ -310,7 +310,7 @@ export default function RefundPreviewModal({
                                         value={transactionId}
                                         onChange={(e) => setTransactionId(e.target.value)}
                                         placeholder="e.g. txn_..."
-                                        className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-[var(--primary)]"
+                                        className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[var(--primary)]"
                                     />
                                 </div>
                             </div>

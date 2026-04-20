@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import Button from "@/components/buttons/button";
 import Card from "@/components/cards/card";
 import { IMAGE } from "@/constant/image-config";
@@ -36,15 +37,43 @@ type OrderReviewCardProps = {
   shippingAddress: UpdateShippingAddressPayload;
 };
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 const OrderReviewCard = ({ shippingAddress }: OrderReviewCardProps) => {
+  const searchParams = useSearchParams();
   const { items } = useCart();
   const [summary, setSummary] = useState<OrderSummaryResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
+  const checkoutMode = searchParams.get("mode");
+  const buyNowProductId = searchParams.get("productId");
+  const buyNowQuantity = Number(searchParams.get("quantity") || "1");
+
+  const checkoutItems = useMemo(() => {
+    if (
+      checkoutMode === "buy-now" &&
+      buyNowProductId &&
+      UUID_REGEX.test(buyNowProductId)
+    ) {
+      return [
+        {
+          productId: buyNowProductId,
+          quantity:
+            Number.isFinite(buyNowQuantity) && buyNowQuantity > 0
+              ? buyNowQuantity
+              : 1,
+        },
+      ];
+    }
+
+    return items.filter((item) => UUID_REGEX.test(item.productId));
+  }, [buyNowProductId, buyNowQuantity, checkoutMode, items]);
+
   useEffect(() => {
-    if (items.length === 0) {
+    if (checkoutItems.length === 0) {
       setSummary(null);
       return;
     }
@@ -53,20 +82,8 @@ const OrderReviewCard = ({ shippingAddress }: OrderReviewCardProps) => {
       setLoading(true);
 
       try {
-        const uuidRegex =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-        const validItems = items.filter((item) =>
-          uuidRegex.test(item.productId),
-        );
-
-        if (validItems.length === 0) {
-          setSummary(null);
-          return;
-        }
-
         const data = await getOrderSummary({
-          items: validItems.map((item) => ({
+          items: checkoutItems.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,
           })),
@@ -82,7 +99,7 @@ const OrderReviewCard = ({ shippingAddress }: OrderReviewCardProps) => {
     };
 
     fetchOrderSummary();
-  }, [items]);
+  }, [checkoutItems]);
 
   const handlePay = async () => {
     setCheckoutError(null);
@@ -132,8 +149,19 @@ const OrderReviewCard = ({ shippingAddress }: OrderReviewCardProps) => {
       window.location.href = redirectUrl;
     } catch (error: any) {
       console.error("Failed to start checkout session", error);
+
+      if (error?.response?.status === 401 && typeof window !== "undefined") {
+        const redirect = `${window.location.pathname}${window.location.search}`;
+        window.location.href = `/public/auth/sign-in?redirect=${encodeURIComponent(redirect)}`;
+        return;
+      }
+
       const apiMessage = error?.response?.data?.message;
-      setCheckoutError(apiMessage || error?.message || "Failed to start checkout. Please try again.");
+      setCheckoutError(
+        apiMessage ||
+        error?.message ||
+        "Failed to start checkout. Please try again.",
+      );
     } finally {
       setIsStartingCheckout(false);
     }

@@ -24,7 +24,8 @@ export type OnlineSummaryStripProps = {
 export type OnlineAboutCardProps = {
   heading: string;
   paragraph: string;
-  highlights: Array<{ iconKey: "check"; text: string }>;
+  learningObjectivesTitle?: string;
+  learningObjectivesHtml?: string;
 };
 
 export type OnlineTechnicalRequirement = {
@@ -79,6 +80,7 @@ export type OnlineScheduleProps = {
 export type OnlinePrepMaterial = {
   title: string;
   sub?: string;
+  href?: string;
 };
 
 export type OnlinePrepMaterialsProps = {
@@ -106,5 +108,5 @@ export type OnlineDetailsViewProps = {
   booking: OnlineBookingCardProps;
   schedule: OnlineScheduleProps;
   supportAndRegistration: OnlineSupportAndRegistrationCardProps;
-  materials: OnlinePrepMaterialsProps;
+  materials?: OnlinePrepMaterialsProps | null;
 };

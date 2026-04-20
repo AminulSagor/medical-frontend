@@ -17,7 +17,7 @@ export default function OnlineView({ data }: { data: OnlineDetailsViewProps }) {
       <CourseDetailsHero
         badges={data.hero.badges}
         title={data.hero.title}
-        imageSrc={data.hero.coverImageSrc ?? "/photos/child.png"}
+        imageSrc={data.hero.coverImageSrc}
       />
 
       {/* Summary strip */}
@@ -36,7 +36,7 @@ export default function OnlineView({ data }: { data: OnlineDetailsViewProps }) {
         <aside className="space-y-6 lg:sticky lg:top-6">
           <OnlineTechnicalRequirementsCard {...data.requirements} />
           <OnlineSupportRegistrationCard {...data.supportAndRegistration} />
-          <OnlinePrepMaterialsCard {...data.materials} />
+          {data.materials ? <OnlinePrepMaterialsCard {...data.materials} /> : null}
         </aside>
       </div>
     </div>

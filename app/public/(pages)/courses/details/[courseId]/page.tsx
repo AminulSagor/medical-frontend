@@ -5,13 +5,11 @@ import { useParams } from "next/navigation";
 import { CourseDetails } from "@/app/public/types/course.details.types";
 import { getPublicWorkshopById } from "@/service/public/workshop.service";
 import { transformWorkshopToDetails } from "@/utils/workshop/transform-workshop-details";
-import { IMAGE } from "@/constant/image-config";
 import CourseDetailsHeroSection from "../../_components/course-details-hero-section";
 import CourseAboutAndInfo from "../../_components/course-about-and-info";
 import CourseInstructors from "../../_components/course-instructors";
 import CourseItinerary from "../../_components/course-itinerary";
 import CoursePricingCard from "../../_components/course-pricing-card";
-import CourseTrustedByRow from "../../_components/course-trusted-by-row";
 
 export default function WorkshopDetailsPage() {
   const params = useParams();
@@ -37,7 +35,7 @@ export default function WorkshopDetailsPage() {
     };
 
     if (workshopId) {
-      fetchWorkshop();
+      void fetchWorkshop();
     }
   }, [workshopId]);
 
@@ -63,7 +61,7 @@ export default function WorkshopDetailsPage() {
     <div>
       <CourseDetailsHeroSection
         title={data.hero.title}
-        backgroundSrc={data.hero.backgroundSrc || IMAGE.course_details_cover}
+        backgroundSrc={data.hero.backgroundSrc}
         badges={data.hero.badges}
       />
       <div className="padding py-10">
@@ -72,10 +70,9 @@ export default function WorkshopDetailsPage() {
             <CourseAboutAndInfo data={data} />
             <CourseItinerary data={data} />
             <CourseInstructors data={data} />
-            <CourseTrustedByRow data={data} />
           </div>
 
-          <div className="lg:sticky lg:top-28 h-fit">
+          <div className="h-fit lg:sticky lg:top-28">
             <CoursePricingCard data={data} />
           </div>
         </div>

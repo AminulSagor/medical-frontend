@@ -1,106 +1,210 @@
-import Image from "next/image";
-import { Calendar, Clock, Eye } from "lucide-react";
+import {
+    Calendar,
+    CheckCircle2,
+    ClipboardList,
+    Clock,
+    Eye,
+    Info,
+    Users,
+} from "lucide-react";
 
 import CourseDetailsSectionCard from "./course-details-section-card";
 import CourseDetailsSideCard from "./course-details-side-card";
 import CourseDetailsRowLine from "./course-details-row-line";
 import CourseDetailsTinyPill from "./course-details-tiny-pill";
 import type { CourseDetailsModel } from "../_utils/course-details.types";
+import NetworkImageFallback from "@/utils/network-image-fallback";
+import { extractListItemsFromHtml, splitHtmlIntoParagraphs, stripHtml } from "@/utils/html-content";
+
+function formatTime12Hour(time?: string | null): string {
+    if (!time) return "—";
+
+    const [hours = "0", minutes = "00"] = time.split(":");
+    const hourNum = Number(hours);
+    const suffix = hourNum >= 12 ? "PM" : "AM";
+    const twelveHour = hourNum % 12 || 12;
+
+    return `${String(twelveHour).padStart(2, "0")}:${minutes} ${suffix}`;
+}
+
+function formatAgendaDate(date?: string | null): string {
+    if (!date) return "—";
+
+    return new Date(date).toLocaleDateString("en-US", {
+        month: "numeric",
+        day: "numeric",
+        year: "numeric",
+    });
+}
+
+function getFacultyName(faculty: CourseDetailsModel["faculty"][number]) {
+    return faculty.fullName || [faculty.firstName, faculty.lastName].filter(Boolean).join(" ") || "—";
+}
+
+function getFacultyRole(faculty: CourseDetailsModel["faculty"][number]) {
+    return [faculty.medicalDesignation, faculty.primaryClinicalRole].filter(Boolean).join(", ") || "Faculty";
+}
+
+function getLearningObjectives(value?: string | null) {
+    return extractListItemsFromHtml(value);
+}
+
+function getDescription(value?: string | null) {
+    return stripHtml(value) || "—";
+}
+
+function renderAgenda(days: CourseDetailsModel["days"]) {
+    if (days.length === 0) {
+        return <p className="text-sm text-slate-500">No agenda available</p>;
+    }
+
+    return (
+        <div className="space-y-6">
+            {days.map((day, idx) => (
+                <div key={day.id || idx} className="space-y-4">
+                    <div className="flex items-center gap-4">
+                        <div className="h-px flex-1 bg-slate-100" />
+                        <p className="text-[11px] font-extrabold uppercase tracking-[0.24em] text-slate-400">
+                            DAY {day.dayNumber || idx + 1} AGENDA ({formatAgendaDate(day.date)})
+                        </p>
+                        <div className="h-px flex-1 bg-slate-100" />
+                    </div>
+
+                    <div className="space-y-3">
+                        {day.segments.map((segment, segmentIdx) => (
+                            <div
+                                key={segment.id || segmentIdx}
+                                className="grid gap-4 rounded-2xl bg-slate-50 px-4 py-4 md:grid-cols-[160px_1fr] md:items-start"
+                            >
+                                <div className="text-[14px] font-extrabold leading-tight text-[#18c3b2]">
+                                    {formatTime12Hour(segment.startTime)} - {formatTime12Hour(segment.endTime)}
+                                </div>
+                                <div>
+                                    <p className="text-[14px] font-bold text-slate-900">
+                                        {segment.courseTopic || "—"}
+                                    </p>
+                                    {segment.topicDetails ? (
+                                        <p className="mt-1 text-[12px] leading-6 text-slate-500">
+                                            {segment.topicDetails}
+                                        </p>
+                                    ) : null}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function renderFaculty(facultyList: CourseDetailsModel["faculty"]) {
+    if (facultyList.length === 0) {
+        return <p className="text-sm text-slate-500">No faculty assigned</p>;
+    }
+
+    return (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {facultyList.map((faculty) => (
+                <div
+                    key={faculty.id}
+                    className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4"
+                >
+                    <div className="relative h-14 w-14 overflow-hidden rounded-full">
+                        <NetworkImageFallback
+                            src={faculty.imageUrl}
+                            alt={getFacultyName(faculty)}
+                            className="h-full w-full object-cover"
+                            fallbackVariant="avatar"
+                            fallbackClassName="h-full w-full"
+                            iconClassName="h-6 w-6"
+                        />
+                    </div>
+
+                    <div className="min-w-0">
+                        <p className="truncate text-[15px] font-bold text-slate-900">
+                            {getFacultyName(faculty)}
+                        </p>
+                        <p className="text-[12px] leading-5 text-slate-500">
+                            {getFacultyRole(faculty)}
+                        </p>
+                        {faculty.institutionOrHospital ? (
+                            <p className="mt-0.5 text-[12px] text-slate-400">
+                                {faculty.institutionOrHospital}
+                            </p>
+                        ) : null}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
 
 export default function CourseDetailsInPerson({
     model,
 }: {
     model: CourseDetailsModel;
 }) {
+    const learningObjectives = getLearningObjectives(model.learningObjectives);
+    const learningObjectiveFallback = splitHtmlIntoParagraphs(model.learningObjectives);
+
     return (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
             <div className="space-y-5">
-                <CourseDetailsSectionCard title="Essentials">
-                    <CourseDetailsRowLine
-                        label="Delivery Mode"
-                        value="In-Person Lab (Multi-Day)"
-                    />
-                    <CourseDetailsRowLine
-                        label="Brief Description"
-                        value={model.shortBlurb || "—"}
-                    />
+                <CourseDetailsSectionCard title="Essentials" icon={Info}>
+                    <div className="space-y-4">
+                        <CourseDetailsRowLine
+                            label="Delivery Mode"
+                            value="In-Person Lab (Multi-Day)"
+                        />
+                        <CourseDetailsRowLine
+                            label="Brief Description"
+                            value={getDescription(model.shortBlurb)}
+                        />
+                    </div>
                 </CourseDetailsSectionCard>
 
                 <CourseDetailsSectionCard
                     title="Syllabus & Details"
+                    icon={ClipboardList}
                     right={
                         <CourseDetailsTinyPill>
-                            CME CREDITS: {model.offersCmeCredits ? "Yes" : "No"}
+                            CME CREDITS: {model.offersCmeCredits ? model.cmeCreditsCount : "0.0"}
                         </CourseDetailsTinyPill>
                     }
                 >
-                    <p className="text-sm text-slate-600">
-                        {model.learningObjectives || "—"}
-                    </p>
-                </CourseDetailsSectionCard>
+                    <div className="space-y-4">
+                        <p className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-slate-500">
+                            Learning Objectives
+                        </p>
 
-                <CourseDetailsSectionCard title="Course Agenda">
-                    {model.days.length > 0 ? (
-                        <div className="space-y-3">
-                            {model.days.map((day, idx) => (
-                                <div
-                                    key={day.id || idx}
-                                    className="border-l-2 border-slate-200 pl-4"
-                                >
-                                    <p className="text-sm font-semibold text-slate-900">
-                                        Day {day.dayNumber || idx + 1}:{" "}
-                                        {day.date ? new Date(day.date).toLocaleDateString() : "—"}
-                                    </p>
-
-                                    {day.segments.length > 0 ? (
-                                        <div className="mt-2 space-y-2">
-                                            {day.segments.map((segment, segmentIdx) => (
-                                                <div
-                                                    key={segment.id || segmentIdx}
-                                                    className="text-xs text-slate-600"
-                                                >
-                                                    <span className="font-medium">
-                                                        {segment.courseTopic || "—"}
-                                                    </span>
-                                                    {segment.topicDetails ? (
-                                                        <p className="mt-1">{segment.topicDetails}</p>
-                                                    ) : null}
-                                                    <p className="text-slate-400">
-                                                        {segment.startTime} - {segment.endTime}
-                                                    </p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : null}
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-sm text-slate-600">No agenda available</p>
-                    )}
-                </CourseDetailsSectionCard>
-
-                <CourseDetailsSectionCard title="Faculty">
-                    <div className="flex items-center gap-3">
-                        <div className="relative h-10 w-10 overflow-hidden rounded-full bg-slate-100">
-                            {model.instructorAvatarUrl ? (
-                                <Image
-                                    src={model.instructorAvatarUrl}
-                                    alt={model.instructorName}
-                                    fill
-                                    className="object-cover"
-                                    unoptimized
-                                />
-                            ) : null}
-                        </div>
-
-                        <div>
-                            <p className="text-sm font-semibold text-slate-900">
-                                {model.instructorName}
-                            </p>
-                            <p className="text-xs text-slate-500">Lead Instructor</p>
-                        </div>
+                        {learningObjectives.length > 0 ? (
+                            <div className="space-y-3">
+                                {learningObjectives.map((item, index) => (
+                                    <div key={`${item}-${index}`} className="flex items-start gap-3">
+                                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#18c3b2]" />
+                                        <p className="text-[14px] leading-6 text-slate-600">{item}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : learningObjectiveFallback.length > 0 ? (
+                            <div className="space-y-2 text-[14px] leading-6 text-slate-600">
+                                {learningObjectiveFallback.map((item, index) => (
+                                    <p key={`${item}-${index}`}>{item}</p>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-slate-500">No learning objectives added</p>
+                        )}
                     </div>
+                </CourseDetailsSectionCard>
+
+                <CourseDetailsSectionCard title="Course Agenda" icon={Calendar}>
+                    {renderAgenda(model.days)}
+                </CourseDetailsSectionCard>
+
+                <CourseDetailsSectionCard title="Faculty" icon={Users}>
+                    {renderFaculty(model.faculty)}
                 </CourseDetailsSectionCard>
             </div>
 
@@ -121,6 +225,11 @@ export default function CourseDetailsInPerson({
                         <p className="mt-1 text-sm font-semibold text-slate-900">
                             {model.facilityLabel}
                         </p>
+                        {model.facilitySubLabel ? (
+                            <p className="mt-1 text-xs text-slate-500">
+                                {model.facilitySubLabel}
+                            </p>
+                        ) : null}
                     </div>
                 </CourseDetailsSideCard>
 
@@ -128,9 +237,14 @@ export default function CourseDetailsInPerson({
                     title="Enrollment Status"
                     right={<Eye size={16} className="text-slate-400" />}
                 >
-                    <p className="text-sm font-semibold text-slate-900">
-                        {model.capacityUsed}/{model.capacityTotal} Seats Filled
-                    </p>
+                    <div className="flex items-center justify-between gap-3 text-sm font-semibold text-slate-900">
+                        <p>{model.capacityUsed} / {model.capacityTotal} Attendees</p>
+                        <p className="text-[var(--primary)]">
+                            {model.capacityTotal <= 0
+                                ? 0
+                                : Math.min(100, Math.round((model.capacityUsed / model.capacityTotal) * 100))}% Capacity
+                        </p>
+                    </div>
 
                     <div className="mt-3 h-2 w-full rounded-full bg-slate-100">
                         <div

@@ -17,7 +17,7 @@ import type { CalendarProviderKey } from "@/types/user/course/add-to-calender-ty
 import type { CourseCalendarLinksResponse } from "@/types/user/course/course-detail-api.types";
 import { getCourseCalendarLinks } from "@/service/user/course-details.service";
 import AddToCalendarModalClient from "../[id]/_components/shared/add-to-calender-modal";
-import NetworkImageFallback from "../../../_components/network-image-fallback";
+import NetworkImageFallback from "../../../../../../utils/network-image-fallback";
 
 type Props = {
   items: ActiveCourseItem[];
@@ -100,7 +100,8 @@ export default function CourseCardsSection({ items }: Props) {
                   src={course.coverImageUrl}
                   alt={course.title}
                   className="h-full w-full object-cover"
-                  fallbackClassName="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400"
+                  fallbackVariant="cover"
+                  fallbackClassName="h-full w-full"
                   iconClassName="h-8 w-8"
                 />
 
@@ -126,9 +127,9 @@ export default function CourseCardsSection({ items }: Props) {
                   <div className="mt-4 rounded-xl border border-sky-100 bg-sky-50 px-4 py-3 text-[12px] leading-5 text-slate-600">
                     <div className="flex items-start gap-2">
                       <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" />
-                      <p>
+                      <p className="line-clamp-2">
                         <span className="font-semibold text-sky-500">{course.infoTitle} </span>
-                        {course.infoText ?? "not in api"}
+                        {course.infoText ?? ""}
                       </p>
                     </div>
                   </div>
@@ -186,8 +187,8 @@ export default function CourseCardsSection({ items }: Props) {
         onClose={() => setCalendarCourse(null)}
         event={{
           title: calendarCourse?.title || "Course",
-          dateText: calendarCourse?.date || "not in api",
-          timeText: "not in api",
+          dateText: calendarCourse?.date || "",
+          timeText: "",
           imageSrc: calendarCourse?.coverImageUrl,
         }}
         providers={providers}

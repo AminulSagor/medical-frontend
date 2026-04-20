@@ -1,13 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { X, Minus, Plus, ShoppingBag, ArrowRight, Lock } from "lucide-react";
 import { DUMMY_UPSELL } from "@/app/public/data/cart.data";
 import { useCart } from "@/app/public/context/cart-context";
 import { calculateCart } from "@/service/public/cart.service";
+import { getProductDetails } from "@/service/public/product.service";
 import type {
   CartCalculateRequest,
   CartCalculateResponse,
@@ -28,6 +29,7 @@ export default function CartSidebar({
   const [calculatedData, setCalculatedData] =
     useState<CartCalculateResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const hasCalculatedOnceRef = useRef(false);
 
   useEffect(() => {
     queueMicrotask(() => setIsClient(true));
@@ -36,44 +38,84 @@ export default function CartSidebar({
   useEffect(() => {
     if (items.length === 0) {
       setCalculatedData(null);
+      hasCalculatedOnceRef.current = false;
       return;
     }
 
-    const fetchCalculation = async () => {
-      setLoading(true);
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const validItems = items.filter((i) => uuidRegex.test(i.productId));
+
+    if (validItems.length === 0) {
+      setCalculatedData(null);
+      hasCalculatedOnceRef.current = false;
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      if (!hasCalculatedOnceRef.current) {
+        setLoading(true);
+      }
+
       try {
-        const uuidRegex =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        const validItems = items.filter((i) => uuidRegex.test(i.productId));
-
-        if (validItems.length === 0) {
-          setCalculatedData(null);
-          return;
-        }
-
         const payload: CartCalculateRequest = {
           items: validItems.map((i) => ({
             productId: i.productId,
             quantity: i.quantity,
           })),
         };
+
         const data = await calculateCart(payload);
-        setCalculatedData(data);
-        syncItems(
-          data.items.map((i) => ({
-            productId: i.productId,
-            quantity: i.quantity,
-          })),
+
+        const validatedItems = await Promise.all(
+          data.items.map(async (item) => {
+            try {
+              await getProductDetails(item.productId);
+              return item;
+            } catch {
+              return null;
+            }
+          }),
         );
+
+        const filteredItems = validatedItems.filter(
+          (item): item is typeof data.items[number] => item !== null,
+        );
+
+        const newData: CartCalculateResponse = {
+          ...data,
+          items: filteredItems,
+        };
+
+        setCalculatedData(newData);
+        hasCalculatedOnceRef.current = true;
+
+        const normalizedItems = filteredItems.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+        }));
+
+        const hasMismatch =
+          normalizedItems.length !== validItems.length ||
+          normalizedItems.some((item) => {
+            const current = validItems.find(
+              (v) => v.productId === item.productId,
+            );
+            return !current || current.quantity !== item.quantity;
+          });
+
+        if (hasMismatch) {
+          syncItems(normalizedItems);
+        }
       } catch (err) {
         console.error("Failed to calculate cart", err);
       } finally {
         setLoading(false);
       }
-    };
+    }, 300);
 
-    fetchCalculation();
-  }, [items]);
+    return () => clearTimeout(timeout);
+  }, [items, syncItems]);
 
   useEffect(() => {
     if (!open) return;
@@ -145,10 +187,10 @@ export default function CartSidebar({
 
         <div className="h-px w-full bg-light-slate/10" />
 
-        <div className="flex-1 overflow-auto px-6 py-5 relative">
-          {loading && (
-            <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <div className="relative flex-1 overflow-auto px-6 py-5">
+          {loading && !calculatedData && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           )}
 
@@ -164,17 +206,37 @@ export default function CartSidebar({
             </div>
           ) : (
             <div className="space-y-6">
-              {calculatedData?.items.map((it) => (
-                <CartRow
-                  key={it.productId}
-                  it={it}
-                  onRemove={() => removeItem(it.productId)}
-                  onUpdateQty={(q) => updateQty(it.productId, q)}
-                />
-              ))}
+              {loading && calculatedData && (
+                <div className="flex justify-center">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                </div>
+              )}
+
+              {items.map((cartItem) => {
+                const it = calculatedData?.items.find(
+                  (i) => i.productId === cartItem.productId,
+                );
+
+                if (!it) return null;
+
+                return (
+                  <CartRow
+                    key={cartItem.productId}
+                    it={it}
+                    quantity={cartItem.quantity}
+                    onRemove={() => removeItem(it.productId)}
+                    onUpdateQty={(q) => updateQty(it.productId, q)}
+                    onOpenDetails={() => {
+                      onClose();
+                      router.push(`/public/store/product-details/${it.productId}`);
+                    }}
+                  />
+                );
+              })}
             </div>
           )}
 
+          {/*
           {items.length > 0 && (
             <div className="mt-10">
               <div className="text-[11px] font-extrabold tracking-widest text-light-slate/70">
@@ -217,9 +279,10 @@ export default function CartSidebar({
               </div>
             </div>
           )}
+          */}
         </div>
 
-        <div className="border-t border-light-slate/10 bg-white px-6 pt-5 pb-6">
+        <div className="border-t border-light-slate/10 bg-white px-6 pb-6 pt-5">
           <div className="space-y-3 text-sm">
             <div className="flex items-center justify-between text-light-slate">
               <span>Subtotal</span>
@@ -254,11 +317,11 @@ export default function CartSidebar({
             }}
             className={[
               "mt-5 w-full rounded-2xl bg-primary px-6 py-4",
-              "text-white text-base font-extrabold",
-              "hover:opacity-90 active:scale-[0.99] transition",
               "inline-flex items-center justify-center gap-2",
+              "text-base font-extrabold text-white",
+              "hover:opacity-90 active:scale-[0.99] transition",
               items.length === 0
-                ? "opacity-50 cursor-not-allowed pointer-events-none"
+                ? "pointer-events-none cursor-not-allowed opacity-50"
                 : "",
             ].join(" ")}
           >
@@ -279,16 +342,25 @@ export default function CartSidebar({
 
 function CartRow({
   it,
+  quantity,
   onRemove,
   onUpdateQty,
+  onOpenDetails,
 }: {
   it: CartResponseItem;
+  quantity: number;
   onRemove: () => void;
   onUpdateQty: (q: number) => void;
+  onOpenDetails: () => void;
 }) {
   return (
     <div className="flex gap-4">
-      <div className="relative h-20 w-20 overflow-hidden rounded-2xl bg-light-slate/10">
+      <button
+        type="button"
+        onClick={onOpenDetails}
+        className="relative h-20 w-20 overflow-hidden rounded-2xl bg-light-slate/10"
+        aria-label={`Open details for ${it.name}`}
+      >
         <Image
           src={it.photo || "/photos/store_product.png"}
           alt={it.name}
@@ -296,14 +368,21 @@ function CartRow({
           sizes="80px"
           className="object-cover"
         />
-      </div>
+      </button>
 
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="truncate text-sm font-bold text-black">
-              {it.name}
-            </div>
+            <button
+              type="button"
+              onClick={onOpenDetails}
+              className="block max-w-full text-left"
+            >
+              <div className="truncate text-sm font-bold text-black hover:text-primary transition-colors">
+                {it.name}
+              </div>
+            </button>
+
             <div className="mt-1 text-xs font-semibold text-light-slate">
               Ref: {it.sku}
             </div>
@@ -317,13 +396,13 @@ function CartRow({
         <div className="mt-4 flex items-center justify-between">
           <div className="inline-flex items-center gap-2 rounded-full border border-light-slate/15 bg-white px-2 py-1">
             <button
-              onClick={() => onUpdateQty(it.quantity - 1)}
-              disabled={it.quantity <= 1}
+              onClick={() => onUpdateQty(quantity - 1)}
+              disabled={quantity <= 1}
               type="button"
               className={[
                 iconBtn(),
-                it.quantity <= 1
-                  ? "opacity-50 cursor-not-allowed pointer-events-none"
+                quantity <= 1
+                  ? "pointer-events-none cursor-not-allowed opacity-50"
                   : "",
               ].join(" ")}
               aria-label="Decrease"
@@ -332,11 +411,11 @@ function CartRow({
             </button>
 
             <div className="w-10 text-center text-sm font-bold text-black">
-              {it.quantity}
+              {quantity}
             </div>
 
             <button
-              onClick={() => onUpdateQty(it.quantity + 1)}
+              onClick={() => onUpdateQty(quantity + 1)}
               type="button"
               className={iconBtn()}
               aria-label="Increase"

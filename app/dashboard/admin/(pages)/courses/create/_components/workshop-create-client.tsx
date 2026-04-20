@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Calendar,
+  CalendarPlus,
   Check,
   Clock,
   ImageIcon,
@@ -12,8 +13,9 @@ import {
   Trash2,
   Search,
   Loader2,
+  Save,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import ThemeDropdown, {
   ThemeDropdownOption,
@@ -21,7 +23,11 @@ import ThemeDropdown, {
 import ManageClinicalLocationsModal from "../../_components/manage-clinical-locations-modal";
 import { searchFaculty } from "@/service/admin/faculty.service";
 import { listFacilities } from "@/service/admin/facility.service";
-import { createWorkshop } from "@/service/admin/workshop.service";
+import { createWorkshop, getWorkshopById } from "@/service/admin/workshop.service";
+import {
+  getUploadUrl,
+  uploadFileToSignedUrl,
+} from "@/service/upload/upload.service";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   createWorkshopSchema,
@@ -29,7 +35,7 @@ import {
 } from "@/schema/admin/workshop.schema";
 import type { Faculty } from "@/types/admin/faculty.types";
 import type { Facility } from "@/types/admin/facility.types";
-import type { WorkshopStatus } from "@/types/admin/workshop.types";
+import type { CreateWorkshopRequest, Workshop, WorkshopStatus } from "@/types/admin/workshop.types";
 
 import RichTextEditor from "./workshop-create/_components/shared/rich-text-editor";
 import SeatMap from "./workshop-create/_components/shared/seat-map";
@@ -58,10 +64,196 @@ import type {
 
 const COURSES_LIST_ROUTE = "/dashboard/admin/courses";
 
+
+function normalizeTimeDisplay(value?: string | null): string {
+  if (!value) return "";
+
+  const trimmed = value.trim();
+  const twentyFourHourMatch = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (twentyFourHourMatch) {
+    const hour = Number(twentyFourHourMatch[1]);
+    const minute = twentyFourHourMatch[2];
+    if (!Number.isNaN(hour)) {
+      const normalizedHour = hour % 12 || 12;
+      const meridiem = hour >= 12 ? "PM" : "AM";
+      return `${String(normalizedHour).padStart(2, "0")}:${minute} ${meridiem}`;
+    }
+  }
+
+  return trimmed
+    .replace(/\s*(AM|PM)$/i, " $1")
+    .replace(/\s+/g, " ")
+    .toUpperCase();
+}
+
+
+function toNativeTimeValue(value?: string | null): string {
+  if (!value) return "";
+
+  const trimmed = value.trim().toUpperCase();
+  const meridiemMatch = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+  if (meridiemMatch) {
+    const rawHour = Number(meridiemMatch[1]);
+    const minute = meridiemMatch[2];
+    const meridiem = meridiemMatch[3];
+    let hour = rawHour % 12;
+    if (meridiem === "PM") hour += 12;
+    return `${String(hour).padStart(2, "0")}:${minute}`;
+  }
+
+  const twentyFourHourMatch = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (twentyFourHourMatch) {
+    return `${String(Number(twentyFourHourMatch[1])).padStart(2, "0")}:${twentyFourHourMatch[2]}`;
+  }
+
+  return "";
+}
+
+function NativeDatePickerField({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const openPicker = () => {
+    const input = inputRef.current;
+    if (!input) return;
+
+    try {
+      (input as HTMLInputElement & { showPicker?: () => void }).showPicker?.();
+    } catch {
+      input.focus();
+      input.click();
+    }
+  };
+
+  return (
+    <div className="relative" onClick={openPicker}>
+      <TextInput
+        value={value}
+        readOnly
+        placeholder={placeholder}
+        className="cursor-pointer pr-10"
+      />
+      <Calendar
+        size={16}
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+      />
+      <input
+        ref={inputRef}
+        type="date"
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value)}
+        onClick={(e) => {
+          e.stopPropagation();
+          openPicker();
+        }}
+        className="pointer-events-none absolute bottom-0 left-0 h-0 w-0 opacity-0"
+        tabIndex={-1}
+        aria-label={placeholder || "Select date"}
+      />
+    </div>
+  );
+}
+
+function NativeTimePickerField({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const openPicker = () => {
+    const input = inputRef.current;
+    if (!input) return;
+
+    try {
+      (input as HTMLInputElement & { showPicker?: () => void }).showPicker?.();
+    } catch {
+      input.focus();
+      input.click();
+    }
+  };
+
+  return (
+    <div className="relative" onClick={openPicker}>
+      <TextInput
+        value={value}
+        readOnly
+        placeholder={placeholder}
+        className="cursor-pointer pr-10"
+      />
+      <Clock
+        size={16}
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+      />
+      <input
+        ref={inputRef}
+        type="time"
+        value={toNativeTimeValue(value)}
+        onChange={(e) => onChange(normalizeTimeDisplay(e.target.value))}
+        onClick={(e) => {
+          e.stopPropagation();
+          openPicker();
+        }}
+        className="pointer-events-none absolute bottom-0 left-0 h-0 w-0 opacity-0"
+        tabIndex={-1}
+        aria-label={placeholder || "Select time"}
+      />
+    </div>
+  );
+}
+
+function formatLastSavedLabel(lastSavedAt: Date | null): string {
+  if (!lastSavedAt) return "Not saved yet";
+
+  const diffMs = Date.now() - lastSavedAt.getTime();
+  const diffMinutes = Math.floor(diffMs / 60000);
+
+  if (diffMinutes < 1) return "just now";
+  if (diffMinutes < 60) {
+    return `${diffMinutes} min${diffMinutes === 1 ? "" : "s"} ago`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+  }
+
+  const hours = lastSavedAt.getHours();
+  const minutes = String(lastSavedAt.getMinutes()).padStart(2, "0");
+  const normalizedHours = hours % 12 || 12;
+  const meridiem = hours >= 12 ? "PM" : "AM";
+  const day = lastSavedAt.getDate();
+  const month = lastSavedAt.toLocaleString("en-US", { month: "long" });
+  const year = lastSavedAt.getFullYear();
+
+  return `${normalizedHours}:${minutes}${meridiem} ${day} ${month}, ${year}`;
+}
+
 export default function WorkshopCreateClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editingWorkshopId = searchParams.get("id");
 
-  const [submitting, setSubmitting] = useState(false);
+  const [saveMode, setSaveMode] = useState<"publish" | "draft" | "autosave" | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
+  const [changeVersion, setChangeVersion] = useState(0);
+  const [isHydrating, setIsHydrating] = useState(true);
+  const hasMountedRef = useRef(false);
+  const coverPreviewUrlRef = useRef<string | null>(null);
+  const suppressDirtyRef = useRef(false);
+
   const [mode, setMode] = useState<DeliveryMode>("in_person");
   const isOnline = mode === "online";
 
@@ -75,8 +267,11 @@ export default function WorkshopCreateClient() {
   const [blurb, setBlurb] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
   const [coverFileName, setCoverFileName] = useState<string | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const [pendingCoverFile, setPendingCoverFile] = useState<File | null>(null);
   const [learningObjectives, setLearningObjectives] = useState("");
   const [cme, setCme] = useState(false);
+  const [cmeCreditsCount, setCmeCreditsCount] = useState("");
   const [registrationDeadline, setRegistrationDeadline] = useState("");
 
   const [facilities, setFacilities] = useState<Facility[]>([]);
@@ -95,18 +290,6 @@ export default function WorkshopCreateClient() {
       [facilities],
     );
 
-  useEffect(() => {
-    listFacilities()
-      .then((res) => {
-        setFacilities(res.items);
-        if (res.items.length > 0) {
-          setFacility(res.items[0].id);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to load facilities:", error);
-      });
-  }, []);
 
   const [days, setDays] = useState<DayAgenda[]>([]);
   const [selectedFaculty, setSelectedFaculty] = useState<FacultyChip[]>([]);
@@ -115,14 +298,120 @@ export default function WorkshopCreateClient() {
   const [facultyResults, setFacultyResults] = useState<Faculty[]>([]);
   const [facultySearching, setFacultySearching] = useState(false);
   const [facultyDropdownOpen, setFacultyDropdownOpen] = useState(false);
+  const [isFacultyInputActive, setIsFacultyInputActive] = useState(false);
   const facultySearchRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const debouncedFacultyQuery = useDebounce(facultyQuery, 300);
+  function hydrateWorkshopForm(workshop: Workshop, availableFacilities: Facility[]) {
+    setWorkshopId(workshop.id);
+    setDraftStatus(workshop.status === "published" ? "Ready" : "Draft");
+    setMode(workshop.deliveryMode);
+    setWebinarPlatform((workshop.webinarPlatform as WebinarPlatform | null) ?? (workshop.deliveryMode === "online" ? "zoom" : null));
+    setMeetingPassword(workshop.meetingPassword ?? "");
+    setMeetingLink(workshop.meetingLink ?? "");
+    setRecordAutomatically(Boolean(workshop.autoRecordSession));
+
+    setTitle(workshop.title ?? "");
+    setBlurb(workshop.shortBlurb ?? "");
+    setCoverImageUrl(workshop.coverImageUrl ?? null);
+    setCoverPreviewUrl(workshop.coverImageUrl ?? null);
+    setCoverFileName(null);
+    setPendingCoverFile(null);
+    setLearningObjectives(workshop.learningObjectives ?? "");
+    setCme(Boolean(workshop.offersCmeCredits));
+    setCmeCreditsCount(workshop.cmeCreditsCount ?? "");
+
+    const defaultFacilityId =
+      workshop.facilityIds?.[0] ?? workshop.facilities?.[0]?.id ?? availableFacilities[0]?.id ?? null;
+    setFacility(defaultFacilityId);
+
+    const sortedDays = [...(workshop.days ?? [])].sort((a, b) => a.dayNumber - b.dayNumber);
+    setDays(
+      sortedDays.map((day, dayIndex) => ({
+        id: day.id || `day-${dayIndex + 1}`,
+        label: `Day ${day.dayNumber ?? dayIndex + 1}`,
+        segments: [...(day.segments ?? [])]
+          .sort((a, b) => a.segmentNumber - b.segmentNumber)
+          .map((segment, segmentIndex) => ({
+            id: segment.id || `${day.id || dayIndex}-segment-${segmentIndex + 1}`,
+            topic: segment.courseTopic ?? "",
+            details: segment.topicDetails ?? "",
+            date: day.date ?? "",
+            startTime: normalizeTimeDisplay(segment.startTime),
+            endTime: normalizeTimeDisplay(segment.endTime),
+          })),
+      })),
+    );
+
+    setSelectedFaculty(
+      (workshop.faculty ?? []).map((faculty) => ({
+        id: faculty.id,
+        name: faculty.fullName || `${faculty.firstName} ${faculty.lastName}`.trim(),
+        role: faculty.medicalDesignation || faculty.primaryClinicalRole || "N/A",
+      })),
+    );
+
+    setCapacity(workshop.capacity ?? 24);
+    setAlert(workshop.alertAt ?? 5);
+    setStandardRate(Number(workshop.standardBaseRate ?? 0));
+
+    const primaryDiscount = [...(workshop.groupDiscounts ?? [])]
+      .sort((a, b) => a.minimumAttendees - b.minimumAttendees)[0];
+    setMinAttendees(primaryDiscount?.minimumAttendees ?? 0);
+    setGroupRate(Number(primaryDiscount?.groupRatePerPerson ?? 0));
+
+    const firstDayDate = sortedDays[0]?.date ?? "";
+    const normalizedRegistrationDeadline = workshop.registrationDeadline
+      ? workshop.registrationDeadline.split("T")[0]
+      : firstDayDate;
+    setRegistrationDeadline(normalizedRegistrationDeadline);
+
+    const updatedAt = workshop.updatedAt || workshop.createdAt;
+    setLastSavedAt(updatedAt ? new Date(updatedAt) : null);
+    setHasPendingChanges(false);
+  }
 
   useEffect(() => {
-    if (debouncedFacultyQuery.length < 3) {
-      setFacultyResults([]);
-      setFacultyDropdownOpen(false);
+    let isCancelled = false;
+
+    async function loadInitialData() {
+      setIsHydrating(true);
+
+      try {
+        const facilitiesResponse = await listFacilities();
+        if (isCancelled) return;
+
+        const availableFacilities = facilitiesResponse.items;
+        setFacilities(availableFacilities);
+
+        if (editingWorkshopId) {
+          const workshop = await getWorkshopById(editingWorkshopId);
+          if (isCancelled) return;
+          hydrateWorkshopForm(workshop, availableFacilities);
+        } else {
+          setWorkshopId(null);
+          setFacility((current) => current ?? availableFacilities[0]?.id ?? null);
+        }
+      } catch (error) {
+        console.error("Failed to load workshop create dependencies:", error);
+      } finally {
+        if (!isCancelled) {
+          setIsHydrating(false);
+        }
+      }
+    }
+
+    void loadInitialData();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [editingWorkshopId]);
+
+  useEffect(() => {
+    if (!isFacultyInputActive) {
+      abortRef.current?.abort();
+      setFacultySearching(false);
       return;
     }
 
@@ -131,15 +420,18 @@ export default function WorkshopCreateClient() {
     abortRef.current = controller;
 
     setFacultySearching(true);
+    setFacultyDropdownOpen(true);
 
-    searchFaculty(debouncedFacultyQuery, 1, 10, controller.signal)
+    searchFaculty(debouncedFacultyQuery.trim() || undefined, 1, 10, controller.signal)
       .then((res) => {
+        if (controller.signal.aborted) return;
         setFacultyResults(res.data);
         setFacultyDropdownOpen(true);
       })
       .catch((error) => {
         if (error?.name !== "AbortError" && error?.code !== "ERR_CANCELED") {
           console.error("Faculty search failed:", error);
+          setFacultyResults([]);
         }
       })
       .finally(() => {
@@ -149,7 +441,7 @@ export default function WorkshopCreateClient() {
       });
 
     return () => controller.abort();
-  }, [debouncedFacultyQuery]);
+  }, [debouncedFacultyQuery, isFacultyInputActive]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -158,6 +450,7 @@ export default function WorkshopCreateClient() {
         !facultySearchRef.current.contains(event.target as Node)
       ) {
         setFacultyDropdownOpen(false);
+        setIsFacultyInputActive(false);
       }
     }
 
@@ -185,6 +478,7 @@ export default function WorkshopCreateClient() {
 
     setFacultyQuery("");
     setFacultyDropdownOpen(false);
+    setIsFacultyInputActive(false);
     setFacultyResults([]);
   }
 
@@ -194,8 +488,103 @@ export default function WorkshopCreateClient() {
   const [minAttendees, setMinAttendees] = useState(0);
   const [groupRate, setGroupRate] = useState(0);
   const [draftStatus, setDraftStatus] = useState<"Draft" | "Ready">("Draft");
+  const [workshopId, setWorkshopId] = useState<string | null>(null);
 
   const derivedTotalDays = useMemo(() => days.length, [days.length]);
+  const isSaving = saveMode !== null;
+
+  const autosaveSnapshot = useMemo(
+    () =>
+      JSON.stringify({
+        mode,
+        webinarPlatform,
+        meetingPassword,
+        meetingLink,
+        recordAutomatically,
+        title,
+        blurb,
+        coverImageUrl,
+        coverFileName,
+        coverPreviewUrl,
+        learningObjectives,
+        cme,
+        cmeCreditsCount,
+        registrationDeadline,
+        facility,
+        days,
+        selectedFaculty,
+        capacity,
+        alert,
+        standardRate,
+        minAttendees,
+        groupRate,
+      }),
+    [
+      mode,
+      webinarPlatform,
+      meetingPassword,
+      meetingLink,
+      recordAutomatically,
+      title,
+      blurb,
+      coverImageUrl,
+      coverFileName,
+      coverPreviewUrl,
+      learningObjectives,
+      cme,
+      cmeCreditsCount,
+      registrationDeadline,
+      facility,
+      days,
+      selectedFaculty,
+      capacity,
+      alert,
+      standardRate,
+      minAttendees,
+      groupRate,
+    ],
+  );
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
+    if (isHydrating) {
+      return;
+    }
+
+    if (suppressDirtyRef.current) {
+      suppressDirtyRef.current = false;
+      return;
+    }
+
+    setHasPendingChanges(true);
+    setChangeVersion((prev) => prev + 1);
+  }, [autosaveSnapshot, isHydrating]);
+
+  useEffect(() => {
+    return () => {
+      if (coverPreviewUrlRef.current) {
+        URL.revokeObjectURL(coverPreviewUrlRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasPendingChanges || isSaving) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      void handleSaveDraft("autosave");
+    }, 60000);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [changeVersion, hasPendingChanges, isSaving]);
 
   function addDay() {
     setDays((prev) => [
@@ -288,14 +677,15 @@ export default function WorkshopCreateClient() {
     router.push(COURSES_LIST_ROUTE);
   }
 
-  async function handleSubmit(status: WorkshopStatus) {
-    const payload = buildWorkshopPayload({
+  function buildPayload(status: WorkshopStatus, nextCoverImageUrl: string | null = coverImageUrl) {
+    return buildWorkshopPayload({
       mode,
       title,
       blurb,
-      coverImageUrl,
+      coverImageUrl: nextCoverImageUrl,
       learningObjectives,
       cme,
+      cmeCreditsCount,
       facility,
       webinarPlatform,
       meetingLink,
@@ -311,56 +701,119 @@ export default function WorkshopCreateClient() {
       status,
       registrationDeadline,
     });
+  }
 
+  async function uploadCoverImageIfNeeded() {
+    if (!pendingCoverFile) {
+      return coverImageUrl;
+    }
+
+    const uploadMeta = await getUploadUrl({
+      fileName: pendingCoverFile.name,
+      contentType: pendingCoverFile.type || "application/octet-stream",
+      folder: "courses",
+    });
+
+    await uploadFileToSignedUrl(uploadMeta.signedUrl, pendingCoverFile);
+
+    suppressDirtyRef.current = true;
+
+    if (coverPreviewUrlRef.current) {
+      URL.revokeObjectURL(coverPreviewUrlRef.current);
+      coverPreviewUrlRef.current = null;
+    }
+
+    setCoverImageUrl(uploadMeta.readUrl);
+    setCoverPreviewUrl(uploadMeta.readUrl);
+    setCoverFileName(pendingCoverFile.name);
+    setPendingCoverFile(null);
+
+    return uploadMeta.readUrl;
+  }
+
+  async function saveWorkshop(
+    status: WorkshopStatus,
+    modeToUse: "publish" | "draft" | "autosave",
+  ) {
+    setSaveMode(modeToUse);
+
+    let resolvedCoverImageUrl = coverImageUrl;
+
+    try {
+      resolvedCoverImageUrl = await uploadCoverImageIfNeeded();
+    } catch (error: any) {
+      console.error("Failed to upload workshop cover image:", error);
+      if (modeToUse !== "autosave") {
+        window.alert(
+          error?.response?.data?.message ||
+            "Failed to upload cover image. Please try again.",
+        );
+      }
+      setSaveMode(null);
+      return false;
+    }
+
+    const payload = buildPayload(status, resolvedCoverImageUrl);
     const parsed = createWorkshopSchema.safeParse(payload);
 
     if (!parsed.success) {
       setDraftStatus("Draft");
-      window.alert(parsed.error.issues[0]?.message ?? "Validation error");
-      return;
+
+      if (modeToUse !== "autosave") {
+        window.alert(parsed.error.issues[0]?.message ?? "Validation error");
+      }
+
+      return false;
     }
 
-    setSubmitting(true);
-
     try {
-      await createWorkshop(payload);
-      setDraftStatus("Ready");
-      navigateToCourses();
+      const requestBody: CreateWorkshopRequest = workshopId
+        ? ({ ...payload, id: workshopId, status } as CreateWorkshopRequest)
+        : payload;
+
+      const savedWorkshop = await createWorkshop(requestBody);
+
+      if (savedWorkshop?.id) {
+        setWorkshopId(savedWorkshop.id);
+      }
+
+      setDraftStatus(status === "published" ? "Ready" : "Draft");
+      setLastSavedAt(new Date());
+      setHasPendingChanges(false);
+      return true;
     } catch (error: any) {
-      console.error("Failed to create workshop:", error);
-      window.alert(
-        error?.response?.data?.message ||
-        "Failed to create workshop. Please try again.",
+      console.error(
+        workshopId ? "Failed to save workshop draft:" : "Failed to create workshop:",
+        error,
       );
+      if (modeToUse !== "autosave") {
+        window.alert(
+          error?.response?.data?.message ||
+            `Failed to ${workshopId ? "save" : "create"} workshop. Please try again.`,
+        );
+      }
+      return false;
     } finally {
-      setSubmitting(false);
+      setSaveMode(null);
     }
   }
 
+  async function handlePublish() {
+    const didSave = await saveWorkshop("published", "publish");
+    if (didSave) {
+      navigateToCourses();
+    }
+  }
+
+  async function handleSaveDraft(modeToUse: "draft" | "autosave" = "draft") {
+    await saveWorkshop("draft", modeToUse);
+  }
+
   const isShortPayload = shortCreateWorkshopSchema.safeParse(
-    buildWorkshopPayload({
-      mode,
-      title,
-      blurb,
-      coverImageUrl,
-      learningObjectives,
-      cme,
-      facility,
-      webinarPlatform,
-      meetingLink,
-      meetingPassword,
-      recordAutomatically,
-      capacity,
-      alert,
-      standardRate,
-      minAttendees,
-      groupRate,
-      selectedFaculty,
-      days,
-      status: "published",
-      registrationDeadline,
-    }),
+    buildPayload("published"),
   ).success;
+
+  const lastSavedLabel = formatLastSavedLabel(lastSavedAt);
 
   return (
     <div className="space-y-5">
@@ -377,7 +830,7 @@ export default function WorkshopCreateClient() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold text-slate-900">
-                Create New Clinical Workshop
+                {workshopId ? "Update Clinical Workshop" : "Create New Clinical Workshop"}
               </h1>
 
               <span className="rounded-full bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600 ring-1 ring-slate-200">
@@ -399,10 +852,10 @@ export default function WorkshopCreateClient() {
 
           <PrimaryButton
             type="button"
-            disabled={submitting}
-            onClick={() => handleSubmit("published")}
+            disabled={isSaving}
+            onClick={handlePublish}
           >
-            {submitting ? (
+            {saveMode === "publish" ? (
               <>
                 <Loader2 size={14} className="animate-spin" />
                 Publishing...
@@ -506,15 +959,15 @@ export default function WorkshopCreateClient() {
                 <TextArea
                   value={blurb}
                   onChange={(e) => setBlurb(e.target.value)}
-                  placeholder="Leave empty to use short API"
+                  placeholder="Brief description for the course catalog..."
                 />
               </div>
 
               <div>
                 <Label>Registration Deadline</Label>
-                <TextInput
+                <NativeDatePickerField
                   value={registrationDeadline}
-                  onChange={(e) => setRegistrationDeadline(e.target.value)}
+                  onChange={setRegistrationDeadline}
                   placeholder="YYYY-MM-DD"
                 />
               </div>
@@ -603,11 +1056,30 @@ export default function WorkshopCreateClient() {
                 <input
                   type="checkbox"
                   checked={cme}
-                  onChange={(e) => setCme(e.target.checked)}
+                  onChange={(e) => {
+                    setCme(e.target.checked);
+                    if (!e.target.checked) {
+                      setCmeCreditsCount("");
+                    }
+                  }}
                   className="h-5 w-5 rounded-md border-slate-300 text-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
                 />
                 This course offers CME credits
               </label>
+
+              {cme ? (
+                <div>
+                  <Label>CME Credit Number</Label>
+                  <TextInput
+                    type="number"
+                    value={cmeCreditsCount}
+                    onChange={(e) => setCmeCreditsCount(e.target.value)}
+                    placeholder="e.g., 8"
+                    min={0}
+                    step="0.1"
+                  />
+                </div>
+              ) : null}
             </div>
           </WorkshopCard>
 
@@ -668,8 +1140,8 @@ export default function WorkshopCreateClient() {
                           </button>
                         </div>
 
-                        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-                          <div className="md:col-span-2">
+                        <div className="mt-3 space-y-3">
+                          <div>
                             <Label>Course Topic</Label>
                             <TextInput
                               value={segment.topic}
@@ -681,7 +1153,7 @@ export default function WorkshopCreateClient() {
                             />
                           </div>
 
-                          <div className="md:col-span-2">
+                          <div>
                             <Label>Topic Details</Label>
                             <TextArea
                               value={segment.details}
@@ -693,43 +1165,45 @@ export default function WorkshopCreateClient() {
                             />
                           </div>
 
-                          <div>
-                            <Label>Date</Label>
-                            <TextInput
-                              value={segment.date}
-                              onChange={(e) =>
-                                updateSegment(day.id, segment.id, {
-                                  date: e.target.value,
-                                })
-                              }
-                              placeholder="MM/DD/YYYY"
-                            />
-                          </div>
+                          <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                            <div>
+                              <Label>Date</Label>
+                              <NativeDatePickerField
+                                value={segment.date}
+                                onChange={(value) =>
+                                  updateSegment(day.id, segment.id, {
+                                    date: value,
+                                  })
+                                }
+                                placeholder="YYYY-MM-DD"
+                              />
+                            </div>
 
-                          <div>
-                            <Label>Start Time</Label>
-                            <TextInput
-                              value={segment.startTime}
-                              onChange={(e) =>
-                                updateSegment(day.id, segment.id, {
-                                  startTime: e.target.value,
-                                })
-                              }
-                              placeholder="08:00 AM"
-                            />
-                          </div>
+                            <div>
+                              <Label>Start Time</Label>
+                              <NativeTimePickerField
+                                value={segment.startTime}
+                                onChange={(value) =>
+                                  updateSegment(day.id, segment.id, {
+                                    startTime: value,
+                                  })
+                                }
+                                placeholder="08:00 AM"
+                              />
+                            </div>
 
-                          <div>
-                            <Label>End Time</Label>
-                            <TextInput
-                              value={segment.endTime}
-                              onChange={(e) =>
-                                updateSegment(day.id, segment.id, {
-                                  endTime: e.target.value,
-                                })
-                              }
-                              placeholder="12:00 PM"
-                            />
+                            <div>
+                              <Label>End Time</Label>
+                              <NativeTimePickerField
+                                value={segment.endTime}
+                                onChange={(value) =>
+                                  updateSegment(day.id, segment.id, {
+                                    endTime: value,
+                                  })
+                                }
+                                placeholder="12:00 PM"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -745,6 +1219,18 @@ export default function WorkshopCreateClient() {
                   </div>
                 </div>
               ))}
+
+
+              <div className="flex justify-center pt-2">
+                <button
+                  type="button"
+                  onClick={addDay}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-slate-900 active:scale-[0.99]"
+                >
+                  <CalendarPlus size={16} />
+                  + Add Day
+                </button>
+              </div>
             </div>
           </WorkshopCard>
 
@@ -757,29 +1243,14 @@ export default function WorkshopCreateClient() {
               <div ref={facultySearchRef} className="relative">
                 <Label>Search Faculty</Label>
 
-                <div className="relative">
-                  <Search
-                    size={16}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-                  <TextInput
-                    value={facultyQuery}
-                    onChange={(e) => setFacultyQuery(e.target.value)}
-                    placeholder="Search by faculty name"
-                    className="pl-9"
-                  />
-
-                  {facultySearching ? (
-                    <Loader2
-                      size={16}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-slate-400"
-                    />
-                  ) : null}
-                </div>
-
                 {facultyDropdownOpen ? (
-                  <div className="absolute z-20 mt-2 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
-                    {facultyResults.length > 0 ? (
+                  <div className="absolute bottom-full left-0 z-20 mb-2 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                    {facultySearching ? (
+                      <div className="flex items-center gap-2 px-3 py-2 text-sm text-slate-500">
+                        <Loader2 size={15} className="animate-spin" />
+                        Loading faculty...
+                      </div>
+                    ) : facultyResults.length > 0 ? (
                       <div className="space-y-1">
                         {facultyResults.map((item) => (
                           <button
@@ -806,6 +1277,35 @@ export default function WorkshopCreateClient() {
                     )}
                   </div>
                 ) : null}
+
+                <div className="relative">
+                  <Search
+                    size={16}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <TextInput
+                    value={facultyQuery}
+                    onFocus={() => {
+                      setIsFacultyInputActive(true);
+                      setFacultyDropdownOpen(true);
+                    }}
+                    onChange={(e) => {
+                      setFacultyQuery(e.target.value);
+                      if (!facultyDropdownOpen) {
+                        setFacultyDropdownOpen(true);
+                      }
+                    }}
+                    placeholder="Search by faculty name"
+                    className="pl-9"
+                  />
+
+                  {facultySearching ? (
+                    <Loader2
+                      size={16}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-slate-400"
+                    />
+                  ) : null}
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -891,9 +1391,9 @@ export default function WorkshopCreateClient() {
 
               <div>
                 <Label>Registration Deadline</Label>
-                <TextInput
+                <NativeDatePickerField
                   value={registrationDeadline}
-                  onChange={(e) => setRegistrationDeadline(e.target.value)}
+                  onChange={setRegistrationDeadline}
                   placeholder="YYYY-MM-DD"
                 />
               </div>
@@ -985,19 +1485,81 @@ export default function WorkshopCreateClient() {
             subtitle="Selecting an image switches to the full payload."
             icon={<ImageIcon size={16} className="text-[var(--primary)]" />}
           >
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm font-medium text-slate-600 transition hover:border-[var(--primary)]/40 hover:bg-[var(--primary-50)]/30">
-              <span>{coverFileName ?? "Choose cover image"}</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  setCoverFileName(file?.name ?? null);
-                  setCoverImageUrl(null);
-                }}
-              />
-            </label>
+            <div className="space-y-4">
+              {coverPreviewUrl ? (
+                <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                  <img
+                    src={coverPreviewUrl}
+                    alt="Cover preview"
+                    className="h-44 w-full object-cover"
+                  />
+                </div>
+              ) : null}
+
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm font-medium text-slate-600 transition hover:border-[var(--primary)]/40 hover:bg-[var(--primary-50)]/30">
+                <span>{coverFileName ?? "Choose cover image"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+
+                    if (coverPreviewUrlRef.current) {
+                      URL.revokeObjectURL(coverPreviewUrlRef.current);
+                      coverPreviewUrlRef.current = null;
+                    }
+
+                    if (file) {
+                      const previewUrl = URL.createObjectURL(file);
+                      coverPreviewUrlRef.current = previewUrl;
+                      setCoverPreviewUrl(previewUrl);
+                      setCoverFileName(file.name);
+                      setPendingCoverFile(file);
+                    } else {
+                      setCoverPreviewUrl(null);
+                      setCoverFileName(null);
+                      setPendingCoverFile(null);
+                    }
+
+                    setCoverImageUrl(null);
+                  }}
+                />
+              </label>
+            </div>
+          </WorkshopCard>
+
+          <WorkshopCard
+            title="Status & Tracking"
+            subtitle="Save progress manually or let auto-save handle it."
+            icon={<Save size={16} className="text-[var(--primary)]" />}
+          >
+            <div className="space-y-4">
+              <SecondaryButton
+                type="button"
+                onClick={() => void handleSaveDraft("draft")}
+                disabled={isSaving}
+                className="w-full justify-center"
+              >
+                {saveMode === "draft" ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Saving Draft...
+                  </>
+                ) : (
+                  <>
+                    <Save size={14} />
+                    Save Draft
+                  </>
+                )}
+              </SecondaryButton>
+
+              <div className="border-t border-slate-200 pt-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                {saveMode === "autosave"
+                  ? "Auto-saving..."
+                  : `Last auto-saved ${lastSavedLabel}`}
+              </div>
+            </div>
           </WorkshopCard>
         </div>
       </div>

@@ -56,23 +56,22 @@ function mapStatus(
   return "Processing";
 }
 
-function buildTitle(order: UserOrderHistoryItem) {
-  if (order.leadItem.extraItemsText) {
-    return `${order.leadItem.title} ${order.leadItem.extraItemsText}`;
+function buildOrderTitle(order: UserOrderHistoryItem) {
+  const leadTitle = order.leadItem.title?.trim() || "Unnamed Product";
+  const extraItemsText = order.leadItem.extraItemsText?.trim();
+
+  if (!extraItemsText) {
+    return leadTitle;
   }
 
-  const extraCount = Math.max(order.totalItemsCount - 1, 0);
-
-  if (extraCount > 0) {
-    return `${order.leadItem.title} + ${extraCount} other item${
-      extraCount > 1 ? "s" : ""
-    }`;
-  }
-
-  return order.leadItem.title;
+  return `${leadTitle} ${extraItemsText}`;
 }
 
 function buildItemsBadge(order: UserOrderHistoryItem) {
+  const badgeText = order.leadItem.badgeText?.trim();
+
+  if (badgeText) return badgeText;
+
   const extraCount = Math.max(order.totalItemsCount - 1, 0);
 
   if (extraCount <= 0) return undefined;
@@ -144,9 +143,9 @@ export default function OrderHistoryPage() {
         icon: <Car className="h-4 w-4" />,
         trend: metrics?.activeDeliveries.trend
           ? {
-              label: metrics.activeDeliveries.trend,
-              direction: getTrendDirection(metrics.activeDeliveries.trend),
-            }
+            label: metrics.activeDeliveries.trend,
+            direction: getTrendDirection(metrics.activeDeliveries.trend),
+          }
           : undefined,
       },
       {
@@ -156,9 +155,9 @@ export default function OrderHistoryPage() {
         icon: <ShoppingBag className="h-4 w-4" />,
         trend: metrics?.orderedThisMonth.trend
           ? {
-              label: metrics.orderedThisMonth.trend,
-              direction: getTrendDirection(metrics.orderedThisMonth.trend),
-            }
+            label: metrics.orderedThisMonth.trend,
+            direction: getTrendDirection(metrics.orderedThisMonth.trend),
+          }
           : undefined,
       },
       {
@@ -168,9 +167,9 @@ export default function OrderHistoryPage() {
         icon: <DollarSign className="h-4 w-4" />,
         trend: metrics?.orderValueMonth.trend
           ? {
-              label: metrics.orderValueMonth.trend,
-              direction: getTrendDirection(metrics.orderValueMonth.trend),
-            }
+            label: metrics.orderValueMonth.trend,
+            direction: getTrendDirection(metrics.orderValueMonth.trend),
+          }
           : undefined,
       },
       {
@@ -180,9 +179,9 @@ export default function OrderHistoryPage() {
         icon: <CreditCard className="h-4 w-4" />,
         trend: metrics?.totalOrderedValue.trend
           ? {
-              label: metrics.totalOrderedValue.trend,
-              direction: getTrendDirection(metrics.totalOrderedValue.trend),
-            }
+            label: metrics.totalOrderedValue.trend,
+            direction: getTrendDirection(metrics.totalOrderedValue.trend),
+          }
           : undefined,
       },
     ];
@@ -192,12 +191,11 @@ export default function OrderHistoryPage() {
     () =>
       (historyResponse?.data ?? []).map((order) => ({
         id: order.id,
-        title: buildTitle(order),
+        title: buildOrderTitle(order),
         orderNo: `#${order.orderNumber}`,
         dateOrdered: order.dateOrdered,
-        qtyLabel: `${order.totalItemsCount} item${
-          order.totalItemsCount !== 1 ? "s" : ""
-        }`,
+        qtyLabel: `${order.totalItemsCount} item${order.totalItemsCount !== 1 ? "s" : ""
+          }`,
         status: mapStatus(order.status),
         total: money(order.totalAmount),
         imageUrl: order.leadItem.imageUrl || "/photos/Image.png",

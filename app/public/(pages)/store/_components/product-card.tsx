@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PublicProduct } from "@/types/public/product/public-product.types";
 import Button from "@/components/buttons/button";
 import Link from "next/link";
+import Image from "next/image";
 import { useCart } from "@/app/public/context/cart-context";
 import { useWishlist } from "@/app/public/context/wishlist-context";
 import { ShoppingCart, Heart } from "lucide-react";
@@ -34,23 +35,36 @@ export default function ProductCard({ product }: Props) {
 
   const wishlisted = isInWishlist(product.id);
 
+  const hasBooleanStock = typeof product.inStock === "boolean";
+  const stockQuantity = product.stockQuantity;
   const hasValidStockQuantity =
-    typeof product.stockQuantity === "number" &&
-    !Number.isNaN(product.stockQuantity);
+    typeof stockQuantity === "number" && !Number.isNaN(stockQuantity);
 
-  const isOut = hasValidStockQuantity ? product.stockQuantity <= 0 : false;
+  const isOut = hasBooleanStock
+    ? !product.inStock && !product.backorder
+    : hasValidStockQuantity
+      ? stockQuantity <= 0 && !product.backorder
+      : false;
+
+  const isBackorderAvailable =
+    product.backorder &&
+    ((hasBooleanStock && !product.inStock) ||
+      (hasValidStockQuantity && stockQuantity <= 0));
+
+  const isLowStock =
+    hasValidStockQuantity && stockQuantity > 0 && stockQuantity <= 10;
 
   const stockLabel = (() => {
-    if (hasValidStockQuantity && product.stockQuantity <= 0) {
+    if (isOut) {
       return "Out of stock";
     }
 
-    if (
-      hasValidStockQuantity &&
-      product.stockQuantity > 0 &&
-      product.stockQuantity <= 10
-    ) {
-      return `Only ${product.stockQuantity} left`;
+    if (isBackorderAvailable) {
+      return "Available on backorder";
+    }
+
+    if (isLowStock) {
+      return `Only ${stockQuantity} left`;
     }
 
     return "In stock";
@@ -77,7 +91,7 @@ export default function ProductCard({ product }: Props) {
   const handleAddToCart = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
-    if (isAddingToCart) return;
+    if (isAddingToCart || isOut) return;
 
     try {
       setIsAddingToCart(true);
@@ -96,25 +110,27 @@ export default function ProductCard({ product }: Props) {
   };
 
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-xl border border-light-slate/10 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg md:rounded-2xl">
+    <div className="group flex h-full flex-col overflow-hidden rounded-xl border border-light-slate/10 bg-white shadow-sm transition-shadow hover:shadow-md md:rounded-2xl">
       <Link
         href={`/public/store/product-details/${product.id}`}
         className="relative block w-full overflow-hidden"
       >
-        <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-light-slate/5 to-light-slate/10 md:aspect-[4/3]">
-          <img
+        <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-light-slate/5 to-light-slate/10 md:aspect-video">
+          <Image
             src={
               product.thumbnail ||
               product.images?.[0] ||
               "/photos/store_product.png"
             }
             alt={product.name || "Product image"}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            priority={false}
           />
         </div>
 
-        <div className="absolute left-3 top-3 flex max-w-[70%] flex-wrap gap-2 md:left-4 md:top-4">
+        <div className="absolute left-3 top-3 flex flex-col gap-2 md:left-4 md:top-4">
           {product.tags && product.tags.length > 0 && (
             <>
               {product.tags[0].toLowerCase() === "bestseller" ? (
@@ -130,7 +146,7 @@ export default function ProductCard({ product }: Props) {
         <button
           type="button"
           onClick={handleToggleWishlist}
-          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-sm ring-1 ring-black/5 backdrop-blur-sm transition-all hover:scale-110 active:scale-95 md:right-4 md:top-4"
+          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm ring-1 ring-black/5 transition-all hover:scale-110 active:scale-95 md:right-4 md:top-4"
           aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >
           <Heart
@@ -152,33 +168,33 @@ export default function ProductCard({ product }: Props) {
         ) : null}
       </Link>
 
-      <div className="flex flex-col p-4 md:p-5">
-        <div className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-primary/70">
+      <div className="flex flex-grow flex-col p-4 md:p-6">
+        <div className="mb-2 text-[9px] font-extrabold uppercase tracking-wider text-primary/70 md:text-[10px]">
           {product.tags?.[0] || product.brand || "Equipment"}
         </div>
 
-        <h3 className="mb-2 text-sm font-bold leading-6 text-slate-900 line-clamp-2 md:text-base">
+        <h3 className="mb-2 line-clamp-2 text-base font-bold text-slate-900 md:text-lg">
           {product.name || "Unnamed Product"}
         </h3>
 
         {product.clinicalDescription && product.clinicalDescription.trim() ? (
-          <p className="mb-4 text-xs leading-5 text-light-slate line-clamp-2 md:text-sm">
+          <p className="mb-3 flex-grow line-clamp-2 text-xs leading-relaxed text-light-slate md:text-sm">
             {product.clinicalDescription}
           </p>
         ) : product.sku ? (
-          <p className="mb-4 text-xs leading-5 text-light-slate md:text-sm">
+          <p className="mb-3 flex-grow text-xs text-light-slate md:text-sm">
             SKU: {product.sku}
           </p>
         ) : null}
 
-        <div className="mb-4 border-t border-light-slate/10 pt-3">
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="text-lg font-extrabold leading-none text-slate-900 md:text-xl">
+        <div className="mb-4 border-t border-light-slate/10 pt-2">
+          <div className="flex items-center gap-2">
+            <div className="text-lg font-extrabold text-slate-900 md:text-xl">
               {money(product.offerPrice || product.actualPrice)}
             </div>
 
             {product.offerPrice &&
-            product.actualPrice !== product.offerPrice ? (
+              product.actualPrice !== product.offerPrice ? (
               <div className="text-xs text-light-slate line-through md:text-sm">
                 {money(product.actualPrice)}
               </div>
@@ -186,13 +202,14 @@ export default function ProductCard({ product }: Props) {
           </div>
 
           <p
-            className={`mt-2 text-xs font-medium ${
-              isOut
+            className={`mt-1 text-xs ${isOut
                 ? "text-red-600"
-                : stockLabel.startsWith("Only")
+                : isLowStock
                   ? "text-orange-600"
-                  : "text-green-600"
-            }`}
+                  : isBackorderAvailable
+                    ? "text-sky-600"
+                    : "text-green-600"
+              }`}
           >
             {stockLabel}
           </p>

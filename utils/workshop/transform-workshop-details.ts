@@ -1,5 +1,4 @@
 import { PublicWorkshopDetails } from "@/types/public/workshop/public-workshop.types";
-import { IMAGE } from "@/constant/image-config";
 import { CourseDetails } from "@/app/public/types/course.details.types";
 
 function formatDate(dateStr: string): string {
@@ -42,20 +41,86 @@ function formatTime(timeStr: string): string {
   return `${hour12.toString().padStart(2, "0")}:${minutes} ${ampm}`;
 }
 
+function formatWebinarPlatform(value?: string | null): string {
+  if (!value) return "";
+
+  return value
+    .replace(/[_-]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function getLocationLines(workshop: PublicWorkshopDetails): string[] {
+  if (workshop.deliveryMode === "online") {
+    return [formatWebinarPlatform(workshop.webinarPlatform) || "Online Course"];
+  }
+
+  const facility = workshop.facilities?.[0];
+
+  if (facility) {
+    return [
+      `${facility.physicalAddress || facility.name || workshop.facility}${facility.roomNumber ? ` (${facility.roomNumber})` : ""}`,
+    ];
+  }
+
+  if (workshop.facility) {
+    return [workshop.facility];
+  }
+
+  return ["Location unavailable"];
+}
+
 function getDayPill(dayNumber: number): string {
   const words = ["ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN"];
   return `DAY ${words[dayNumber - 1] || dayNumber}`;
 }
 
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'");
+}
+
+function extractLearningObjectiveLines(html?: string | null): string[] {
+  if (!html) return [];
+
+  const normalized = decodeHtmlEntities(html)
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(li|div|p|ul|ol|h[1-6])>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "")
+    .replace(/<[^>]+>/g, " ");
+
+  return normalized
+    .split(/\n+/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+function buildCmeBadgeLabel(workshop: PublicWorkshopDetails) {
+  const rawCount = workshop.cmeCreditsCount;
+  if (rawCount === null || rawCount === undefined || `${rawCount}`.trim() === "") {
+    return "CME CREDITS";
+  }
+
+  return `${rawCount} CME CREDITS`;
+}
+
 export function transformWorkshopToDetails(
   workshop: PublicWorkshopDetails,
 ): CourseDetails {
-  const deliveryModeLabel =
-    workshop.deliveryMode === "online" ? "ONLINE" : "IN-PERSON";
   const daysLabel =
     workshop.numberOfDays === 1
       ? "1-DAY WORKSHOP"
       : `${workshop.numberOfDays}-DAY WORKSHOP`;
+  const learningObjectiveLines = extractLearningObjectiveLines(
+    workshop.learningObjectives,
+  );
 
   return {
     id: workshop.id,
@@ -65,28 +130,24 @@ export function transformWorkshopToDetails(
       badges: [
         { label: daysLabel, tone: "primary" },
         ...(workshop.offersCmeCredits
-          ? [{ label: "CME CREDITS", tone: "muted" as const }]
+          ? [{ label: buildCmeBadgeLabel(workshop), tone: "muted" as const }]
           : []),
       ],
-      backgroundSrc: workshop.workshopPhoto || IMAGE.course_details_cover,
+      backgroundSrc: workshop.workshopPhoto,
       backgroundAlt: workshop.title,
     },
 
     about: {
       title: "About this Workshop",
       description: workshop.description,
+      learningObjectives: learningObjectiveLines,
     },
 
     info: [
       {
         key: "location" as const,
-        title: "DELIVERY MODE",
-        lines: [
-          deliveryModeLabel,
-          workshop.deliveryMode === "online" && workshop.webinarPlatform
-            ? `Via ${workshop.webinarPlatform.charAt(0).toUpperCase() + workshop.webinarPlatform.slice(1)}`
-            : "",
-        ].filter(Boolean),
+        title: "LOCATION",
+        lines: getLocationLines(workshop),
       },
       {
         key: "dates" as const,
@@ -128,8 +189,12 @@ export function transformWorkshopToDetails(
           ? {
               title: "GROUP & SAVE",
               oldPrice: parseFloat(workshop.standardPrice),
-              newPrice: parseFloat(workshop.groupDiscounts[0].pricePerPerson),
-              discountLabel: `SAVE $${workshop.groupDiscounts[0].savingsPerPerson}`,
+              newPrice: parseFloat(
+                workshop.groupDiscounts[0].pricePerPerson ||
+                  workshop.groupDiscounts[0].ratePerPerson ||
+                  workshop.standardPrice,
+              ),
+              discountLabel: `SAVE $${workshop.groupDiscounts[0].savingsPerPerson || "0.00"}`,
               note: `Special pricing for ${workshop.groupDiscounts[0].minimumAttendees}+ attendees`,
             }
           : {
@@ -142,8 +207,10 @@ export function transformWorkshopToDetails(
       ctaLabel: "Enroll Now",
       warningLabel:
         workshop.availableSeats <= workshop.alertAt
-          ? `Only ${workshop.availableSeats} seats remaining!`
-          : `${workshop.availableSeats} seats available`,
+          ? `Only ${workshop.availableSeats} seats remaining`
+          : `${workshop.availableSeats} seats remaining`,
+      warningTone:
+        workshop.availableSeats <= workshop.alertAt ? "danger" : "default",
       footnote: `LIMITED SLOTS: ONLY ${workshop.totalCapacity} AVAILABLE`,
     },
 
@@ -174,18 +241,14 @@ export function transformWorkshopToDetails(
         name: f.name,
         role: f.title,
         quote: f.bio || f.specialties,
-        avatarSrc: f.profileImageUrl || IMAGE.instructor_1,
+        avatarSrc: f.profileImageUrl || null,
         avatarAlt: f.name,
       })),
     },
 
     trustedBy: {
       label: "LEARNING OBJECTIVES:",
-      brands: workshop.learningObjectives
-        .split(/[,.\n]/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0)
-        .slice(0, 3),
+      brands: [],
     },
   };
 }

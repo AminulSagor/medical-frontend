@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 
 export type CourseDetailsHeroBadge = {
   label: string;
@@ -16,32 +16,27 @@ export default function CourseDetailsHeroSection({
 }: {
   title: string;
   badges: CourseDetailsHeroBadge[];
-  backgroundSrc: string;
+  backgroundSrc?: string | null;
   backgroundAlt?: string;
 }) {
   return (
     <section className="relative overflow-hidden">
-      {/* background */}
       <div className="absolute inset-0">
-        <Image
+        <NetworkImageFallback
           src={backgroundSrc}
           alt={backgroundAlt}
-          fill
-          priority
-          className="object-cover"
+          className="h-full w-full object-cover"
+          fallbackVariant="cover"
+          fallbackClassName="h-full w-full"
+          iconClassName="h-12 w-12"
         />
-        {/* dark overlay to match screenshot */}
         <div className="absolute inset-0 bg-black/45" />
-        {/* subtle bottom fade */}
         <div className="absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-black/35 to-transparent" />
       </div>
 
-      {/* content */}
       <div className="relative">
         <div className="mx-auto max-w-7xl px-6">
-          {/* give space for fixed navbar overlay */}
-          <div className="pt-32 pb-14">
-            {/* pills */}
+          <div className="pb-14 pt-32">
             <div className="flex flex-wrap items-center gap-3">
               {badges.map((b) => (
                 <span
@@ -59,7 +54,6 @@ export default function CourseDetailsHeroSection({
               ))}
             </div>
 
-            {/* title */}
             <h1 className="mt-5 max-w-2xl text-4xl font-bold leading-[1.05] text-white md:text-6xl">
               {title}
             </h1>

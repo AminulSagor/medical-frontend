@@ -22,16 +22,36 @@ function inCreditsRange(cme: number, range: CreditsRange) {
   return cme >= 8;
 }
 
+function formatWebinarPlatform(value?: string | null) {
+  if (!value) return "";
+
+  return value
+    .replace(/[_-]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
 function resolveLocation(workshop: PublicWorkshop) {
   if (workshop.deliveryMode === "online") {
-    return workshop.webinarPlatform || "Online Course";
+    return formatWebinarPlatform(workshop.webinarPlatform) || "Online Course";
   }
 
   if (workshop.facilities?.length) {
     return workshop.facilities[0].name;
   }
 
-  return "Location unavailable";
+  return "";
+}
+
+function isRegistrationDeadlineExpired(deadline?: string | null) {
+  if (!deadline) return false;
+
+  const parsed = new Date(deadline);
+  if (Number.isNaN(parsed.getTime())) return false;
+
+  return parsed.getTime() <= Date.now();
 }
 
 
@@ -50,22 +70,30 @@ function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
 
   const availableSeats = workshop.availableSeats;
   const totalCapacity = workshop.totalCapacity;
+  const isRegistrationClosed = isRegistrationDeadlineExpired(
+    workshop.registrationDeadline,
+  );
+  const isSoldOut = workshop.isFullyBooked || availableSeats <= 0;
   const percentFilled =
     totalCapacity > 0
       ? ((totalCapacity - availableSeats) / totalCapacity) * 100
       : 0;
-  const isAvailable = !workshop.isFullyBooked && availableSeats > 0;
+  const isAvailable = !isSoldOut;
 
-  const action: CourseCardModel["action"] = !isAvailable
-    ? { kind: "waitlist", label: "Join Waitlist" }
-    : { kind: "reserve", label: "Reserve Seat" };
+  const action: CourseCardModel["action"] = isRegistrationClosed
+    ? { kind: "disabled", label: "Expired" }
+    : isSoldOut
+      ? { kind: "disabled", label: "Sold Out" }
+      : { kind: "reserve", label: "Reserve Seat" };
 
   const metaTop: CourseCardModel["metaTop"] = [];
   if (workshop.totalHours) {
     metaTop.push({ icon: "clock", label: workshop.totalHours });
   }
-  metaTop.push({ icon: "pin", label: resolveLocation(workshop) });
-  if (workshop.totalModules > 0) {
+  const resolvedLocation = resolveLocation(workshop);
+  if (resolvedLocation) {
+    metaTop.push({ icon: "pin", label: resolvedLocation });
+  } else if (workshop.totalModules > 0) {
     metaTop.push({
       icon: "modules",
       label: `${workshop.totalModules} Modules`,
@@ -73,22 +101,25 @@ function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
   }
 
   const metaBottom: CourseCardModel["metaBottom"] = [];
+  const cmeCreditsCount = Number(workshop.cmeCreditsCount ?? 0);
   if (workshop.cmeCredits) {
     metaBottom.push({
       icon: "cme",
-      label: `${workshop.cmeCreditsCount ?? 0} CME`,
+      label: `${cmeCreditsCount} CME`,
     });
   }
 
+  const isLowAvailability = isAvailable && availableSeats <= 5;
+
   const availability: CourseCardModel["availability"] = {
     label: "AVAILABILITY",
-    note: !isAvailable
-      ? "Sold Out - Join Waitlist"
-      : availableSeats <= 5
-        ? `Only ${availableSeats} seats left!`
+    note: isSoldOut
+      ? "Sold Out"
+      : isLowAvailability
+        ? `Only ${availableSeats} seats available`
         : `${availableSeats} seats available`,
     percent: percentFilled,
-    tone: !isAvailable || availableSeats <= 3 ? "danger" : "primary",
+    tone: isSoldOut || isLowAvailability ? "danger" : "primary",
   };
 
   const currentPrice = Number(workshop.offerPrice ?? workshop.price) || 0;
@@ -108,8 +139,10 @@ function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
     price: currentPrice,
     oldPrice,
     action,
-    cmeCredits: workshop.cmeCreditsCount ?? 0,
+    cmeCredits: cmeCreditsCount,
     isAvailable,
+    isRegistrationClosed,
+    isSoldOut,
   };
 }
 
@@ -338,7 +371,7 @@ export default function CoursesBrowseSection() {
                 </div>
               ) : (
                 <>
-                  <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3 items-start">
+                  <div className="grid items-stretch gap-8 md:grid-cols-2 xl:grid-cols-3">
                     {filtered.map((c) => (
                       <CourseBrowseCard key={c.id} course={c} />
                     ))}

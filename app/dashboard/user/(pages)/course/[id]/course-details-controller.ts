@@ -46,7 +46,7 @@ export type CourseDetailsControllerState =
       completed: CompletedDetailsViewProps;
     };
 
-const NOT_IN_API = "not in api";
+const NOT_IN_API = "";
 
 function text(value?: string | null, fallback = NOT_IN_API) {
   return value && value.trim() ? value : fallback;
@@ -105,6 +105,62 @@ function getRefundDaysBeforeStart(refund: CourseRefundInfoResponse) {
   if (typeof refund.daysBeforeStart === "number") return refund.daysBeforeStart;
   if (typeof refund.hoursBeforeStart === "number") return Math.max(0, Math.floor(refund.hoursBeforeStart / 24));
   return 0;
+}
+
+function formatWebinarPlatform(value?: string | null) {
+  if (!value) return NOT_IN_API;
+
+  return value
+    .replace(/[_-]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function hasMeaningfulHtmlContent(value?: string | null) {
+  if (!value) return false;
+
+  const normalized = value
+    .replace(/<br\s*\/?>/gi, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .trim();
+
+  return normalized.length > 0;
+}
+
+function mapPrepMaterials(data: CourseDetailResponse): OnlineDetailsViewProps["materials"] {
+  const rawItems = data.sidebar.onlineDetails?.prepMaterials;
+  if (!Array.isArray(rawItems) || rawItems.length === 0) return null;
+
+  const items = rawItems
+    .map((item) => {
+      if (typeof item === "string") {
+        const title = text(item);
+        return title ? { title } : null;
+      }
+
+      const title = text(item?.title ?? item?.name);
+      const sub = text(item?.description);
+      const href = text(item?.url);
+
+      if (!title && !sub) return null;
+
+      return {
+        title: title || sub,
+        sub: title && sub ? sub : undefined,
+        href: href || undefined,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  if (!items.length) return null;
+
+  return {
+    heading: "PREPARATION MATERIALS",
+    items,
+  };
 }
 
 function mapHero(data: CourseDetailResponse): CourseDetailsHeroProps {
@@ -252,8 +308,14 @@ function mapSchedule(data: CourseDetailResponse): CourseScheduleItem[] {
 
 function mapAbout(data: CourseDetailResponse): CourseAboutCardProps {
   return {
-    title: "About this Course",
-    paragraphs: [text(data.workshop.shortBlurb), text(data.workshop.learningObjectives)],
+    title: "ABOUT THIS COURSE",
+    paragraphs: [text(data.workshop.shortBlurb)].filter(Boolean),
+    learningObjectivesTitle: hasMeaningfulHtmlContent(data.workshop.learningObjectives)
+      ? "LEARNING OBJECTIVES"
+      : undefined,
+    learningObjectivesHtml: hasMeaningfulHtmlContent(data.workshop.learningObjectives)
+      ? data.workshop.learningObjectives ?? undefined
+      : undefined,
   };
 }
 
@@ -375,7 +437,7 @@ function mapOnline(
       statusPillText: text(data.banner.badgePrimary),
       description: text(data.banner.description),
       instructorText: firstFacultyName(data),
-      platformText: text(data.workshop.webinarPlatform),
+      platformText: formatWebinarPlatform(data.workshop.webinarPlatform),
       sessionCard: {
         dateRange: text(data.banner.dateBox.dateRange),
         label: `${data.progress.totalDays || 1}-DAY WORKSHOP`,
@@ -386,14 +448,19 @@ function mapOnline(
     about: {
       heading: "ABOUT THIS COURSE",
       paragraph: text(data.workshop.shortBlurb),
-      highlights: [{ iconKey: "check", text: text(data.workshop.learningObjectives) }],
+      learningObjectivesTitle: hasMeaningfulHtmlContent(data.workshop.learningObjectives)
+        ? "LEARNING OBJECTIVES"
+        : undefined,
+      learningObjectivesHtml: hasMeaningfulHtmlContent(data.workshop.learningObjectives)
+        ? data.workshop.learningObjectives ?? undefined
+        : undefined,
     },
     requirements: {
       heading: "TECHNICAL REQUIREMENTS",
       items: [
-        { iconKey: "wifi", title: "Internet", desc: "not in api" },
-        { iconKey: "camera", title: "Camera", desc: "not in api" },
-        { iconKey: "mic", title: "Microphone", desc: "not in api" },
+        { iconKey: "wifi", title: "Internet", desc: "" },
+        { iconKey: "camera", title: "Camera", desc: "" },
+        { iconKey: "mic", title: "Microphone", desc: "" },
       ],
     },
     booking: {
@@ -457,13 +524,10 @@ function mapOnline(
       },
       registration: {
         heading: "REGISTRATION REFERENCE",
-        value: text(data.courseId),
+        value: text(data.sidebar.onlineDetails?.registrationReference, text(data.courseId)),
       },
     },
-    materials: {
-      heading: "PREPARATION MATERIALS",
-      items: [{ title: "not in api" }],
-    },
+    materials: mapPrepMaterials(data),
   };
 }
 
@@ -493,7 +557,7 @@ export async function getCourseDetailsController(
       },
       uiMessages: {
         title: "Request Refund",
-        policyWarning: "not in api",
+        policyWarning: "",
       },
     })),
   ]);

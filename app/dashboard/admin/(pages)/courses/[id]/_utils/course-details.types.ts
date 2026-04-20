@@ -19,10 +19,12 @@ export interface CourseDetailsModel {
     capacityUsed: number;
     capacityTotal: number;
     refundRequests: number;
+    revenueGenerated: number;
     deliveryMode: CourseDetailsDeliveryMode;
     shortBlurb: string;
     learningObjectives: string;
     offersCmeCredits: boolean;
+    cmeCreditsCount: string;
     standardBaseRate: string;
     groupDiscounts: GroupDiscount[];
     webinarPlatform: string;
@@ -32,4 +34,5 @@ export interface CourseDetailsModel {
     days: WorkshopDay[];
     faculty: WorkshopFaculty[];
     facilityLabel: string;
+    facilitySubLabel: string;
 }

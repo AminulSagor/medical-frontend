@@ -19,6 +19,7 @@ type BuildWorkshopPayloadParams = {
     coverImageUrl: string | null;
     learningObjectives: string;
     cme: boolean;
+    cmeCreditsCount: string;
     facility: FacilityLocation | null;
     webinarPlatform: WebinarPlatform | null;
     meetingLink: string;
@@ -49,6 +50,17 @@ function normalizeDate(date: string): string {
     }
 
     return date;
+}
+
+function resolveRegistrationDeadline(days: DayAgenda[], registrationDeadline: string): string {
+    const normalizedRegistrationDeadline = normalizeDate(registrationDeadline);
+    if (normalizedRegistrationDeadline) return normalizedRegistrationDeadline;
+
+    const firstDayDate = days
+        .flatMap((day) => day.segments.map((segment) => normalizeDate(segment.date || "")))
+        .find(Boolean);
+
+    return firstDayDate || "";
 }
 
 function hasMeaningfulSchedule(days: DayAgenda[]): boolean {
@@ -84,6 +96,7 @@ export function buildWorkshopPayload(
         coverImageUrl,
         learningObjectives,
         cme,
+        cmeCreditsCount,
         facility,
         webinarPlatform,
         meetingLink,
@@ -101,16 +114,18 @@ export function buildWorkshopPayload(
     } = params;
 
     const isOnline = mode === "online";
+    const resolvedRegistrationDeadline = resolveRegistrationDeadline(days, registrationDeadline);
 
     if (!shouldUseFullPayload(params)) {
         const shortPayload: ShortCreateWorkshopRequest = {
             deliveryMode: mode,
             title,
             offersCmeCredits: cme,
+            cmeCreditsCount: cme ? (cmeCreditsCount || undefined) : undefined,
             facilityId: facility ?? "",
             capacity,
             alertAt: alert,
-            registrationDeadline: normalizeDate(registrationDeadline),
+            registrationDeadline: resolvedRegistrationDeadline,
         };
 
         return shortPayload;
@@ -124,6 +139,8 @@ export function buildWorkshopPayload(
         coverImageUrl: coverImageUrl || undefined,
         learningObjectives: learningObjectives || undefined,
         offersCmeCredits: cme,
+        cmeCreditsCount: cme ? (cmeCreditsCount || undefined) : undefined,
+        registrationDeadline: resolvedRegistrationDeadline,
         facilityIds: facility ? [facility] : [],
         webinarPlatform: isOnline ? (webinarPlatform ?? undefined) : null,
         meetingLink: isOnline ? meetingLink || undefined : null,
