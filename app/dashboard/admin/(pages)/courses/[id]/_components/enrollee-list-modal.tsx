@@ -8,6 +8,7 @@ import {
     Loader2,
     Mail,
     Phone,
+    RefreshCcw,
     Search,
     X,
 } from "lucide-react";
@@ -15,15 +16,23 @@ import {
 import { getWorkshopEnrollees } from "@/service/admin/workshop.service";
 import type { WorkshopEnrolleesResponse } from "@/types/admin/workshop.types";
 
+function normalizeStatus(status: string) {
+    return status.toLowerCase().replace(/[_-]+/g, " ").trim();
+}
+
+function toTitleStatus(status: string) {
+    return normalizeStatus(status).replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 function StatusBadge({ status }: { status: string }) {
-    const normalized = status.toLowerCase();
+    const normalized = normalizeStatus(status);
 
     let className =
         "inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold";
 
     if (normalized.includes("book")) {
         className += " bg-emerald-100 text-emerald-700";
-    } else if (normalized.includes("refund requested")) {
+    } else if (normalized.includes("request")) {
         className += " bg-amber-100 text-amber-700";
     } else if (normalized.includes("partial")) {
         className += " bg-orange-100 text-orange-700";
@@ -33,7 +42,7 @@ function StatusBadge({ status }: { status: string }) {
         className += " bg-slate-100 text-slate-600";
     }
 
-    return <span className={className}>{status}</span>;
+    return <span className={className}>{toTitleStatus(status)}</span>;
 }
 
 function MetricCard({
@@ -79,7 +88,6 @@ export default function EnrolleeListModal({
     const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
     const lastLoadedWorkshopIdRef = useRef<string | null>(null);
 
-
     useEffect(() => {
         const timer = window.setTimeout(() => {
             setDebouncedSearch(search.trim());
@@ -121,7 +129,11 @@ export default function EnrolleeListModal({
             enrollmentStatus:
                 statusFilter === "all"
                     ? undefined
-                    : (statusFilter as "BOOKED" | "REFUND_REQUESTED" | "PARTIAL_REFUNDED" | "REFUNDED"),
+                    : (statusFilter as
+                          | "BOOKED"
+                          | "REFUND_REQUESTED"
+                          | "PARTIAL_REFUNDED"
+                          | "REFUNDED"),
         })
             .then((res) => {
                 lastLoadedWorkshopIdRef.current = workshopId;
@@ -167,7 +179,7 @@ export default function EnrolleeListModal({
                 [
                     `"${item.studentInfo.fullName}"`,
                     `"${item.studentInfo.email}"`,
-                    `"${item.studentInfo.phoneNumber}"`,
+                    `"${item.studentInfo.phoneNumber || "—"}"`,
                     `"${item.bookingType}"`,
                     item.groupSize,
                     `"${item.institutionOrHospital || "—"}"`,
@@ -189,7 +201,10 @@ export default function EnrolleeListModal({
 
     return (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
-            <div className="flex w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" style={{ maxHeight: "90vh" }}>
+            <div
+                className="flex w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+                style={{ maxHeight: "90vh" }}
+            >
                 <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
                     <div>
                         <h2 className="text-2xl font-bold text-slate-900">
@@ -295,12 +310,12 @@ export default function EnrolleeListModal({
                                                     const isExpanded = Boolean(expandedRows[item.reservationId]);
                                                     const canExpand =
                                                         item.members.length > 0 || item.groupSize > 1;
+                                                    const canProcessRefund =
+                                                        item.requestedMembers.length > 0;
 
                                                     return (
                                                         <Fragment key={item.reservationId}>
-                                                            <tr
-                                                                className="border-t border-slate-100 text-sm"
-                                                            >
+                                                            <tr className="border-t border-slate-100 text-sm">
                                                                 <td className="px-4 py-4">
                                                                     <div className="flex items-start gap-3">
                                                                         {canExpand ? (
@@ -336,7 +351,7 @@ export default function EnrolleeListModal({
                                                                                 {item.studentInfo.email}
                                                                             </p>
                                                                             <p className="text-xs text-slate-400">
-                                                                                {item.studentInfo.phoneNumber}
+                                                                                {item.studentInfo.phoneNumber || "—"}
                                                                             </p>
                                                                         </div>
                                                                     </div>
@@ -345,7 +360,7 @@ export default function EnrolleeListModal({
                                                                 <td className="px-4 py-4">
                                                                     <div className="space-y-1">
                                                                         <span className="inline-flex rounded-full bg-sky-100 px-2.5 py-1 text-[10px] font-semibold text-sky-700">
-                                                                            {item.bookingType}
+                                                                            {toTitleStatus(item.bookingType)}
                                                                         </span>
                                                                         <p className="text-xs text-slate-400">
                                                                             {item.groupSize} Person
@@ -372,29 +387,37 @@ export default function EnrolleeListModal({
 
                                                                 <td className="px-4 py-4">
                                                                     <div className="flex items-center justify-end gap-2">
-                                                                        <a
-                                                                            href={`tel:${item.studentInfo.phoneNumber}`}
-                                                                            className="rounded-md border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
-                                                                        >
-                                                                            <Phone size={14} />
-                                                                        </a>
+                                                                        {canProcessRefund ? (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() =>
+                                                                                    onProcessRefund(item.reservationId)
+                                                                                }
+                                                                                className="inline-flex h-11 w-11 items-center justify-center rounded-[18px] bg-[#f7edd2] text-[#d97706] transition hover:bg-[#f3e5bc] hover:text-[#c76a00]"
+                                                                                aria-label="Process refund request"
+                                                                                title="Process refund request"
+                                                                            >
+                                                                                <RefreshCcw size={20} strokeWidth={2.2} />
+                                                                            </button>
+                                                                        ) : null}
+                                                                        {item.studentInfo.phoneNumber ? (
+                                                                            <a
+                                                                                href={`tel:${item.studentInfo.phoneNumber}`}
+                                                                                className="rounded-md border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+                                                                            >
+                                                                                <Phone size={14} />
+                                                                            </a>
+                                                                        ) : null}
 
-                                                                        <a
-                                                                            href={`mailto:${item.studentInfo.email}`}
-                                                                            className="rounded-md border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
-                                                                        >
-                                                                            <Mail size={14} />
-                                                                        </a>
+                                                                        {item.studentInfo.email ? (
+                                                                            <a
+                                                                                href={`mailto:${item.studentInfo.email}`}
+                                                                                className="rounded-md border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+                                                                            >
+                                                                                <Mail size={14} />
+                                                                            </a>
+                                                                        ) : null}
 
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() =>
-                                                                                onProcessRefund(item.reservationId)
-                                                                            }
-                                                                            className="rounded-md bg-[var(--primary)] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[var(--primary-hover)]"
-                                                                        >
-                                                                            Refund
-                                                                        </button>
                                                                     </div>
                                                                 </td>
                                                             </tr>
@@ -420,8 +443,13 @@ export default function EnrolleeListModal({
                                                                                     <p className="text-xs text-slate-400">
                                                                                         {member.institutionOrHospital || "—"}
                                                                                     </p>
-                                                                                    <div className="mt-3">
+                                                                                    <div className="mt-3 flex items-center justify-between gap-3">
                                                                                         <StatusBadge status={member.status} />
+                                                                                        {member.refundedAmount ? (
+                                                                                            <span className="text-xs font-semibold text-slate-500">
+                                                                                                ${member.refundedAmount}
+                                                                                            </span>
+                                                                                        ) : null}
                                                                                     </div>
                                                                                 </div>
                                                                             ))}

@@ -5,10 +5,16 @@ const PUBLIC_ROUTES = ["/public"];
 const AUTH_ROUTES = ["/public/auth/sign-in", "/public/auth/sign-up"];
 const ADMIN_ONLY_ROUTES = ["/dashboard/admin"];
 const USER_ONLY_ROUTES = ["/dashboard/user"];
+const PUBLIC_USER_ROUTES = ["/dashboard/user/ticket"];
 
 function isPublicRoute(pathname: string) {
-  return PUBLIC_ROUTES.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  return (
+    PUBLIC_ROUTES.some(
+      (route) => pathname === route || pathname.startsWith(`${route}/`),
+    ) ||
+    PUBLIC_USER_ROUTES.some(
+      (route) => pathname === route || pathname.startsWith(`${route}/`),
+    )
   );
 }
 

@@ -116,6 +116,8 @@ export interface BrowseCourseItem {
   price?: string | null;
   cmeCredits: number;
   cmeCreditsLabel: string;
+  registrationDeadline?: string | null;
+  isRegistrationClosed?: boolean;
   actions: CourseActions;
 }
 

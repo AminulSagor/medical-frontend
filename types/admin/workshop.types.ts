@@ -258,26 +258,35 @@ export interface WorkshopEnrolleeMember {
   email: string;
   institutionOrHospital: string | null;
   status: string;
+  refundedAmount: string | null;
 }
 
 export interface WorkshopEnrolleeStudentInfo {
   fullName: string;
   email: string;
-  phoneNumber: string;
+  phoneNumber: string | null;
 }
 
 export interface WorkshopEnrolleeItem {
   reservationId: string;
+  refundRequestId: string | null;
   bookingType: string;
   groupSize: number;
+  activeMemberCount: number;
+  requestedMemberCount: number;
+  refundedMemberCount: number;
+  refundRequestStatus: boolean;
+  showRefundActionButton: boolean;
   studentInfo: WorkshopEnrolleeStudentInfo;
   institutionOrHospital: string | null;
   registeredAt: string;
   paymentAmount: string;
   status: string;
-  paymentGateway: string;
-  transactionId: string;
+  paymentGateway: string | null;
+  transactionId: string | null;
   members: WorkshopEnrolleeMember[];
+  requestedMembers: WorkshopEnrolleeMember[];
+  refundedMembers: WorkshopEnrolleeMember[];
 }
 
 export interface WorkshopEnrolleesOverview {
@@ -290,6 +299,7 @@ export interface WorkshopEnrolleesOverview {
 export interface WorkshopEnrolleesWorkshop {
   id: string;
   title: string;
+  registrationDeadline?: string;
 }
 
 export interface WorkshopEnrolleesData {
@@ -320,8 +330,9 @@ export interface RefundPreviewMember {
   fullName: string;
   email: string;
   refundAmount: string;
-  refundStatus: string;
-  isRefundable: boolean;
+  status: string;
+  isSelectable: boolean;
+  isRequested: boolean;
 }
 
 export interface RefundPreviewSummary {
@@ -332,11 +343,16 @@ export interface RefundPreviewSummary {
 export interface WorkshopRefundPreviewData {
   reservationId: string;
   workshopId: string;
+  requestId?: string | null;
   bookingOwner: RefundPreviewBookingOwner;
+  bookingType?: string;
   groupSize: number;
+  activeGroupSize?: number;
   totalPaid: string;
-  paymentGateway: string;
-  transactionId: string;
+  paymentGateway: string | null;
+  transactionId: string | null;
+  refundRequestStatus?: boolean;
+  requestedMembers: RefundPreviewMember[];
   members: RefundPreviewMember[];
   summary: RefundPreviewSummary;
 }
@@ -358,10 +374,24 @@ export interface ConfirmWorkshopRefundRequest {
 export interface ConfirmWorkshopRefundResponse {
   message?: string;
   data?: {
+    refundId?: string;
+    requestId?: string;
+    workshopId?: string;
     reservationId?: string;
+    bookingType?: string;
+    bookingOwnerName?: string;
+    originalGroupSize?: number;
+    processedMemberCount?: number;
+    remainingEnrolledCount?: number;
     refundedAmount?: string;
-    paymentGateway?: string;
-    transactionId?: string;
+    refundType?: string;
+    enrollmentStatus?: string;
+    refundRequestStatus?: boolean;
+    reservationLifecycleStatus?: string;
+    paymentGateway?: string | null;
+    transactionId?: string | null;
+    emailNotificationSent?: boolean;
+    processedAt?: string;
   };
 }
 

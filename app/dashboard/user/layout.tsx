@@ -27,6 +27,8 @@ export default function UserLayout({
       "/dashboard/user/settings",
   };
 
+  const isPublicTicketRoute = pathname.startsWith("/dashboard/user/ticket/");
+
   const useSidebar =
     pathname.startsWith(hrefs.dashboard) ||
     pathname.startsWith(hrefs.courses) ||
@@ -42,6 +44,10 @@ export default function UserLayout({
       : pathname.startsWith(hrefs.settings)
         ? "settings"
         : "dashboard";
+
+  if (isPublicTicketRoute) {
+    return <main className="min-h-screen bg-slate-50">{children}</main>;
+  }
 
   if (!useSidebar) {
     return (

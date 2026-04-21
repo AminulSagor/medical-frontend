@@ -187,6 +187,7 @@ function normalizeWorkshopEnrolleesResponse(
       workshop: {
         id: "",
         title: "Course Enrollee List",
+        registrationDeadline: undefined,
       },
       overview,
       items,
@@ -216,13 +217,26 @@ function normalizeRefundPreviewResponse(
     data: {
       reservationId: documented.reservation?.id ?? "",
       workshopId: "",
+      requestId: null,
       bookingOwner: {
         fullName: attendees[0]?.fullName ?? "—",
       },
+      bookingType: "single",
       groupSize: documented.reservation?.numberOfSeats ?? attendees.length,
+      activeGroupSize: documented.reservation?.numberOfSeats ?? attendees.length,
       totalPaid: documented.reservation?.totalPrice ?? "0.00",
       paymentGateway: "",
       transactionId: "",
+      refundRequestStatus: selectedCount > 0,
+      requestedMembers: (documented.refundableAttendees ?? []).map((item) => ({
+        attendeeId: item.attendeeId,
+        fullName: item.fullName,
+        email: attendees.find((attendee) => attendee.id === item.attendeeId)?.email ?? "",
+        refundAmount: item.refundAmount,
+        status: "REQUESTED",
+        isSelectable: true,
+        isRequested: true,
+      })),
       members: attendees.map((attendee) => {
         const refundItem = documented.refundableAttendees?.find((item) => item.attendeeId === attendee.id);
         return {
@@ -230,8 +244,9 @@ function normalizeRefundPreviewResponse(
           fullName: attendee.fullName,
           email: attendee.email,
           refundAmount: refundItem?.refundAmount ?? "0.00",
-          refundStatus: refundItem ? "REFUNDABLE" : "NOT_REFUNDABLE",
-          isRefundable: !!refundItem,
+          status: refundItem ? "REQUESTED" : "CONFIRMED",
+          isSelectable: !!refundItem,
+          isRequested: !!refundItem,
         };
       }),
       summary: {
@@ -253,7 +268,10 @@ function normalizeConfirmRefundResponse(
   return {
     message: documented.status,
     data: {
+      refundId: documented.refundId,
+      requestId: documented.requestId,
       reservationId: documented.requestId,
+      processedMemberCount: documented.attendees?.length,
       refundedAmount: documented.refundAmount,
       paymentGateway: undefined,
       transactionId: documented.refundId,

@@ -9,7 +9,6 @@ import {
   SlidersHorizontal,
   RotateCcw,
   Eye,
-  Copy,
   ShoppingCart,
   ChevronLeft,
   ChevronRight,
@@ -211,18 +210,21 @@ export default function PastOrdersTable(props: {
               <tr key={o.id} className="bg-white">
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="relative h-11 w-11 overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200">
-                      <Image
-                        src={o.imageUrl}
-                        alt={o.title}
-                        fill
-                        className="object-cover"
-                      />
+                    <div className="relative flex-shrink-0">
                       {o.itemsBadge ? (
-                        <span className="absolute left-1 top-1 rounded-full bg-sky-500 px-2 py-0.5 text-[9px] font-semibold text-white">
+                        <span className="absolute -top-3 left-1/2 z-10 inline-flex h-7 -translate-x-1/2 items-center rounded-lg bg-sky-500 px-3 text-[11px] font-semibold leading-none text-white shadow-[0_6px_14px_rgba(14,165,233,0.28)]">
                           {o.itemsBadge}
                         </span>
                       ) : null}
+
+                      <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200">
+                        <Image
+                          src={o.imageUrl}
+                          alt={o.title}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
                     </div>
 
                     <div className="min-w-0">
@@ -262,16 +264,6 @@ export default function PastOrdersTable(props: {
                       }}
                     >
                       <Eye className="h-4 w-4" />
-                    </ActionIconButton>
-
-                    <ActionIconButton
-                      label="Copy"
-                      onClick={async () => {
-                        if (!o.copyValue) return;
-                        await navigator.clipboard.writeText(o.copyValue);
-                      }}
-                    >
-                      <Copy className="h-4 w-4" />
                     </ActionIconButton>
 
                     <ActionIconButton

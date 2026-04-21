@@ -17,12 +17,6 @@ const CONTACT_INFO = {
   supportHoursText: "Mon-Fri, 8am - 6pm EST",
 };
 
-function parseRefundAmount(value: string) {
-  const normalized = value.replace(/[^\d.-]/g, "");
-  const amount = Number.parseFloat(normalized);
-  return Number.isFinite(amount) ? amount : 0;
-}
-
 export default function CourseBookingDetailsCard({
   status,
   payment,
@@ -37,9 +31,11 @@ export default function CourseBookingDetailsCard({
   const [openSubmitted, setOpenSubmitted] = useState(false);
 
   const handleConfirmRefund = async ({
+    selectedAttendeeIds,
     reasonText,
     acknowledged,
   }: {
+    selectedAttendeeIds: string[];
     reasonText: string;
     acknowledged: boolean;
   }) => {
@@ -48,7 +44,7 @@ export default function CourseBookingDetailsCard({
       setSubmitError(null);
 
       const response = await submitCourseRefundRequest(courseId, {
-        refundAmount: parseRefundAmount(refund.estimatedRefund),
+        attendeeIds: selectedAttendeeIds,
         reason: reasonText,
         confirmedTerms: acknowledged,
       });
@@ -124,12 +120,15 @@ export default function CourseBookingDetailsCard({
           onClose={() => setOpenRefund(false)}
           courseTitle={refund.courseTitle}
           metaText={refund.courseDateText}
-          refundWindowText={`${refund.daysBeforeStart} day(s) before start`}
+          refundWindowText={refund.refundWindowText}
           policyTitle="Refund Policy:"
           policyText={refund.policyText}
           totalPaidValue={refund.amountPaid}
           refundAmountValue={refund.estimatedRefund}
-          feeText=""
+          processingFeeAmount={refund.processingFeeAmount}
+          currency={refund.currency}
+          members={refund.members}
+          selection={refund.selection}
           disclaimerText="I understand that this action cannot be undone and my access to all course materials will be permanently removed."
           footnoteText={refund.description}
           submitting={submitting}
@@ -165,8 +164,8 @@ export default function CourseBookingDetailsCard({
         courseTitle={refund.courseTitle}
         subtitle={submittedData?.message || "Your refund request has been submitted."}
         requestIdValue={submittedData?.requestId || "—"}
-        expectedRefundValue={submittedData?.refundAmountRequested || refund.estimatedRefund}
-        confirmationText={undefined}
+        expectedRefundValue={submittedData?.expectedRefund || refund.estimatedRefund}
+        confirmationText={submittedData ? `${submittedData.requestedMemberCount} member(s) selected for refund.` : undefined}
         footnoteText={submittedData?.message || refund.description}
         ctaLabel="Back to Course"
         onCta={() => setOpenSubmitted(false)}

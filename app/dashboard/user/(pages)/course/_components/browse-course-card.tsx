@@ -29,9 +29,11 @@ export default function BrowseCourseCard({
   price,
   cmeCreditsLabel,
   actions,
+  isRegistrationClosed,
 }: BrowseCourseItem) {
   const router = useRouter();
   const isOnline = courseType === "online";
+  const primaryLabel = actions.primary?.label ?? "View Details";
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
@@ -70,10 +72,19 @@ export default function BrowseCourseCard({
 
         <button
           type="button"
-          onClick={() => openRoute(actions.primary?.route ?? "", router)}
-          className="mt-4 h-10 w-full rounded-lg bg-sky-500 text-[13px] font-semibold text-white hover:bg-sky-600"
+          disabled={isRegistrationClosed}
+          onClick={() => {
+            if (isRegistrationClosed) return;
+            openRoute(actions.primary?.route ?? "", router);
+          }}
+          className={[
+            "mt-4 h-10 w-full rounded-lg text-[13px] font-semibold transition-colors",
+            isRegistrationClosed
+              ? "cursor-not-allowed bg-slate-300 text-slate-600"
+              : "bg-sky-500 text-white hover:bg-sky-600",
+          ].join(" ")}
         >
-          View Details
+          {isRegistrationClosed ? "Registration Closed" : primaryLabel}
         </button>
       </div>
     </div>

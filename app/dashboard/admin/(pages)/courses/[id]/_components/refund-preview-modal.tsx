@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, CheckCircle2, Loader2, X } from "lucide-react";
+import {
+    AlertCircle,
+    Check,
+    CheckCircle2,
+    Loader2,
+    RefreshCcw,
+    X,
+} from "lucide-react";
 
 import {
     confirmWorkshopRefund,
@@ -18,6 +25,68 @@ type RefundSuccessData = {
     paymentGateway: string;
     transactionId: string;
 };
+
+function formatCurrency(amount?: string | number | null) {
+    return `$${Number(amount ?? 0).toFixed(2)}`;
+}
+
+function normalizeStatus(status?: string) {
+    return (status ?? "").toLowerCase().replace(/[_-]+/g, " ").trim();
+}
+
+function MemberRow({
+    member,
+    selected,
+    disabled,
+    onClick,
+}: {
+    member: RefundPreviewMember;
+    selected: boolean;
+    disabled?: boolean;
+    onClick?: () => void;
+}) {
+    const normalizedStatus = normalizeStatus(member.status);
+    const statusLabel = normalizedStatus
+        ? normalizedStatus.replace(/\b\w/g, (char) => char.toUpperCase())
+        : null;
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            className={`flex w-full items-start justify-between gap-3 border-t border-slate-100 px-4 py-4 text-left first:border-t-0 ${
+                disabled ? "cursor-not-allowed bg-slate-50/80" : "bg-white"
+            }`}
+        >
+            <div className="flex items-start gap-4">
+                <span
+                    className={`mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-xl border ${
+                        selected
+                            ? "border-[#23c8c8] bg-[#23c8c8] text-white"
+                            : "border-slate-200 bg-white text-transparent"
+                    }`}
+                >
+                    <Check size={18} strokeWidth={3} />
+                </span>
+
+                <div>
+                    <p className="text-sm font-semibold text-slate-900">{member.fullName}</p>
+                    <p className="text-xs text-slate-500">{member.email}</p>
+                    {statusLabel ? (
+                        <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                            {statusLabel}
+                        </p>
+                    ) : null}
+                </div>
+            </div>
+
+            <p className="pt-1 text-sm font-semibold text-slate-400">
+                {formatCurrency(member.refundAmount)}
+            </p>
+        </button>
+    );
+}
 
 export default function RefundPreviewModal({
     open,
@@ -53,19 +122,28 @@ export default function RefundPreviewModal({
         getWorkshopRefundPreview(workshopId, reservationId)
             .then((res) => {
                 setResponse(res);
-                setPaymentGateway(res.data.paymentGateway || "");
-                setTransactionId(res.data.transactionId || "");
+                setPaymentGateway(res.data.paymentGateway ?? "");
+                setTransactionId(res.data.transactionId ?? "");
                 setAdjustmentNote("");
 
-                const refundableMembers = res.data.members.filter(
-                    (member) => member.isRefundable,
+                const requestedSelectableMembers = (res.data.requestedMembers ?? []).filter(
+                    (member) => member.isSelectable,
+                );
+                const selectableMembers = (res.data.members ?? []).filter(
+                    (member) => member.isSelectable,
                 );
 
-                const initialSelected = refundableMembers
-                    .slice(0, res.data.summary.selectedCount || refundableMembers.length)
-                    .map((member) => member.attendeeId);
+                const initialSelectedSource =
+                    requestedSelectableMembers.length > 0
+                        ? requestedSelectableMembers
+                        : selectableMembers.slice(
+                              0,
+                              res.data.summary.selectedCount || selectableMembers.length,
+                          );
 
-                setSelectedAttendeeIds(initialSelected);
+                setSelectedAttendeeIds(
+                    initialSelectedSource.map((member) => member.attendeeId),
+                );
             })
             .catch((err) => {
                 setError(
@@ -90,7 +168,7 @@ export default function RefundPreviewModal({
     }, [selectedMembers]);
 
     function toggleMember(member: RefundPreviewMember) {
-        if (!member.isRefundable) return;
+        if (!member.isSelectable) return;
 
         setSelectedAttendeeIds((prev) =>
             prev.includes(member.attendeeId)
@@ -116,12 +194,15 @@ export default function RefundPreviewModal({
             });
 
             onSuccess({
-                traineeName: response.data.bookingOwner.fullName ?? "—",
+                traineeName:
+                    confirmResponse.data?.bookingOwnerName ||
+                    response.data.bookingOwner.fullName ||
+                    "—",
                 refundedAmount:
                     confirmResponse.data?.refundedAmount ||
                     calculatedRefundAmount.toFixed(2),
-                paymentGateway: confirmResponse.data?.paymentGateway || paymentGateway,
-                transactionId: confirmResponse.data?.transactionId || transactionId,
+                paymentGateway: confirmResponse.data?.paymentGateway ?? paymentGateway,
+                transactionId: confirmResponse.data?.transactionId ?? transactionId,
             });
         } catch (err) {
             setError(
@@ -136,7 +217,10 @@ export default function RefundPreviewModal({
 
     return (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-            <div className="flex w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" style={{ maxHeight: "88vh" }}>
+            <div
+                className="flex w-full max-w-[760px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+                style={{ maxHeight: "90vh" }}
+            >
                 <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
                     <div>
                         <h2 className="text-2xl font-bold text-slate-900">Process Refund</h2>
@@ -165,84 +249,117 @@ export default function RefundPreviewModal({
                         </div>
                     ) : response ? (
                         <>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                                        Seats Booked
-                                    </p>
-                                    <p className="mt-1 text-lg font-bold text-slate-900">
-                                        {response.data.groupSize} Persons
-                                    </p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-5">
+                                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+                                        <div>
+                                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                                                Seats Booked
+                                            </p>
+                                            <p className="mt-2 text-[2rem] font-bold leading-none text-slate-900">
+                                                {response.data.groupSize} Persons
+                                            </p>
+                                        </div>
+
+                                        <div className="h-12 w-px bg-slate-200" />
+
+                                        <div className="text-right">
+                                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                                                Total Paid
+                                            </p>
+                                            <p className="mt-2 text-[2rem] font-bold leading-none text-slate-900">
+                                                {formatCurrency(response.data.totalPaid)}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-right">
-                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                                        Total Paid
+                                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-5">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                                        Refund Summary
                                     </p>
-                                    <p className="mt-1 text-lg font-bold text-slate-900">
-                                        ${response.data.totalPaid}
-                                    </p>
+                                    <div className="mt-3 flex items-end justify-between gap-4">
+                                        <div>
+                                            <p className="text-3xl font-bold leading-none text-slate-900">
+                                                {selectedAttendeeIds.length}
+                                            </p>
+                                            <p className="mt-1 text-xs text-slate-500">
+                                                member(s) selected
+                                            </p>
+                                        </div>
+
+                                        <div className="text-right">
+                                            <p className="text-sm font-semibold text-slate-400">
+                                                {formatCurrency(calculatedRefundAmount)}
+                                            </p>
+                                            <p className="mt-1 text-xs text-slate-500">
+                                                calculated refund
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="rounded-xl bg-slate-50 px-4 py-3 text-xs text-slate-500">
-                                Select the individual members for whom the client has requested a
-                                refund. These records will be updated upon confirmation.
-                            </div>
+                            {response.data.requestedMembers.length > 0 ? (
+                                <div className="space-y-3">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                        Requested Members To Refund
+                                    </p>
+
+                                    <div className="overflow-hidden rounded-2xl border border-[#23c8c8] bg-white">
+                                        {response.data.requestedMembers.map((member) => (
+                                            <div
+                                                key={member.attendeeId}
+                                                className="flex items-start justify-between gap-3 border-t border-slate-100 px-4 py-4 first:border-t-0"
+                                            >
+                                                <div>
+                                                    <p className="text-sm font-semibold text-slate-900">
+                                                        {member.fullName}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500">{member.email}</p>
+                                                </div>
+
+                                                <p className="pt-1 text-sm font-semibold text-slate-400">
+                                                    {formatCurrency(member.refundAmount)}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="rounded-xl border-l-2 border-slate-300 bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-500">
+                                        Select the individual members for whom the client has requested a
+                                        refund. These records will be updated upon confirmation.
+                                    </div>
+                                </div>
+                            ) : null}
 
                             <div className="space-y-2">
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                                     Select Members to Refund
                                 </p>
 
-                                <div className="overflow-hidden rounded-xl border border-slate-200">
+                                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                                     {response.data.members.map((member) => {
                                         const checked = selectedAttendeeIds.includes(member.attendeeId);
+                                        const disabled = !member.isSelectable;
 
                                         return (
-                                            <button
+                                            <MemberRow
                                                 key={member.attendeeId}
-                                                type="button"
+                                                member={member}
+                                                selected={checked}
+                                                disabled={disabled}
                                                 onClick={() => toggleMember(member)}
-                                                className="flex w-full items-start justify-between gap-3 border-t border-slate-100 px-4 py-3 text-left first:border-t-0"
-                                            >
-                                                <div className="flex items-start gap-3">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={checked}
-                                                        readOnly
-                                                        disabled={!member.isRefundable}
-                                                        className="mt-1 h-4 w-4 rounded border-slate-300 text-[var(--primary)]"
-                                                    />
-
-                                                    <div>
-                                                        <p className="text-sm font-semibold text-slate-900">
-                                                            {member.fullName}
-                                                        </p>
-                                                        <p className="text-xs text-slate-500">
-                                                            {member.email}
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="text-right">
-                                                    <p className="text-sm font-semibold text-slate-900">
-                                                        ${member.refundAmount}
-                                                    </p>
-                                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                                                        {member.refundStatus}
-                                                    </p>
-                                                </div>
-                                            </button>
+                                            />
                                         );
                                     })}
                                 </div>
 
-                                <div className="flex items-start gap-2 text-xs text-slate-500">
-                                    <AlertCircle size={14} className="mt-0.5 text-slate-400" />
+                                <div className="flex items-start gap-2 rounded-xl bg-slate-50 px-4 py-3 text-xs text-slate-500">
+                                    <AlertCircle size={14} className="mt-0.5 shrink-0 text-slate-400" />
                                     <p>
-                                        Selected members will be marked as Refunded and removed from
-                                        the active course roster upon confirmation.
+                                        Selected members will be marked as Refunded and removed from the
+                                        active course roster upon confirmation.
                                     </p>
                                 </div>
                             </div>
@@ -267,12 +384,12 @@ export default function RefundPreviewModal({
                                         Calculated Refund Amount
                                     </label>
                                     <input
-                                        value={`$ ${calculatedRefundAmount.toFixed(2)}`}
+                                        value={formatCurrency(calculatedRefundAmount)}
                                         readOnly
                                         className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-900 outline-none"
                                     />
                                     <p className="mt-1 text-[10px] text-slate-400">
-                                        You can adjust the amount manually later
+                                        Matches the selected attendees above
                                     </p>
                                 </div>
                             </div>
@@ -315,10 +432,16 @@ export default function RefundPreviewModal({
                                 </div>
                             </div>
 
-                            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
-                                Reminder: Please ensure the refund has been manually sent in the
-                                third-party payment software before confirming the refund status
-                                here.
+                            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
+                                <div className="flex items-start gap-3">
+                                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f7edd2] text-[#d97706]">
+                                        <RefreshCcw size={18} />
+                                    </span>
+                                    <p className="leading-6">
+                                        Please make sure the refund has already been completed in the
+                                        payment gateway before you confirm this refund here.
+                                    </p>
+                                </div>
                             </div>
                         </>
                     ) : null}
@@ -336,9 +459,7 @@ export default function RefundPreviewModal({
 
                         <button
                             type="button"
-                            disabled={
-                                !response || selectedAttendeeIds.length === 0 || confirming
-                            }
+                            disabled={!response || selectedAttendeeIds.length === 0 || confirming}
                             onClick={handleConfirmRefund}
                             className="inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[var(--primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
                         >
