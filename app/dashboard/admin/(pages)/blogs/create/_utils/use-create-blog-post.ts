@@ -151,6 +151,7 @@ export function useCreateBlogPost() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromPreview = searchParams.get("fromPreview") === "true";
+  const shouldReset = searchParams.get("reset") === "true";
   const previewBlog = useBlogPreviewStore((state) => state.previewBlog);
   const clearPreview = useBlogPreviewStore((state) => state.clearPreview);
 
@@ -397,8 +398,13 @@ export function useCreateBlogPost() {
       return;
     }
 
+    if (shouldReset) {
+      resetFormState();
+      return;
+    }
+
     resetFormState();
-  }, [fromPreview]);
+  }, [fromPreview, shouldReset]);
 
   useEffect(() => {
     if (!previewBlog || didHydrateFromPreviewRef.current) {

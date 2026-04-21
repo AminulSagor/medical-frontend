@@ -246,7 +246,7 @@ export default function BlogsClient() {
   return (
     <section className="space-y-6">
       <BlogsHeader
-        onCreate={() => router.push("/dashboard/admin/blogs/create")}
+        onCreate={() => router.push("/dashboard/admin/blogs/create?reset=true")}
       />
 
       <BlogsAnalyticsOverview />
