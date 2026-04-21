@@ -78,7 +78,7 @@ function buildBlogContentHtml(content: string) {
   return trimmedContent;
 }
 
-function buildLocalDateInputValue(value?: string | null) {
+export function buildLocalDateInputValue(value?: string | null) {
   if (!value) return "";
 
   const date = new Date(value);
@@ -94,7 +94,7 @@ function buildLocalDateInputValue(value?: string | null) {
   return `${year}-${month}-${day}`;
 }
 
-function buildLocalTimeInputValue(value?: string | null) {
+export function buildLocalTimeInputValue(value?: string | null) {
   if (!value) return "";
 
   const date = new Date(value);
