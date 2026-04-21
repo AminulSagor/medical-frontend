@@ -162,9 +162,9 @@ export default function RecipientLogTable({
               <th className="px-5 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 md:px-7">
                 Status
               </th>
-              <th className="px-5 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 md:px-7">
+              {/* <th className="px-5 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 md:px-7">
                 Device
-              </th>
+              </th> */}
               <th className="px-5 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 md:px-7">
                 Timestamp
               </th>
@@ -219,11 +219,11 @@ export default function RecipientLogTable({
                       </span>
                     </td>
 
-                    <td className="px-5 py-5 align-middle md:px-7">
+                    {/* <td className="px-5 py-5 align-middle md:px-7">
                       <span className="text-xs font-medium text-slate-400">
                         — No Data —
                       </span>
-                    </td>
+                    </td> */}
 
                     <td className="px-5 py-5 align-middle md:px-7">
                       <span className="text-xs font-semibold text-slate-500">

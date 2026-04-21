@@ -200,9 +200,9 @@ export default function GeneralQueueTable({
         <table className="min-w-[1180px] w-full">
           <thead className="bg-white">
             <tr className="border-b border-slate-200">
-              <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              {/* <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
                 Seq
-              </th>
+              </th> */}
               <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
                 Scheduled Date
               </th>
@@ -243,7 +243,7 @@ export default function GeneralQueueTable({
                     key={item.id}
                     className="border-b border-slate-100 last:border-b-0"
                   >
-                    <td className="px-4 py-5">
+                    {/* <td className="px-4 py-5">
                       <div className="flex items-center gap-2">
                         {item.actions?.reorder ? (
                           <span className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-300">
@@ -254,7 +254,7 @@ export default function GeneralQueueTable({
                           {item.sequence ?? "—"}
                         </span>
                       </div>
-                    </td>
+                    </td> */}
 
                     <td className="px-4 py-5">
                       <div className="font-semibold text-slate-800">
