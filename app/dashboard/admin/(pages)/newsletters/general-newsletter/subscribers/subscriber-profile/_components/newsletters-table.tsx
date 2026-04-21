@@ -1,5 +1,5 @@
 import React from "react";
-import { Eye, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { SubscriberNewsletterRow } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/subscribers/subscriber-profile/types/subscriber-profile.type";
 
 function cx(...parts: Array<string | false | null | undefined>) {
@@ -30,7 +30,7 @@ function DeliveredPill({
             ? "border-[#c8f0d8] bg-[#eefcf4] text-[#0f7a4d]"
             : status === "bounced"
               ? "border-rose-200 bg-rose-50 text-rose-600"
-              : "border-slate-200 bg-slate-50 text-slate-600",
+              : "border-slate-200 bg-slate-50 text-slate-700",
         )}
       >
         {status}
@@ -49,10 +49,10 @@ function ActivityPill({
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[10px] font-bold uppercase tracking-[0.14em]",
+        "inline-flex min-w-[96px] items-center justify-center gap-2 rounded-full border px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em]",
         active
           ? "border-[#0e8f86] bg-[#0e8f86] text-white"
-          : "border-slate-200 bg-white text-slate-300",
+          : "border-slate-300 bg-white text-slate-500",
       )}
     >
       {active ? <Check size={14} /> : <span className="h-[14px] w-[14px]" />}
@@ -73,80 +73,69 @@ export default function NewslettersTable({
   onLoadMore?: () => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white">
-      <div className="w-[600px] max-w-full overflow-x-auto">
-        <table className="min-w-[980px] table-fixed border-collapse">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div className="w-full overflow-x-auto">
+        <table className="min-w-[400px] border-collapse">
           <colgroup>
-            <col style={{ width: 420 }} />
-            <col style={{ width: 220 }} />
-            <col style={{ width: 220 }} />
-            <col style={{ width: 280 }} />
-            <col style={{ width: 80 }} />
+            <col className="w-[42%]" />
+            <col className="w-[20%]" />
+            <col className="w-[18%]" />
+            <col className="w-[20%]" />
           </colgroup>
 
-          <thead>
-            <tr className="border-b border-slate-100">
-              <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+          <thead className="bg-slate-50">
+            <tr className="border-b border-slate-200">
+              <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
                 Newsletter Title
               </th>
-              <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+              <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
                 Sent Date
               </th>
-              <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+              <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
                 Status
               </th>
-              <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+              <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
                 Open/Click Activity
-              </th>
-              <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                Actions
               </th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-slate-100">
             {rows.length ? (
-              rows.map((r) => (
-                <tr key={r.id}>
-                  <td className="px-6 py-5">
+              rows.map((r, index) => (
+                <tr
+                  key={r.id ?? `${r.title}-${r.sentDateLabel}-${index}`}
+                  className="align-middle"
+                >
+                  <td className="px-6 py-5 align-middle">
                     <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-xl bg-[#eefcfb]" />
-                      <p className="text-sm font-semibold text-slate-800">
+                      <div className="h-9 w-9 shrink-0 rounded-xl bg-[#eefcfb]" />
+                      <p className="line-clamp-2 text-sm font-semibold text-slate-900">
                         {r.title}
                       </p>
                     </div>
                   </td>
 
-                  <td className="px-6 py-5 text-sm font-medium text-slate-500">
+                  <td className="px-6 py-5 align-middle whitespace-nowrap text-sm font-medium text-slate-700">
                     {r.sentDateLabel}
                   </td>
 
-                  <td className="px-6 py-5">
+                  <td className="px-6 py-5 align-middle">
                     <DeliveredPill status={r.status} />
                   </td>
 
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-3">
+                  <td className="px-6 py-5 align-middle">
+                    <div className="flex items-center gap-2 whitespace-nowrap">
                       <ActivityPill active={r.opened} label="opened" />
                       <ActivityPill active={r.clicked} label="clicked" />
                     </div>
-                  </td>
-
-                  <td className="px-6 py-5 text-right">
-                    <button
-                      type="button"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-                      aria-label="View newsletter"
-                    >
-                      <Eye size={16} />
-                    </button>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={4}
                   className="px-6 py-10 text-center text-sm font-medium text-slate-500"
                 >
                   No newsletter history found.
@@ -158,12 +147,12 @@ export default function NewslettersTable({
       </div>
 
       {canLoadMore ? (
-        <div className="flex items-center justify-center border-t border-slate-100 py-5">
+        <div className="flex items-center justify-center border-t border-slate-200 py-5">
           <button
             type="button"
             onClick={onLoadMore}
             disabled={isLoadingMore}
-            className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoadingMore ? "Loading..." : "Load more history"}
           </button>
