@@ -15,7 +15,7 @@ const tabs: Array<{ key: RecipientLogTab; label: string }> = [
   { key: "opened", label: "Opened" },
   { key: "clicked", label: "Clicked" },
   { key: "bounced", label: "Bounced" },
-  { key: "delivered", label: "Delivered" },
+  
 ];
 
 export default function RecipientLogTabs({

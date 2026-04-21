@@ -50,8 +50,13 @@ function formatTimestamp(timestamp: string) {
   }).format(new Date(timestamp));
 }
 
-function getInitials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
+function getInitials(name?: string | null) {
+  const safeName = name?.trim();
+
+  if (!safeName) return "--";
+
+  const parts = safeName.split(/\s+/).filter(Boolean);
+
   return parts
     .slice(0, 2)
     .map((part) => part.charAt(0).toUpperCase())
@@ -194,7 +199,7 @@ export default function RecipientLogTable({
 
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-slate-900">
-                            {item.recipient.name}
+                            {item.recipient.name || "Unknown Recipient"}
                           </p>
                           <p className="mt-0.5 truncate text-xs text-slate-500">
                             {item.recipient.email}
