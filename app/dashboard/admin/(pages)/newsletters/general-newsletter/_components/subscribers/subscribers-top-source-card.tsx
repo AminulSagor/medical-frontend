@@ -99,6 +99,18 @@ export default function SubscribersTopSourceCard({
 }: {
   summary: SubscribersSummary;
 }) {
+  const uniqueTopSources = Array.from(
+    new Map(
+      summary.topSource.map((item) => [
+        item.source,
+        {
+          source: item.source,
+          percent: item.percent,
+        },
+      ]),
+    ).values(),
+  );
+
   return (
     <div
       className={cn(
@@ -119,7 +131,7 @@ export default function SubscribersTopSourceCard({
         <Donut48 />
 
         <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-          {summary.topSource.map((item) => (
+          {uniqueTopSources.map((item) => (
             <LegendItem
               key={item.source}
               label={labelMap[item.source] ?? item.source}
