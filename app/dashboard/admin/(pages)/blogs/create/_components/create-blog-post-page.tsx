@@ -330,14 +330,9 @@ export default function CreateBlogPostPage() {
     }
 
     if (channel === "trainees") {
-      const options = await ensureDistributionOptions();
-
-      if (!options) {
-        return;
-      }
-
       setIsShareDistributionModalOpen(false);
       setIsCohortsModalOpen(true);
+      return;
     }
   };
 
@@ -728,9 +723,8 @@ export default function CreateBlogPostPage() {
         />
       ) : null}
 
-      {isCohortsModalOpen && distributionOptions ? (
+      {isCohortsModalOpen ? (
         <CohortsModal
-          cohorts={distributionOptions.courseCohorts}
           isSubmitting={isDistributionSubmitting}
           onBack={handleBackToDistributionFromCohorts}
           onClose={handleCloseCohortsModal}
