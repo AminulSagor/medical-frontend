@@ -52,23 +52,20 @@ export type BlogAuthorApi = {
   profilePhotoUrl?: string;
 };
 
-export type BlogImageLike =
-  | string
-  | null
-  | {
-      url?: string;
-      src?: string;
-      secureUrl?: string;
-      href?: string;
-      location?: string;
-    };
+export type BlogImageType = "hero" | "thumbnail" | "article_inline";
+
+export type BlogImageApi = {
+  imageUrl: string;
+  imageType: BlogImageType;
+};
 
 export type BlogPostApi = {
   id: string;
   title: string;
   description?: string;
   excerpt?: string;
-  coverImageUrl?: BlogImageLike;
+  coverImageUrl?: BlogImageApi[] | null;
+  authorName?: string;
   categories?: BlogCategoryApi[] | null;
   authors?: BlogAuthorApi[] | null;
   readTimeMinutes?: number | string | null;

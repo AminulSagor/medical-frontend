@@ -3,47 +3,64 @@ import BigFeatureCard from "./post-cards/big-feature-card";
 import SmallPostCard from "./post-cards/small-feature-card";
 import WideInterviewCard from "./post-cards/wide-interview-card";
 
-export default function LatestDiscoveriesGrid({ posts }: { posts: BlogPost[] }) {
+export default function LatestDiscoveriesGrid({
+  posts,
+}: {
+  posts: BlogPost[];
+}) {
   if (!posts.length) {
-    return <div className="py-10 text-center text-slate-500">No articles available.</div>;
+    return (
+      <div className="py-10 text-center text-slate-500">
+        No articles available.
+      </div>
+    );
   }
 
   const big = posts[0];
   const rightTop = posts[1];
   const rightBottom = posts[2];
   const wide = posts[3];
+  const remainingPosts = posts.slice(4);
 
   return (
-    <div className="grid gap-6 md:grid-cols-3">
-      {big ? (
-        <div className="md:col-span-2 md:row-span-2">
-          <BigFeatureCard post={big} />
-        </div>
-      ) : null}
+    <div className="space-y-6">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.95fr)]">
+        {big ? (
+          <div>
+            <BigFeatureCard post={big} />
+          </div>
+        ) : null}
 
-      {rightTop ? (
-        <div className="md:col-span-1">
-          <SmallPostCard post={rightTop} />
-        </div>
-      ) : null}
+        <div className="grid gap-6">
+          {rightTop ? (
+            <div>
+              <SmallPostCard post={rightTop} />
+            </div>
+          ) : null}
 
-      {rightBottom ? (
-        <div className="md:col-span-1">
-          <SmallPostCard post={rightBottom} />
+          {rightBottom ? (
+            <div>
+              <SmallPostCard post={rightBottom} />
+            </div>
+          ) : null}
         </div>
-      ) : null}
+      </div>
 
       {wide ? (
-        <div className="md:col-span-3">
+        <div>
           <WideInterviewCard post={wide} />
         </div>
       ) : null}
 
-      {posts.slice(4).map((post) => (
-        <div key={post.id} className="md:col-span-1">
-          <SmallPostCard post={post} />
+      {remainingPosts.length > 0 ? (
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {remainingPosts.map((post) => (
+            <div key={post.id}>
+              <SmallPostCard post={post} />
+            </div>
+          ))}
         </div>
-      ))}
+      ) : null}
     </div>
   );
 }

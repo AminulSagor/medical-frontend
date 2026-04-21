@@ -16,8 +16,8 @@ export default function BlogsHero({ post }: BlogsHeroProps) {
     <section className="mt-20 w-full pt-6">
       <div className="padding">
         <div className="relative overflow-hidden rounded-[28px] shadow-[0_18px_50px_rgba(16,24,25,0.10)]">
-          <div className="relative h-[1216px] w-full p-4 md:h-[650px] md:p-8">
-            <div className="relative h-full w-full overflow-hidden rounded-[22px]">
+          <div className="relative min-h-[560px] w-full sm:min-h-[620px] lg:min-h-[600px]">
+            <div className="absolute inset-0">
               <FallbackNetworkImage
                 src={post.coverImageSrc}
                 alt={post.coverImageAlt}
@@ -26,13 +26,16 @@ export default function BlogsHero({ post }: BlogsHeroProps) {
                 fallbackClassName="bg-light-slate/10 text-light-slate/45"
                 iconSize={42}
               />
+            </div>
 
-              <div className="absolute inset-0 bg-black/15" />
-              <div className="absolute inset-0 bg-linear-to-r from-black/30 via-black/10 to-transparent" />
+            <div className="absolute inset-0 bg-black/20" />
+            <div className="absolute inset-0 bg-linear-to-r from-black/45 via-black/15 to-black/10 lg:from-black/25 lg:via-black/10 lg:to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-t from-black/25 via-transparent to-transparent" />
 
-              <div className="absolute right-6 top-1/2 w-full max-w-[540px] -translate-y-1/2 md:right-10">
-                <div className="rounded-[26px] border border-light-slate/10 bg-white px-8 py-10 shadow-[0_22px_60px_rgba(16,24,25,0.16)] md:px-12 md:py-12">
-                  <div className="flex items-center gap-4">
+            <div className="relative z-10 flex min-h-[560px] items-end p-4 sm:min-h-[620px] sm:p-6 lg:min-h-[600px] lg:items-center lg:justify-end lg:p-8">
+              <div className="w-full max-w-[520px]">
+                <div className="rounded-[24px] border border-white/20 bg-white/95 px-5 py-6 shadow-[0_22px_60px_rgba(16,24,25,0.16)] backdrop-blur-sm sm:px-7 sm:py-8 lg:px-8 lg:py-8">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                     {post.badge?.label ? (
                       <span className="inline-flex items-center rounded-full bg-primary/10 px-4 py-1.5 text-[11px] font-extrabold tracking-[0.22em] text-primary">
                         {post.badge.label}
@@ -44,15 +47,15 @@ export default function BlogsHero({ post }: BlogsHeroProps) {
                     </span>
                   </div>
 
-                  <h1 className="mt-6 whitespace-pre-line font-serif text-[44px] leading-[1.02] font-bold text-black">
+                  <h1 className="mt-5 whitespace-pre-line font-serif text-[24px] leading-[1.08] font-bold text-black sm:text-[30px] md:text-[34px] lg:text-[38px]">
                     {post.title}
                   </h1>
 
-                  <p className="mt-6 max-w-[52ch] text-[15px] leading-relaxed text-light-slate/70">
+                  <p className="mt-4 max-w-[50ch] text-sm leading-7 text-light-slate/70">
                     {post.excerpt}
                   </p>
 
-                  <div className="mt-8 flex flex-wrap items-center gap-4">
+                  <div className="mt-7 flex flex-wrap items-center gap-3 sm:gap-4">
                     <Link href={post.href}>
                       <Button size="base" variant="primary" shape="pill">
                         Read Article
@@ -64,7 +67,7 @@ export default function BlogsHero({ post }: BlogsHeroProps) {
                         size="base"
                         variant="secondary"
                         shape="pill"
-                        className="border-light-slate/20"
+                        className="border-light-slate/20 bg-white"
                       >
                         Watch Video
                       </Button>
@@ -72,9 +75,9 @@ export default function BlogsHero({ post }: BlogsHeroProps) {
                   </div>
                 </div>
               </div>
-
-              <div className="pointer-events-none absolute inset-0 rounded-[22px] ring-1 ring-black/5" />
             </div>
+
+            <div className="pointer-events-none absolute inset-0 rounded-[28px] ring-1 ring-black/5" />
           </div>
         </div>
       </div>

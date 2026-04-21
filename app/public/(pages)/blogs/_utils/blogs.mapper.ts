@@ -1,4 +1,6 @@
 import type {
+  BlogImageApi,
+  BlogImageType,
   BlogPost,
   BlogPostApi,
   TrendingItem,
@@ -42,7 +44,9 @@ const getSafeReadTimeLabel = (value: unknown): string | undefined => {
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (trimmed) {
-      return trimmed.toLowerCase().includes("read") ? trimmed : `${trimmed} min read`;
+      return trimmed.toLowerCase().includes("read")
+        ? trimmed
+        : `${trimmed} min read`;
     }
   }
 
@@ -65,6 +69,48 @@ const getSafeDateLabel = (publishedAt: unknown): string => {
   return "Recently published";
 };
 
+const getBlogImages = (
+  images: BlogPostApi["coverImageUrl"],
+): BlogImageApi[] => {
+  return Array.isArray(images) ? images : [];
+};
+
+const getImageUrlByType = (
+  images: BlogPostApi["coverImageUrl"],
+  preferredType: BlogImageType,
+): string => {
+  const normalizedImages = getBlogImages(images);
+
+  const matchedImage = normalizedImages.find(
+    (image) =>
+      image?.imageType === preferredType &&
+      typeof image.imageUrl === "string" &&
+      image.imageUrl.trim(),
+  );
+
+  return matchedImage?.imageUrl?.trim() ?? "";
+};
+
+const getPreferredBlogImage = (
+  images: BlogPostApi["coverImageUrl"],
+): string => {
+  const heroImage = getImageUrlByType(images, "hero");
+  if (heroImage) {
+    return heroImage;
+  }
+
+  const thumbnailImage = getImageUrlByType(images, "thumbnail");
+  if (thumbnailImage) {
+    return thumbnailImage;
+  }
+
+  const firstValidImage = getBlogImages(images).find(
+    (image) => typeof image?.imageUrl === "string" && image.imageUrl.trim(),
+  );
+
+  return firstValidImage?.imageUrl?.trim() ?? "";
+};
+
 export const getBlogHref = (id: string): string => `${BLOGS_BASE_PATH}/${id}`;
 
 export const formatBlogDateLabel = (publishedAt: string): string => {
@@ -75,7 +121,9 @@ export const formatBlogDateLabel = (publishedAt: string): string => {
   }).format(new Date(publishedAt));
 };
 
-export const getBlogReadsLabel = (blog: Pick<BlogPostApi, "readBy" | "readCount">): string => {
+export const getBlogReadsLabel = (
+  blog: Pick<BlogPostApi, "readBy" | "readCount">,
+): string => {
   const readBy = getSafeString(blog.readBy);
   if (readBy) {
     return `${readBy} reads`;
@@ -99,21 +147,36 @@ export const mapApiBlogToUiBlog = (apiPost: BlogPostApi): BlogPost => {
   const primaryCategory = getSafeString(categories[0]?.name, "Uncategorized");
   const primaryAuthor = authors[0];
   const title = getSafeString(apiPost.title, "Untitled Article");
-  const description = getSafeString(apiPost.description ?? apiPost.excerpt, "No description available.");
+  const description = getSafeString(
+    apiPost.description ?? apiPost.excerpt,
+    "No description available.",
+  );
+  const authorName = getSafeString(
+    apiPost.authorName,
+    getSafeString(primaryAuthor?.fullLegalName, "Unknown Author"),
+  );
 
   return {
-    id: getSafeString(apiPost.id, `blog-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "item"}`),
+    id: getSafeString(
+      apiPost.id,
+      `blog-${
+        title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "item"
+      }`,
+    ),
     category: primaryCategory,
     title,
     excerpt: description,
     dateLabel: getSafeDateLabel(apiPost.publishedAt),
     readTimeLabel: getSafeReadTimeLabel(apiPost.readTimeMinutes),
-    coverImageSrc: getSafeString(apiPost.coverImageUrl),
+    coverImageSrc: getPreferredBlogImage(apiPost.coverImageUrl),
     coverImageAlt: title,
-    author: primaryAuthor
+    author: authorName
       ? {
-          name: getSafeString(primaryAuthor.fullLegalName, "Unknown Author"),
-          avatarSrc: getSafeString(primaryAuthor.profilePhotoUrl) || undefined,
+          name: authorName,
+          avatarSrc: getSafeString(primaryAuthor?.profilePhotoUrl) || undefined,
         }
       : undefined,
     href: getBlogHref(getSafeString(apiPost.id, title)),
@@ -121,7 +184,9 @@ export const mapApiBlogToUiBlog = (apiPost: BlogPostApi): BlogPost => {
   };
 };
 
-export const mapApiBlogToTrendingItem = (apiPost: BlogPostApi): TrendingItem => {
+export const mapApiBlogToTrendingItem = (
+  apiPost: BlogPostApi,
+): TrendingItem => {
   const title = getSafeString(apiPost.title, "Untitled Article");
   const id = getSafeString(apiPost.id, title);
 
