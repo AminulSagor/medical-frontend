@@ -178,6 +178,21 @@ export default function WishlistSidebar({
                   product.inStock === false ||
                   Number(product.stockQuantity || 0) <= 0;
 
+                const isInactive =
+                  product.status !== undefined
+                    ? product.status !== "ACTIVE"
+                    : product.isActive !== undefined
+                      ? !product.isActive
+                      : false;
+
+                const isCartDisabled = isOutOfStock || isInactive;
+
+                const cartButtonText = isInactive
+                  ? "Product is not available right now"
+                  : isOutOfStock
+                    ? "Out of Stock"
+                    : "Cart";
+
                 return (
                   <div
                     key={product.wishlistItemId}
@@ -230,27 +245,36 @@ export default function WishlistSidebar({
                       </div>
 
                       <p
-                        className={`mt-1 text-xs font-medium ${isOutOfStock ? "text-red-500" : "text-green-600"
+                        className={`mt-1 text-xs font-medium ${isInactive
+                            ? "text-slate-500"
+                            : isOutOfStock
+                              ? "text-red-500"
+                              : "text-green-600"
                           }`}
                       >
-                        {isOutOfStock ? "Out of stock" : "In stock"}
+                        {isInactive
+                          ? "Product is not available right now"
+                          : isOutOfStock
+                            ? "Out of stock"
+                            : "In stock"}
                       </p>
 
                       <div className="mt-3 flex gap-2">
                         <button
                           type="button"
                           onClick={() => handleAddToCart(product.productId)}
-                          disabled={isOutOfStock}
+                          disabled={isCartDisabled}
                           className={[
-                            "flex h-8 flex-1 items-center justify-center gap-1 rounded-lg text-xs font-bold transition",
-                            isOutOfStock
+                            "flex h-8 flex-1 items-center justify-center gap-1 rounded-lg px-2 text-xs font-bold transition",
+                            isCartDisabled
                               ? "cursor-not-allowed bg-slate-100 text-slate-400"
                               : "bg-blue-50 text-primary hover:bg-blue-100 active:scale-95",
                           ].join(" ")}
                           aria-label="Add to cart"
+                          title={cartButtonText}
                         >
                           <ShoppingCart size={14} />
-                          {isOutOfStock ? "Out of Stock" : "Cart"}
+                          <span className="truncate">{cartButtonText}</span>
                         </button>
 
                         <button

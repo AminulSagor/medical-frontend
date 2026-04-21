@@ -15,6 +15,8 @@ export interface OrderSummaryItem {
   quantity: number;
   unitPrice: string;
   lineTotal: string;
+  availableQuantity?: number;
+  inStock?: boolean;
 }
 
 export interface OrderSummaryResponse {

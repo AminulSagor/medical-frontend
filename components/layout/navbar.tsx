@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { ShoppingCart, Menu, Search, X, Heart } from "lucide-react";
-import { getToken } from "@/utils/token/cookie_utils";
-import { usePathname, useRouter } from "next/navigation";
+import {
+  AUTH_CHANGED_EVENT,
+  getToken,
+} from "@/utils/token/cookie_utils";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "motion/react";
 
 import NavbarLogo from "@/components/logo";
@@ -24,6 +26,7 @@ function isActivePath(pathname: string, href: string) {
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { totalItems } = useCart();
   const { totalItems: wishlistCount } = useWishlist();
 
@@ -64,8 +67,36 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const handleWishlistClick = () => {
+    const token = getToken();
+
+    if (!token) {
+      if (typeof window !== "undefined") {
+        const currentUrl =
+          window.location.pathname +
+          window.location.search +
+          window.location.hash;
+
+        window.sessionStorage.setItem("postLoginRedirect", currentUrl);
+        window.sessionStorage.setItem("postLoginOpenWishlist", "true");
+      }
+
+      router.push("/public/auth/sign-in");
+      return;
+    }
+
+    setWishlistSidebar(true);
+  };
+
   return (
     <>
+      <Suspense fallback={null}>
+        <NavbarWishlistQueryHandler
+          pathname={pathname}
+          onOpenWishlist={() => setWishlistSidebar(true)}
+        />
+      </Suspense>
+
       <motion.header
         animate={{
           y: hideOnScrollDown ? -6 : 0,
@@ -193,7 +224,7 @@ export default function Navbar() {
                     "hover:bg-light-slate/5 active:scale-95 transition",
                   ].join(" ")}
                   aria-label="Wishlist"
-                  onClick={() => setWishlistSidebar(true)}
+                  onClick={handleWishlistClick}
                 >
                   <Heart size={18} className="text-black" />
                   {wishlistCount > 0 && (
@@ -267,13 +298,52 @@ export default function Navbar() {
   );
 }
 
+function NavbarWishlistQueryHandler({
+  pathname,
+  onOpenWishlist,
+}: {
+  pathname: string;
+  onOpenWishlist: () => void;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const shouldOpenWishlist = searchParams.get("openWishlist") === "true";
+    const token = getToken();
+
+    if (!shouldOpenWishlist || !token) return;
+
+    onOpenWishlist();
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("openWishlist");
+
+    const nextQuery = nextParams.toString();
+    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+
+    router.replace(nextUrl, { scroll: false });
+  }, [onOpenWishlist, pathname, router, searchParams]);
+
+  return null;
+}
+
 function AccountAccessButton() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const token = getToken();
-    setIsAuthenticated(!!token);
+    const syncAuthState = () => {
+      const token = getToken();
+      setIsAuthenticated(!!token);
+    };
+
+    syncAuthState();
+    window.addEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+
+    return () => {
+      window.removeEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+    };
   }, []);
 
   if (!isAuthenticated) {

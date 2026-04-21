@@ -1,13 +1,11 @@
-// components/public/public-sidebar.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ChevronRight,
   LogIn,
-  Menu,
   ShoppingCart,
   UserPlus,
   X,
@@ -15,6 +13,10 @@ import {
 
 import NavbarLogo from "@/components/logo";
 import { NAV_LINKS } from "@/constant/navigation-links";
+import {
+  AUTH_CHANGED_EVENT,
+  getToken,
+} from "@/utils/token/cookie_utils";
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/public/home") return pathname === "/public/home";
@@ -35,18 +37,34 @@ export default function PublicSidebar({
   hideCart?: boolean;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // lock scroll when open
+  useEffect(() => {
+    const syncAuthState = () => {
+      const token = getToken();
+      setIsAuthenticated(!!token);
+    };
+
+    syncAuthState();
+    window.addEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+
+    return () => {
+      window.removeEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+    };
+  }, []);
+
   useEffect(() => {
     if (!open) return;
+
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
     return () => {
       document.body.style.overflow = prev;
     };
   }, [open]);
 
-  // close on route change
   useEffect(() => {
     if (open) onClose();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -60,7 +78,6 @@ export default function PublicSidebar({
       ].join(" ")}
       aria-hidden={!open}
     >
-      {/* overlay */}
       <div
         className={[
           "absolute inset-0 bg-black/25 backdrop-blur-[2px] transition-opacity",
@@ -69,7 +86,6 @@ export default function PublicSidebar({
         onClick={onClose}
       />
 
-      {/* panel */}
       <aside
         className={[
           "absolute left-0 top-0 h-full w-[86%] max-w-[360px]",
@@ -82,7 +98,6 @@ export default function PublicSidebar({
         role="dialog"
         aria-label="Public menu"
       >
-        {/* header */}
         <div className="flex items-center justify-between px-5 py-4">
           <NavbarLogo />
 
@@ -100,10 +115,10 @@ export default function PublicSidebar({
           </button>
         </div>
 
-        {/* links */}
         <nav className="px-3" aria-label="Public primary">
           {NAV_LINKS.map((l) => {
             const active = isActivePath(pathname, l.href);
+
             return (
               <Link
                 key={l.href}
@@ -140,16 +155,14 @@ export default function PublicSidebar({
           })}
         </nav>
 
-        {/* bottom actions */}
         <div className="absolute bottom-0 left-0 right-0 p-5">
           <div className="rounded-3xl border border-light-slate/15 bg-white p-3 shadow-sm">
-            {/* cart - hidden on auth routes */}
             {!hideCart && (
               <>
                 <button
                   type="button"
                   onClick={onOpenCart}
-                  className="flex w-full items-center justify-between rounded-2xl px-4 py-3 hover:bg-light-slate/5 transition"
+                  className="flex w-full items-center justify-between rounded-2xl px-4 py-3 transition hover:bg-light-slate/5"
                 >
                   <div className="flex items-center gap-3">
                     <div className="grid h-10 w-10 place-items-center rounded-full border border-light-slate/15 bg-white">
@@ -169,26 +182,57 @@ export default function PublicSidebar({
               </>
             )}
 
-            {/* auth actions */}
-            <Link
-              href="/public/auth/sign-in"
-              onClick={onClose}
-              className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-light-slate/5 transition"
-            >
-              <LogIn size={18} className="text-light-slate" />
-              <span className="text-sm font-semibold text-black">Sign In</span>
-            </Link>
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  router.push("/dashboard/user/dashboard");
+                }}
+                className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 transition hover:bg-light-slate/5"
+              >
+                <div className="relative grid h-10 w-10 place-items-center rounded-full border border-light-slate/30 bg-primary/10">
+                  <span className="text-sm font-bold text-primary">U</span>
+                  <span
+                    className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-primary ring-2 ring-white"
+                    aria-hidden="true"
+                  />
+                </div>
 
-            <Link
-              href="/public/auth/sign-up"
-              onClick={onClose}
-              className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-light-slate/5 transition"
-            >
-              <UserPlus size={18} className="text-primary" />
-              <span className="text-sm font-semibold text-primary">
-                Create Account
-              </span>
-            </Link>
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-semibold text-black">
+                    My Account
+                  </span>
+                  <span className="text-xs text-light-slate">
+                    Go to dashboard
+                  </span>
+                </div>
+              </button>
+            ) : (
+              <>
+                <Link
+                  href="/public/auth/sign-in"
+                  onClick={onClose}
+                  className="flex items-center gap-3 rounded-2xl px-4 py-3 transition hover:bg-light-slate/5"
+                >
+                  <LogIn size={18} className="text-light-slate" />
+                  <span className="text-sm font-semibold text-black">
+                    Sign In
+                  </span>
+                </Link>
+
+                <Link
+                  href="/public/auth/sign-up"
+                  onClick={onClose}
+                  className="flex items-center gap-3 rounded-2xl px-4 py-3 transition hover:bg-light-slate/5"
+                >
+                  <UserPlus size={18} className="text-primary" />
+                  <span className="text-sm font-semibold text-primary">
+                    Create Account
+                  </span>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </aside>

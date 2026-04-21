@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 import { ArrowRight, Microscope, Stethoscope } from "lucide-react";
 import { RiLungsLine } from "react-icons/ri";
@@ -144,9 +145,11 @@ export default function HeroSection() {
               }}
               className="inline-block"
             >
-              <Button size="md" className="px-10 sm:px-12 lg:px-15">
-                Get Training <ArrowRight size={18} />
-              </Button>
+              <Link href="/public/courses">
+                <Button size="md" className="px-10 sm:px-12 lg:px-15">
+                  Get Training <ArrowRight size={18} />
+                </Button>
+              </Link>
             </motion.div>
           </div>
 

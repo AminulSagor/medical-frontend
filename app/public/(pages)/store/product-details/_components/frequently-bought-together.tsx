@@ -4,7 +4,7 @@ import Image from "next/image";
 import { ShoppingCart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
+import { toast } from "react-hot-toast";
 import { useCart } from "@/app/public/context/cart-context";
 import { getPublicProducts } from "@/service/public/product.service";
 import type { PublicProductItem } from "@/types/public/product/public-product.types";
@@ -93,10 +93,12 @@ export default function FrequentlyBoughtTogether({
             : item,
         ),
       );
+      toast.success("Added to cart");
       return;
     }
 
     syncItems([...items, { productId, quantity: 1 }]);
+    toast.success("Added to cart");
   };
 
   if (!categoryId) {

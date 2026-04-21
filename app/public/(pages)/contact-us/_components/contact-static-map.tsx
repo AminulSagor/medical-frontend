@@ -45,12 +45,12 @@ export default function ContactStaticMap({
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-slate-100">
-      <img
-        src={imageUrl}
-        alt={`${title} static map`}
-        className="h-full w-full object-cover"
+      <iframe
+        src={`https://www.google.com/maps?q=${encodeURIComponent(subtitle)}&z=6&output=embed`}
+        title={`${title} map`}
+        className="h-full w-full border-0"
         loading="lazy"
-        onError={() => setHasError(true)}
+        referrerPolicy="no-referrer-when-downgrade"
       />
 
       <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/55 via-black/10 to-transparent" />

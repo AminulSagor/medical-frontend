@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { X, Minus, Plus, ShoppingBag, ArrowRight, Lock } from "lucide-react";
-import { DUMMY_UPSELL } from "@/app/public/data/cart.data";
 import { useCart } from "@/app/public/context/cart-context";
 import { calculateCart } from "@/service/public/cart.service";
 import { getProductDetails } from "@/service/public/product.service";
@@ -25,7 +24,14 @@ export default function CartSidebar({
 }) {
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
-  const { items, updateQty, removeItem, totalItems, syncItems } = useCart();
+  const {
+    items,
+    updateQty,
+    removeItem,
+    totalItems,
+    syncItems,
+    pruneItems,
+  } = useCart();
   const [calculatedData, setCalculatedData] =
     useState<CartCalculateResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -78,19 +84,35 @@ export default function CartSidebar({
           }),
         );
 
-        const filteredItems = validatedItems.filter(
+        const existingItems = validatedItems.filter(
           (item): item is typeof data.items[number] => item !== null,
         );
 
+        const availableItems = existingItems.filter((item) => {
+          const hasStock =
+            typeof item.availableQuantity === "number"
+              ? item.availableQuantity > 0
+              : true;
+
+          return item.inStock && hasStock;
+        });
+
+        const unavailableProductIds = existingItems
+          .filter(
+            (item) =>
+              !availableItems.some((available) => available.productId === item.productId),
+          )
+          .map((item) => item.productId);
+
         const newData: CartCalculateResponse = {
           ...data,
-          items: filteredItems,
+          items: availableItems,
         };
 
         setCalculatedData(newData);
         hasCalculatedOnceRef.current = true;
 
-        const normalizedItems = filteredItems.map((i) => ({
+        const normalizedItems = availableItems.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
         }));
@@ -107,6 +129,10 @@ export default function CartSidebar({
         if (hasMismatch) {
           syncItems(normalizedItems);
         }
+
+        if (unavailableProductIds.length > 0) {
+          await pruneItems(unavailableProductIds);
+        }
       } catch (err) {
         console.error("Failed to calculate cart", err);
       } finally {
@@ -115,7 +141,7 @@ export default function CartSidebar({
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [items, syncItems]);
+  }, [items, pruneItems, syncItems]);
 
   useEffect(() => {
     if (!open) return;
@@ -235,51 +261,6 @@ export default function CartSidebar({
               })}
             </div>
           )}
-
-          {/*
-          {items.length > 0 && (
-            <div className="mt-10">
-              <div className="text-[11px] font-extrabold tracking-widest text-light-slate/70">
-                FREQUENTLY BOUGHT TOGETHER
-              </div>
-
-              <div className="mt-4 rounded-2xl border border-light-slate/15 bg-white p-4">
-                <div className="flex items-center gap-4">
-                  <div className="relative h-12 w-12 overflow-hidden rounded-xl bg-light-slate/10">
-                    <Image
-                      src={DUMMY_UPSELL.imageUrl}
-                      alt={DUMMY_UPSELL.name}
-                      fill
-                      sizes="48px"
-                      className="object-cover"
-                    />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-bold text-black">
-                      {DUMMY_UPSELL.name}
-                    </div>
-                    <div className="text-xs font-semibold text-light-slate">
-                      {money(DUMMY_UPSELL.price)}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    className={[
-                      "flex h-10 w-10 items-center justify-center rounded-full",
-                      "border border-light-slate/20 bg-white",
-                      "hover:bg-light-slate/5 active:scale-95 transition",
-                    ].join(" ")}
-                    aria-label="Add"
-                  >
-                    <Plus size={18} className="text-primary" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          */}
         </div>
 
         <div className="border-t border-light-slate/10 bg-white px-6 pb-6 pt-5">
@@ -353,6 +334,16 @@ function CartRow({
   onUpdateQty: (q: number) => void;
   onOpenDetails: () => void;
 }) {
+  const maxAvailableQuantity =
+    typeof it.availableQuantity === "number" &&
+      !Number.isNaN(it.availableQuantity)
+      ? it.availableQuantity
+      : Number.POSITIVE_INFINITY;
+
+  const hasReachedMaxQuantity =
+    Number.isFinite(maxAvailableQuantity) &&
+    quantity >= maxAvailableQuantity;
+
   return (
     <div className="flex gap-4">
       <button
@@ -394,35 +385,53 @@ function CartRow({
         </div>
 
         <div className="mt-4 flex items-center justify-between">
-          <div className="inline-flex items-center gap-2 rounded-full border border-light-slate/15 bg-white px-2 py-1">
-            <button
-              onClick={() => onUpdateQty(quantity - 1)}
-              disabled={quantity <= 1}
-              type="button"
-              className={[
-                iconBtn(),
-                quantity <= 1
-                  ? "pointer-events-none cursor-not-allowed opacity-50"
-                  : "",
-              ].join(" ")}
-              aria-label="Decrease"
-            >
-              <Minus size={16} className="text-light-slate" />
-            </button>
+          <div className="flex flex-col">
+            <div className="inline-flex items-center gap-2 rounded-full border border-light-slate/15 bg-white px-2 py-1">
+              <button
+                onClick={() => onUpdateQty(quantity - 1)}
+                disabled={quantity <= 1}
+                type="button"
+                className={[
+                  iconBtn(),
+                  quantity <= 1
+                    ? "pointer-events-none cursor-not-allowed opacity-50"
+                    : "",
+                ].join(" ")}
+                aria-label="Decrease"
+              >
+                <Minus size={16} className="text-light-slate" />
+              </button>
 
-            <div className="w-10 text-center text-sm font-bold text-black">
-              {quantity}
+              <div className="w-10 text-center text-sm font-bold text-black">
+                {quantity}
+              </div>
+
+              <button
+                onClick={() => {
+                  if (hasReachedMaxQuantity) return;
+                  onUpdateQty(quantity + 1);
+                }}
+                disabled={hasReachedMaxQuantity}
+                type="button"
+                className={[
+                  iconBtn(),
+                  hasReachedMaxQuantity
+                    ? "pointer-events-none cursor-not-allowed opacity-50"
+                    : "",
+                ].join(" ")}
+                aria-label="Increase"
+              >
+                <Plus size={16} className="text-primary" />
+              </button>
             </div>
 
-            <button
-              onClick={() => onUpdateQty(quantity + 1)}
-              type="button"
-              className={iconBtn()}
-              aria-label="Increase"
-            >
-              <Plus size={16} className="text-primary" />
-            </button>
+            {hasReachedMaxQuantity ? (
+              <p className="mt-1 text-[10px] text-red-500">
+                Max available quantity reached
+              </p>
+            ) : null}
           </div>
+
           <button
             onClick={onRemove}
             type="button"
