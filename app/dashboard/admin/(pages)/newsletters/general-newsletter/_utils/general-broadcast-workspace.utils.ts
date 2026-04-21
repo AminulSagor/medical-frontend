@@ -203,6 +203,18 @@ function extractTextValue(value: unknown, fallback = ""): string {
   return fallback;
 }
 
+function normalizeFilterText(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function getNormalizedTypeValues(
+  item: GeneralBroadcastWorkspaceItem,
+): string[] {
+  return [item.type.displayLabel, item.type.code]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .map(normalizeFilterText);
+}
+
 export function filterWorkspaceItems(params: {
   items: GeneralBroadcastWorkspaceItem[];
   parentTab: GeneralDataParentTabKey;
@@ -231,11 +243,17 @@ export function filterWorkspaceItems(params: {
       return false;
     }
 
-    if (
-      filters.contentTypes.length > 0 &&
-      !filters.contentTypes.includes(item.type.code)
-    ) {
-      return false;
+    if (filters.contentTypes.length > 0) {
+      const selectedTypes = filters.contentTypes.map(normalizeFilterText);
+      const itemTypeValues = getNormalizedTypeValues(item);
+
+      const hasMatchingType = selectedTypes.some((selectedType) =>
+        itemTypeValues.includes(selectedType),
+      );
+
+      if (!hasMatchingType) {
+        return false;
+      }
     }
 
     if (filters.author && formatAuthorName(item.author) !== filters.author) {

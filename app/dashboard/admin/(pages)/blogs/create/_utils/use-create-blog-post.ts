@@ -78,7 +78,7 @@ function buildBlogContentHtml(content: string) {
   return trimmedContent;
 }
 
-function buildLocalDateInputValue(value?: string | null) {
+export function buildLocalDateInputValue(value?: string | null) {
   if (!value) return "";
 
   const date = new Date(value);
@@ -94,7 +94,7 @@ function buildLocalDateInputValue(value?: string | null) {
   return `${year}-${month}-${day}`;
 }
 
-function buildLocalTimeInputValue(value?: string | null) {
+export function buildLocalTimeInputValue(value?: string | null) {
   if (!value) return "";
 
   const date = new Date(value);
@@ -151,6 +151,7 @@ export function useCreateBlogPost() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromPreview = searchParams.get("fromPreview") === "true";
+  const shouldReset = searchParams.get("reset") === "true";
   const previewBlog = useBlogPreviewStore((state) => state.previewBlog);
   const clearPreview = useBlogPreviewStore((state) => state.clearPreview);
 
@@ -397,8 +398,13 @@ export function useCreateBlogPost() {
       return;
     }
 
+    if (shouldReset) {
+      resetFormState();
+      return;
+    }
+
     resetFormState();
-  }, [fromPreview]);
+  }, [fromPreview, shouldReset]);
 
   useEffect(() => {
     if (!previewBlog || didHydrateFromPreviewRef.current) {

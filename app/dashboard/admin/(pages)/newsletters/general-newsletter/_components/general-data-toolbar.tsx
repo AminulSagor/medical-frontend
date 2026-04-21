@@ -54,23 +54,20 @@ export default function GeneralDataToolbar({
 }: Props) {
   const [openFilter, setOpenFilter] = useState(false);
   const [openSort, setOpenSort] = useState(false);
-  const closeTimer = useRef<number | null>(null);
+
+  const filterRef = useRef<HTMLDivElement | null>(null);
   const sortRef = useRef<HTMLDivElement | null>(null);
-
-  const openNow = () => {
-    if (closeTimer.current) window.clearTimeout(closeTimer.current);
-    setOpenFilter(true);
-  };
-
-  const closeSoon = () => {
-    if (closeTimer.current) window.clearTimeout(closeTimer.current);
-    closeTimer.current = window.setTimeout(() => setOpenFilter(false), 120);
-  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+
+      if (sortRef.current && !sortRef.current.contains(target)) {
         setOpenSort(false);
+      }
+
+      if (filterRef.current && !filterRef.current.contains(target)) {
+        setOpenFilter(false);
       }
     };
 
@@ -88,10 +85,10 @@ export default function GeneralDataToolbar({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h3 className="text-[16px] font-semibold text-slate-800">
+        <h3 className="text-sm font-semibold text-slate-800">
           {title}
           {countLabel ? (
-            <span className="ml-1 font-medium text-slate-400">
+            <span className="ml-1 text-sm font-medium text-slate-400">
               {countLabel}
             </span>
           ) : null}
@@ -183,30 +180,28 @@ export default function GeneralDataToolbar({
           />
         </div>
 
-        <div className="relative md:ml-auto">
-          <div
-            className="relative"
-            onMouseEnter={openNow}
-            onMouseLeave={closeSoon}
+        <div ref={filterRef} className="relative md:ml-auto">
+          <button
+            type="button"
+            onClick={() => setOpenFilter((prev) => !prev)}
+            className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"
+            aria-haspopup="dialog"
+            aria-expanded={openFilter}
           >
-            {/* <button
-              type="button"
-              className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-600 shadow-sm"
-            >
-              {actionLabel}
-            </button> */}
+            <SlidersHorizontal size={16} className="text-[#14b8ad]" />
+            <span>{actionLabel}</span>
+          </button>
 
-            {/* {openFilter ? (
-              <div className="absolute right-0 top-[calc(100%+12px)] z-50">
-                <FilterOptionsPopover
-                  value={filters}
-                  options={filterOptions}
-                  onApply={onApplyFilters}
-                  onRequestClose={() => setOpenFilter(false)}
-                />
-              </div>
-            ) : null} */}
-          </div>
+          {openFilter ? (
+            <div className="absolute right-0 top-[calc(100%+12px)] z-50">
+              <FilterOptionsPopover
+                value={filters}
+                options={filterOptions}
+                onApply={onApplyFilters}
+                onRequestClose={() => setOpenFilter(false)}
+              />
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

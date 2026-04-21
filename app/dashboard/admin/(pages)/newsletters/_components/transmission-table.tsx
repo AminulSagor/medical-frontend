@@ -4,11 +4,11 @@ import { Filter } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { getRecentGeneralTransmissions } from "@/service/admin/newsletter/dashboard/recent-transmissions.service";
+import { getTransmissionHistory } from "@/service/admin/newsletter/dashboard/transmission-history.service";
 import type {
-  RecentGeneralTransmissionItem,
-  RecentGeneralTransmissionsResponse,
-} from "@/types/admin/newsletter/dashboard/recent-transmissions.types";
+  TransmissionHistoryItem,
+  TransmissionHistoryResponse,
+} from "@/types/admin/newsletter/dashboard/transmission-history.types";
 
 type StatusFilter = "ALL" | "SENT" | "CANCELLED" | "DRAFT" | "SCHEDULED";
 
@@ -28,8 +28,8 @@ function Progress({ value }: { value: number }) {
   );
 }
 
-function getStatusDotClass(status: string) {
-  switch (status.toUpperCase()) {
+function getStatusDotClass(statusCode: string) {
+  switch (statusCode.toUpperCase()) {
     case "SENT":
       return "bg-emerald-500";
     case "CANCELLED":
@@ -43,35 +43,24 @@ function getStatusDotClass(status: string) {
   }
 }
 
-function getTypeLabel(contentType: string) {
-  switch (contentType) {
-    case "CUSTOM_MESSAGE":
-      return "Custom Message";
-    case "ARTICLE_LINK":
-      return "Article Link";
-    default:
-      return contentType
-        .toLowerCase()
-        .split("_")
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" ");
-  }
-}
-
 function formatSentDate(sentAt: string | null) {
   if (!sentAt) return "—";
+
+  const date = new Date(sentAt);
+
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
 
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
-  }).format(new Date(sentAt));
+  }).format(date);
 }
 
 export default function TransmissionTable() {
-  const [data, setData] = useState<RecentGeneralTransmissionsResponse | null>(
-    null,
-  );
+  const [data, setData] = useState<TransmissionHistoryResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -81,19 +70,20 @@ export default function TransmissionTable() {
   useEffect(() => {
     let isMounted = true;
 
-    const loadRecentTransmissions = async () => {
+    const loadTransmissionHistory = async () => {
       try {
         setIsLoading(true);
 
-        const response = await getRecentGeneralTransmissions({
+        const response = await getTransmissionHistory({
           page: 1,
           limit: 5,
+          sortOrder: "DESC",
         });
 
         if (!isMounted) return;
         setData(response);
       } catch (error) {
-        console.error("Failed to load recent transmissions", error);
+        console.error("Failed to load transmission history", error);
 
         if (!isMounted) return;
         setData(null);
@@ -103,7 +93,7 @@ export default function TransmissionTable() {
       }
     };
 
-    loadRecentTransmissions();
+    void loadTransmissionHistory();
 
     return () => {
       isMounted = false;
@@ -135,7 +125,7 @@ export default function TransmissionTable() {
     }
 
     return items
-      .filter((item) => item.status.toUpperCase() === statusFilter)
+      .filter((item) => item.status.code.toUpperCase() === statusFilter)
       .slice(0, 5);
   }, [data?.items, statusFilter]);
 
@@ -163,25 +153,11 @@ export default function TransmissionTable() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* <select
-            value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter(event.target.value as StatusFilter)
-            }
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 outline-none ring-0"
-          >
-            <option value="ALL">All Status</option>
-            <option value="SENT">Sent</option>
-            <option value="CANCELLED">Cancelled</option>
-            <option value="DRAFT">Draft</option>
-            <option value="SCHEDULED">Scheduled</option>
-          </select> */}
-
           <div ref={filterRef} className="relative">
             <button
               type="button"
               onClick={() => setIsFilterOpen((prev) => !prev)}
-              className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
             >
               <Filter size={14} /> Filter
             </button>
@@ -260,19 +236,19 @@ export default function TransmissionTable() {
                 </tr>
               ))
             ) : filteredRows.length > 0 ? (
-              filteredRows.map((row: RecentGeneralTransmissionItem) => (
+              filteredRows.map((row: TransmissionHistoryItem) => (
                 <tr key={row.id} className="border-t border-slate-100 bg-white">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <span
-                        className={`h-2 w-2 rounded-full ${getStatusDotClass(row.status)}`}
+                        className={`h-2 w-2 rounded-full ${getStatusDotClass(row.status.code)}`}
                       />
                       <div>
                         <p className="text-xs font-semibold text-slate-900">
-                          {row.status}
+                          {row.status.label}
                         </p>
                         <span className="mt-1 inline-flex rounded-full bg-[var(--primary-50)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--primary)]">
-                          {getTypeLabel(row.contentType)}
+                          {row.type.label}
                         </span>
                       </div>
                     </div>
@@ -280,18 +256,18 @@ export default function TransmissionTable() {
 
                   <td className="px-5 py-4">
                     <p className="max-w-[420px] truncate text-xs font-semibold text-slate-900">
-                      {row.subjectLine}
+                      {row.subject}
                     </p>
                   </td>
 
                   <td className="px-5 py-4">
                     <p className="text-xs text-slate-600">
-                      {row.audienceLabel}
+                      {row.targetAudience}
                     </p>
                   </td>
 
                   <td className="px-5 py-4">
-                    <Progress value={row.openRatePercent} />
+                    <Progress value={row.rates.openRatePercent} />
                   </td>
 
                   <td className="px-5 py-4">
@@ -301,12 +277,18 @@ export default function TransmissionTable() {
                   </td>
 
                   <td className="px-5 py-4 text-right">
-                    <Link
-                      href={`/dashboard/admin/newsletters/transmission-history/${row.id}`}
-                      className="text-xs font-semibold text-[var(--primary)] hover:underline"
-                    >
-                      View Report
-                    </Link>
+                    {row.actions.viewReport ? (
+                      <Link
+                        href={`/dashboard/admin/newsletters/transmission-history/${row.id}`}
+                        className="text-xs font-semibold text-[var(--primary)] hover:underline"
+                      >
+                        View Report
+                      </Link>
+                    ) : (
+                      <span className="text-xs font-medium text-slate-400">
+                        —
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))

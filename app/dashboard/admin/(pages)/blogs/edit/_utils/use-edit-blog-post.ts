@@ -5,7 +5,11 @@ import { getAdminBlogLiveById } from "@/service/admin/blogs/blog-live.service";
 import { updateBlogPost } from "@/service/admin/blogs/blog-edit.service";
 import type { BlogCreatePublishingStatus } from "@/types/admin/blogs/blog-create.types";
 import toast from "react-hot-toast";
-import { useCreateBlogPost } from "@/app/dashboard/admin/(pages)/blogs/create/_utils/use-create-blog-post";
+import {
+  buildLocalDateInputValue,
+  buildLocalTimeInputValue,
+  useCreateBlogPost,
+} from "@/app/dashboard/admin/(pages)/blogs/create/_utils/use-create-blog-post";
 import { buildScheduledPublishDateFromInputs } from "@/app/dashboard/admin/(pages)/blogs/create/_utils/create-blog-post.helpers";
 
 type EditCreatedBlogModalData = {
@@ -82,11 +86,15 @@ export function useEditBlogPost(blogId: string) {
           ...inlineImages,
         ]);
 
-        if (blog.scheduledPublishDate) {
-          const d = new Date(blog.scheduledPublishDate);
+        const scheduleSource =
+          blog.scheduledPublishDate ||
+          blog.publishedAt ||
+          blog.createdAt ||
+          null;
 
-          setScheduleDate(d.toISOString().split("T")[0]);
-          setScheduleTime(d.toTimeString().slice(0, 5));
+        if (scheduleSource) {
+          setScheduleDate(buildLocalDateInputValue(scheduleSource));
+          setScheduleTime(buildLocalTimeInputValue(scheduleSource));
         } else {
           setScheduleDate("");
           setScheduleTime("");
@@ -156,9 +164,9 @@ export function useEditBlogPost(blogId: string) {
         nextErrors.coverImage = "Cover image is required";
       }
 
-      if (!create.secondImageUrl) {
-        nextErrors.secondImage = "Second image is required";
-      }
+      // if (!create.secondImageUrl) {
+      //   nextErrors.secondImage = "Second image is required";
+      // }
 
       if (create.selectedCategoryIds.length === 0) {
         nextErrors.categories = "At least one category must be selected";

@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { Calendar, Search, X } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
 import { WorkspaceFilterState } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/types/general-newsletter-data.type";
 import { GeneralBroadcastWorkspaceFilterOptions } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-workspace.types";
 
@@ -29,53 +28,30 @@ function CheckboxRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-slate-50"
+      className="flex w-full items-center gap-3 rounded-xl px-1 py-2.5 text-left transition hover:bg-slate-50"
     >
       <span
         className={cx(
-          "flex h-4 w-4 items-center justify-center rounded-[5px] border",
+          "flex h-[18px] w-[18px] items-center justify-center rounded-md border transition",
           checked
             ? "border-[#14b8ad] bg-[#14b8ad]"
-            : "border-slate-200 bg-white",
+            : "border-[#d7dfeb] bg-white",
         )}
       >
-        {checked ? <span className="h-2 w-2 rounded-[3px] bg-white" /> : null}
-      </span>
-      <span className="text-sm font-medium text-slate-700">{label}</span>
-    </button>
-  );
-}
-
-function SelectableRow({
-  active,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-slate-50"
-    >
-      <span className="flex-1 text-sm font-medium text-slate-700">{label}</span>
-
-      {active ? (
-        <span className="text-[#14b8ad]">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        {checked ? (
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
             <path
-              d="M20 6L9 17l-5-5"
-              stroke="currentColor"
-              strokeWidth="2.5"
+              d="M9.8 3.2L4.9 8.1L2.2 5.4"
+              stroke="white"
+              strokeWidth="1.8"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
           </svg>
-        </span>
-      ) : null}
+        ) : null}
+      </span>
+
+      <span className="text-sm font-medium text-slate-700">{label}</span>
     </button>
   );
 }
@@ -94,15 +70,26 @@ function DatePill({
       type="button"
       onClick={onClick}
       className={cx(
-        "h-9 flex-1 rounded-xl border px-3 text-[11px] font-bold uppercase tracking-[0.12em] transition",
+        "flex h-11 flex-1 items-center justify-center rounded-xl border px-3 text-xs font-bold uppercase tracking-[0.12em] transition",
         active
-          ? "border-[#b7efe9] bg-[#e8fbf8] text-[#14b8ad]"
-          : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50",
+          ? "border-[#cfeee9] bg-[#f3fbfa] text-[#14b8ad]"
+          : "border-[#d7dfeb] bg-white text-[#7d8db3] hover:bg-slate-50",
       )}
     >
       {label}
     </button>
   );
+}
+
+function buildClearedFilters(): WorkspaceFilterState {
+  return {
+    contentTypes: [],
+    author: null,
+    audienceSegment: null,
+    quickDateRange: null,
+    fromDate: "",
+    toDate: "",
+  };
 }
 
 export default function FilterOptionsPopover({
@@ -113,15 +100,21 @@ export default function FilterOptionsPopover({
 }: Props) {
   const [draft, setDraft] = useState<WorkspaceFilterState>(value);
 
-  const contentTypeOptions = options?.contentTypes ?? [];
-  const authorOptions = options?.authors ?? [];
-  const audienceSegmentOptions = options?.audienceSegments ?? [];
-  const quickDateRangeOptions = options?.quickDateRanges ?? [];
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
 
-  const hasAudience = useMemo(
-    () => Boolean(draft.audienceSegment?.trim()),
-    [draft.audienceSegment],
-  );
+  const contentTypeOptions = useMemo(() => {
+    return options?.contentTypes ?? [];
+  }, [options?.contentTypes]);
+
+  const quickDateRangeOptions = useMemo(() => {
+    if (options?.quickDateRanges?.length) {
+      return options.quickDateRanges;
+    }
+
+    return ["LAST_7_DAYS", "LAST_30_DAYS", "CUSTOM"];
+  }, [options?.quickDateRanges]);
 
   const toggleContentType = (contentType: string) => {
     setDraft((prev) => ({
@@ -132,213 +125,126 @@ export default function FilterOptionsPopover({
     }));
   };
 
-  const clearAll = () => {
-    const cleared: WorkspaceFilterState = {
-      contentTypes: [],
-      author: null,
-      audienceSegment: null,
-      quickDateRange: null,
-      fromDate: "",
-      toDate: "",
-    };
-
+  const handleClearAll = () => {
+    const cleared = buildClearedFilters();
     setDraft(cleared);
     onApply(cleared);
+    onRequestClose?.();
   };
 
   return (
-    <div className="w-[340px] rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.14)]">
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-slate-800">Filter Options</h4>
+    <div className="w-[342px] overflow-hidden rounded-[24px] border border-[#e6edf5] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.14)]">
+      <div className="px-6 pb-5 pt-5">
+        <div className="flex items-start justify-between">
+          <h4 className="text-sm font-semibold text-slate-800">
+            Filter Options
+          </h4>
 
-        <button
-          type="button"
-          onClick={clearAll}
-          className="text-[12px] font-semibold text-[#14b8ad] hover:opacity-80"
-        >
-          Clear All
-        </button>
-      </div>
-
-      <div className="mt-4">
-        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-          Content Type
-        </p>
-
-        <div className="mt-2 space-y-1">
-          {contentTypeOptions.length > 0 ? (
-            contentTypeOptions.map((item) => (
-              <CheckboxRow
-                key={item}
-                checked={draft.contentTypes.includes(item)}
-                label={item}
-                onClick={() => toggleContentType(item)}
-              />
-            ))
-          ) : (
-            <p className="px-2 py-2 text-sm text-slate-400">No content types</p>
-          )}
+          <button
+            type="button"
+            onClick={handleClearAll}
+            className="text-sm font-semibold text-[#14b8ad] transition hover:opacity-80"
+          >
+            Clear All
+          </button>
         </div>
-      </div>
 
-      <div className="mt-4">
-        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-          Target Audience
-        </p>
+        <div className="mt-5">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#94a3c3]">
+            Content Type
+          </p>
 
-        <div className="mt-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
-          <div className="flex items-center gap-2">
-            <Search size={14} className="text-slate-400" />
-
-            {hasAudience ? (
-              <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[12px] font-semibold text-slate-600">
-                {draft.audienceSegment}
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDraft((prev) => ({
-                      ...prev,
-                      audienceSegment: null,
-                    }))
-                  }
-                  className="text-slate-400 hover:text-slate-600"
-                  aria-label="Remove audience"
-                >
-                  <X size={14} />
-                </button>
-              </span>
-            ) : null}
-
-            <input
-              className="h-7 flex-1 bg-transparent text-[12px] font-medium text-slate-600 outline-none placeholder:text-slate-400"
-              placeholder="Search audiences..."
-              value={hasAudience ? "" : (draft.audienceSegment ?? "")}
-              onChange={(e) =>
-                setDraft((prev) => ({
-                  ...prev,
-                  audienceSegment: e.target.value || null,
-                }))
-              }
-            />
+          <div className="mt-3 space-y-1.5">
+            {contentTypeOptions.length > 0 ? (
+              contentTypeOptions.map((item) => (
+                <CheckboxRow
+                  key={item}
+                  checked={draft.contentTypes.includes(item)}
+                  label={item}
+                  onClick={() => toggleContentType(item)}
+                />
+              ))
+            ) : (
+              <p className="px-1 py-2 text-sm text-slate-400">
+                No content types
+              </p>
+            )}
           </div>
         </div>
 
-        {audienceSegmentOptions.length > 0 ? (
-          <div className="mt-2 space-y-1">
-            {audienceSegmentOptions.map((segment) => (
-              <SelectableRow
-                key={segment}
-                active={draft.audienceSegment === segment}
-                label={segment}
+        <div className="mt-6">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#94a3c3]">
+            Date Range
+          </p>
+
+          <div className="mt-3 flex items-center gap-2">
+            {quickDateRangeOptions.map((preset) => (
+              <DatePill
+                key={preset}
+                active={draft.quickDateRange === preset}
+                label={preset.replaceAll("_", " ")}
                 onClick={() =>
                   setDraft((prev) => ({
                     ...prev,
-                    audienceSegment:
-                      prev.audienceSegment === segment ? null : segment,
+                    quickDateRange:
+                      prev.quickDateRange === preset ? null : preset,
                   }))
                 }
               />
             ))}
           </div>
-        ) : null}
-      </div>
 
-      <div className="mt-4">
-        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-          Author
-        </p>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-[#d7dfeb] bg-white px-4 py-3">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#94a3c3]">
+                From
+              </p>
 
-        <div className="mt-2 space-y-1">
-          {authorOptions.length > 0 ? (
-            authorOptions.map((author) => (
-              <SelectableRow
-                key={author}
-                active={draft.author === author}
-                label={author}
-                onClick={() =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    author: prev.author === author ? null : author,
-                  }))
-                }
-              />
-            ))
-          ) : (
-            <p className="px-2 py-2 text-sm text-slate-400">No authors</p>
-          )}
-        </div>
-      </div>
-
-      <div className="mt-4">
-        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-          Date Range
-        </p>
-
-        <div className="mt-2 flex items-center gap-2">
-          {quickDateRangeOptions.map((preset) => (
-            <DatePill
-              key={preset}
-              active={draft.quickDateRange === preset}
-              label={preset.replaceAll("_", " ")}
-              onClick={() =>
-                setDraft((prev) => ({
-                  ...prev,
-                  quickDateRange:
-                    prev.quickDateRange === preset ? null : preset,
-                }))
-              }
-            />
-          ))}
-        </div>
-
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-              From
-            </p>
-            <div className="mt-1 flex items-center gap-2">
-              <input
-                type="date"
-                value={draft.fromDate}
-                onChange={(e) =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    fromDate: e.target.value,
-                  }))
-                }
-                className="h-6 w-full bg-transparent text-[12px] font-semibold text-slate-700 outline-none"
-              />
-              <Calendar size={14} className="text-slate-400" />
+              <div className="mt-2">
+                <input
+                  type="date"
+                  value={draft.fromDate}
+                  onChange={(e) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      fromDate: e.target.value,
+                      quickDateRange: "CUSTOM",
+                    }))
+                  }
+                  className="h-6 w-full bg-transparent text-sm font-semibold text-slate-700 outline-none"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-              To
-            </p>
-            <div className="mt-1 flex items-center gap-2">
-              <input
-                type="date"
-                value={draft.toDate}
-                onChange={(e) =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    toDate: e.target.value,
-                  }))
-                }
-                className="h-6 w-full bg-transparent text-[12px] font-semibold text-slate-700 outline-none"
-              />
-              <Calendar size={14} className="text-slate-400" />
+            <div className="rounded-2xl border border-[#d7dfeb] bg-white px-4 py-3">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#94a3c3]">
+                To
+              </p>
+
+              <div className="mt-2">
+                <input
+                  type="date"
+                  value={draft.toDate}
+                  onChange={(e) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      toDate: e.target.value,
+                      quickDateRange: "CUSTOM",
+                    }))
+                  }
+                  className="h-6 w-full bg-transparent text-sm font-semibold text-slate-700 outline-none"
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-end gap-3 pt-2">
+      <div className="flex items-center justify-end gap-3 border-t border-[#edf2f7] bg-[#fbfdff] px-6 py-4">
         <button
           type="button"
           onClick={onRequestClose}
-          className="h-10 rounded-xl px-4 text-sm font-semibold text-slate-500 hover:bg-slate-50"
+          className="h-10 rounded-xl px-3 text-sm font-semibold text-[#64748b] transition hover:bg-slate-100"
         >
           Cancel
         </button>
@@ -349,7 +255,7 @@ export default function FilterOptionsPopover({
             onApply(draft);
             onRequestClose?.();
           }}
-          className="h-10 rounded-xl bg-[#14b8ad] px-5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(20,184,173,0.22)] hover:opacity-95"
+          className="inline-flex h-11 items-center justify-center rounded-xl bg-[#14b8ad] px-5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(20,184,173,0.24)] transition hover:opacity-95"
         >
           Apply Filters
         </button>

@@ -26,6 +26,7 @@ import {
 } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/_utils/general-broadcast-workspace.utils";
 import { generalBroadcastWorkspaceService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-workspace.service";
 import type {
+  GeneralBroadcastWorkspaceFilterOptions,
   GeneralBroadcastWorkspaceItem,
   GeneralBroadcastWorkspaceListResponse,
 } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-workspace.types";
@@ -79,6 +80,36 @@ function sortWorkspaceItems(
 
     return getItemLastModifiedTime(b) - getItemLastModifiedTime(a);
   });
+}
+
+function getResolvedFilterOptions(
+  workspace: GeneralBroadcastWorkspaceListResponse | null,
+): GeneralBroadcastWorkspaceFilterOptions | undefined {
+  if (!workspace) return undefined;
+
+  const backendOptions = workspace.filterOptions;
+
+  const derivedContentTypes = Array.from(
+    new Set(
+      workspace.items
+        .map((item) => item.type?.displayLabel?.trim())
+        .filter((value): value is string => Boolean(value)),
+    ),
+  );
+
+  return {
+    contentTypes:
+      backendOptions?.contentTypes && backendOptions.contentTypes.length > 0
+        ? backendOptions.contentTypes
+        : derivedContentTypes,
+    authors: backendOptions?.authors ?? [],
+    audienceSegments: backendOptions?.audienceSegments ?? [],
+    quickDateRanges:
+      backendOptions?.quickDateRanges &&
+      backendOptions.quickDateRanges.length > 0
+        ? backendOptions.quickDateRanges
+        : ["LAST_7_DAYS", "LAST_30_DAYS", "CUSTOM"],
+  };
 }
 
 export default function GeneralNewsLetterDataSection() {
@@ -159,6 +190,10 @@ export default function GeneralNewsLetterDataSection() {
   const handleRefresh = useCallback(async () => {
     await fetchWorkspaceData(page);
   }, [fetchWorkspaceData, page]);
+
+  const resolvedFilterOptions = useMemo(() => {
+    return getResolvedFilterOptions(workspace);
+  }, [workspace]);
 
   const filteredItems = useMemo(() => {
     if (!workspace) return [];
@@ -241,7 +276,7 @@ export default function GeneralNewsLetterDataSection() {
                   onChange={setCadenceTab}
                 />
 
-                <GeneralDataToolbar
+                {/* <GeneralDataToolbar
                   title={toolbarTitle}
                   countLabel={toolbarCountLabel}
                   searchPlaceholder={toolbarSearchPlaceholder}
@@ -249,11 +284,11 @@ export default function GeneralNewsLetterDataSection() {
                   searchValue={searchQuery}
                   onSearchChange={setSearchQuery}
                   filters={filters}
-                  filterOptions={workspace?.filterOptions}
+                  filterOptions={resolvedFilterOptions}
                   onApplyFilters={setFilters}
                   sortValue={sortValue}
                   onSortChange={setSortValue}
-                />
+                /> */}
 
                 {isLoading ? (
                   <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-sm font-medium text-slate-400">
@@ -276,7 +311,7 @@ export default function GeneralNewsLetterDataSection() {
 
             {parentTab === "drafts" && (
               <>
-                <GeneralDataToolbar
+                {/* <GeneralDataToolbar
                   title={toolbarTitle}
                   countLabel={toolbarCountLabel}
                   searchPlaceholder={toolbarSearchPlaceholder}
@@ -284,11 +319,11 @@ export default function GeneralNewsLetterDataSection() {
                   searchValue={searchQuery}
                   onSearchChange={setSearchQuery}
                   filters={filters}
-                  filterOptions={workspace?.filterOptions}
+                  filterOptions={resolvedFilterOptions}
                   onApplyFilters={setFilters}
                   sortValue={sortValue}
                   onSortChange={setSortValue}
-                />
+                /> */}
 
                 {isLoading ? (
                   <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-sm font-medium text-slate-400">
@@ -320,7 +355,7 @@ export default function GeneralNewsLetterDataSection() {
                   searchValue={searchQuery}
                   onSearchChange={setSearchQuery}
                   filters={filters}
-                  filterOptions={workspace?.filterOptions}
+                  filterOptions={resolvedFilterOptions}
                   onApplyFilters={setFilters}
                   sortValue={sortValue}
                   onSortChange={setSortValue}

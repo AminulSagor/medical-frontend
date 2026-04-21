@@ -726,7 +726,6 @@ export default function EditBlogPostPage({ blogId }: { blogId: string }) {
 
       {isCohortsModalOpen && distributionOptions ? (
         <CohortsModal
-          cohorts={distributionOptions.courseCohorts}
           isSubmitting={isDistributionSubmitting}
           onBack={handleBackToDistributionFromCohorts}
           onClose={handleCloseCohortsModal}

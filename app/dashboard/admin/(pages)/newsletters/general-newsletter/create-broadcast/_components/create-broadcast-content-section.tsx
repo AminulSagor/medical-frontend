@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, FileText, Link2, Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { generalBroadcastCreateService } from "@/service/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-create.service";
 import type {
   CreateBroadcastFormErrors,
@@ -40,6 +40,8 @@ export default function CreateBroadcastContentSection({
   const [isSearchingArticles, setIsSearchingArticles] = useState(false);
   const [showArticleDropdown, setShowArticleDropdown] = useState(false);
 
+  const skipNextArticleSearchRef = useRef(false);
+
   const isArticleCardDisabled =
     isEditMode && form.contentType === "CUSTOM_MESSAGE";
   const isCustomCardDisabled =
@@ -48,10 +50,16 @@ export default function CreateBroadcastContentSection({
   useEffect(() => {
     if (form.contentType !== "ARTICLE_LINK") return;
 
+    if (skipNextArticleSearchRef.current) {
+      skipNextArticleSearchRef.current = false;
+      return;
+    }
+
     const searchText = form.articleSearch.trim();
 
     if (searchText.length < 2) {
       setArticleOptions([]);
+      setShowArticleDropdown(false);
       return;
     }
 
@@ -77,9 +85,11 @@ export default function CreateBroadcastContentSection({
   }, [form.articleSearch, form.contentType]);
 
   const handleSelectArticle = (article: GeneralBroadcastArticleSourceItem) => {
+    skipNextArticleSearchRef.current = true;
     onChange("selectedArticle", article);
     onChange("articleSearch", article.title);
     setShowArticleDropdown(false);
+    setArticleOptions([]);
   };
 
   return (
@@ -152,15 +162,25 @@ export default function CreateBroadcastContentSection({
                   type="text"
                   value={form.articleSearch}
                   onChange={(e) => {
+                    skipNextArticleSearchRef.current = false;
                     onChange("articleSearch", e.target.value);
                     onChange("selectedArticle", null);
                   }}
-                  onFocus={() => setShowArticleDropdown(true)}
+                  onFocus={() => {
+                    if (
+                      !form.selectedArticle &&
+                      (form.articleSearch.trim().length >= 2 ||
+                        articleOptions.length > 0)
+                    ) {
+                      setShowArticleDropdown(true);
+                    }
+                  }}
                   placeholder="Search and select a published article"
                   className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#18c3b2]"
                 />
 
                 {showArticleDropdown &&
+                !form.selectedArticle &&
                 (form.articleSearch.trim().length >= 2 ||
                   articleOptions.length > 0) ? (
                   <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-10 max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-lg">
