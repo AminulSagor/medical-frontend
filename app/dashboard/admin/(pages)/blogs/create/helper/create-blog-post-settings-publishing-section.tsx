@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarDays, Clock3, Clock3Icon, Minus, PenLine } from "lucide-react";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { cx } from "../_utils/create-blog-post.helpers";
 import CreateBlogPostSettingsSection from "./create-blog-post-settings-section";
 
@@ -78,6 +78,23 @@ function openNativePicker(input: HTMLInputElement | null) {
   input.click();
 }
 
+function getTodayDateString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = `${now.getMonth() + 1}`.padStart(2, "0");
+  const day = `${now.getDate()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function getCurrentTimeString() {
+  const now = new Date();
+  const hours = `${now.getHours()}`.padStart(2, "0");
+  const minutes = `${now.getMinutes()}`.padStart(2, "0");
+
+  return `${hours}:${minutes}`;
+}
+
 export default function CreateBlogPostSettingsPublishingSection({
   authorName,
   onAuthorNameChange,
@@ -104,6 +121,34 @@ export default function CreateBlogPostSettingsPublishingSection({
     () => formatScheduleTime(scheduleTime),
     [scheduleTime],
   );
+
+  const todayDate = useMemo(() => getTodayDateString(), []);
+  const currentTime = useMemo(() => getCurrentTimeString(), []);
+  const minTime = scheduleDate === todayDate ? currentTime : undefined;
+
+  useEffect(() => {
+    if (scheduleDate && scheduleDate < todayDate) {
+      onScheduleDateChange(todayDate);
+      onScheduleTimeChange("");
+      return;
+    }
+
+    if (
+      scheduleDate === todayDate &&
+      scheduleTime &&
+      minTime &&
+      scheduleTime < minTime
+    ) {
+      onScheduleTimeChange("");
+    }
+  }, [
+    scheduleDate,
+    scheduleTime,
+    todayDate,
+    minTime,
+    onScheduleDateChange,
+    onScheduleTimeChange,
+  ]);
 
   return (
     <CreateBlogPostSettingsSection title="Publishing Status">
@@ -149,20 +194,18 @@ export default function CreateBlogPostSettingsPublishingSection({
             ref={dateInputRef}
             type="date"
             value={scheduleDate}
+            min={todayDate}
             onChange={(e) => onScheduleDateChange(e.target.value)}
-            className="pointer-events-none absolute opacity-0"
-            tabIndex={-1}
-            aria-hidden="true"
+            className="absolute h-0 w-0 opacity-0"
           />
 
           <input
             ref={timeInputRef}
             type="time"
             value={scheduleTime}
+            min={minTime}
             onChange={(e) => onScheduleTimeChange(e.target.value)}
-            className="pointer-events-none absolute opacity-0"
-            tabIndex={-1}
-            aria-hidden="true"
+            className="absolute h-0 w-0 opacity-0"
           />
 
           <button

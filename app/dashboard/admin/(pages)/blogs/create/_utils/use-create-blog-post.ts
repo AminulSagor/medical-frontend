@@ -740,7 +740,9 @@ export function useCreateBlogPost() {
   const handleViewLiveArticle = () => {
     if (!createdBlogModalData?.id) return;
 
-    router.push(`/dashboard/admin/blogs/live/${createdBlogModalData.id}`);
+    const liveUrl = `${window.location.origin}/public/blogs/${createdBlogModalData.id}`;
+
+    window.open(liveUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleShareArticle = () => {
