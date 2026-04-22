@@ -106,10 +106,12 @@ function mapStatus(status: string): SubscriberProfile["status"] {
   return "unsubscribed";
 }
 
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
+function getInitials(name?: string | null): string {
+  const safeName = name?.trim() ?? "";
 
-  if (!parts.length) return "NA";
+  if (!safeName) return "NA";
+
+  const parts = safeName.split(/\s+/).filter(Boolean);
 
   return parts
     .slice(0, 2)
@@ -122,21 +124,21 @@ export const mapSubscriberProfileResponseToUi = (
 ): SubscriberProfile => {
   const adminNotes = response.adminNotes.length
     ? response.adminNotes.map((item) => ({
-      id: item.id,
-      note: item.note,
-      createdAt: item.createdAt,
-    }))
+        id: item.id,
+        note: item.note,
+        createdAt: item.createdAt,
+      }))
     : [
-      {
-        id: "empty-note",
-        note: "No internal notes yet.",
-      },
-    ];
+        {
+          id: "empty-note",
+          note: "No internal notes yet.",
+        },
+      ];
 
   return {
     id: response.profile.id,
     breadcrumbLabel: "General Newsletter → Subscriber Profile",
-    name: response.profile.fullName,
+    name: response.profile.fullName?.trim() || "Unknown Subscriber",
     roleLabel: response.profile.clinicalRole ?? "—",
     initials: getInitials(response.profile.fullName),
     status: mapStatus(response.profile.status),
