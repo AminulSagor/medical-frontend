@@ -7,7 +7,7 @@ import type {
 export async function createBlogPost(
   payload: CreateBlogPostPayload,
 ): Promise<CreateBlogPostResponse> {
-  console.log("blog payload", payload);
+  // console.log("blog payload", payload);
   const { data } = await serviceClient.post("/admin/blog", payload);
   return data;
 }
