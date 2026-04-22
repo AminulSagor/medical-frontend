@@ -2,10 +2,11 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type BlogPreviewSource = "draft" | "published";
+export type BlogPreviewMode = "create" | "edit";
 
 export type BlogPreviewImage = {
   imageUrl: string;
-  imageType: "hero" | "thumbnail";
+  imageType: "hero" | "thumbnail" | "article_inline";
 };
 
 export type BlogPreviewItem = {
@@ -47,12 +48,25 @@ export type BlogPreviewItem = {
   updatedAt: string;
 };
 
+type BlogPreviewOptions = {
+  mode?: BlogPreviewMode;
+  returnPath?: string;
+};
+
 type BlogPreviewState = {
   source: BlogPreviewSource;
+  mode: BlogPreviewMode;
   blogId?: string;
+  previewReturnPath?: string;
   previewBlog: BlogPreviewItem | null;
-  setDraftPreview: (data: BlogPreviewItem) => void;
-  setPublishedPreview: (data: BlogPreviewItem) => void;
+  setDraftPreview: (
+    data: BlogPreviewItem,
+    options?: BlogPreviewOptions,
+  ) => void;
+  setPublishedPreview: (
+    data: BlogPreviewItem,
+    options?: BlogPreviewOptions,
+  ) => void;
   clearPreview: () => void;
 };
 
@@ -60,28 +74,36 @@ export const useBlogPreviewStore = create<BlogPreviewState>()(
   persist(
     (set) => ({
       source: "draft",
+      mode: "create",
       blogId: undefined,
+      previewReturnPath: undefined,
       previewBlog: null,
 
-      setDraftPreview: (data) =>
+      setDraftPreview: (data, options) =>
         set({
           source: "draft",
+          mode: options?.mode ?? "create",
+          previewReturnPath: options?.returnPath ?? undefined,
           previewBlog: data,
-          blogId: data.id || undefined,
+          blogId: data.id?.trim() ? data.id : undefined,
         }),
 
-      setPublishedPreview: (data) =>
+      setPublishedPreview: (data, options) =>
         set({
           source: "published",
+          mode: options?.mode ?? "create",
+          previewReturnPath: options?.returnPath ?? undefined,
           previewBlog: data,
-          blogId: data.id || undefined,
+          blogId: data.id?.trim() ? data.id : undefined,
         }),
 
       clearPreview: () =>
         set({
           previewBlog: null,
           blogId: undefined,
+          previewReturnPath: undefined,
           source: "draft",
+          mode: "create",
         }),
     }),
     {

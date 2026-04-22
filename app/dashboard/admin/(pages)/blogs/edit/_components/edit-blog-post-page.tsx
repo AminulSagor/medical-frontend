@@ -417,56 +417,71 @@ export default function EditBlogPostPage({ blogId }: { blogId: string }) {
       selectedCategoryIds.includes(category.id),
     );
 
-    setDraftPreview({
-      id: "",
-      title: title.trim(),
-      content,
-      authorName: authorName.trim(),
-      coverImages: [
-        ...(coverImageUrl
-          ? [{ imageUrl: coverImageUrl, imageType: "hero" as const }]
-          : []),
-        ...(secondImageUrl
-          ? [{ imageUrl: secondImageUrl, imageType: "thumbnail" as const }]
-          : []),
-      ],
-      publishingStatus: "draft",
-      scheduledPublishDate:
-        scheduleDate && scheduleTime
-          ? new Date(`${scheduleDate}T${scheduleTime}:00`).toISOString()
-          : null,
-      isFeatured,
-      excerpt,
-      readTimeMinutes: Number.parseInt(readTimeLabel, 10) || 0,
-      publishedAt: null,
-      seo: {
-        id: "",
-        postId: "",
-        metaTitle,
-        metaDescription,
+    setDraftPreview(
+      {
+        id: blogId,
+        title: title.trim(),
+        content,
+        authorName: authorName.trim(),
+        coverImages: [
+          ...(coverImageUrl
+            ? [{ imageUrl: coverImageUrl, imageType: "hero" as const }]
+            : []),
+          ...(secondImageUrl
+            ? [{ imageUrl: secondImageUrl, imageType: "thumbnail" as const }]
+            : []),
+          ...articleImages
+            .filter(
+              (image): image is string =>
+                typeof image === "string" && image.trim().length > 0,
+            )
+            .map((image) => ({
+              imageUrl: image,
+              imageType: "article_inline" as const,
+            })),
+        ],
+        publishingStatus: "draft",
+        scheduledPublishDate:
+          scheduleDate && scheduleTime
+            ? new Date(`${scheduleDate}T${scheduleTime}:00`).toISOString()
+            : null,
+        isFeatured,
+        excerpt,
+        readTimeMinutes: Number.parseInt(readTimeLabel, 10) || 0,
+        publishedAt: null,
+        seo: {
+          id: "",
+          postId: "",
+          metaTitle,
+          metaDescription,
+          createdAt: "",
+          updatedAt: "",
+        },
+        categories: selectedCategories.map((category) => ({
+          id: category.id,
+          name: category.name,
+          slug: "",
+          description: null,
+          isActive: true,
+          createdAt: "",
+          updatedAt: "",
+        })),
+        tags: tagOptions
+          .filter((tag) => selectedTagIds.includes(tag.id))
+          .map((tag) => ({
+            id: tag.id,
+            name: tag.name,
+            slug: "",
+            createdAt: "",
+          })),
         createdAt: "",
         updatedAt: "",
       },
-      categories: selectedCategories.map((category) => ({
-        id: category.id,
-        name: category.name,
-        slug: "",
-        description: null,
-        isActive: true,
-        createdAt: "",
-        updatedAt: "",
-      })),
-      tags: tagOptions
-        .filter((tag) => selectedTagIds.includes(tag.id))
-        .map((tag) => ({
-          id: tag.id,
-          name: tag.name,
-          slug: "",
-          createdAt: "",
-        })),
-      createdAt: "",
-      updatedAt: "",
-    });
+      {
+        mode: "edit",
+        returnPath: `/dashboard/admin/blogs/edit/${blogId}?fromPreview=true`,
+      },
+    );
 
     router.push("/dashboard/admin/blogs/preview?source=draft");
   };

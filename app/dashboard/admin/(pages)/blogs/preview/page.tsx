@@ -62,19 +62,42 @@ function getPreviewTitle(blog: any) {
   return blog?.title || "Untitled Article";
 }
 
-function getCoverImage(blog: any) {
-  return (
-    blog?.coverImages?.find((image: PreviewImage) => image.imageType === "hero")
-      ?.imageUrl || ""
+function getPreviewImages(blog: any): PreviewImage[] {
+  if (!Array.isArray(blog?.coverImages)) return [];
+
+  return blog.coverImages.filter(
+    (image: PreviewImage) =>
+      image?.imageUrl && typeof image.imageUrl === "string",
   );
 }
 
-function getBodyImage(blog: any) {
+function getHeroImage(blog: any) {
+  const images = getPreviewImages(blog);
+
   return (
-    blog?.coverImages?.find(
-      (image: PreviewImage) => image.imageType === "thumbnail",
-    )?.imageUrl || ""
+    images.find((image) => image.imageType === "hero")?.imageUrl ||
+    images[0]?.imageUrl ||
+    ""
   );
+}
+
+function getThumbnailImages(blog: any) {
+  return getPreviewImages(blog).filter(
+    (image) => image.imageType === "thumbnail",
+  );
+}
+
+function getOtherImages(blog: any) {
+  return getPreviewImages(blog).filter(
+    (image) => image.imageType !== "hero" && image.imageType !== "thumbnail",
+  );
+}
+
+function getAllBodyImages(blog: any) {
+  const thumbnails = getThumbnailImages(blog);
+  const others = getOtherImages(blog);
+
+  return [...thumbnails, ...others];
 }
 
 function getSeoDescription(blog: any) {
@@ -173,10 +196,49 @@ function PreviewTopBar({
   );
 }
 
+function ArticleImageGallery({
+  images,
+  title,
+}: {
+  images: PreviewImage[];
+  title: string;
+}) {
+  if (!images.length) return null;
+
+  if (images.length === 1) {
+    return (
+      <div className="mb-8 overflow-hidden rounded-sm">
+        <img
+          src={images[0].imageUrl}
+          alt={`${title} image 1`}
+          className="h-auto w-full object-cover"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+      {images.map((image, index) => (
+        <div
+          key={`${image.imageUrl}-${index}`}
+          className="overflow-hidden rounded-sm"
+        >
+          <img
+            src={image.imageUrl}
+            alt={`${title} image ${index + 1}`}
+            className="h-full w-full object-cover"
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DesktopArticlePreview({ blog }: { blog: any }) {
   const title = getPreviewTitle(blog);
-  const coverImage = getCoverImage(blog);
-  const bodyImage = getBodyImage(blog);
+  const coverImage = getHeroImage(blog);
+  const bodyImages = getAllBodyImages(blog);
   const authorName = getAuthorName(blog);
   const authorRole = getAuthorRole();
   const categoryName = getCategoryName(blog);
@@ -246,15 +308,7 @@ function DesktopArticlePreview({ blog }: { blog: any }) {
       <div className="bg-white px-12 py-14">
         <div className="grid grid-cols-[minmax(0,1fr)_260px] gap-14">
           <div className="min-w-0">
-            {bodyImage ? (
-              <div className="mb-8 overflow-hidden rounded-sm">
-                <img
-                  src={bodyImage}
-                  alt={`${title} article`}
-                  className="h-auto w-full object-cover"
-                />
-              </div>
-            ) : null}
+            <ArticleImageGallery images={bodyImages} title={title} />
 
             <div
               className="text-slate-600 [&_blockquote]:my-6 [&_blockquote]:border-l-[3px] [&_blockquote]:border-[#16c6c1] [&_blockquote]:pl-4 [&_blockquote]:italic [&_h1]:mb-5 [&_h1]:mt-10 [&_h1]:font-semibold [&_h1]:text-slate-900 [&_h1]:text-base [&_h2]:mb-5 [&_h2]:mt-10 [&_h2]:font-semibold [&_h2]:text-slate-900 [&_h2]:text-base [&_h3]:mb-4 [&_h3]:mt-8 [&_h3]:font-semibold [&_h3]:text-slate-900 [&_h3]:text-base [&_img]:my-6 [&_img]:h-auto [&_img]:w-full [&_ol]:my-5 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mb-5 [&_p]:leading-[2] [&_p]:text-slate-600 [&_p]:text-base [&_strong]:font-semibold [&_strong]:text-slate-900 [&_ul]:my-5 [&_ul]:list-disc [&_ul]:pl-6"
@@ -304,8 +358,8 @@ function DesktopArticlePreview({ blog }: { blog: any }) {
 
 function TabletArticlePreview({ blog }: { blog: any }) {
   const title = getPreviewTitle(blog);
-  const coverImage = getCoverImage(blog);
-  const bodyImage = getBodyImage(blog);
+  const coverImage = getHeroImage(blog);
+  const bodyImages = getAllBodyImages(blog);
   const authorName = getAuthorName(blog);
   const categoryName = getCategoryName(blog);
   const readTime = getReadTime(blog);
@@ -385,15 +439,7 @@ function TabletArticlePreview({ blog }: { blog: any }) {
       </div>
 
       <div className="bg-white px-8 py-8">
-        {bodyImage ? (
-          <div className="mb-6 overflow-hidden rounded-sm">
-            <img
-              src={bodyImage}
-              alt={`${title} article`}
-              className="h-auto w-full object-cover"
-            />
-          </div>
-        ) : null}
+        <ArticleImageGallery images={bodyImages} title={title} />
 
         <div
           className="text-slate-700 [&_blockquote]:my-5 [&_blockquote]:border-l-[3px] [&_blockquote]:border-[#16c6c1] [&_blockquote]:pl-4 [&_blockquote]:italic [&_h1]:mb-4 [&_h1]:mt-8 [&_h1]:font-semibold [&_h1]:text-slate-900 [&_h1]:text-base [&_h2]:mb-4 [&_h2]:mt-8 [&_h2]:font-semibold [&_h2]:text-slate-900 [&_h2]:text-base [&_h3]:mb-3 [&_h3]:mt-6 [&_h3]:font-semibold [&_h3]:text-slate-900 [&_h3]:text-base [&_img]:my-5 [&_img]:h-auto [&_img]:w-full [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_p]:leading-8 [&_p]:text-base [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-5"
@@ -409,8 +455,8 @@ function TabletArticlePreview({ blog }: { blog: any }) {
 
 function MobileArticlePreview({ blog }: { blog: any }) {
   const title = getPreviewTitle(blog);
-  const coverImage = getCoverImage(blog);
-  const bodyImage = getBodyImage(blog);
+  const coverImage = getHeroImage(blog);
+  const bodyImages = getAllBodyImages(blog);
   const authorName = getAuthorName(blog);
   const categoryName = getCategoryName(blog);
   const readTime = getReadTime(blog);
@@ -488,15 +534,7 @@ function MobileArticlePreview({ blog }: { blog: any }) {
       </div>
 
       <div className="bg-white px-4 py-5">
-        {bodyImage ? (
-          <div className="mb-5 overflow-hidden rounded-sm">
-            <img
-              src={bodyImage}
-              alt={`${title} article`}
-              className="h-auto w-full object-cover"
-            />
-          </div>
-        ) : null}
+        <ArticleImageGallery images={bodyImages} title={title} />
 
         <div
           className="text-slate-700 [&_blockquote]:my-4 [&_blockquote]:border-l-[3px] [&_blockquote]:border-[#16c6c1] [&_blockquote]:pl-3 [&_blockquote]:italic [&_h1]:mb-3 [&_h1]:mt-6 [&_h1]:font-semibold [&_h1]:text-slate-900 [&_h1]:text-base [&_h2]:mb-3 [&_h2]:mt-6 [&_h2]:font-semibold [&_h2]:text-slate-900 [&_h2]:text-base [&_h3]:mb-3 [&_h3]:mt-5 [&_h3]:font-semibold [&_h3]:text-slate-900 [&_h3]:text-base [&_img]:my-4 [&_img]:h-auto [&_img]:w-full [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_p]:leading-7 [&_p]:text-sm [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-5"
@@ -518,8 +556,14 @@ export default function BlogPreviewPage() {
 
   const hasPreview = useMemo(() => Boolean(previewBlog), [previewBlog]);
 
+  const previewReturnPath = useBlogPreviewStore(
+    (state) => state.previewReturnPath,
+  );
+
   const handleClosePreview = () => {
-    router.push("/dashboard/admin/blogs/create?fromPreview=true");
+    router.push(
+      previewReturnPath || "/dashboard/admin/blogs/create?fromPreview=true",
+    );
   };
 
   if (!hasPreview || !previewBlog) {
