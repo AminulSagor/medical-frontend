@@ -86,7 +86,7 @@ function OrderDetailsPageContent() {
         price: money(item.price),
         qty: item.quantity,
         meta: buildMeta(item.attributes),
-        imageSrc: item.imageUrl || "/photos/image.png",
+        imageSrc: item.imageUrl ?? null,
       })),
     [orderDetails],
   );

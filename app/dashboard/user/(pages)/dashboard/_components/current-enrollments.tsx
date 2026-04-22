@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { BookOpen, CalendarDays, LogIn, MapPin } from "lucide-react";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 import type { DashboardEnrollmentCardItem } from "@/types/user/dashboard/dashboard.types";
 
 interface CurrentEnrollmentsProps {
@@ -60,17 +61,14 @@ function EnrollmentCard({ item }: { item: DashboardEnrollmentCardItem }) {
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
       <div className="relative h-[170px] w-full overflow-hidden bg-slate-100">
-        {item.imageUrl ? (
-          <img
-            src={item.imageUrl}
-            alt={item.title}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-r from-sky-500 to-cyan-400 text-sm font-semibold text-white">
-            Workshop Preview
-          </div>
-        )}
+        <NetworkImageFallback
+          src={item.imageUrl}
+          alt={item.title}
+          className="h-full w-full object-cover"
+          fallbackVariant="cover"
+          fallbackClassName="h-full w-full"
+          iconClassName="h-8 w-8"
+        />
       </div>
 
       <div className="p-5">

@@ -39,28 +39,39 @@ type BuildWorkshopPayloadParams = {
 function normalizeDate(date: string): string {
     if (!date) return "";
 
-    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        return date;
+    const trimmedDate = date.trim();
+
+    if (/^\d{4}-\d{2}-\d{2}(?:T.*)?$/.test(trimmedDate)) {
+        return trimmedDate.slice(0, 10);
     }
 
-    const parts = date.split("/");
+    const parts = trimmedDate.split("/");
     if (parts.length === 3) {
         const [month, day, year] = parts;
         return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
 
-    return date;
+    return trimmedDate;
+}
+
+function toUtcEndOfDay(date: string): string {
+    const normalizedDate = normalizeDate(date);
+    if (!normalizedDate) return "";
+
+    return `${normalizedDate}T23:59:59.999Z`;
 }
 
 function resolveRegistrationDeadline(days: DayAgenda[], registrationDeadline: string): string {
     const normalizedRegistrationDeadline = normalizeDate(registrationDeadline);
-    if (normalizedRegistrationDeadline) return normalizedRegistrationDeadline;
+    if (normalizedRegistrationDeadline) {
+        return toUtcEndOfDay(normalizedRegistrationDeadline);
+    }
 
     const firstDayDate = days
         .flatMap((day) => day.segments.map((segment) => normalizeDate(segment.date || "")))
         .find(Boolean);
 
-    return firstDayDate || "";
+    return toUtcEndOfDay(firstDayDate || "");
 }
 
 function hasMeaningfulSchedule(days: DayAgenda[]): boolean {

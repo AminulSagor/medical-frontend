@@ -71,6 +71,19 @@ function pageNumbers(page: number, totalPages: number) {
     return nums;
 }
 
+function getErrorMessage(error: unknown) {
+    const maybeError = error as {
+        response?: { data?: { message?: string } };
+        message?: string;
+    };
+
+    return (
+        maybeError?.response?.data?.message ||
+        maybeError?.message ||
+        "Failed to update product. Please try again."
+    );
+}
+
 export default function ProductsTable({
     rows,
     totalCount,
@@ -91,6 +104,7 @@ export default function ProductsTable({
     const [quickAnchor, setQuickAnchor] = useState<HTMLElement | null>(null);
     const [savingQuickId, setSavingQuickId] = useState<string | null>(null);
     const [localRows, setLocalRows] = useState<ProductRow[]>(rows);
+    const [quickError, setQuickError] = useState<string | null>(null);
 
     useEffect(() => {
         setLocalRows(rows);
@@ -99,11 +113,17 @@ export default function ProductsTable({
     const displayRows = useMemo(() => localRows, [localRows]);
 
     const showingLabel = useMemo(() => {
-        if (totalCount === 0) return "Showing 0 results";
+        // ✅ No data case (correct UX)
+        if (!displayRows.length) {
+            return "No products found";
+        }
+
+        // ✅ Normal case
         const start = (page - 1) * pageSize + 1;
-        const end = Math.min(page * pageSize, totalCount);
+        const end = start + displayRows.length - 1;
+
         return `Showing ${start} to ${end} of ${totalCount.toLocaleString()} results`;
-    }, [page, pageSize, totalCount]);
+    }, [page, pageSize, totalCount, displayRows]);
 
     const nums = useMemo(() => pageNumbers(page, totalPages), [page, totalPages]);
 
@@ -131,6 +151,15 @@ export default function ProductsTable({
     ) => {
         try {
             setSavingQuickId(id);
+            setQuickError(null);
+
+            if (!Number.isFinite(next.stock) || next.stock < 0) {
+                throw new Error("Stock quantity must be 0 or greater.");
+            }
+
+            if (!Number.isFinite(next.price) || next.price < 0) {
+                throw new Error("Price must be 0 or greater.");
+            }
 
             const updatedProduct = await updateProduct(id, {
                 offerPrice: next.price.toFixed(2),
@@ -158,8 +187,10 @@ export default function ProductsTable({
 
             setOpenQuickId(null);
             setQuickAnchor(null);
+            setQuickError(null);
         } catch (error) {
             console.error("Failed to quick update product:", error);
+            setQuickError(getErrorMessage(error));
         } finally {
             setSavingQuickId(null);
         }
@@ -305,6 +336,7 @@ export default function ProductsTable({
                                                 setQuickAnchor(
                                                     nextId ? (e.currentTarget as HTMLElement) : null,
                                                 );
+                                                setQuickError(null);
                                             }}
                                             aria-label="Quick update"
                                         >
@@ -338,10 +370,13 @@ export default function ProductsTable({
                                                 open={openQuickId === r.id}
                                                 stock={r.stock ?? 0}
                                                 price={r.price ?? 0}
+                                                saving={savingQuickId === r.id}
+                                                error={quickError}
                                                 onClose={() => {
                                                     if (savingQuickId === r.id) return;
                                                     setOpenQuickId(null);
                                                     setQuickAnchor(null);
+                                                    setQuickError(null);
                                                 }}
                                                 onSave={(next) => handleQuickSave(r.id, next)}
                                             />

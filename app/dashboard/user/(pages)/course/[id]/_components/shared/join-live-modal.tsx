@@ -26,17 +26,32 @@ export default function JoinLiveModalClient({
   loading?: boolean;
   data?: CourseMeetingInfoResponse | null;
 }) {
-  const [copied, setCopied] = useState(false);
+  const [copiedAll, setCopiedAll] = useState(false);
+  const [copiedPasscode, setCopiedPasscode] = useState(false);
 
   if (!open) return null;
 
+  const copyPasscode = async () => {
+    if (!data?.meetingDetails.passcode) return;
+
+    try {
+      await navigator.clipboard.writeText(data.meetingDetails.passcode);
+      setCopiedPasscode(true);
+      window.setTimeout(() => setCopiedPasscode(false), 1500);
+    } catch (error) {
+      console.error("Failed to copy passcode", error);
+    }
+  };
+
   const copyCredentials = async () => {
     if (!data) return;
+
     const payload = `Meeting ID: ${data.meetingDetails.meetingId}\nPasscode: ${data.meetingDetails.passcode}\nJoin Link: ${data.meetingDetails.meetingLink}`;
+
     try {
       await navigator.clipboard.writeText(payload);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
+      setCopiedAll(true);
+      window.setTimeout(() => setCopiedAll(false), 1500);
     } catch (error) {
       console.error("Failed to copy credentials", error);
     }
@@ -74,7 +89,13 @@ export default function JoinLiveModalClient({
                 <div className="text-[10px] font-bold tracking-[0.15em] text-slate-400">PASSCODE</div>
                 <div className="mt-2 flex items-center justify-between gap-3">
                   <div className="text-[13px] font-semibold text-slate-900">{data.meetingDetails.passcode}</div>
-                  <button type="button" onClick={copyCredentials} className="text-sky-500">
+                  <button
+                    type="button"
+                    onClick={copyPasscode}
+                    className={copiedPasscode ? "text-emerald-500" : "text-sky-500"}
+                    aria-label="Copy passcode"
+                    title={copiedPasscode ? "Passcode copied" : "Copy passcode"}
+                  >
                     <Copy className="h-4 w-4" />
                   </button>
                 </div>
@@ -120,7 +141,7 @@ export default function JoinLiveModalClient({
                 className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-700 hover:bg-slate-50"
               >
                 <Copy className="h-4 w-4" />
-                {copied ? "Copied" : "Copy All Credentials"}
+                {copiedAll ? "Copied" : "Copy All Credentials"}
               </button>
             </>
           ) : (

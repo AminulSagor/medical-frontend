@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { ShoppingCart, Menu, Search, X, Heart } from "lucide-react";
-import { getToken } from "@/utils/token/cookie_utils";
-import { usePathname, useRouter } from "next/navigation";
+import {
+  AUTH_CHANGED_EVENT,
+  getToken,
+} from "@/utils/token/cookie_utils";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "motion/react";
 
 import NavbarLogo from "@/components/logo";
@@ -16,6 +18,8 @@ import PublicSidebar from "@/components/public-sidebar";
 import NavbarSearch from "@/app/public/(pages)/home/_components/navbar-search";
 import { useCart } from "@/app/public/context/cart-context";
 import { useWishlist } from "@/app/public/context/wishlist-context";
+import { getUserProfile } from "@/service/user/profile.service";
+import UserAvatar from "@/components/common/user-avatar";
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/public/home") return pathname === "/public/home";
@@ -24,6 +28,7 @@ function isActivePath(pathname: string, href: string) {
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { totalItems } = useCart();
   const { totalItems: wishlistCount } = useWishlist();
 
@@ -64,8 +69,36 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const handleWishlistClick = () => {
+    const token = getToken();
+
+    if (!token) {
+      if (typeof window !== "undefined") {
+        const currentUrl =
+          window.location.pathname +
+          window.location.search +
+          window.location.hash;
+
+        window.sessionStorage.setItem("postLoginRedirect", currentUrl);
+        window.sessionStorage.setItem("postLoginOpenWishlist", "true");
+      }
+
+      router.push("/public/auth/sign-in");
+      return;
+    }
+
+    setWishlistSidebar(true);
+  };
+
   return (
     <>
+      <Suspense fallback={null}>
+        <NavbarWishlistQueryHandler
+          pathname={pathname}
+          onOpenWishlist={() => setWishlistSidebar(true)}
+        />
+      </Suspense>
+
       <motion.header
         animate={{
           y: hideOnScrollDown ? -6 : 0,
@@ -193,7 +226,7 @@ export default function Navbar() {
                     "hover:bg-light-slate/5 active:scale-95 transition",
                   ].join(" ")}
                   aria-label="Wishlist"
-                  onClick={() => setWishlistSidebar(true)}
+                  onClick={handleWishlistClick}
                 >
                   <Heart size={18} className="text-black" />
                   {wishlistCount > 0 && (
@@ -267,25 +300,84 @@ export default function Navbar() {
   );
 }
 
+function NavbarWishlistQueryHandler({
+  pathname,
+  onOpenWishlist,
+}: {
+  pathname: string;
+  onOpenWishlist: () => void;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const shouldOpenWishlist = searchParams.get("openWishlist") === "true";
+    const token = getToken();
+
+    if (!shouldOpenWishlist || !token) return;
+
+    onOpenWishlist();
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("openWishlist");
+
+    const nextQuery = nextParams.toString();
+    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+
+    router.replace(nextUrl, { scroll: false });
+  }, [onOpenWishlist, pathname, router, searchParams]);
+
+  return null;
+}
+
 function AccountAccessButton() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userName, setUserName] = useState<string>("");
+  const [userImage, setUserImage] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = getToken();
-    setIsAuthenticated(!!token);
+    const syncAuthState = async () => {
+      const token = getToken();
+      setIsAuthenticated(!!token);
+
+      if (!token) {
+        setUserName("");
+        setUserImage(null);
+        return;
+      }
+
+      try {
+        const response = await getUserProfile();
+        const data = response.data;
+
+        setUserName(
+          `${data.firstName ?? ""} ${data.lastName ?? ""}`.trim() || "User",
+        );
+        setUserImage(data.profilePicture ?? null);
+      } catch (error) {
+        console.error("Failed to load navbar profile", error);
+        setUserName("User");
+        setUserImage(null);
+      }
+    };
+
+    void syncAuthState();
+
+    window.addEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+    window.addEventListener("profile-updated", syncAuthState); // ✅ added
+
+    return () => {
+      window.removeEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+      window.removeEventListener("profile-updated", syncAuthState); // ✅ added
+    };
   }, []);
 
   if (!isAuthenticated) {
     return (
       <Link
         href="/public/auth/sign-in"
-        className={[
-          "hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full",
-          "border-2 border-primary text-primary",
-          "text-sm font-semibold",
-          "hover:bg-primary hover:text-white transition-colors",
-        ].join(" ")}
+        className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-primary text-primary text-sm font-semibold hover:bg-primary hover:text-white transition-colors"
       >
         Sign In
       </Link>
@@ -296,21 +388,10 @@ function AccountAccessButton() {
     <button
       type="button"
       onClick={() => router.push("/dashboard/user/dashboard")}
-      className={[
-        "relative h-10 w-10 rounded-full",
-        "border border-light-slate/30 bg-primary/10",
-        "transition hover:bg-primary/15 active:scale-95",
-      ].join(" ")}
-      aria-label="Go to dashboard"
+      className="relative transition active:scale-95"
     >
-      <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-primary">
-        U
-      </span>
-
-      <span
-        className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-primary ring-2 ring-white"
-        aria-hidden="true"
-      />
+      <UserAvatar name={userName} imageUrl={userImage} size={40} />
+      <span className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-primary ring-2 ring-white" />
     </button>
   );
 }

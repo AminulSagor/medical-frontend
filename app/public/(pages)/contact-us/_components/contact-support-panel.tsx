@@ -51,8 +51,8 @@ export default function ContactSupportPanel({
   inquiryOptions = [
     { value: "general_inquiry", label: "General Inquiry" },
     { value: "order_inquiry", label: "Order Inquiry" },
-    { value: "enrollment_programs", label: "Enrollment & Programs" },
-    { value: "group_bookings", label: "Group Bookings" },
+    { value: "enrollment", label: "Enrollment & Programs" },
+    { value: "facility_booking", label: "Group Bookings" },
     { value: "technical_support", label: "Technical Support" },
   ],
   contactInfo = {
@@ -327,14 +327,45 @@ function getSubmitErrorMessage(error: unknown): string {
       const message = responseData.message;
 
       if (Array.isArray(message)) {
-        return message.join(", ");
+        const normalizedMessages = message.map((item) =>
+          typeof item === "string" ? item.toLowerCase() : "",
+        );
+
+        if (
+          normalizedMessages.some(
+            (item) =>
+              item.includes("inquirytype must be one of the following values") ||
+              item.includes("inquiry type must be one of the following values"),
+          )
+        ) {
+          return "Please select a valid inquiry type and try again.";
+        }
+
+        return "We couldn't send your message right now. Please review your details and try again.";
       }
 
       if (typeof message === "string") {
+        const normalizedMessage = message.toLowerCase();
+
+        if (
+          normalizedMessage.includes(
+            "inquirytype must be one of the following values",
+          ) ||
+          normalizedMessage.includes(
+            "inquiry type must be one of the following values",
+          )
+        ) {
+          return "Please select a valid inquiry type and try again.";
+        }
+
+        if (normalizedMessage.includes("failed to send message")) {
+          return "We couldn't send your message right now. Please try again in a moment.";
+        }
+
         return message;
       }
     }
   }
 
-  return "Failed to send your message. Please try again.";
+  return "We couldn't send your message right now. Please try again.";
 }

@@ -15,25 +15,26 @@ export default function FounderStatCard({ stat }: { stat: FounderStat }) {
     >
       <Card
         shape="soft"
-        className="h-full border border-light-slate/15 p-6 shadow-sm"
+        className="h-full rounded-[28px] border border-light-slate/10 px-7 py-8 shadow-sm"
       >
-        <div className="flex flex-col gap-3">
+        <div className="flex h-full flex-col items-start justify-between gap-6">
           <motion.div
-            initial={{ opacity: 0, scale: 0.8, rotate: -8 }}
+            initial={{ opacity: 0, scale: 0.85, rotate: -6 }}
             whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
-            viewport={{ once: false, amount: 0.5 }}
+            viewport={{ once: false, amount: 0.4 }}
             transition={{ duration: 0.45, ease: "easeOut" }}
+            className="text-primary"
           >
-            <Icon size={20} className="text-primary" />
+            <Icon size={28} strokeWidth={2.1} />
           </motion.div>
 
-          <div>
+          <div className="space-y-2">
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.5 }}
+              viewport={{ once: false, amount: 0.4 }}
               transition={{ duration: 0.45, ease: "easeOut" }}
-              className="text-2xl font-extrabold text-black"
+              className="text-[44px] font-bold leading-none text-black"
             >
               {stat.value}
             </motion.p>
@@ -41,9 +42,9 @@ export default function FounderStatCard({ stat }: { stat: FounderStat }) {
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.5 }}
+              viewport={{ once: false, amount: 0.4 }}
               transition={{ duration: 0.5, delay: 0.05, ease: "easeOut" }}
-              className="text-sm font-medium text-light-slate"
+              className="text-[16px] font-medium leading-6 text-light-slate"
             >
               {stat.label}
             </motion.p>

@@ -10,6 +10,8 @@ export interface WishlistProduct {
   inStock: boolean;
   stockQuantity: number;
   addedAt: string;
+  productStatus?: boolean;
+  isActive?: boolean;
 }
 
 export interface WishlistData {

@@ -77,11 +77,11 @@ function renderAgenda(days: CourseDetailsModel["days"]) {
                                 key={segment.id || segmentIdx}
                                 className="grid gap-4 rounded-2xl bg-slate-50 px-4 py-4 md:grid-cols-[160px_1fr] md:items-start"
                             >
-                                <div className="text-[20px] font-extrabold leading-tight text-[#18c3b2]">
+                                <div className="text-[14px] font-extrabold leading-tight text-[#18c3b2]">
                                     {formatTime12Hour(segment.startTime)} - {formatTime12Hour(segment.endTime)}
                                 </div>
                                 <div>
-                                    <p className="text-[16px] font-bold text-slate-900">
+                                    <p className="text-[14px] font-bold text-slate-900">
                                         {segment.courseTopic || "—"}
                                     </p>
                                     {segment.topicDetails ? (

@@ -1,46 +1,41 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Heart,
-  Lock,
-  Minus,
-  Plus,
-  Trash2,
-  Truck,
-  ShoppingBag,
-  Loader2,
-} from "lucide-react";
-import Card from "@/components/cards/card";
+import { ArrowLeft, Loader2, ShoppingBag } from "lucide-react";
 import Button from "@/components/buttons/button";
-
+import {
+  CartCalculateRequest,
+  CartCalculateResponse,
+} from "@/types/public/cart/cart.types";
 import { useCart } from "@/app/public/context/cart-context";
 import { useWishlist } from "@/app/public/context/wishlist-context";
 import { calculateCart } from "@/service/public/cart.service";
 import { reorderBackendCart } from "@/service/public/cart-server.service";
 import { getProductDetails } from "@/service/public/product.service";
-import type {
-  CartCalculateRequest,
-  CartCalculateResponse,
-} from "@/types/public/cart/cart.types";
+import CartItemRow from "./cart-item-row";
+import CartOrderSummaryCard from "./cart-order-summary-card";
+import CartShippingInfoCard from "./cart-shipping-info-card";
 
-function money(n: number) {
+export function money(n: number) {
   return `$${n.toFixed(2)}`;
 }
 
-export default function CartPage() {
+export default function CartPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const reorderFrom = searchParams.get("reorderFrom");
 
-  const { items, updateQty, removeItem, totalItems, syncItems } = useCart();
+  const {
+    items,
+    updateQty,
+    removeItem,
+    totalItems,
+    syncItems,
+    pruneItems,
+  } = useCart();
   const { toggleWishlist } = useWishlist();
-  const [promo, setPromo] = useState("");
 
   const [calculatedData, setCalculatedData] =
     useState<CartCalculateResponse | null>(null);
@@ -119,19 +114,35 @@ export default function CartPage() {
           }),
         );
 
-        const filteredItems = validatedItems.filter(
+        const existingItems = validatedItems.filter(
           (item): item is typeof data.items[number] => item !== null,
         );
 
+        const availableItems = existingItems.filter((item) => {
+          const hasStock =
+            typeof item.availableQuantity === "number"
+              ? item.availableQuantity > 0
+              : true;
+
+          return item.inStock && hasStock;
+        });
+
+        const unavailableProductIds = existingItems
+          .filter(
+            (item) =>
+              !availableItems.some((a) => a.productId === item.productId),
+          )
+          .map((item) => item.productId);
+
         const newData: CartCalculateResponse = {
           ...data,
-          items: filteredItems,
+          items: availableItems,
         };
 
         setCalculatedData(newData);
         hasCalculatedOnceRef.current = true;
 
-        const normalizedItems = filteredItems.map((i) => ({
+        const normalizedItems = availableItems.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
         }));
@@ -148,6 +159,10 @@ export default function CartPage() {
         if (hasMismatch) {
           syncItems(normalizedItems);
         }
+
+        if (unavailableProductIds.length > 0) {
+          await pruneItems(unavailableProductIds);
+        }
       } catch (err) {
         console.error("Failed to calculate cart", err);
       } finally {
@@ -156,7 +171,21 @@ export default function CartPage() {
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [items, syncItems]);
+  }, [items, pruneItems, syncItems]);
+
+  const hasInvalidQuantity = useMemo(() => {
+    if (!calculatedData?.items?.length) return false;
+
+    return calculatedData.items.some((item) => {
+      const cartItem = items.find((i) => i.productId === item.productId);
+      if (!cartItem) return false;
+
+      return (
+        typeof item.availableQuantity === "number" &&
+        cartItem.quantity > item.availableQuantity
+      );
+    });
+  }, [calculatedData, items]);
 
   return (
     <div className="mt-24 min-h-screen">
@@ -222,261 +251,34 @@ export default function CartPage() {
 
                   if (!it) return null;
 
-                  const quantity = cartItem.quantity;
-                  const productDetailsHref = `/public/store/product-details/${it.productId}`;
-                  const maxAvailableQuantity =
-                    typeof it.availableQuantity === "number" &&
-                      !Number.isNaN(it.availableQuantity)
-                      ? it.availableQuantity
-                      : Number.POSITIVE_INFINITY;
-                  const hasReachedMaxQuantity =
-                    Number.isFinite(maxAvailableQuantity) &&
-                    quantity >= maxAvailableQuantity;
-
                   return (
-                    <div
+                    <CartItemRow
                       key={cartItem.productId}
-                      className="grid grid-cols-12 gap-3 px-6 py-6"
-                    >
-                      <div className="col-span-7 flex items-start gap-4">
-                        <Link
-                          href={productDetailsHref}
-                          className="relative block h-16 w-16 overflow-hidden rounded-2xl bg-light-slate/10 ring-1 ring-slate-200 transition-opacity hover:opacity-90"
-                        >
-                          <Image
-                            src={it.photo || "/photos/store_product.png"}
-                            alt={it.name}
-                            fill
-                            className="object-cover"
-                            sizes="64px"
-                          />
-                        </Link>
-
-                        <div className="min-w-0">
-                          <Link
-                            href={productDetailsHref}
-                            className="block truncate text-sm font-bold text-black transition-colors hover:text-primary"
-                          >
-                            {it.name}
-                          </Link>
-
-                          <div className="mt-1 text-xs text-light-slate">
-                            SKU: {it.sku}
-                          </div>
-
-                          <div className="mt-2 inline-flex items-center gap-2 text-xs">
-                            <span
-                              className={
-                                it.inStock ? "text-green-500" : "text-orange-500"
-                              }
-                            >
-                              {it.inStock ? "In Stock" : "Out of Stock"}
-                            </span>
-                          </div>
-
-                          <div className="mt-3 flex flex-wrap items-center gap-6 text-xs">
-                            <button
-                              type="button"
-                              onClick={() => removeItem(it.productId)}
-                              className="inline-flex items-center gap-2 text-red-500 hover:opacity-80"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Remove
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                toggleWishlist(it.productId);
-                                removeItem(it.productId);
-                              }}
-                              className="inline-flex items-center gap-2 text-light-slate hover:text-red-400"
-                            >
-                              <Heart className="h-4 w-4" />
-                              Save for Later
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="col-span-2 flex items-center justify-end">
-                        <div className="text-sm text-black">
-                          {money(Number(it.price))}
-                        </div>
-                      </div>
-
-                      <div className="col-span-2 flex flex-col items-center justify-center">
-                        <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateQty(cartItem.productId, quantity - 1)
-                            }
-                            disabled={quantity <= 1}
-                            className={[
-                              "inline-flex h-4 w-4 items-center justify-center rounded-full hover:bg-light-slate/10 transition-all",
-                              quantity <= 1
-                                ? "pointer-events-none cursor-not-allowed opacity-50"
-                                : "active:scale-95",
-                            ].join(" ")}
-                            aria-label="Decrease quantity"
-                          >
-                            <Minus className="h-4 w-4 text-light-slate" />
-                          </button>
-
-                          <div className="w-6 text-center text-sm font-bold text-black">
-                            {quantity}
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (hasReachedMaxQuantity) return;
-                              updateQty(cartItem.productId, quantity + 1);
-                            }}
-                            disabled={hasReachedMaxQuantity}
-                            className={[
-                              "inline-flex h-8 w-8 items-center justify-center rounded-full transition-all",
-                              hasReachedMaxQuantity
-                                ? "cursor-not-allowed opacity-50"
-                                : "hover:bg-light-slate/10 active:scale-95",
-                            ].join(" ")}
-                            aria-label="Increase quantity"
-                          >
-                            <Plus className="h-4 w-4 text-light-slate" />
-                          </button>
-                        </div>
-
-                        {hasReachedMaxQuantity ? (
-                          <p className="mt-1 text-[10px] text-red-500">
-                            Max available quantity reached
-                          </p>
-                        ) : null}
-                      </div>
-
-                      <div className="col-span-1 flex items-center justify-end">
-                        <div className="text-sm font-bold text-black">
-                          {money(Number(it.itemTotal))}
-                        </div>
-                      </div>
-                    </div>
+                      item={it}
+                      quantity={cartItem.quantity}
+                      onRemove={() => removeItem(it.productId)}
+                      onSaveForLater={() => {
+                        toggleWishlist(it.productId);
+                        removeItem(it.productId);
+                      }}
+                      onDecrease={() =>
+                        updateQty(cartItem.productId, cartItem.quantity - 1)
+                      }
+                      onIncrease={() =>
+                        updateQty(cartItem.productId, cartItem.quantity + 1)
+                      }
+                    />
                   );
                 })}
               </div>
             </div>
 
             <div className="space-y-6 lg:col-span-4">
-              <Card>
-                <div className="text-lg font-bold text-black">
-                  Order Summary
-                </div>
-                <div className="mt-4 border-t border-slate-100" />
-
-                <div className="mt-4 space-y-3 text-sm">
-                  <div className="flex items-center justify-between text-light-slate">
-                    <span>Subtotal</span>
-                    <span className="font-bold text-black">
-                      {money(Number(calculatedData?.orderSummary?.subtotal || 0))}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-light-slate">
-                    <span>Estimated Shipping</span>
-                    <span className="text-xs italic text-light-slate">
-                      Calculated in next step
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-light-slate">
-                    <span>Estimated Tax</span>
-                    <span className="font-bold text-black">
-                      {money(
-                        Number(calculatedData?.orderSummary?.estimatedTax || 0),
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <div className="text-[11px] font-bold tracking-widest text-light-slate">
-                    PROMO CODE
-                  </div>
-
-                  <div className="mt-3 flex items-center gap-3">
-                    <input
-                      value={promo}
-                      onChange={(e) => setPromo(e.target.value)}
-                      placeholder="Enter code"
-                      className="h-10 w-full rounded-full border border-slate-200 bg-white px-4 text-sm text-black outline-none placeholder:text-light-slate focus:border-primary"
-                    />
-                    <Button
-                      variant="secondary"
-                      shape="pill"
-                      className="h-10 px-5"
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="mt-6 border-t border-slate-100 pt-5">
-                  <div className="flex items-end justify-between">
-                    <div className="text-sm font-bold text-black">
-                      Order Total
-                    </div>
-                    <div className="text-2xl font-bold text-black">
-                      {money(
-                        Number(calculatedData?.orderSummary?.orderTotal || 0),
-                      )}
-                    </div>
-                  </div>
-
-                  <Link href={"/public/checkout"}>
-                    <Button className="mt-5 h-14 w-full bg-primary text-white shadow-sm">
-                      Proceed to Checkout
-                      <ArrowRight className="h-5 w-5" />
-                    </Button>
-                  </Link>
-
-                  <div className="mt-4 flex items-center justify-center gap-2 text-xs text-light-slate">
-                    <Lock className="h-4 w-4" />
-                    Secure Checkout
-                  </div>
-
-                  <div className="mt-3 flex items-center justify-center gap-2">
-                    <span className="rounded-md bg-light-slate/10 px-3 py-1 text-[10px] text-light-slate">
-                      VISA
-                    </span>
-                    <span className="rounded-md bg-light-slate/10 px-3 py-1 text-[10px] text-light-slate">
-                      MC
-                    </span>
-                    <span className="rounded-md bg-light-slate/10 px-3 py-1 text-[10px] text-light-slate">
-                      AMEX
-                    </span>
-                    <span className="rounded-md bg-light-slate/10 px-3 py-1 text-[10px] text-light-slate">
-                      PAYPAL
-                    </span>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="border-primary/20 bg-primary/5">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
-                    <Truck className="h-5 w-5 text-primary" />
-                  </div>
-
-                  <div className="min-w-0">
-                    <div className="text-sm font-bold text-black">
-                      Free Shipping on orders over $500
-                    </div>
-                    <div className="mt-1 text-xs text-light-slate">
-                      Add <span className="text-primary">$288.87</span> more to
-                      your cart to qualify.
-                    </div>
-                  </div>
-                </div>
-              </Card>
+              <CartOrderSummaryCard
+                calculatedData={calculatedData}
+                hasInvalidQuantity={hasInvalidQuantity}
+              />
+              <CartShippingInfoCard />
             </div>
           </div>
         )}

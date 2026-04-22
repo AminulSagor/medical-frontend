@@ -1,5 +1,5 @@
 // app/(dashboard)/_components/shipment-item-row.tsx
-import Image from "next/image";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 
 export type ShipmentItemRowProps = {
     title: string;
@@ -7,7 +7,7 @@ export type ShipmentItemRowProps = {
     price: string; // keep as formatted "$120.00" for UI
     qty: number;
     meta?: string[]; // e.g. ["Size: Mac 3", "Packaging: Sterile"]
-    imageSrc: string;
+    imageSrc: string | null;
 };
 
 export default function ShipmentItemRow({
@@ -22,7 +22,14 @@ export default function ShipmentItemRow({
         <div className="flex gap-4 py-6">
             {/* thumbnail */}
             <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-slate-200">
-                <Image src={imageSrc} alt={title} fill className="object-cover" />
+                <NetworkImageFallback
+                    src={imageSrc}
+                    alt={title}
+                    className="h-full w-full object-cover"
+                    fallbackVariant="cover"
+                    fallbackClassName="h-full w-full"
+                    iconClassName="h-6 w-6"
+                />
             </div>
 
             {/* info */}

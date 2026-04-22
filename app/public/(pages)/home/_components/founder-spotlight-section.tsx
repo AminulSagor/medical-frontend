@@ -1,12 +1,74 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { FOUNDER_PROFILE, FOUNDER_STATS } from "@/app/public/data/founder.data";
 import Image from "next/image";
 import { motion } from "motion/react";
 import FounderStatCard from "@/app/public/(pages)/home/_components/founder-state-card";
+import { getHomepageOverviewStats } from "@/service/public/homepage.service";
+import type { HomepageOverviewStats } from "@/types/public/homepage.types";
+import type { FounderStat } from "@/app/public/types/founder.types";
+
+function formatCount(value: number, withPlus = false) {
+  if (!Number.isFinite(value)) return "0";
+  return withPlus ? `${value}+` : `${value}`;
+}
 
 export default function FounderSpotlightSection() {
   const p = FOUNDER_PROFILE;
+  const [overviewStats, setOverviewStats] = useState<HomepageOverviewStats | null>(
+    null,
+  );
+
+  useEffect(() => {
+    const fetchOverviewStats = async () => {
+      try {
+        const response = await getHomepageOverviewStats();
+        setOverviewStats(response);
+      } catch (error) {
+        console.error("Failed to fetch homepage overview stats", error);
+      }
+    };
+
+    void fetchOverviewStats();
+  }, []);
+
+  const founderStats = useMemo<FounderStat[]>(() => {
+    if (!overviewStats) {
+      return FOUNDER_STATS.map((item) => ({
+        ...item,
+        value: "0",
+      }));
+    }
+
+    return FOUNDER_STATS.map((item) => {
+      if (item.id === "courses") {
+        return {
+          ...item,
+          value: formatCount(overviewStats.totalWorkshops),
+        };
+      }
+
+      if (item.id === "trained") {
+        return {
+          ...item,
+          value: formatCount(overviewStats.totalEnrollee, true),
+        };
+      }
+
+      if (item.id === "equipment") {
+        return {
+          ...item,
+          value: formatCount(overviewStats.totalProducts, true),
+        };
+      }
+
+      return {
+        ...item,
+        value: formatCount(overviewStats.totalBlogs, true),
+      };
+    });
+  }, [overviewStats]);
 
   return (
     <section className="w-full overflow-hidden">
@@ -23,9 +85,9 @@ export default function FounderSpotlightSection() {
               },
             },
           }}
-          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+          className="grid gap-7 sm:grid-cols-2 xl:grid-cols-4"
         >
-          {FOUNDER_STATS.map((s) => (
+          {founderStats.map((s) => (
             <motion.div
               key={s.id}
               variants={{
@@ -39,6 +101,7 @@ export default function FounderSpotlightSection() {
                   },
                 },
               }}
+              className="h-full"
             >
               <FounderStatCard stat={s} />
             </motion.div>

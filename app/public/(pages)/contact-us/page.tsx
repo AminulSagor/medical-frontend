@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo } from "react";
+import React, { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import ContactHeroHeader from "./_components/contact-hero-header";
 import ContactSupportPanel from "./_components/contact-support-panel";
@@ -40,6 +40,13 @@ function ContactPageContent() {
     return "";
   }, [source, normalizedOrderNo]);
 
+  const [selectedInquiryType, setSelectedInquiryType] =
+    React.useState<ContactUsInquiryType | undefined>(initialInquiryType);
+
+  React.useEffect(() => {
+    setSelectedInquiryType(initialInquiryType);
+  }, [initialInquiryType]);
+
   return (
     <div className="mt-20 min-h-screen bg-slate-50">
       <ContactHeroHeader />
@@ -48,11 +55,13 @@ function ContactPageContent() {
         onSubmit={sendContactUsMessage}
         mapImageUrl={TEXAS_STATIC_MAP_IMAGE_URL}
         mapOpenHref={TEXAS_MAP_OPEN_URL}
-        initialInquiryType={initialInquiryType}
+        initialInquiryType={selectedInquiryType}
         initialMessage={initialMessage}
       />
 
-      <ContactHelpCategories />
+      <ContactHelpCategories
+        onSelect={(type) => setSelectedInquiryType(type)}
+      />
     </div>
   );
 }

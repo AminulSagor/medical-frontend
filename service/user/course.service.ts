@@ -86,6 +86,7 @@ interface RawCourseListItem {
   enrolledAt?: string | null;
   startDate?: string | null;
   endDate?: string | null;
+  registrationDeadline?: string | null;
   completedOn?: string | null;
   totalHours?: number | null;
   cmeCredits?: number | null;
@@ -192,6 +193,15 @@ function formatDateTime(value?: string | null, fallback = "No upcoming sessions"
   return DATE_TIME_FORMATTER.format(date);
 }
 
+function isRegistrationClosed(registrationDeadline?: string | null) {
+  if (!registrationDeadline) return false;
+
+  const deadline = new Date(registrationDeadline);
+  if (Number.isNaN(deadline.getTime())) return false;
+
+  return deadline.getTime() < Date.now();
+}
+
 function formatMoney(value?: string | null, fallback = PRICE_UNAVAILABLE) {
   if (!value || value.trim() === "") return fallback;
 
@@ -209,9 +219,9 @@ function formatCreditsBadge(value?: number | null) {
   return `${value.toFixed(1)} CME CREDITS`;
 }
 
-function getCourseImage(courseType?: string | null, imageUrl?: string | null) {
-  if (imageUrl && imageUrl.trim()) return imageUrl;
-  return isOnlineCourse(courseType) ? "/photos/strethoscope.png" : "/photos/child.png";
+function getCourseImage(_courseType?: string | null, imageUrl?: string | null) {
+  if (imageUrl && imageUrl.trim()) return imageUrl.trim();
+  return null;
 }
 
 function getSeatsText(numberOfSeats?: number) {
@@ -356,6 +366,8 @@ function normalizeCompletedCourse(item: RawCourseListItem): CompletedCourseItem 
 function normalizeBrowseCourse(item: RawCourseListItem): BrowseCourseItem {
   const courseId = item.workshopId ?? "";
   const online = isOnlineCourse(item.courseType);
+  const registrationDeadline = item.registrationDeadline ?? null;
+  const registrationClosed = isRegistrationClosed(registrationDeadline);
 
   return {
     id: courseId,
@@ -368,9 +380,11 @@ function normalizeBrowseCourse(item: RawCourseListItem): BrowseCourseItem {
     price: item.price ?? item.standardBaseRate ?? item.reservation?.totalPrice ?? null,
     cmeCredits: item.cmeCredits ?? 0,
     cmeCreditsLabel: formatCreditsBadge(item.cmeCredits),
+    registrationDeadline,
+    isRegistrationClosed: registrationClosed,
     actions: {
       primary: {
-        label: "View Details",
+        label: registrationClosed ? "Registration Closed" : "View Details",
         route: buildPublicCourseDetailsRoute(courseId),
       },
       secondary: null,

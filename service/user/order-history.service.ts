@@ -22,7 +22,7 @@ export const getUserOrderHistory = async (
   }
 
   if (params.status) {
-    queryParams.status = params.status;
+    queryParams.status = params.status === "cancelled" ? "closed" : params.status;
   }
 
   if (params.search?.trim()) {

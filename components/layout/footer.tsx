@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Mail, Globe, Share2, PlusSquare } from "lucide-react";
 import { motion } from "motion/react";
@@ -8,9 +8,10 @@ import { AxiosError } from "axios";
 import {
   FOOTER_BOTTOM,
   FOOTER_INSTITUTE,
-  FOOTER_PROGRAMS,
+  type FooterLink,
 } from "@/app/public/data/footer.data";
 import { subscribeToNewsletter } from "@/service/public/newsletter.service";
+import { getPublicWorkshops } from "@/service/public/workshop.service";
 
 function FooterColTitle({ children }: { children: React.ReactNode }) {
   return <h3 className="text-sm font-extrabold text-black">{children}</h3>;
@@ -36,11 +37,58 @@ interface ApiErrorResponse {
   message?: string;
 }
 
+type FooterWorkshopLike = {
+  id?: string;
+  title?: string;
+  name?: string;
+  workshopTitle?: string;
+};
+
 export default function Footer() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [shareMessage, setShareMessage] = useState("");
+  const [footerPrograms, setFooterPrograms] = useState<FooterLink[]>([]);
+  const [hasMorePrograms, setHasMorePrograms] = useState(false);
+
+  useEffect(() => {
+    const fetchFooterPrograms = async () => {
+      try {
+        const response = await getPublicWorkshops({
+          page: 1,
+          limit: 5,
+        });
+
+        const programs = (response.data ?? []) as FooterWorkshopLike[];
+
+        setFooterPrograms(
+          programs
+            .filter((item) => item?.id)
+            .slice(0, 4)
+            .map((item) => ({
+              label:
+                item.title ||
+                item.name ||
+                item.workshopTitle ||
+                "Untitled Program",
+              href: `/public/courses/details/${item.id}`,
+            })),
+        );
+
+        setHasMorePrograms(
+          programs.length > 4 || (response.meta?.total ?? 0) > 4,
+        );
+      } catch (error) {
+        console.error("Failed to load footer programs:", error);
+        setFooterPrograms([]);
+        setHasMorePrograms(false);
+      }
+    };
+
+    void fetchFooterPrograms();
+  }, []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -86,6 +134,41 @@ export default function Footer() {
     }
   }
 
+  async function handleShare() {
+    const shareUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/public/home`
+        : "/public/home";
+
+    setShareMessage("");
+
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({
+          title: "Texas Airway Institute",
+          text: "Explore Texas Airway Institute",
+          url: shareUrl,
+        });
+        setShareMessage("Sharable link is ready.");
+        return;
+      }
+
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(shareUrl);
+        setShareMessage("Sharable link copied to clipboard.");
+        return;
+      }
+
+      setShareMessage("Sharing is not supported on this device.");
+    } catch {
+      setShareMessage("Unable to share right now.");
+    } finally {
+      window.setTimeout(() => {
+        setShareMessage("");
+      }, 2500);
+    }
+  }
+
   const containerVariants = {
     hidden: {},
     show: {
@@ -122,7 +205,7 @@ export default function Footer() {
               whileHover={{ y: -2 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
             >
-              <Link href="/" className="inline-flex items-center gap-3">
+              <Link href="/public/home" className="inline-flex items-center gap-3">
                 <span className="grid h-9 w-9 place-items-center rounded-md border border-light-slate/20 bg-white">
                   <PlusSquare className="text-primary" size={18} />
                 </span>
@@ -138,19 +221,22 @@ export default function Footer() {
             </p>
 
             <div className="flex items-center gap-5">
-              <motion.button
-                type="button"
+              <motion.div
                 whileHover={{ y: -3, scale: 1.06 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
-                className="text-light-slate/50 transition-colors hover:text-black"
-                aria-label="Website"
               >
-                <Globe size={21} strokeWidth={2} />
-              </motion.button>
+                <Link
+                  href="/public/home"
+                  className="text-light-slate/50 transition-colors hover:text-black"
+                  aria-label="Website"
+                >
+                  <Globe size={21} strokeWidth={2} />
+                </Link>
+              </motion.div>
 
-              <motion.button
-                type="button"
+              <motion.a
+                href="mailto:support@simcenter.edu"
                 whileHover={{ y: -3, scale: 1.06 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
@@ -158,10 +244,11 @@ export default function Footer() {
                 aria-label="Email"
               >
                 <Mail size={21} strokeWidth={2} />
-              </motion.button>
+              </motion.a>
 
               <motion.button
                 type="button"
+                onClick={handleShare}
                 whileHover={{ y: -3, scale: 1.06 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
@@ -171,22 +258,46 @@ export default function Footer() {
                 <Share2 size={21} strokeWidth={2} />
               </motion.button>
             </div>
+
+            {shareMessage ? (
+              <p className="text-xs font-medium text-green-600">{shareMessage}</p>
+            ) : null}
           </motion.div>
 
           <motion.div variants={itemVariants} className="space-y-4">
             <FooterColTitle>Programs</FooterColTitle>
             <div className="flex flex-col gap-3">
-              {FOOTER_PROGRAMS.map((l) => (
-                <FooterLinkItem key={l.href} href={l.href} label={l.label} />
-              ))}
+              {footerPrograms.length > 0 ? (
+                <>
+                  {footerPrograms.map((item) => (
+                    <FooterLinkItem
+                      key={`${item.href}-${item.label}`}
+                      href={item.href}
+                      label={item.label}
+                    />
+                  ))}
+
+                  {hasMorePrograms ? (
+                    <FooterLinkItem href="/public/courses" label="More..." />
+                  ) : null}
+                </>
+              ) : (
+                <p className="text-sm text-light-slate">
+                  No programs available right now.
+                </p>
+              )}
             </div>
           </motion.div>
 
           <motion.div variants={itemVariants} className="space-y-4">
             <FooterColTitle>Institute</FooterColTitle>
             <div className="flex flex-col gap-3">
-              {FOOTER_INSTITUTE.map((l) => (
-                <FooterLinkItem key={l.href} href={l.href} label={l.label} />
+              {FOOTER_INSTITUTE.map((item) => (
+                <FooterLinkItem
+                  key={item.href}
+                  href={item.href}
+                  label={item.label}
+                />
               ))}
             </div>
           </motion.div>
@@ -218,9 +329,7 @@ export default function Footer() {
                   "border bg-white px-5 text-sm text-black",
                   "placeholder:text-light-slate outline-none transition",
                   "focus:border-primary/40 focus:ring-2 focus:ring-primary/10",
-                  errorMessage
-                    ? "border-red-300"
-                    : "border-light-slate/25",
+                  errorMessage ? "border-red-300" : "border-light-slate/25",
                   isSubmitting ? "cursor-not-allowed opacity-70" : "",
                 ].join(" ")}
               />
@@ -262,17 +371,17 @@ export default function Footer() {
           </p>
 
           <div className="flex items-center gap-8">
-            {FOOTER_BOTTOM.map((l) => (
+            {FOOTER_BOTTOM.map((item) => (
               <motion.div
-                key={l.href}
+                key={item.href}
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
               >
                 <Link
-                  href={l.href}
+                  href={item.href}
                   className="text-sm font-medium text-light-slate transition-colors hover:text-black"
                 >
-                  {l.label}
+                  {item.label}
                 </Link>
               </motion.div>
             ))}
