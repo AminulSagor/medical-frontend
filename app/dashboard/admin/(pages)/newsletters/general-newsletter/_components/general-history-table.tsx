@@ -85,7 +85,6 @@ function ActionButtons({ item }: { item: GeneralBroadcastWorkspaceItem }) {
           title="View report"
         >
           <Eye size={15} />
-          <span className="text-xs font-semibold">Report</span>
         </Link>
       ) : (
         <button
@@ -94,7 +93,6 @@ function ActionButtons({ item }: { item: GeneralBroadcastWorkspaceItem }) {
           className="inline-flex items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Eye size={15} />
-          <span className="text-xs font-semibold">Report</span>
         </button>
       )}
 
@@ -122,7 +120,7 @@ export default function GeneralHistoryTable({
               <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
                 Sent Date
               </th>
-              <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              <th className="px-4 py-4 text text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
                 Type
               </th>
               <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
@@ -137,9 +135,9 @@ export default function GeneralHistoryTable({
               <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
                 Status
               </th>
-              {/* <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
                 Actions
-              </th> */}
+              </th>
             </tr>
           </thead>
 
@@ -160,7 +158,7 @@ export default function GeneralHistoryTable({
                   </td>
 
                   <td className="px-4 py-4">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-col">
                       <TypeTag
                         label={item.type.displayLabel}
                         variant={item.type.badgeVariant}
@@ -199,9 +197,9 @@ export default function GeneralHistoryTable({
                     </span>
                   </td>
 
-                  {/* <td className="px-4 py-4">
+                  <td className="px-4 py-4">
                     <ActionButtons item={item} />
-                  </td> */}
+                  </td>
                 </tr>
               ))
             ) : (
