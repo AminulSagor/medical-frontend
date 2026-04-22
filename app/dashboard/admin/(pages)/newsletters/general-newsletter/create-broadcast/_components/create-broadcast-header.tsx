@@ -24,8 +24,8 @@ export default function CreateBroadcastHeader({
 
   const title =
     mode === "create"
-      ? "Create Cadence-Based Broadcast"
-      : "Edit Cadence-Based Broadcast";
+      ? "Cadence-Based Broadcast Editor"
+      : "Cadence-Based Broadcast Editor";
 
   const description =
     mode === "create"
@@ -38,7 +38,7 @@ export default function CreateBroadcastHeader({
       : "Updating..."
     : mode === "create"
       ? isCreateReady
-        ? "Create Broadcast"
+        ? "Schedule Broadcast"
         : "Save Draft"
       : "Update Broadcast";
 
