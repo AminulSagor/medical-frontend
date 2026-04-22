@@ -173,9 +173,9 @@ export default function GeneralDraftsTable({
               <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
                 Author
               </th>
-              {/* <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
                 Est. Read
-              </th> */}
+              </th>
               <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
                 Status
               </th>
@@ -224,9 +224,9 @@ export default function GeneralDraftsTable({
                       />
                     </td>
 
-                    {/* <td className="px-4 py-5 text-sm font-medium text-slate-500">
+                    <td className="px-4 py-5 text-sm font-medium text-slate-500">
                       {formatEstimatedReadMinutes(item.estReadMinutes)}
-                    </td> */}
+                    </td>
 
                     <td className="px-4 py-5">
                       <DraftBadge label={item.status.displayLabel} />

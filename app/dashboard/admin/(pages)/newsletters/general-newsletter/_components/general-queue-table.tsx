@@ -30,7 +30,7 @@ function cx(...parts: Array<string | false | null | undefined>) {
 function Avatar({ name, initials }: { name: string; initials?: string }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-600">
+      <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-600">
         {initials ?? name.slice(0, 2).toUpperCase()}
       </div>
       <span className="text-sm text-slate-600">{name}</span>
@@ -221,9 +221,9 @@ export default function GeneralQueueTable({
               <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
                 Author
               </th>
-              {/* <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
                 Est. Read
-              </th> */}
+              </th>
               <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
                 Status
               </th>
@@ -277,7 +277,7 @@ export default function GeneralQueueTable({
                     </td>
 
                     <td className="px-4 py-5">
-                      <div className="max-w-[280px] font-semibold leading-6 text-slate-800">
+                      <div className="max-w-[280px] font-semibold leading-6 text-slate-800 line-clamp-2">
                         {item.articleTitle || item.subjectLine || "—"}
                       </div>
                     </td>
@@ -293,9 +293,9 @@ export default function GeneralQueueTable({
                       />
                     </td>
 
-                    {/* <td className="px-4 py-5 text-sm font-medium text-slate-500">
+                    <td className="px-4 py-5 text-sm font-medium text-slate-500">
                       {formatEstimatedReadMinutes(item.estReadMinutes)}
-                    </td> */}
+                    </td>
 
                     <td className="px-4 py-5">
                       <StatusBadge
