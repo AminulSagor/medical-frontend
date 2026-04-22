@@ -1,3 +1,5 @@
+import type { CourseRefundMember, CourseRefundSelection } from "./course-details-type";
+
 export type OnlineHeroProps = {
   title: string;
   subtitle: string;
@@ -53,9 +55,13 @@ export type OnlineBookingCardProps = {
   refundDescription: string;
   refundPolicyText: string;
   refundAmount: string;
-  daysBeforeStart: number;
+  refundWindowText: string;
   courseTitle: string;
   courseDateText: string;
+  refundProcessingFeeAmount: string;
+  refundCurrency: string;
+  refundMembers: CourseRefundMember[];
+  refundSelection: CourseRefundSelection;
 };
 
 export type OnlineScheduleDayKey = `day${number}`;
@@ -73,7 +79,12 @@ export type OnlineScheduleItem = {
 
 export type OnlineScheduleProps = {
   heading: string;
-  days: Array<{ key: OnlineScheduleDayKey; label: string }>;
+  days: Array<{
+    key: OnlineScheduleDayKey;
+    label: string;
+    dateText?: string;
+    status?: "completed" | "live" | "upcoming";
+  }>;
   items: OnlineScheduleItem[];
 };
 

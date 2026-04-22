@@ -101,10 +101,19 @@ function getRefundDescription(refund: CourseRefundInfoResponse) {
   return text(refund.uiMessages.policyWarning ?? refund.uiMessages.description, NOT_IN_API);
 }
 
-function getRefundDaysBeforeStart(refund: CourseRefundInfoResponse) {
-  if (typeof refund.daysBeforeStart === "number") return refund.daysBeforeStart;
-  if (typeof refund.hoursBeforeStart === "number") return Math.max(0, Math.floor(refund.hoursBeforeStart / 24));
-  return 0;
+function getRefundWindowText(refund: CourseRefundInfoResponse) {
+  const refundWindowRemaining = text(refund.courseDetails.refundWindowRemaining);
+  if (refundWindowRemaining) return refundWindowRemaining;
+
+  if (typeof refund.daysBeforeStart === "number") {
+    return `${refund.daysBeforeStart} day(s) before start`;
+  }
+
+  if (typeof refund.hoursBeforeStart === "number") {
+    return `${Math.max(0, Math.floor(refund.hoursBeforeStart / 24))} day(s) before start`;
+  }
+
+  return NOT_IN_API;
 }
 
 function formatWebinarPlatform(value?: string | null) {
@@ -179,20 +188,20 @@ function mapRefundUi(
   refund: CourseRefundInfoResponse,
 ): CourseBookingDetailsCardProps["refund"] {
   const policy = refund.policy;
-  const deadlineHours = typeof policy.deadlineHours === "number" ? policy.deadlineHours : null;
-  const processingFee =
-    refund.financials.processingFee && refund.financials.processingFee !== "0.00"
-      ? `Processing fee: ${money(refund.financials.processingFee, refund.financials.currency)}`
-      : typeof policy.processingFee === "number" && policy.processingFee > 0
-        ? `Processing fee: ${money(policy.processingFee, refund.financials.currency)}`
-        : "";
+  const processingFeeAmount =
+    refund.financials.processingFee ??
+    (typeof policy?.processingFee === "number" ? String(policy.processingFee) : "0.00");
+  const processingFeeText =
+    processingFeeAmount && processingFeeAmount !== "0.00"
+      ? `Processing fee: ${money(processingFeeAmount, refund.financials.currency)}`
+      : "";
 
-  const eligiblePolicyText: string =
-    typeof deadlineHours === "number"
-      ? `Refund requests are allowed up to ${deadlineHours} hours before the course starts.${processingFee ? ` ${processingFee}` : ""}`
-      : typeof policy.fullRefundDays === "number"
+  const legacyPolicyText: string =
+    typeof policy?.deadlineHours === "number"
+      ? `Refund requests are allowed up to ${policy.deadlineHours} hours before the course starts.${processingFeeText ? ` ${processingFeeText}` : ""}`
+      : typeof policy?.fullRefundDays === "number"
         ? `Full refunds up to ${policy.fullRefundDays} days before start.${typeof policy.partialRefundPercentage === "number" && typeof policy.partialRefundDaysMin === "number" && typeof policy.partialRefundDaysMax === "number" ? ` Partial refunds ${policy.partialRefundPercentage}% from ${policy.partialRefundDaysMin}-${policy.partialRefundDaysMax} days before start.` : ""}`
-        : getRefundDescription(refund);
+        : "";
 
   const refundTitle: string = text(refund.uiMessages.title, "Request Refund");
   const refundDescription: string = getRefundDescription(refund);
@@ -206,7 +215,8 @@ function mapRefundUi(
     refund.financials.estimatedRefund,
     refund.financials.currency,
   );
-  const policyText: string = refund.isEligible ? eligiblePolicyText : refundDescription;
+  const refundWindowText: string = getRefundWindowText(refund);
+  const policyText: string = text(refund.uiMessages.policyWarning, legacyPolicyText || refundDescription);
 
   return {
     enabled: refund.isEligible,
@@ -217,8 +227,23 @@ function mapRefundUi(
     courseDateText,
     amountPaid,
     estimatedRefund,
-    daysBeforeStart: getRefundDaysBeforeStart(refund),
+    refundWindowText,
     policyText,
+    processingFeeAmount,
+    currency: refund.financials.currency,
+    members: (refund.members ?? []).map((member) => ({
+      attendeeId: member.attendeeId,
+      fullName: text(member.fullName, "Unnamed attendee"),
+      email: text(member.email, "—"),
+      baseRefundAmount: member.baseRefundAmount,
+      requestStatus: text(member.requestStatus, "NONE"),
+      isSelectable: Boolean(member.isSelectable),
+      isSelectedByDefault: Boolean(member.isSelectedByDefault),
+    })),
+    selection: {
+      defaultSelectedAttendeeIds: refund.selection?.defaultSelectedAttendeeIds ?? [],
+      maxSelectableCount: refund.selection?.maxSelectableCount ?? refund.members?.length ?? 0,
+    },
   };
 }
 
@@ -259,6 +284,14 @@ function mapDayState(status?: string): CourseScheduleItem["dayState"] {
   const normalized = (status || "").toLowerCase().replace(/\s+/g, "");
   if (normalized === "completed") return "done";
   if (normalized === "current" || normalized === "inprogress") return "active";
+  return "upcoming";
+}
+
+function sessionDayStateToOnline(
+  state?: CourseScheduleItem["dayState"],
+): "completed" | "live" | "upcoming" {
+  if (state === "done") return "completed";
+  if (state === "active") return "live";
   return "upcoming";
 }
 
@@ -463,29 +496,39 @@ function mapOnline(
         { iconKey: "mic", title: "Microphone", desc: "" },
       ],
     },
-    booking: {
-      courseId: data.courseId,
-      heading: "BOOKING DETAILS",
-      bookedText: text(data.bookingDetails.status),
-      joinLiveLabel: "Join Live Room",
-      totalFeeLabel: text(data.bookingDetails.paymentBadge),
-      totalFeeValue: text(data.bookingDetails.totalPayment),
-      refundLabel: "Request Refund",
-      refundNote: text(data.bookingDetails.refundNote),
-      refundEnabled: refund.isEligible,
-      refundTitle: text(refund.uiMessages.title),
-      refundDescription: getRefundDescription(refund),
-      refundPolicyText: mapRefundUi(data, refund).policyText,
-      refundAmount: mapRefundUi(data, refund).estimatedRefund,
-      daysBeforeStart: getRefundDaysBeforeStart(refund),
-      courseTitle: text(data.banner.title),
-      courseDateText: text(data.banner.dateBox.dateRange),
-    },
+    booking: (() => {
+      const mappedRefund = mapRefundUi(data, refund);
+
+      return {
+        courseId: data.courseId,
+        heading: "BOOKING DETAILS",
+        bookedText: text(data.bookingDetails.status),
+        joinLiveLabel: "Join Live Room",
+        totalFeeLabel: text(data.bookingDetails.paymentBadge),
+        totalFeeValue: text(data.bookingDetails.totalPayment),
+        refundLabel: "Request Refund",
+        refundNote: text(data.bookingDetails.refundNote),
+        refundEnabled: refund.isEligible,
+        refundTitle: mappedRefund.title,
+        refundDescription: mappedRefund.description,
+        refundPolicyText: mappedRefund.policyText,
+        refundAmount: mappedRefund.estimatedRefund,
+        refundWindowText: mappedRefund.refundWindowText,
+        courseTitle: mappedRefund.courseTitle,
+        courseDateText: mappedRefund.courseDateText,
+        refundProcessingFeeAmount: mappedRefund.processingFeeAmount,
+        refundCurrency: mappedRefund.currency,
+        refundMembers: mappedRefund.members,
+        refundSelection: mappedRefund.selection,
+      };
+    })(),
     schedule: {
       heading: text(data.scheduleHeader.title),
       days: data.schedule.map((day, index) => ({
         key: `day${index + 1}` as const,
         label: day.title,
+        dateText: text(day.date),
+        status: sessionDayStateToOnline(mapDayState(day.status)),
       })),
       items: data.schedule.flatMap((day, index) => {
         let liveAssigned = false;
@@ -538,11 +581,8 @@ export async function getCourseDetailsController(
     getBookedCourseDetails(courseId),
     getCourseRefundInfoServer(courseId).catch(() => ({
       isEligible: false,
-      daysBeforeStart: 0,
-      policy: {
-        deadlineHours: 0,
-        processingFee: 0,
-      },
+      refundRequestStatus: false,
+      pendingRequestId: null,
       courseDetails: {
         title: "",
         dateRange: "",
@@ -554,6 +594,12 @@ export async function getCourseDetailsController(
         processingFee: "0.00",
         estimatedRefund: "0.00",
         currency: "USD",
+        perSeatRefundBase: "0.00",
+      },
+      members: [],
+      selection: {
+        defaultSelectedAttendeeIds: [],
+        maxSelectableCount: 0,
       },
       uiMessages: {
         title: "Request Refund",

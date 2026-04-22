@@ -155,9 +155,11 @@ export interface CourseDetailResponse {
 
 export interface CourseRefundInfoResponse {
   isEligible: boolean;
+  refundRequestStatus?: boolean;
+  pendingRequestId?: string | null;
   daysBeforeStart?: number;
   hoursBeforeStart?: number;
-  policy: {
+  policy?: {
     fullRefundDays?: number;
     partialRefundDaysMin?: number;
     partialRefundDaysMax?: number;
@@ -177,6 +179,20 @@ export interface CourseRefundInfoResponse {
     processingFee?: string;
     estimatedRefund: string;
     currency: string;
+    perSeatRefundBase?: string;
+  };
+  members?: Array<{
+    attendeeId: string;
+    fullName: string;
+    email: string;
+    baseRefundAmount: string;
+    requestStatus: string;
+    isSelectable: boolean;
+    isSelectedByDefault: boolean;
+  }>;
+  selection?: {
+    defaultSelectedAttendeeIds?: string[];
+    maxSelectableCount?: number;
   };
   uiMessages: {
     title: string;
@@ -186,9 +202,10 @@ export interface CourseRefundInfoResponse {
 }
 
 export interface CourseRefundSubmitRequest {
-  refundAmount: number;
+  attendeeIds: string[];
   reason: string;
   confirmedTerms: boolean;
+  refundAmount?: number;
 }
 
 export interface CourseRefundSubmitResponse {
@@ -196,7 +213,8 @@ export interface CourseRefundSubmitResponse {
   title: string;
   message: string;
   requestId?: string;
-  refundAmountRequested: string;
+  expectedRefund: string;
+  requestedMemberCount: number;
   reasonRecorded: string;
 }
 

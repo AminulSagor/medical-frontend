@@ -1,4 +1,3 @@
-import { Bell } from "lucide-react";
 import type {
   AccountProfile,
   SettingsSectionKey,
@@ -86,14 +85,6 @@ export default async function Page({
             Manage your personal information and account preferences
           </p>
         </div>
-
-        <button
-          type="button"
-          className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-          aria-label="Notifications"
-        >
-          <Bell className="h-4 w-4" />
-        </button>
       </div>
 
       <div className="mt-5">

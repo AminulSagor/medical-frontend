@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { DashboardRecentOrderCardItem } from "@/types/user/dashboard/dashboard.types";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 
 interface RecentOrdersCardProps {
   items?: DashboardRecentOrderCardItem[];
@@ -70,17 +71,14 @@ function OrderRow({ order }: { order: DashboardRecentOrderCardItem }) {
     >
       <div className="flex min-w-0 items-center gap-3">
         <div className="relative h-10 w-10 overflow-hidden rounded-lg bg-slate-100 ring-1 ring-slate-200">
-          {order.imageUrl ? (
-            <img
-              src={order.imageUrl}
-              alt={order.title}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-slate-100 text-[10px] font-semibold text-slate-500">
-              IMG
-            </div>
-          )}
+          <NetworkImageFallback
+            src={order.imageUrl}
+            alt={order.title}
+            className="h-full w-full object-cover"
+            fallbackVariant="cover"
+            fallbackClassName="h-full w-full"
+            iconClassName="h-5 w-5"
+          />
         </div>
 
         <div className="min-w-0">
@@ -132,6 +130,10 @@ function getBadge(status: string): { className: string } {
     normalizedStatus.includes("paid")
   ) {
     return { className: "bg-emerald-50 text-emerald-700 ring-emerald-200" };
+  }
+
+  if (normalizedStatus.includes("cancel")) {
+    return { className: "bg-rose-50 text-rose-700 ring-rose-200" };
   }
 
   return { className: "bg-slate-50 text-slate-700 ring-slate-200" };

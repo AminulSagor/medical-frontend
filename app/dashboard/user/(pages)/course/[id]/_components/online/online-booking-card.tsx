@@ -24,12 +24,6 @@ const CONTACT_INFO = {
   supportHoursText: "Mon-Fri, 8am - 6pm EST",
 };
 
-function parseRefundAmount(value: string) {
-  const normalized = value.replace(/[^\d.-]/g, "");
-  const amount = Number.parseFloat(normalized);
-  return Number.isFinite(amount) ? amount : 0;
-}
-
 export default function OnlineBookingCardClient({
   booking,
 }: {
@@ -60,9 +54,11 @@ export default function OnlineBookingCardClient({
   };
 
   const handleConfirmRefund = async ({
+    selectedAttendeeIds,
     reasonText,
     acknowledged,
   }: {
+    selectedAttendeeIds: string[];
     reasonText: string;
     acknowledged: boolean;
   }) => {
@@ -71,7 +67,7 @@ export default function OnlineBookingCardClient({
       setSubmitError(null);
 
       const response = await submitCourseRefundRequest(booking.courseId, {
-        refundAmount: parseRefundAmount(booking.refundAmount),
+        attendeeIds: selectedAttendeeIds,
         reason: reasonText,
         confirmedTerms: acknowledged,
       });
@@ -165,12 +161,15 @@ export default function OnlineBookingCardClient({
           onClose={() => setOpenRefund(false)}
           courseTitle={booking.courseTitle}
           metaText={booking.courseDateText}
-          refundWindowText={`${booking.daysBeforeStart} day(s) before start`}
+          refundWindowText={booking.refundWindowText}
           policyTitle="Refund Policy:"
           policyText={booking.refundPolicyText}
           totalPaidValue={booking.totalFeeValue}
           refundAmountValue={booking.refundAmount}
-          feeText=""
+          processingFeeAmount={booking.refundProcessingFeeAmount}
+          currency={booking.refundCurrency}
+          members={booking.refundMembers}
+          selection={booking.refundSelection}
           disclaimerText="I understand that this action cannot be undone and my access to all course materials will be permanently removed."
           footnoteText={booking.refundNote}
           submitting={submitting}
@@ -213,8 +212,8 @@ export default function OnlineBookingCardClient({
         courseTitle={booking.courseTitle}
         subtitle={submittedData?.message || "Your refund request has been submitted."}
         requestIdValue={submittedData?.requestId || "—"}
-        expectedRefundValue={submittedData?.refundAmountRequested || booking.refundAmount}
-        confirmationText={undefined}
+        expectedRefundValue={submittedData?.expectedRefund || booking.refundAmount}
+        confirmationText={submittedData ? `${submittedData.requestedMemberCount} member(s) selected for refund.` : undefined}
         footnoteText={submittedData?.message || booking.refundNote}
         ctaLabel="Back to Course"
         onCta={() => setOpenSubmitted(false)}

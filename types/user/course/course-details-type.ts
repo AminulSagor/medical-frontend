@@ -29,6 +29,21 @@ export type CourseAboutCardProps = {
   learningObjectivesHtml?: string;
 };
 
+export type CourseRefundMember = {
+  attendeeId: string;
+  fullName: string;
+  email: string;
+  baseRefundAmount: string;
+  requestStatus: string;
+  isSelectable: boolean;
+  isSelectedByDefault: boolean;
+};
+
+export type CourseRefundSelection = {
+  defaultSelectedAttendeeIds: string[];
+  maxSelectableCount: number;
+};
+
 export type CourseRefundUi = {
   enabled: boolean;
   label: string;
@@ -38,8 +53,12 @@ export type CourseRefundUi = {
   courseDateText: string;
   amountPaid: string;
   estimatedRefund: string;
-  daysBeforeStart: number;
+  refundWindowText: string;
   policyText: string;
+  processingFeeAmount: string;
+  currency: string;
+  members: CourseRefundMember[];
+  selection: CourseRefundSelection;
 };
 
 export type CourseBookingDetailsCardProps = {

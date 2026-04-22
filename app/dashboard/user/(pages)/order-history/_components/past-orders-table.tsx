@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useEffect, useState } from "react";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -9,7 +9,6 @@ import {
   SlidersHorizontal,
   RotateCcw,
   Eye,
-  Copy,
   ShoppingCart,
   ChevronLeft,
   ChevronRight,
@@ -21,7 +20,7 @@ import type {
 import { reorderBackendCart } from "@/service/public/cart-server.service";
 import { useCart } from "@/app/public/context/cart-context";
 
-type OrderStatus = "Ordered" | "Processing" | "Shipped" | "Delivered";
+type OrderStatus = "Ordered" | "Processing" | "Shipped" | "Delivered" | "Cancelled";
 
 type PastOrder = {
   id: string;
@@ -31,7 +30,7 @@ type PastOrder = {
   qtyLabel: string;
   status: OrderStatus;
   total: string;
-  imageUrl: string;
+  imageUrl: string | null;
   itemsBadge?: string;
   viewHref?: string;
   copyValue?: string;
@@ -50,6 +49,7 @@ const STATUS_LABELS: Record<OrderHistoryStatus, string> = {
   processing: "Processing",
   shipped: "Shipped",
   received: "Delivered",
+  cancelled: "Cancelled",
 };
 
 export default function PastOrdersTable(props: {
@@ -71,6 +71,7 @@ export default function PastOrdersTable(props: {
 
   const [showDurationMenu, setShowDurationMenu] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [pageInput, setPageInput] = useState("1");
 
   const items: PastOrder[] = props.items ?? [];
   const currentPage = props.page ?? 1;
@@ -82,11 +83,42 @@ export default function PastOrdersTable(props: {
 
   const showingFrom = items.length === 0 ? 0 : (currentPage - 1) * 10 + 1;
   const showingTo = items.length === 0 ? 0 : showingFrom + items.length - 1;
+  useEffect(() => {
+    setPageInput(String(currentPage));
+  }, [currentPage]);
 
-  const goToOrderDetails = (href?: string) => {
-    if (!href) return;
-    router.push(href);
+  useEffect(() => {
+    const trimmedValue = pageInput.trim();
+
+    if (!trimmedValue) return;
+
+    const nextPage = Number.parseInt(trimmedValue, 10);
+    if (Number.isNaN(nextPage)) return;
+
+    const clampedPage = Math.min(Math.max(nextPage, 1), totalPages);
+
+    const timer = window.setTimeout(() => {
+      if (clampedPage !== currentPage) {
+        props.onPageChange?.(clampedPage);
+      }
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [currentPage, pageInput, props, totalPages]);
+
+  const commitPageInput = () => {
+    const trimmedValue = pageInput.trim();
+    const parsedValue = Number.parseInt(trimmedValue || String(currentPage), 10);
+    const nextPage = Number.isNaN(parsedValue) ? currentPage : parsedValue;
+    const clampedPage = Math.min(Math.max(nextPage, 1), totalPages);
+
+    setPageInput(String(clampedPage));
+
+    if (clampedPage !== currentPage) {
+      props.onPageChange?.(clampedPage);
+    }
   };
+
 
   return (
     <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.06)]">
@@ -217,25 +249,32 @@ export default function PastOrdersTable(props: {
                 <td className="px-4 py-4">
                   <button
                     type="button"
-                    onClick={() => goToOrderDetails(o.viewHref)}
-                    className="flex items-center gap-3 rounded-lg text-left transition hover:bg-slate-50"
+                    onClick={() => {
+                      if (o.viewHref) router.push(o.viewHref);
+                    }}
+                    className="group flex w-full items-center gap-3 rounded-xl text-left transition hover:bg-slate-50 p-1 -m-1"
                   >
-                    <div className="relative h-11 w-11 overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200">
-                      <Image
-                        src={o.imageUrl}
-                        alt={o.title}
-                        fill
-                        className="object-cover"
-                      />
-                      {o.itemsBadge ? (
-                        <span className="absolute left-1 top-1 rounded-full bg-sky-500 px-2 py-0.5 text-[9px] font-semibold text-white">
+                    <div className="relative flex-shrink-0">
+                      {o.itemsBadge && o.qtyLabel !== "1 item" ? (
+                        <span className="absolute -top-2.5 left-1/2 z-10 inline-flex h-5 -translate-x-1/2 whitespace-nowrap items-center rounded-md bg-sky-500 px-2 text-[10px] font-semibold text-white shadow-md">
                           {o.itemsBadge}
                         </span>
                       ) : null}
+
+                      <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200">
+                        <NetworkImageFallback
+                          src={o.imageUrl}
+                          alt={o.title}
+                          className="h-full w-full object-cover"
+                          fallbackVariant="cover"
+                          fallbackClassName="h-full w-full"
+                          iconClassName="h-6 w-6"
+                        />
+                      </div>
                     </div>
 
                     <div className="min-w-0">
-                      <div className="truncate text-[12px] font-semibold text-slate-900 hover:text-sky-600">
+                      <div className="truncate text-[12px] font-semibold text-slate-900 group-hover:text-sky-600 transition-colors">
                         {o.title}
                       </div>
                       <div className="text-[10px] text-slate-500">
@@ -267,20 +306,10 @@ export default function PastOrdersTable(props: {
                     <ActionIconButton
                       label="View"
                       onClick={() => {
-                        goToOrderDetails(o.viewHref);
+                        if (o.viewHref) router.push(o.viewHref);
                       }}
                     >
                       <Eye className="h-4 w-4" />
-                    </ActionIconButton>
-
-                    <ActionIconButton
-                      label="Copy"
-                      onClick={async () => {
-                        if (!o.copyValue) return;
-                        await navigator.clipboard.writeText(o.copyValue);
-                      }}
-                    >
-                      <Copy className="h-4 w-4" />
                     </ActionIconButton>
 
                     <ActionIconButton
@@ -367,9 +396,29 @@ export default function PastOrdersTable(props: {
         <div className="flex items-center gap-2 text-[11px] text-slate-500">
           <span>Go to page</span>
           <input
-            value={currentPage}
-            readOnly
-            className="h-8 w-12 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-900 outline-none"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={pageInput}
+            onChange={(event) => {
+              const digitsOnly = event.target.value.replace(/\D/g, "");
+
+              if (!digitsOnly) {
+                setPageInput("");
+                return;
+              }
+
+              const parsedValue = Number.parseInt(digitsOnly, 10);
+              const clampedValue = Math.min(Math.max(parsedValue, 1), totalPages);
+              setPageInput(String(clampedValue));
+            }}
+            onBlur={commitPageInput}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                commitPageInput();
+              }
+            }}
+            className="h-8 w-16 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-900 outline-none focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
           />
         </div>
       </div>
@@ -411,7 +460,9 @@ function StatusPill({ status }: { status: OrderStatus }) {
         ? "bg-sky-50 text-sky-700 ring-sky-200"
         : status === "Shipped"
           ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-          : "bg-slate-50 text-slate-700 ring-slate-200";
+          : status === "Cancelled"
+            ? "bg-rose-50 text-rose-700 ring-rose-200"
+            : "bg-slate-50 text-slate-700 ring-slate-200";
 
   return (
     <span
