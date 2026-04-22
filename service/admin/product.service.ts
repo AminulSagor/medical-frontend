@@ -10,6 +10,8 @@ import type {
   CreateTagRequest,
   AdminProductsListResponse,
   AdminProductsListParams,
+  AdminProductFilterCategory,
+  AdminProductFilterCategoriesResponse,
 } from "@/types/admin/product.types";
 
 export const getProductCategories = async (
@@ -38,6 +40,19 @@ export const getAdminCategories = async (): Promise<ProductCategory[]> => {
   }
 
   return [];
+};
+
+export const getAdminProductFilterCategories = async (
+  query?: string,
+): Promise<AdminProductFilterCategory[]> => {
+  const response = await serviceClient.get<AdminProductFilterCategoriesResponse>(
+    "/public/products/categories",
+    {
+      params: query ? { q: query } : {},
+    },
+  );
+
+  return response.data.categories ?? [];
 };
 
 export const getProductsList = async (

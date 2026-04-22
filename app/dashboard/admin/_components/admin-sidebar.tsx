@@ -1,11 +1,13 @@
 "use client";
 
-import Image from "next/image";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, X } from "lucide-react";
 import { ADMIN_NAV_LINKS } from "@/constant/navigation-links";
 import { logoutUser } from "@/utils/logout.utils";
+import { getUserProfile } from "@/service/user/profile.service";
+import UserAvatar from "@/components/common/user-avatar";
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -16,8 +18,70 @@ type AdminSidebarProps = {
   onClose?: () => void;
 };
 
+type AdminProfile = {
+  name: string;
+  subtitle: string;
+  imageUrl?: string;
+};
+
+const FALLBACK_ADMIN_PROFILE: AdminProfile = {
+  name: "Administrator",
+  subtitle: "Admin",
+};
+
+function mapProfileToAdminProfile(profile: {
+  firstName?: string | null;
+  lastName?: string | null;
+  role?: string | null;
+  title?: string | null;
+  emailAddress?: string | null;
+  profilePicture?: string | null;
+}): AdminProfile {
+  const fullName = [profile.firstName, profile.lastName]
+    .filter((value) => typeof value === "string" && value.trim().length > 0)
+    .join(" ")
+    .trim();
+
+  return {
+    name: fullName || FALLBACK_ADMIN_PROFILE.name,
+    subtitle:
+      profile.role?.trim() ||
+      profile.title?.trim() ||
+      profile.emailAddress?.trim() ||
+      FALLBACK_ADMIN_PROFILE.subtitle,
+    imageUrl: profile.profilePicture?.trim() || undefined,
+  };
+}
+
 export default function AdminSidebar({ onClose }: AdminSidebarProps) {
   const pathname = usePathname();
+  const [adminProfile, setAdminProfile] =
+    useState<AdminProfile>(FALLBACK_ADMIN_PROFILE);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProfile = async () => {
+      try {
+        const response = await getUserProfile();
+
+        if (!isMounted) return;
+
+        setAdminProfile(mapProfileToAdminProfile(response.data));
+      } catch (error) {
+        console.error("Failed to load admin profile", error);
+      }
+    };
+
+    void loadProfile();
+
+    window.addEventListener("profile-updated", loadProfile); // ✅ added
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("profile-updated", loadProfile); // ✅ added
+    };
+  }, []);
 
   return (
     <div className="flex h-full flex-col">
@@ -76,19 +140,19 @@ export default function AdminSidebar({ onClose }: AdminSidebarProps) {
       <div className="mt-auto border-t px-5 py-4">
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="relative h-9 w-9 overflow-hidden rounded-full ring-1 ring-slate-200">
-              <Image
-                src="/photos/image.png"
-                alt="Admin"
-                fill
-                className="object-cover"
-              />
-            </div>
+            <UserAvatar
+              name={adminProfile.name}
+              imageUrl={adminProfile.imageUrl}
+              size={36}
+            />
+
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-slate-900">
-                Dr. Farah
+                {adminProfile.name}
               </p>
-              <p className="truncate text-xs text-slate-500">Administrator</p>
+              <p className="truncate text-xs text-slate-500">
+                {adminProfile.subtitle}
+              </p>
             </div>
           </div>
 

@@ -10,7 +10,7 @@ export interface WishlistProduct {
   inStock: boolean;
   stockQuantity: number;
   addedAt: string;
-  status?: "ACTIVE" | "DRAFT";
+  productStatus?: boolean;
   isActive?: boolean;
 }
 

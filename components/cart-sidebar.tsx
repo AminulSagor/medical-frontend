@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import Image from "next/image";
 import { X, Minus, Plus, ShoppingBag, ArrowRight, Lock } from "lucide-react";
 import { useCart } from "@/app/public/context/cart-context";
 import { calculateCart } from "@/service/public/cart.service";
@@ -14,6 +13,7 @@ import type {
   CartResponseItem,
 } from "@/types/public/cart/cart.types";
 import { Loader2 } from "lucide-react";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 
 export default function CartSidebar({
   open,
@@ -24,14 +24,8 @@ export default function CartSidebar({
 }) {
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
-  const {
-    items,
-    updateQty,
-    removeItem,
-    totalItems,
-    syncItems,
-    pruneItems,
-  } = useCart();
+  const { items, updateQty, removeItem, totalItems, syncItems, pruneItems } =
+    useCart();
   const [calculatedData, setCalculatedData] =
     useState<CartCalculateResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -100,7 +94,9 @@ export default function CartSidebar({
         const unavailableProductIds = existingItems
           .filter(
             (item) =>
-              !availableItems.some((available) => available.productId === item.productId),
+              !availableItems.some(
+                (available) => available.productId === item.productId,
+              ),
           )
           .map((item) => item.productId);
 
@@ -187,7 +183,7 @@ export default function CartSidebar({
           "flex flex-col",
         ].join(" ")}
       >
-        <div className="px-6 pt-6 pb-4">
+        <div className="px-6 pb-4 pt-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10">
@@ -297,10 +293,8 @@ export default function CartSidebar({
               router.push("/public/cart");
             }}
             className={[
-              "mt-5 w-full rounded-2xl bg-primary px-6 py-4",
-              "inline-flex items-center justify-center gap-2",
-              "text-base font-extrabold text-white",
-              "hover:opacity-90 active:scale-[0.99] transition",
+              "mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-base font-extrabold text-white",
+              "transition hover:opacity-90 active:scale-[0.99]",
               items.length === 0
                 ? "pointer-events-none cursor-not-allowed opacity-50"
                 : "",
@@ -341,8 +335,7 @@ function CartRow({
       : Number.POSITIVE_INFINITY;
 
   const hasReachedMaxQuantity =
-    Number.isFinite(maxAvailableQuantity) &&
-    quantity >= maxAvailableQuantity;
+    Number.isFinite(maxAvailableQuantity) && quantity >= maxAvailableQuantity;
 
   return (
     <div className="flex gap-4">
@@ -352,12 +345,12 @@ function CartRow({
         className="relative h-20 w-20 overflow-hidden rounded-2xl bg-light-slate/10"
         aria-label={`Open details for ${it.name}`}
       >
-        <Image
-          src={it.photo || "/photos/store_product.png"}
+        <NetworkImageFallback
+          src={it.photo || ""}
           alt={it.name}
-          fill
-          sizes="80px"
-          className="object-cover"
+          className="h-full w-full object-cover"
+          fallbackClassName="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400"
+          iconClassName="h-6 w-6"
         />
       </button>
 
@@ -369,7 +362,7 @@ function CartRow({
               onClick={onOpenDetails}
               className="block max-w-full text-left"
             >
-              <div className="truncate text-sm font-bold text-black hover:text-primary transition-colors">
+              <div className="truncate text-sm font-bold text-black transition-colors hover:text-primary">
                 {it.name}
               </div>
             </button>
@@ -449,8 +442,8 @@ function iconBtn() {
   return [
     "inline-flex items-center justify-center",
     "h-9 w-9 rounded-full",
-    " bg-white",
-    "hover:bg-light-slate/5 active:scale-95 transition",
+    "bg-white",
+    "transition hover:bg-light-slate/5 active:scale-95",
   ].join(" ");
 }
 

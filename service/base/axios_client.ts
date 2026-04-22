@@ -29,9 +29,12 @@ function buildSignInRedirectUrl() {
 serviceClient.interceptors.request.use(
   (config) => {
     const token = getToken();
-    if (token) {
+    const url = config.url ?? "";
+
+    if (token && url !== "/contact-us") {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => Promise.reject(error),

@@ -1,7 +1,7 @@
 export type ContactUsInquiryType =
   | "general_inquiry"
-  | "enrollment_programs"
-  | "group_bookings"
+  | "enrollment"
+  | "facility_booking"
   | "technical_support"
   | "order_inquiry";
 

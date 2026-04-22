@@ -17,6 +17,8 @@ import {
   AUTH_CHANGED_EVENT,
   getToken,
 } from "@/utils/token/cookie_utils";
+import { getUserProfile } from "@/service/user/profile.service";
+import UserAvatar from "@/components/common/user-avatar";
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/public/home") return pathname === "/public/home";
@@ -39,18 +41,45 @@ export default function PublicSidebar({
   const pathname = usePathname();
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userName, setUserName] = useState<string>("");
+  const [userImage, setUserImage] = useState<string | null>(null);
 
   useEffect(() => {
-    const syncAuthState = () => {
+    const syncAuthState = async () => {
       const token = getToken();
-      setIsAuthenticated(!!token);
+      const authenticated = !!token;
+
+      setIsAuthenticated(authenticated);
+
+      if (!authenticated) {
+        setUserName("");
+        setUserImage(null);
+        return;
+      }
+
+      try {
+        const response = await getUserProfile();
+        const data = response.data;
+
+        setUserName(
+          `${data.firstName ?? ""} ${data.lastName ?? ""}`.trim() || "User",
+        );
+        setUserImage(data.profilePicture ?? null);
+      } catch (error) {
+        console.error("Failed to load public sidebar profile", error);
+        setUserName("User");
+        setUserImage(null);
+      }
     };
 
-    syncAuthState();
+    void syncAuthState();
+
     window.addEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+    window.addEventListener("profile-updated", syncAuthState); // ✅ added
 
     return () => {
       window.removeEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+      window.removeEventListener("profile-updated", syncAuthState); // ✅ added
     };
   }, []);
 
@@ -191,8 +220,8 @@ export default function PublicSidebar({
                 }}
                 className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 transition hover:bg-light-slate/5"
               >
-                <div className="relative grid h-10 w-10 place-items-center rounded-full border border-light-slate/30 bg-primary/10">
-                  <span className="text-sm font-bold text-primary">U</span>
+                <div className="relative shrink-0">
+                  <UserAvatar name={userName} imageUrl={userImage} size={40} />
                   <span
                     className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-primary ring-2 ring-white"
                     aria-hidden="true"

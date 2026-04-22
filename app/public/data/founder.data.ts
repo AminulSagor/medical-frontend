@@ -1,4 +1,4 @@
-import { GraduationCap, Users, MonitorPlay, Star } from "lucide-react";
+import { GraduationCap, Users, BriefcaseMedical, Newspaper } from "lucide-react";
 import { IMAGE } from "@/constant/image-config";
 import { FounderProfile, FounderStat } from "@/app/public/types/founder.types";
 
@@ -6,12 +6,27 @@ export const FOUNDER_STATS: FounderStat[] = [
   {
     id: "courses",
     Icon: GraduationCap,
-    value: "120+",
+    value: "",
     label: "Accredited Courses",
   },
-  { id: "trained", Icon: Users, value: "5k+", label: "Physicians Trained" },
-  { id: "vr", Icon: MonitorPlay, value: "50+", label: "VR Simulations" },
-  { id: "rating", Icon: Star, value: "4.9", label: "Average Rating" },
+  {
+    id: "trained",
+    Icon: Users,
+    value: "",
+    label: "Physicians Trained",
+  },
+  {
+    id: "equipment",
+    Icon: BriefcaseMedical,
+    value: "",
+    label: "Medical Equipment",
+  },
+  {
+    id: "blogs",
+    Icon: Newspaper,
+    value: "",
+    label: "Medical Blog Articles",
+  },
 ];
 
 export const FOUNDER_PROFILE: FounderProfile = {

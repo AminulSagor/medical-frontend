@@ -18,6 +18,8 @@ import PublicSidebar from "@/components/public-sidebar";
 import NavbarSearch from "@/app/public/(pages)/home/_components/navbar-search";
 import { useCart } from "@/app/public/context/cart-context";
 import { useWishlist } from "@/app/public/context/wishlist-context";
+import { getUserProfile } from "@/service/user/profile.service";
+import UserAvatar from "@/components/common/user-avatar";
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/public/home") return pathname === "/public/home";
@@ -331,18 +333,43 @@ function NavbarWishlistQueryHandler({
 function AccountAccessButton() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userName, setUserName] = useState<string>("");
+  const [userImage, setUserImage] = useState<string | null>(null);
 
   useEffect(() => {
-    const syncAuthState = () => {
+    const syncAuthState = async () => {
       const token = getToken();
       setIsAuthenticated(!!token);
+
+      if (!token) {
+        setUserName("");
+        setUserImage(null);
+        return;
+      }
+
+      try {
+        const response = await getUserProfile();
+        const data = response.data;
+
+        setUserName(
+          `${data.firstName ?? ""} ${data.lastName ?? ""}`.trim() || "User",
+        );
+        setUserImage(data.profilePicture ?? null);
+      } catch (error) {
+        console.error("Failed to load navbar profile", error);
+        setUserName("User");
+        setUserImage(null);
+      }
     };
 
-    syncAuthState();
+    void syncAuthState();
+
     window.addEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+    window.addEventListener("profile-updated", syncAuthState); // ✅ added
 
     return () => {
       window.removeEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+      window.removeEventListener("profile-updated", syncAuthState); // ✅ added
     };
   }, []);
 
@@ -350,12 +377,7 @@ function AccountAccessButton() {
     return (
       <Link
         href="/public/auth/sign-in"
-        className={[
-          "hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full",
-          "border-2 border-primary text-primary",
-          "text-sm font-semibold",
-          "hover:bg-primary hover:text-white transition-colors",
-        ].join(" ")}
+        className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-primary text-primary text-sm font-semibold hover:bg-primary hover:text-white transition-colors"
       >
         Sign In
       </Link>
@@ -366,21 +388,10 @@ function AccountAccessButton() {
     <button
       type="button"
       onClick={() => router.push("/dashboard/user/dashboard")}
-      className={[
-        "relative h-10 w-10 rounded-full",
-        "border border-light-slate/30 bg-primary/10",
-        "transition hover:bg-primary/15 active:scale-95",
-      ].join(" ")}
-      aria-label="Go to dashboard"
+      className="relative transition active:scale-95"
     >
-      <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-primary">
-        U
-      </span>
-
-      <span
-        className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-primary ring-2 ring-white"
-        aria-hidden="true"
-      />
+      <UserAvatar name={userName} imageUrl={userImage} size={40} />
+      <span className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-primary ring-2 ring-white" />
     </button>
   );
 }

@@ -16,16 +16,54 @@ export type AdminNavItem = {
   icon: React.ElementType;
 };
 
+const ADMIN_BASE_PATH = "/dashboard/admin";
+
 export const ADMIN_NAV: AdminNavItem[] = [
-  { label: "Dashboard", href: "/admin-dashboard", icon: LayoutDashboard },
-  { label: "Courses", href: "/courses", icon: BookOpen },
-  { label: "Products", href: "/products", icon: Package },
-  { label: "Orders and Sales", href: "/orders-and-sales", icon: ShoppingCart },
-  { label: "Blogs", href: "/blogs", icon: FileText },
-  { label: "Newsletters", href: "/newsletters", icon: Mail },
-  { label: "Users", href: "/users", icon: Users },
-  { label: "Analytics", href: "/analytics", icon: BarChart3 },
-  { label: "Settings", href: "/setting", icon: Settings },
+  {
+    label: "Dashboard",
+    href: `${ADMIN_BASE_PATH}/admin-dashboard`,
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Courses",
+    href: `${ADMIN_BASE_PATH}/courses`,
+    icon: BookOpen,
+  },
+  {
+    label: "Products",
+    href: `${ADMIN_BASE_PATH}/products`,
+    icon: Package,
+  },
+  {
+    label: "Orders and Sales",
+    href: `${ADMIN_BASE_PATH}/orders-and-sales`,
+    icon: ShoppingCart,
+  },
+  {
+    label: "Blogs",
+    href: `${ADMIN_BASE_PATH}/blogs`,
+    icon: FileText,
+  },
+  {
+    label: "Newsletters",
+    href: `${ADMIN_BASE_PATH}/newsletters`,
+    icon: Mail,
+  },
+  {
+    label: "Users",
+    href: `${ADMIN_BASE_PATH}/users`,
+    icon: Users,
+  },
+  {
+    label: "Analytics",
+    href: `${ADMIN_BASE_PATH}/analytics`,
+    icon: BarChart3,
+  },
+  {
+    label: "Settings",
+    href: `${ADMIN_BASE_PATH}/setting`,
+    icon: Settings,
+  },
 ];
 
 export function isActivePath(pathname: string, href: string) {
@@ -37,6 +75,5 @@ export function getActiveAdminLabel(pathname: string) {
   const found = ADMIN_NAV.find((it) => isActivePath(pathname, it.href));
   const label = found?.label ?? "Dashboard";
 
-  // ✅ prevent "Admin" duplication if label accidentally includes it
   return label.replace(/^Admin\s*\/\s*/i, "").trim();
 }

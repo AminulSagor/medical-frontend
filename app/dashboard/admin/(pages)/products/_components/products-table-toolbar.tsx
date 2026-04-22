@@ -2,14 +2,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Search, ChevronDown } from "lucide-react";
-
-const CATEGORIES = [
-    "All",
-    "Airway Management",
-    "Diagnostic Instruments",
-    "Surgical Supplies",
-    "Emergency Care",
-] as const;
+import { getAdminProductFilterCategories } from "@/service/admin/product.service";
+import type { AdminProductFilterCategory } from "@/types/admin/product.types";
 
 export default function ProductsTableToolbar({
     query,
@@ -24,14 +18,15 @@ export default function ProductsTableToolbar({
 }) {
     const [open, setOpen] = useState(false);
     const [hovered, setHovered] = useState<string | null>(null);
+    const [categories, setCategories] = useState<AdminProductFilterCategory[]>([]);
     const wrapRef = useRef<HTMLDivElement | null>(null);
 
-    // close on outside click
     useEffect(() => {
         const onDown = (e: MouseEvent) => {
             if (!wrapRef.current) return;
             if (!wrapRef.current.contains(e.target as Node)) setOpen(false);
         };
+
         document.addEventListener("mousedown", onDown);
         return () => document.removeEventListener("mousedown", onDown);
     }, []);
@@ -40,9 +35,27 @@ export default function ProductsTableToolbar({
         if (!open) setHovered(null);
     }, [open]);
 
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await getAdminProductFilterCategories();
+                setCategories(response);
+            } catch (error) {
+                console.error("Failed to fetch product filter categories", error);
+                setCategories([]);
+            }
+        };
+
+        void fetchCategories();
+    }, []);
+
+    const categoryOptions = [
+        "All",
+        ...categories.map((item) => item.name).filter((name) => name.trim().length > 0),
+    ];
+
     return (
         <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between">
-            {/* Search */}
             <div className="relative w-full md:max-w-[320px]">
                 <Search
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -56,19 +69,13 @@ export default function ProductsTableToolbar({
                 />
             </div>
 
-            {/* Category (custom dropdown like your other view) */}
             <div ref={wrapRef} className="relative w-full md:w-[220px]">
                 <button
                     type="button"
                     onClick={() => setOpen((v) => !v)}
                     className={[
-                        "flex w-full items-center justify-between",
-                        "rounded-md border border-slate-200 bg-white",
-                        "px-3 py-2 text-sm text-slate-900",
-                        "cursor-pointer",
-                        "hover:bg-slate-50",
-                        "outline-none",
-                        "focus:ring-2 focus:ring-[var(--primary)]/20",
+                        "flex w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900",
+                        "cursor-pointer outline-none hover:bg-slate-50 focus:ring-2 focus:ring-[var(--primary)]/20",
                     ].join(" ")}
                     aria-haspopup="listbox"
                     aria-expanded={open}
@@ -92,12 +99,8 @@ export default function ProductsTableToolbar({
                             className="max-h-60 overflow-y-auto py-1"
                             onMouseLeave={() => setHovered(null)}
                         >
-                            {CATEGORIES.map((opt) => {
+                            {categoryOptions.map((opt) => {
                                 const active = category === opt;
-
-                                // ✅ highlight rule:
-                                // - if hovering something => highlight ONLY hovered
-                                // - else => highlight selected
                                 const isHighlighted = hovered ? hovered === opt : active;
 
                                 return (
