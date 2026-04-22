@@ -6,6 +6,20 @@ export interface ProductCategory {
   createdAt: string;
 }
 
+export interface AdminProductFilterCategory {
+  name: string;
+  productCount: number;
+}
+
+export interface AdminProductFilterCategoriesResponse {
+  categories: AdminProductFilterCategory[];
+  brands: string[];
+  priceRange?: {
+    min: number;
+    max: number;
+  };
+}
+
 export interface ProductSearchResult {
   id: string;
   name: string;
@@ -159,6 +173,7 @@ export interface AdminProductsTabsCount {
   active: number;
   out_of_stock: number;
   low_stock: number;
+  draft: number;
 }
 
 export interface AdminProductsListResponse {

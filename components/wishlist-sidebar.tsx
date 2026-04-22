@@ -3,12 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import Image from "next/image";
 import { X, Trash2, Heart, ShoppingCart } from "lucide-react";
 import { getWishlist, removeFromWishlist } from "@/service/user/wishlist.service";
 import { useWishlist } from "@/app/public/context/wishlist-context";
 import { useCart } from "@/app/public/context/cart-context";
 import type { WishlistData } from "@/types/public/wishlist/wishlist.types";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 
 export default function WishlistSidebar({
   open,
@@ -120,7 +120,7 @@ export default function WishlistSidebar({
           "flex flex-col",
         ].join(" ")}
       >
-        <div className="px-6 pt-6 pb-4">
+        <div className="px-6 pb-4 pt-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-500/10">
@@ -143,7 +143,7 @@ export default function WishlistSidebar({
               onClick={onClose}
               className={[
                 "flex h-10 w-10 items-center justify-center rounded-full",
-                "hover:bg-light-slate/10 active:scale-95 transition",
+                "transition hover:bg-light-slate/10 active:scale-95",
               ].join(" ")}
               aria-label="Close"
             >
@@ -179,19 +179,17 @@ export default function WishlistSidebar({
                   Number(product.stockQuantity || 0) <= 0;
 
                 const isInactive =
-                  product.status !== undefined
-                    ? product.status !== "ACTIVE"
+                  typeof product.productStatus === "boolean"
+                    ? !product.productStatus
                     : product.isActive !== undefined
                       ? !product.isActive
                       : false;
 
-                const isCartDisabled = isOutOfStock || isInactive;
-
-                const cartButtonText = isInactive
-                  ? "Product is not available right now"
+                const availabilityLabel = isInactive
+                  ? "Currently unavailable"
                   : isOutOfStock
-                    ? "Out of Stock"
-                    : "Cart";
+                    ? "Out of stock"
+                    : "In stock";
 
                 return (
                   <div
@@ -204,12 +202,12 @@ export default function WishlistSidebar({
                       className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-light-slate/10"
                       aria-label={`Open details for ${product.name}`}
                     >
-                      <Image
-                        src={product.imageUrl || "/photos/store_product.png"}
+                      <NetworkImageFallback
+                        src={product.imageUrl}
                         alt={product.name}
-                        fill
-                        sizes="80px"
-                        className="object-cover"
+                        className="h-full w-full object-cover"
+                        fallbackClassName="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400"
+                        iconClassName="h-6 w-6"
                       />
                     </button>
 
@@ -219,7 +217,7 @@ export default function WishlistSidebar({
                         onClick={() => handleOpenDetails(product.productId)}
                         className="block max-w-full text-left"
                       >
-                        <h3 className="truncate text-sm font-bold text-black hover:text-primary transition-colors">
+                        <h3 className="truncate text-sm font-bold text-black transition-colors hover:text-primary">
                           {product.name}
                         </h3>
                       </button>
@@ -252,30 +250,43 @@ export default function WishlistSidebar({
                               : "text-green-600"
                           }`}
                       >
-                        {isInactive
-                          ? "Product is not available right now"
-                          : isOutOfStock
-                            ? "Out of stock"
-                            : "In stock"}
+                        {availabilityLabel}
                       </p>
 
                       <div className="mt-3 flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleAddToCart(product.productId)}
-                          disabled={isCartDisabled}
-                          className={[
-                            "flex h-8 flex-1 items-center justify-center gap-1 rounded-lg px-2 text-xs font-bold transition",
-                            isCartDisabled
-                              ? "cursor-not-allowed bg-slate-100 text-slate-400"
-                              : "bg-blue-50 text-primary hover:bg-blue-100 active:scale-95",
-                          ].join(" ")}
-                          aria-label="Add to cart"
-                          title={cartButtonText}
-                        >
-                          <ShoppingCart size={14} />
-                          <span className="truncate">{cartButtonText}</span>
-                        </button>
+                        {isInactive ? (
+                          <button
+                            type="button"
+                            disabled
+                            className="cursor-not-allowed flex h-8 flex-1 items-center justify-center rounded-lg bg-slate-100 px-2 text-xs font-bold text-slate-400"
+                            aria-label="Currently unavailable"
+                            title="Currently unavailable"
+                          >
+                            <span className="truncate">Currently unavailable</span>
+                          </button>
+                        ) : isOutOfStock ? (
+                          <button
+                            type="button"
+                            disabled
+                            className="cursor-not-allowed flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-slate-100 px-2 text-xs font-bold text-slate-400"
+                            aria-label="Out of stock"
+                            title="Out of stock"
+                          >
+                            <ShoppingCart size={14} />
+                            <span className="truncate">Out of Stock</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleAddToCart(product.productId)}
+                            className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-blue-50 px-2 text-xs font-bold text-primary transition hover:bg-blue-100 active:scale-95"
+                            aria-label="Add to cart"
+                            title="Cart"
+                          >
+                            <ShoppingCart size={14} />
+                            <span className="truncate">Cart</span>
+                          </button>
+                        )}
 
                         <button
                           type="button"
@@ -285,7 +296,7 @@ export default function WishlistSidebar({
                           className={[
                             "flex h-8 w-8 items-center justify-center rounded-lg",
                             "bg-red-50 text-red-500",
-                            "hover:bg-red-100 active:scale-95 transition",
+                            "transition hover:bg-red-100 active:scale-95",
                           ].join(" ")}
                           aria-label="Remove from wishlist"
                         >
@@ -311,7 +322,7 @@ export default function WishlistSidebar({
               className={[
                 "w-full rounded-2xl bg-light-slate/10 px-6 py-3",
                 "text-sm font-extrabold text-light-slate",
-                "hover:bg-light-slate/20 active:scale-[0.99] transition",
+                "transition hover:bg-light-slate/20 active:scale-[0.99]",
               ].join(" ")}
             >
               Continue Shopping

@@ -113,11 +113,17 @@ export default function ProductsTable({
     const displayRows = useMemo(() => localRows, [localRows]);
 
     const showingLabel = useMemo(() => {
-        if (totalCount === 0) return "Showing 0 results";
+        // ✅ No data case (correct UX)
+        if (!displayRows.length) {
+            return "No products found";
+        }
+
+        // ✅ Normal case
         const start = (page - 1) * pageSize + 1;
-        const end = Math.min(page * pageSize, totalCount);
+        const end = start + displayRows.length - 1;
+
         return `Showing ${start} to ${end} of ${totalCount.toLocaleString()} results`;
-    }, [page, pageSize, totalCount]);
+    }, [page, pageSize, totalCount, displayRows]);
 
     const nums = useMemo(() => pageNumbers(page, totalPages), [page, totalPages]);
 

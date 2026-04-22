@@ -82,6 +82,7 @@ const DEFAULT_TABS_COUNT: AdminProductsTabsCount = {
     active: 0,
     out_of_stock: 0,
     low_stock: 0,
+    draft: 0,
 };
 
 export default function ProductsTabsAndTable({
@@ -112,7 +113,7 @@ export default function ProductsTabsAndTable({
                     page: 1,
                     limit: 100,
                     search: query.trim() || undefined,
-                    category,
+                    category: category === "All" ? undefined : category,
                     tab:
                         tab === "outOfStock"
                             ? "out_of_stock"
@@ -151,27 +152,6 @@ export default function ProductsTabsAndTable({
 
     const allRows = useMemo(() => products.map(transformProductToRow), [products]);
 
-    const filtered = useMemo(() => {
-        let rows = [...allRows];
-
-        const q = query.trim().toLowerCase();
-        if (q) {
-            rows = rows.filter((r) => {
-                return (
-                    r.name.toLowerCase().includes(q) ||
-                    (r.sku ?? "").toLowerCase().includes(q) ||
-                    (r.category ?? "").toLowerCase().includes(q)
-                );
-            });
-        }
-
-        if (category !== "All") {
-            rows = rows.filter((r) => r.category === category);
-        }
-
-        return rows;
-    }, [allRows, query, category]);
-
     const filterLabel = useMemo(() => {
         const parts: string[] = [];
 
@@ -197,7 +177,7 @@ export default function ProductsTabsAndTable({
                         ? tabsCount.out_of_stock
                         : tab === "lowStock"
                             ? tabsCount.low_stock
-                            : 0;
+                            : tabsCount.draft;
 
         onExportMetaChange({
             totalRecords,
@@ -205,10 +185,10 @@ export default function ProductsTabsAndTable({
         });
     }, [tab, tabsCount, filterLabel, onExportMetaChange]);
 
-    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(allRows.length / PAGE_SIZE));
     const safePage = Math.min(page, totalPages);
     const start = (safePage - 1) * PAGE_SIZE;
-    const pageRows = filtered.slice(start, start + PAGE_SIZE);
+    const pageRows = allRows.slice(start, start + PAGE_SIZE);
 
     return (
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -247,7 +227,7 @@ export default function ProductsTabsAndTable({
                 <button className={pillClass(tab === "drafts")} onClick={() => setTab("drafts")}>
                     Drafts{" "}
                     <span className="ml-2 rounded-full bg-yellow-50 px-2 py-0.5 text-[11px] text-yellow-700 ring-1 ring-yellow-100">
-                        0
+                        {tabsCount.draft}
                     </span>
                 </button>
             </div>
@@ -268,11 +248,7 @@ export default function ProductsTabsAndTable({
                 onPageChange={setPage}
             />
 
-            {loading && (
-                <div className="p-8 text-center text-slate-500">
-                    Loading products...
-                </div>
-            )}
+            {loading && <div className="p-8 text-center text-slate-500">Loading products...</div>}
         </div>
     );
 }

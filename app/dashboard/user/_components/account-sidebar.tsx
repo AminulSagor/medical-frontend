@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import {
   LayoutGrid,
@@ -14,26 +13,21 @@ import {
 } from "lucide-react";
 import { logoutUser } from "@/utils/logout.utils";
 import { getUserProfile } from "@/service/user/profile.service";
+import UserAvatar from "@/components/common/user-avatar";
 
 type NavKey = "dashboard" | "courses" | "orders" | "settings";
 
 type Props = {
   active?: NavKey;
   onChange?: (key: NavKey) => void;
-
-  /** optional: if you want real navigation */
   hrefs?: Partial<Record<NavKey, string>>;
-
   user?: {
     name: string;
     subtitle?: string;
     avatarUrl?: string;
   };
-
   onSignOut?: () => void;
   className?: string;
-
-  /** optional: initial state for mobile drawer */
   defaultOpen?: boolean;
 };
 
@@ -75,37 +69,30 @@ const NAV: Array<{
   label: string;
   icon: React.ReactNode;
 }> = [
-  {
-    key: "dashboard",
-    label: "Dashboard",
-    icon: <LayoutGrid className="h-[18px] w-[18px]" />,
-  },
-  {
-    key: "courses",
-    label: "My Courses",
-    icon: <BookOpen className="h-[18px] w-[18px]" />,
-  },
-  {
-    key: "orders",
-    label: "Order History",
-    icon: <ShoppingBag className="h-[18px] w-[18px]" />,
-  },
-  {
-    key: "settings",
-    label: "Settings",
-    icon: <Settings className="h-[18px] w-[18px]" />,
-  },
-];
+    {
+      key: "dashboard",
+      label: "Dashboard",
+      icon: <LayoutGrid className="h-[18px] w-[18px]" />,
+    },
+    {
+      key: "courses",
+      label: "My Courses",
+      icon: <BookOpen className="h-[18px] w-[18px]" />,
+    },
+    {
+      key: "orders",
+      label: "Order History",
+      icon: <ShoppingBag className="h-[18px] w-[18px]" />,
+    },
+    {
+      key: "settings",
+      label: "Settings",
+      icon: <Settings className="h-[18px] w-[18px]" />,
+    },
+  ];
 
 function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
-}
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const a = parts[0]?.[0] ?? "";
-  const b = parts[1]?.[0] ?? "";
-  return (a + b).toUpperCase() || "U";
 }
 
 export default function AccountSidebarCard({
@@ -146,10 +133,13 @@ export default function AccountSidebarCard({
       }
     };
 
-    loadUserProfile();
+    void loadUserProfile();
+
+    window.addEventListener("profile-updated", loadUserProfile); // ✅ added
 
     return () => {
       isMounted = false;
+      window.removeEventListener("profile-updated", loadUserProfile); // ✅ added
     };
   }, []);
 
@@ -233,23 +223,13 @@ export default function AccountSidebarCard({
 
   const SidebarInner = ({ mobile }: { mobile?: boolean }) => (
     <div className="flex h-full flex-col border-r border-slate-200 bg-white">
-      {/* Top: user */}
       <div className="px-4 pt-5">
         <div className="flex flex-col items-center gap-2 text-center">
-          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200">
-            {sidebarUser.avatarUrl ? (
-              <img
-                src={sidebarUser.avatarUrl}
-                alt={sidebarUser.name}
-                className="object-cover"
-                sizes="44px"
-              />
-            ) : (
-              <div className="grid h-full w-full place-items-center text-xs font-semibold text-slate-600">
-                {initials(sidebarUser.name)}
-              </div>
-            )}
-          </div>
+          <UserAvatar
+            name={sidebarUser.name}
+            imageUrl={sidebarUser.avatarUrl}
+            size={44}
+          />
 
           <div className="w-full max-w-[220px]">
             <div className="truncate text-[14px] font-semibold leading-5 text-slate-900">
@@ -266,21 +246,24 @@ export default function AccountSidebarCard({
         <div className="mt-4 h-px bg-slate-200/70" />
       </div>
 
-      {/* Middle: nav */}
       <nav className="flex-1 overflow-auto px-3 py-4">
         <div className="space-y-1">
           {NAV.map((n) => renderNavItem(n, { mobile }))}
         </div>
       </nav>
 
-      {/* Bottom: sign out */}
       <div className="px-3 pb-4">
         <div className="mb-3 h-px bg-slate-200/70" />
 
         <button
           type="button"
           onClick={() => {
-            logoutUser();
+            if (onSignOut) {
+              onSignOut();
+            } else {
+              logoutUser();
+            }
+
             if (mobile) closeDrawer();
           }}
           className={cx(
@@ -306,7 +289,6 @@ export default function AccountSidebarCard({
 
   return (
     <>
-      {/* ✅ Desktop sidebar (md+) — STICKY FIX ONLY */}
       <aside
         className={cx(
           "hidden w-[240px] shrink-0 box-border md:block",
@@ -317,7 +299,6 @@ export default function AccountSidebarCard({
         <SidebarInner />
       </aside>
 
-      {/* ✅ Mobile: floating open button */}
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -332,7 +313,6 @@ export default function AccountSidebarCard({
         <Menu className="h-[18px] w-[18px] text-slate-700 " />
       </button>
 
-      {/* ✅ Mobile drawer */}
       <div
         className={cx(
           "fixed inset-0 z-50 md:hidden",
