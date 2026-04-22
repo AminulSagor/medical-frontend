@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Mail, Phone } from "lucide-react";
+import { FileText, Mail, Phone } from "lucide-react";
 import { SubscriberProfile } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/subscribers/subscriber-profile/types/subscriber-profile.type";
 
 function cx(...parts: Array<string | false | null | undefined>) {
@@ -98,8 +98,10 @@ export default function SubscriberProfileCard({
       </div>
 
       <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_12px_40px_rgba(15,23,42,0.05)]">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl border border-slate-200 bg-white" />
+        <div className="flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl border-slate-200 bg-white text-slate-500">
+            <FileText size={16} strokeWidth={1.8} />
+          </div>
           <p className="text-sm font-semibold text-slate-800">Admin Notes</p>
         </div>
 
