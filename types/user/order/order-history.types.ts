@@ -4,7 +4,8 @@ export type OrderHistoryStatus =
   | "unfulfilled"
   | "processing"
   | "shipped"
-  | "received";
+  | "received"
+  | "cancelled";
 
 export type UserOrderHistoryLeadItem = {
   title: string;

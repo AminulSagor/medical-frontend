@@ -34,7 +34,7 @@ export default function RefundSuccessModal({
                 <div className="mt-5 overflow-hidden rounded-xl border border-slate-200">
                     <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 first:border-t-0">
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                            Trainee Name
+                            Booking Owner
                         </p>
                         <p className="text-sm font-semibold text-slate-900">
                             {data.traineeName}
@@ -71,7 +71,7 @@ export default function RefundSuccessModal({
 
                 <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-xs text-slate-500">
                     The system has been updated. A confirmation email can be sent to the
-                    trainee regarding this refund.
+                    booking owner regarding this refund.
                 </div>
 
                 <button

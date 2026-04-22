@@ -36,8 +36,8 @@ export default function OrderSummaryCard({ shipTo, payment, totals }: OrderSumma
 
                 <div className="mt-3 text-sm font-semibold text-slate-900">{shipTo.name}</div>
                 <div className="mt-2 space-y-1 text-sm text-slate-600">
-                    {shipTo.lines.map((l) => (
-                        <div key={l}>{l}</div>
+                    {shipTo.lines.map((line, index) => (
+                        <div key={`${line}-${index}`}>{line}</div>
                     ))}
                 </div>
             </div>

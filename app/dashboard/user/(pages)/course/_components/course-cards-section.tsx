@@ -64,10 +64,30 @@ export default function CourseCardsSection({ items }: Props) {
   const [loadingCalendar, setLoadingCalendar] = useState(false);
 
   const providers: Array<{ key: CalendarProviderKey; title: string; subtitle: string; href?: string }> = [
-    { key: "google", title: "Google Calendar", subtitle: "Sync to your personal Google account", href: calendarData?.links.google },
-    { key: "outlook", title: "Outlook Calendar", subtitle: "Office 365 or Outlook.com", href: calendarData?.links.outlook },
-    { key: "apple", title: "Apple Calendar", subtitle: "iCal for Mac, iPhone or iPad", href: calendarData?.links.appleOrIcs },
-    { key: "yahoo", title: "Yahoo Calendar", subtitle: "Sync to your Yahoo account", href: calendarData?.links.yahoo },
+    {
+      key: "google",
+      title: "Google Calendar",
+      subtitle: "Sync to your personal Google account",
+      href: calendarData?.links.google,
+    },
+    {
+      key: "outlook",
+      title: "Outlook Calendar",
+      subtitle: "Office 365 or Outlook.com",
+      href: calendarData?.links.outlook,
+    },
+    {
+      key: "apple",
+      title: "Apple Calendar",
+      subtitle: "iCal for Mac, iPhone or iPad",
+      href: calendarData?.links.appleOrIcs,
+    },
+    {
+      key: "yahoo",
+      title: "Yahoo Calendar",
+      subtitle: "Sync to your Yahoo account",
+      href: calendarData?.links.yahoo,
+    },
   ];
 
   const handleOpenCalendar = async (course: ActiveCourseItem) => {
@@ -93,7 +113,7 @@ export default function CourseCardsSection({ items }: Props) {
           return (
             <div
               key={course.enrollmentId}
-              className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.04)]"
+              className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.04)]"
             >
               <div className="relative h-[160px] w-full overflow-hidden bg-slate-200">
                 <NetworkImageFallback
@@ -117,9 +137,10 @@ export default function CourseCardsSection({ items }: Props) {
                 </div>
               </div>
 
-              <div className="px-5 pb-5 pt-5">
+              <div className="flex flex-1 flex-col px-5 pb-5 pt-5">
                 <h3 className="text-[15px] font-semibold leading-tight text-slate-900">{course.title}</h3>
-                <p className="mt-2 text-[12px] leading-5 text-slate-500 line-clamp-2">
+
+                <p className="mt-2 line-clamp-2 text-[12px] leading-5 text-slate-500">
                   {course.subtitle}
                 </p>
 
@@ -137,20 +158,48 @@ export default function CourseCardsSection({ items }: Props) {
 
                 {isOnline ? (
                   <div className="mt-5 grid grid-cols-2 gap-y-4">
-                    <ActiveStat icon={<UserRound className="h-4 w-4" />} label="Booked For" value={course.bookedFor} />
-                    <ActiveStat icon={<WalletCards className="h-4 w-4" />} label="Booking Fee" value={course.bookingFee} />
-                    <ActiveStat icon={<NotebookTabs className="h-4 w-4" />} label="Progress" value={course.progress} />
+                    <ActiveStat
+                      icon={<UserRound className="h-4 w-4" />}
+                      label="Booked For"
+                      value={course.bookedFor}
+                    />
+                    <ActiveStat
+                      icon={<WalletCards className="h-4 w-4" />}
+                      label="Booking Fee"
+                      value={course.bookingFee}
+                    />
+                    <ActiveStat
+                      icon={<NotebookTabs className="h-4 w-4" />}
+                      label="Progress"
+                      value={course.progress}
+                    />
                   </div>
                 ) : (
                   <div className="mt-5 grid grid-cols-2 gap-y-4">
-                    <ActiveStat icon={<CalendarDays className="h-4 w-4" />} label="Date" value={course.date} />
-                    <ActiveStat icon={<MapPin className="h-4 w-4" />} label="Location" value={course.location} />
-                    <ActiveStat icon={<UserRound className="h-4 w-4" />} label="Booked For" value={course.bookedFor} />
-                    <ActiveStat icon={<WalletCards className="h-4 w-4" />} label="Booking Fee" value={course.bookingFee} />
+                    <ActiveStat
+                      icon={<CalendarDays className="h-4 w-4" />}
+                      label="Date"
+                      value={course.date}
+                    />
+                    <ActiveStat
+                      icon={<MapPin className="h-4 w-4" />}
+                      label="Location"
+                      value={course.location}
+                    />
+                    <ActiveStat
+                      icon={<UserRound className="h-4 w-4" />}
+                      label="Booked For"
+                      value={course.bookedFor}
+                    />
+                    <ActiveStat
+                      icon={<WalletCards className="h-4 w-4" />}
+                      label="Booking Fee"
+                      value={course.bookingFee}
+                    />
                   </div>
                 )}
 
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <div className="mt-auto flex flex-col gap-3 pt-6 sm:flex-row">
                   {!isOnline && course.actions.secondary ? (
                     <button
                       type="button"
@@ -168,7 +217,9 @@ export default function CourseCardsSection({ items }: Props) {
                       onClick={() => openRoute(course.actions.primary?.route ?? "", router)}
                       className={[
                         "flex h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold",
-                        isOnline ? "bg-sky-500 text-white hover:bg-sky-600" : "bg-sky-50 text-sky-600 hover:bg-sky-100",
+                        isOnline
+                          ? "bg-sky-500 text-white hover:bg-sky-600"
+                          : "bg-sky-50 text-sky-600 hover:bg-sky-100",
                       ].join(" ")}
                     >
                       {isOnline ? <CirclePlay className="h-4 w-4" /> : null}
