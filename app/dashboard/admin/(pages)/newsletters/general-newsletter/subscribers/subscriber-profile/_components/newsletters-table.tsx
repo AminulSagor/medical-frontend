@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { getSubscriberNewsletterHistory } from "@/service/admin/newsletter/subscribes/subscriber-newsletter-history.service.latest";
 import { SubscriberNewsletterHistoryItem } from "@/types/admin/newsletter/general-newsletter/subscribes/subscriber-newsletter-history-latest.types";
+import Link from "next/link";
 
 function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
@@ -242,7 +243,11 @@ export default function NewslettersTable({ id }: { id: string }) {
                         className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition hover:bg-slate-50 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
                         aria-label="View newsletter details"
                       >
-                        <Eye size={16} />
+                        <Link
+                          href={`/dashboard/admin/newsletters/transmission-history/${r.broadcastId}/sent-content`}
+                        >
+                          <Eye size={16} />
+                        </Link>
                       </button>
                     </td>
                   </tr>

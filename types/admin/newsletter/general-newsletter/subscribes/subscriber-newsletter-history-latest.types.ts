@@ -4,6 +4,7 @@ export interface SubscriberNewsletterHistoryActions {
 
 export interface SubscriberNewsletterHistoryItem {
   deliveryRecipientId: string;
+  broadcastId: string;
   newsletterTitle: string;
   sentDate: string | null;
   status: string;
