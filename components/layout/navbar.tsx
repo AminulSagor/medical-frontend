@@ -5,6 +5,7 @@ import { ShoppingCart, Menu, Search, X, Heart } from "lucide-react";
 import {
   AUTH_CHANGED_EVENT,
   getToken,
+  getUserRole,
 } from "@/utils/token/cookie_utils";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -20,6 +21,7 @@ import { useCart } from "@/app/public/context/cart-context";
 import { useWishlist } from "@/app/public/context/wishlist-context";
 import { getUserProfile } from "@/service/user/profile.service";
 import UserAvatar from "@/components/common/user-avatar";
+import { getRoleFromToken } from "@/utils/decode-token.utils";
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/public/home") return pathname === "/public/home";
@@ -336,6 +338,23 @@ function AccountAccessButton() {
   const [userName, setUserName] = useState<string>("");
   const [userImage, setUserImage] = useState<string | null>(null);
 
+  const ROLE_DASHBOARD_MAP: Record<string, string> = {
+    admin: "/dashboard/admin/admin-dashboard",
+  };
+
+  const handleRedirectToDashboard = () => {
+    const token = getToken();
+    if (!token) return;
+
+    const role = getRoleFromToken(token);
+    if (!role) return;
+
+    const redirectPath =
+      ROLE_DASHBOARD_MAP[role] || "/dashboard/user/dashboard";
+
+    router.push(redirectPath);
+  };
+
   useEffect(() => {
     const syncAuthState = async () => {
       const token = getToken();
@@ -387,10 +406,10 @@ function AccountAccessButton() {
   return (
     <button
       type="button"
-      onClick={() => router.push("/dashboard/user/dashboard")}
+      onClick={handleRedirectToDashboard}
       className="relative transition active:scale-95"
     >
-      <UserAvatar name={userName} imageUrl={userImage} size={40} />
+      <UserAvatar name={userName} imageUrl={userImage} size={34} />
       <span className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-primary ring-2 ring-white" />
     </button>
   );
