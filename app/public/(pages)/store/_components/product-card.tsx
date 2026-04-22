@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useCart } from "@/app/public/context/cart-context";
 import { useWishlist } from "@/app/public/context/wishlist-context";
 import { ShoppingCart, Heart } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 interface Props {
   product: PublicProduct;
@@ -96,8 +97,10 @@ export default function ProductCard({ product }: Props) {
     try {
       setIsAddingToCart(true);
       await addItem(product.id, 1);
+      toast.success("Added to cart");
     } catch (error) {
       console.error("Failed to add product to cart", error);
+      toast.error("Failed to add to cart");
     } finally {
       setIsAddingToCart(false);
     }
@@ -146,7 +149,7 @@ export default function ProductCard({ product }: Props) {
         <button
           type="button"
           onClick={handleToggleWishlist}
-          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm ring-1 ring-black/5 transition-all hover:scale-110 active:scale-95 md:right-4 md:top-4"
+          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm ring-1 ring-black/5 transition-all hover:scale-110 active:scale-95 md:right-4 md:top-4"
           aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >
           <Heart
@@ -160,7 +163,7 @@ export default function ProductCard({ product }: Props) {
         </button>
 
         {isOut ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40">
             <span className="rounded-lg bg-white px-4 py-2 text-xs font-extrabold tracking-widest text-red-600 md:text-sm">
               OUT OF STOCK
             </span>
@@ -203,12 +206,12 @@ export default function ProductCard({ product }: Props) {
 
           <p
             className={`mt-1 text-xs ${isOut
-                ? "text-red-600"
-                : isLowStock
-                  ? "text-orange-600"
-                  : isBackorderAvailable
-                    ? "text-sky-600"
-                    : "text-green-600"
+              ? "text-red-600"
+              : isLowStock
+                ? "text-orange-600"
+                : isBackorderAvailable
+                  ? "text-sky-600"
+                  : "text-green-600"
               }`}
           >
             {stockLabel}

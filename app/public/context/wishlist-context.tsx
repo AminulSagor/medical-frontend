@@ -7,7 +7,10 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { getToken } from "@/utils/token/cookie_utils";
+import {
+  AUTH_CHANGED_EVENT,
+  getToken,
+} from "@/utils/token/cookie_utils";
 import {
   getWishlistProductIds,
   addToWishlist as addToWishlistApi,
@@ -15,16 +18,12 @@ import {
 } from "@/service/user/wishlist.service";
 
 interface WishlistContextValue {
-  /** Set of product IDs in the wishlist */
   wishlistIds: Set<string>;
-  /** Total count */
   totalItems: number;
-  /** True while loading */
   isLoading: boolean;
-  /** Toggle a product — adds if not in wishlist, removes if already in */
   toggleWishlist: (productId: string) => Promise<void>;
-  /** Check if a product is in the wishlist */
   isInWishlist: (productId: string) => boolean;
+  refreshWishlist: () => Promise<void>;
 }
 
 const WishlistContext = createContext<WishlistContextValue | null>(null);
@@ -33,24 +32,41 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
+  const refreshWishlist = useCallback(async () => {
     const token = getToken();
-    if (!token) return;
 
-    const fetchIds = async () => {
-      try {
-        setIsLoading(true);
-        const ids = await getWishlistProductIds();
-        setWishlistIds(new Set(ids));
-      } catch (error) {
-        console.error("Failed to load wishlist", error);
-      } finally {
-        setIsLoading(false);
-      }
+    if (!token) {
+      setWishlistIds(new Set());
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const ids = await getWishlistProductIds();
+      setWishlistIds(new Set(ids));
+    } catch (error) {
+      console.error("Failed to load wishlist", error);
+      setWishlistIds(new Set());
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshWishlist();
+  }, [refreshWishlist]);
+
+  useEffect(() => {
+    const handleAuthChanged = () => {
+      refreshWishlist();
     };
 
-    fetchIds();
-  }, []);
+    window.addEventListener(AUTH_CHANGED_EVENT, handleAuthChanged);
+
+    return () => {
+      window.removeEventListener(AUTH_CHANGED_EVENT, handleAuthChanged);
+    };
+  }, [refreshWishlist]);
 
   const isInWishlist = useCallback(
     (productId: string) => wishlistIds.has(productId),
@@ -60,41 +76,46 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const toggleWishlist = useCallback(
     async (productId: string) => {
       const token = getToken();
+
       if (!token) {
-        // Redirect to sign-in or show toast
         if (typeof window !== "undefined") {
           window.location.href = "/public/auth/sign-in";
         }
         return;
       }
 
-      // Optimistic update
+      const wasInWishlist = wishlistIds.has(productId);
+
       setWishlistIds((prev) => {
         const next = new Set(prev);
+
         if (next.has(productId)) {
           next.delete(productId);
         } else {
           next.add(productId);
         }
+
         return next;
       });
 
       try {
-        if (wishlistIds.has(productId)) {
+        if (wasInWishlist) {
           await removeFromWishlistApi(productId);
         } else {
           await addToWishlistApi(productId);
         }
       } catch (error) {
         console.error("Failed to update wishlist", error);
-        // Revert on failure
+
         setWishlistIds((prev) => {
           const next = new Set(prev);
-          if (next.has(productId)) {
-            next.delete(productId);
-          } else {
+
+          if (wasInWishlist) {
             next.add(productId);
+          } else {
+            next.delete(productId);
           }
+
           return next;
         });
       }
@@ -110,6 +131,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         toggleWishlist,
         isInWishlist,
+        refreshWishlist,
       }}
     >
       {children}
