@@ -188,6 +188,10 @@ export default function CreateBlogPostPage() {
     return queueInfo.articlesInQueue + 1;
   }, [distributionOptions, lastNewsletterFrequency]);
 
+  const isScheduledPublish = useMemo(() => {
+    return Boolean(scheduleDate && scheduleTime);
+  }, [scheduleDate, scheduleTime]);
+
   const handlePreview = () => {
     if (
       !title.trim() ||
@@ -480,25 +484,22 @@ export default function CreateBlogPostPage() {
 
             <button
               type="button"
-              onClick={() => handleSubmit("scheduled")}
-              disabled={
-                isSubmitting || isUploadingCoverImage || isUploadingSecondImage
+              onClick={() =>
+                handleSubmit(isScheduledPublish ? "scheduled" : "published")
               }
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60"
-            >
-              <CalendarDays size={16} />
-              Schedule
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSubmit("published")}
               disabled={
                 isSubmitting || isUploadingCoverImage || isUploadingSecondImage
               }
               className="inline-flex h-11 items-center gap-2 rounded-lg bg-[var(--primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--primary-hover)] disabled:opacity-60"
             >
-              ▷ Publish
+              {isScheduledPublish ? (
+                <>
+                  <CalendarDays size={16} />
+                  Schedule
+                </>
+              ) : (
+                <>▷ Publish</>
+              )}
             </button>
           </div>
         </div>

@@ -168,6 +168,10 @@ export default function EditBlogPostPage({ blogId }: { blogId: string }) {
     return queueInfo.articlesInQueue + 1;
   }, [distributionOptions, lastNewsletterFrequency]);
 
+  const isScheduledPublish = useMemo(() => {
+    return Boolean(scheduleDate && scheduleTime);
+  }, [scheduleDate, scheduleTime]);
+
   if (loading) {
     return (
       <div className="min-h-screen">
@@ -192,16 +196,12 @@ export default function EditBlogPostPage({ blogId }: { blogId: string }) {
     );
   }
 
-  const handleUpdateAsDraft = async () => {
+  const handleSaveChanges = async () => {
     await handleSubmit("draft");
   };
 
-  const handleUpdateAsScheduled = async () => {
-    await handleSubmit("scheduled");
-  };
-
-  const handleUpdateAsPublished = async () => {
-    await handleSubmit("published");
+  const handlePrimaryAction = async () => {
+    await handleSubmit(isScheduledPublish ? "scheduled" : "published");
   };
 
   const ensureDistributionOptions = async () => {
@@ -489,37 +489,32 @@ export default function EditBlogPostPage({ blogId }: { blogId: string }) {
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              onClick={handleUpdateAsDraft}
+              onClick={handleSaveChanges}
               disabled={
                 isSubmitting || isUploadingCoverImage || isUploadingSecondImage
               }
               className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60"
             >
               <Save size={16} />
-              Save Draft
+              Save Changes
             </button>
 
             <button
               type="button"
-              onClick={handleUpdateAsScheduled}
-              disabled={
-                isSubmitting || isUploadingCoverImage || isUploadingSecondImage
-              }
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60"
-            >
-              <CalendarDays size={16} />
-              Schedule
-            </button>
-
-            <button
-              type="button"
-              onClick={handleUpdateAsPublished}
+              onClick={handlePrimaryAction}
               disabled={
                 isSubmitting || isUploadingCoverImage || isUploadingSecondImage
               }
               className="inline-flex h-11 items-center gap-2 rounded-lg bg-[var(--primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--primary-hover)] disabled:opacity-60"
             >
-              ▷ Publish
+              {isScheduledPublish ? (
+                <>
+                  <CalendarDays size={16} />
+                  Schedule
+                </>
+              ) : (
+                <>▷ Publish</>
+              )}
             </button>
           </div>
         </div>

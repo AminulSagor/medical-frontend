@@ -86,11 +86,10 @@ export function useEditBlogPost(blogId: string) {
           ...inlineImages,
         ]);
 
-        const scheduleSource =
-          blog.scheduledPublishDate ||
-          blog.publishedAt ||
-          blog.createdAt ||
-          null;
+        const isScheduledPost = blog.publishingStatus === "scheduled";
+        const scheduleSource = isScheduledPost
+          ? blog.scheduledPublishDate || null
+          : null;
 
         if (scheduleSource) {
           setScheduleDate(buildLocalDateInputValue(scheduleSource));
@@ -217,9 +216,9 @@ export function useEditBlogPost(blogId: string) {
   const handleViewLiveArticle = () => {
     if (!createdBlogModalData?.id) return;
 
-    window.location.assign(
-      `/dashboard/admin/blogs/live/${createdBlogModalData.id}`,
-    );
+    const liveUrl = `${window.location.origin}/public/blogs/${createdBlogModalData.id}`;
+
+    window.open(liveUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleShareArticle = () => {

@@ -122,6 +122,10 @@ export default function CreateBlogPostSettingsPublishingSection({
     [scheduleTime],
   );
 
+  const isScheduledPublish = useMemo(() => {
+    return Boolean(scheduleDate && scheduleTime);
+  }, [scheduleDate, scheduleTime]);
+
   const todayDate = useMemo(() => getTodayDateString(), []);
   const currentTime = useMemo(() => getCurrentTimeString(), []);
   const minTime = scheduleDate === todayDate ? currentTime : undefined;
@@ -232,6 +236,12 @@ export default function CreateBlogPostSettingsPublishingSection({
         {scheduleError ? (
           <p className="mt-2 text-xs text-rose-500">{scheduleError}</p>
         ) : null}
+
+        <p className="mt-2 text-xs text-slate-500">
+          {isScheduledPublish
+            ? "This post will be scheduled."
+            : "Select date and time to schedule this post."}
+        </p>
       </div>
 
       <div className="mt-8 flex items-center justify-between">
