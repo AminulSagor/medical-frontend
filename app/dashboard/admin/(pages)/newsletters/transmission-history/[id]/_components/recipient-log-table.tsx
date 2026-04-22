@@ -50,8 +50,13 @@ function formatTimestamp(timestamp: string) {
   }).format(new Date(timestamp));
 }
 
-function getInitials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
+function getInitials(name?: string | null) {
+  const safeName = name?.trim();
+
+  if (!safeName) return "--";
+
+  const parts = safeName.split(/\s+/).filter(Boolean);
+
   return parts
     .slice(0, 2)
     .map((part) => part.charAt(0).toUpperCase())
@@ -157,9 +162,9 @@ export default function RecipientLogTable({
               <th className="px-5 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 md:px-7">
                 Status
               </th>
-              <th className="px-5 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 md:px-7">
+              {/* <th className="px-5 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 md:px-7">
                 Device
-              </th>
+              </th> */}
               <th className="px-5 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 md:px-7">
                 Timestamp
               </th>
@@ -194,7 +199,7 @@ export default function RecipientLogTable({
 
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-slate-900">
-                            {item.recipient.name}
+                            {item.recipient.name || "Unknown Recipient"}
                           </p>
                           <p className="mt-0.5 truncate text-xs text-slate-500">
                             {item.recipient.email}
@@ -214,11 +219,11 @@ export default function RecipientLogTable({
                       </span>
                     </td>
 
-                    <td className="px-5 py-5 align-middle md:px-7">
+                    {/* <td className="px-5 py-5 align-middle md:px-7">
                       <span className="text-xs font-medium text-slate-400">
                         — No Data —
                       </span>
-                    </td>
+                    </td> */}
 
                     <td className="px-5 py-5 align-middle md:px-7">
                       <span className="text-xs font-semibold text-slate-500">

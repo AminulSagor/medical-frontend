@@ -175,7 +175,7 @@ export default function TransmissionDetailsTable({
   onSelectedIdsChange,
 }: Props) {
   const total = meta?.total ?? 0;
-  const limit = meta?.limit ?? 10;
+  const limit = meta?.limit ?? 6;
   const currentPage = meta?.page ?? page;
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const start = total === 0 ? 0 : (currentPage - 1) * limit + 1;
@@ -228,7 +228,7 @@ export default function TransmissionDetailsTable({
 
               <thead>
                 <tr className="border-b border-slate-100">
-                  {/* <th className="px-4 py-4 text-left">
+                  <th className="px-4 py-4 text-left">
                     <input
                       type="checkbox"
                       checked={isAllCurrentPageSelected}
@@ -237,7 +237,7 @@ export default function TransmissionDetailsTable({
                       className="h-4 w-4 rounded border-slate-300 text-[var(--primary)] focus:ring-[var(--primary)]"
                       aria-label="Select all rows on current page"
                     />
-                  </th> */}
+                  </th>
 
                   <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
                     Status/Type
@@ -275,7 +275,7 @@ export default function TransmissionDetailsTable({
                           isSelected && "bg-[var(--primary-50)]/40",
                         )}
                       >
-                        {/* <td className="px-4 py-5 align-top">
+                        <td className="px-4 py-5 align-top">
                           <input
                             type="checkbox"
                             checked={isSelected}
@@ -283,7 +283,7 @@ export default function TransmissionDetailsTable({
                             className="h-4 w-4 rounded border-slate-300 text-[var(--primary)] focus:ring-[var(--primary)]"
                             aria-label={`Select transmission ${item.id}`}
                           />
-                        </td> */}
+                        </td>
 
                         <td className="px-6 py-5 align-top">
                           <div className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Card from "@/components/cards/card";
 import {
   Plus,
@@ -14,7 +14,6 @@ import { getProductFilters } from "@/service/public/product.service";
 import type {
   ProductFiltersResponse,
   ProductFilters,
-  ProductCategory,
 } from "@/types/public/product/public-product.types";
 
 interface FiltersSidebarProps {
@@ -46,7 +45,9 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <div className="text-sm md:text-base font-bold text-slate-900">{title}</div>
+      <div className="text-sm md:text-base font-bold text-slate-900">
+        {title}
+      </div>
       {right}
     </div>
   );
@@ -119,42 +120,118 @@ function RangeTrack({
   maxValue: number;
   onChange: (min: number, max: number) => void;
 }) {
+  const [dragging, setDragging] = useState<"min" | "max" | null>(null);
+
+  const safeMinValue = Math.max(min, Math.min(minValue, maxValue));
+  const safeMaxValue = Math.min(max, Math.max(maxValue, safeMinValue));
   const range = max - min;
-  const leftPercent = range > 0 ? ((minValue - min) / range) * 100 : 0;
-  const rightPercent = range > 0 ? 100 - ((maxValue - min) / range) * 100 : 0;
+
+  const leftPercent = range > 0 ? ((safeMinValue - min) / range) * 100 : 0;
+  const rightPercent = range > 0 ? ((safeMaxValue - min) / range) * 100 : 100;
+
+  const updateFromClientX = useCallback(
+    (clientX: number, handle: "min" | "max") => {
+      const track = document.getElementById("price-range-track");
+      if (!track) return;
+
+      const rect = track.getBoundingClientRect();
+      const relativeX = Math.min(Math.max(clientX - rect.left, 0), rect.width);
+      const percent = rect.width > 0 ? relativeX / rect.width : 0;
+      const rawValue = Math.round(min + percent * (max - min));
+
+      if (handle === "min") {
+        onChange(Math.min(rawValue, safeMaxValue), safeMaxValue);
+      } else {
+        onChange(safeMinValue, Math.max(rawValue, safeMinValue));
+      }
+    },
+    [max, min, onChange, safeMaxValue, safeMinValue],
+  );
+
+  useEffect(() => {
+    if (!dragging) return;
+
+    const handleMouseMove = (event: MouseEvent) => {
+      updateFromClientX(event.clientX, dragging);
+    };
+
+    const handleMouseUp = () => {
+      setDragging(null);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [dragging, updateFromClientX]);
 
   return (
     <div className="mt-5">
-      <div className="relative h-2 w-full rounded-full bg-slate-100">
+      <div id="price-range-track" className="relative h-6 w-full">
+        <div className="absolute top-1/2 h-2 w-full -translate-y-1/2 rounded-full bg-slate-100" />
+
         <div
-          className="absolute top-0 h-2 rounded-full bg-primary"
-          style={{ left: `${leftPercent}%`, right: `${rightPercent}%` }}
+          className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-primary"
+          style={{
+            left: `${leftPercent}%`,
+            width: `${rightPercent - leftPercent}%`,
+          }}
         />
-        <div
+
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            setDragging("min");
+          }}
           className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white ring-2 ring-slate-200 cursor-pointer"
-          style={{ left: `${leftPercent}%` }}
+          style={{ left: `calc(${leftPercent}% - 8px)` }}
+          aria-label="Minimum price"
         />
-        <div
+
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            setDragging("max");
+          }}
           className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white ring-2 ring-slate-200 cursor-pointer"
-          style={{ right: `${rightPercent}%` }}
+          style={{ left: `calc(${rightPercent}% - 8px)` }}
+          aria-label="Maximum price"
         />
       </div>
+
       <div className="mt-3 flex items-center gap-2">
         <input
           type="number"
-          value={minValue}
+          value={safeMinValue}
           min={min}
-          max={maxValue}
-          onChange={(e) => onChange(Number(e.target.value), maxValue)}
+          max={safeMaxValue}
+          onChange={(e) => {
+            const nextMin = Number(e.target.value);
+            onChange(
+              Math.max(min, Math.min(nextMin, safeMaxValue)),
+              safeMaxValue,
+            );
+          }}
           className="w-20 rounded-lg border border-slate-200 px-2 py-1 text-sm"
         />
         <span className="text-slate-400">-</span>
         <input
           type="number"
-          value={maxValue}
-          min={minValue}
+          value={safeMaxValue}
+          min={safeMinValue}
           max={max}
-          onChange={(e) => onChange(minValue, Number(e.target.value))}
+          onChange={(e) => {
+            const nextMax = Number(e.target.value);
+            onChange(
+              safeMinValue,
+              Math.min(max, Math.max(nextMax, safeMinValue)),
+            );
+          }}
           className="w-20 rounded-lg border border-slate-200 px-2 py-1 text-sm"
         />
       </div>
@@ -183,7 +260,9 @@ function BrandRow({
           checked ? "bg-primary border-primary" : "bg-white border-slate-300",
         ].join(" ")}
       >
-        {checked ? <span className="h-1.5 md:h-2 w-1.5 md:w-2 rounded-full bg-white" /> : null}
+        {checked ? (
+          <span className="h-1.5 md:h-2 w-1.5 md:w-2 rounded-full bg-white" />
+        ) : null}
       </span>
 
       <span className="truncate">{label}</span>
@@ -205,7 +284,7 @@ export default function FiltersSidebar({
       try {
         const data = await getProductFilters();
         setFiltersData(data);
-        // Set initial price range from API
+
         if (data.priceRange) {
           onFiltersChange({
             ...filters,
@@ -219,6 +298,7 @@ export default function FiltersSidebar({
         setLoading(false);
       }
     };
+
     fetchFilters();
   }, []);
 
@@ -233,6 +313,7 @@ export default function FiltersSidebar({
     const newBrands = filters.brands.includes(brand)
       ? filters.brands.filter((b) => b !== brand)
       : [...filters.brands, brand];
+
     onFiltersChange({ ...filters, brands: newBrands });
   };
 

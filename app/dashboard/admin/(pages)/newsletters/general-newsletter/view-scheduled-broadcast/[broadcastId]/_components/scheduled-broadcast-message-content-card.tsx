@@ -1,24 +1,24 @@
 import ScheduledBroadcastSectionShell from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_components/scheduled-broadcast-section-shell";
 import { stripHtml } from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_utils/scheduled-broadcast-view.utils";
-import type { BroadcastCustomContent } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
+import type { BroadcastUIMessageContent } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-ui-view.types";
 
 type Props = {
-  customContent: BroadcastCustomContent | null;
+  messageContent?: BroadcastUIMessageContent | null;
 };
 
 export default function ScheduledBroadcastMessageContentCard({
-  customContent,
+  messageContent,
 }: Props) {
   const text =
-    customContent?.messageBodyText?.trim() ||
-    stripHtml(customContent?.messageBodyHtml) ||
+    messageContent?.text?.trim() ||
+    stripHtml(messageContent?.html) ||
     "No message content available.";
 
-  const personalizationTokens = customContent?.personalizationTokens ?? [];
+  const personalizationTokens = messageContent?.personalizationTokens ?? [];
 
   return (
     <ScheduledBroadcastSectionShell title="Message Content">
-      <div className="rounded-2xl border border-slate-200 bg-white p-7">
+      <div className="rounded-2xl border border-slate-200 bg-white p-7 ">
         {personalizationTokens.length > 0 && (
           <div className="mb-5 flex flex-wrap gap-2">
             {personalizationTokens.map((token) => (
@@ -32,7 +32,7 @@ export default function ScheduledBroadcastMessageContentCard({
           </div>
         )}
 
-        <div className="whitespace-pre-wrap text-[15px] leading-8 text-slate-600">
+        <div className="whitespace-pre-wrap text-[15px] leading-8 text-slate-600 ">
           {text}
         </div>
       </div>

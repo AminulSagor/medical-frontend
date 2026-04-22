@@ -28,14 +28,16 @@ export default function AboutCtaVisit() {
             >
               <Link href="/public/courses">Explore Courses</Link>
             </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              shape="pill"
-              className="px-6 py-4"
-            >
-              Contact Dr. Enoh
-            </Button>
+            <Link href="/public/contact-us">
+              <Button
+                size="sm"
+                variant="secondary"
+                shape="pill"
+                className="px-6 py-4"
+              >
+                Contact Dr. Enoh
+              </Button>
+            </Link>
           </div>
         </div>
 

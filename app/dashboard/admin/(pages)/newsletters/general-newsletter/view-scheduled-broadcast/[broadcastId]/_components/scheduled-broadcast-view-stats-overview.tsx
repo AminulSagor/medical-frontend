@@ -1,14 +1,10 @@
 import React from "react";
 import { CalendarDays, RefreshCcw, Users } from "lucide-react";
 
-import {
-  formatDateTime,
-  formatFrequencyType,
-} from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_utils/scheduled-broadcast-view.utils";
-import type { GetGeneralBroadcastResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
+import type { GetGeneralBroadcastUIViewResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-ui-view.types";
 
 type Props = {
-  data: GetGeneralBroadcastResponse;
+  data: GetGeneralBroadcastUIViewResponse;
 };
 
 function StatCard({
@@ -23,46 +19,44 @@ function StatCard({
   helper: string;
 }) {
   return (
-    <div className="rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
-      <div className="mb-4 flex items-start justify-between">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
-          {label}
-        </p>
-        <span className="text-[#9de4dc]">{icon}</span>
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <p className="text-sm font-medium text-slate-500">{label}</p>
+        <span className="text-[#18c3b2]">{icon}</span>
       </div>
 
-      <div className="text-[26px] font-semibold leading-tight text-slate-800">
-        {value}
-      </div>
+      <div className="text-base font-semibold text-slate-800">{value}</div>
 
-      <p className="mt-2 text-sm text-slate-500">{helper}</p>
+      <p className="mt-2 text-sm text-slate-400">{helper}</p>
     </div>
   );
 }
 
 export default function ScheduledBroadcastViewStatsOverview({ data }: Props) {
+  const { summaryCards, deliveryLogistics } = data;
+
   return (
     <section>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <StatCard
           icon={<Users size={18} />}
           label="Recipients"
-          value={data.estimatedRecipientsCount.toLocaleString()}
+          value={summaryCards.recipients.toLocaleString()}
           helper="Estimated total recipients"
         />
 
         <StatCard
           icon={<CalendarDays size={18} />}
           label="Scheduled For"
-          value={formatDateTime(data.scheduledAt)}
-          helper={data.timezone || "Timezone not available"}
+          value={summaryCards.scheduledForDisplay}
+          helper={deliveryLogistics.timezone || "Timezone not available"}
         />
 
         <StatCard
           icon={<RefreshCcw size={18} />}
           label="Cadence"
-          value={formatFrequencyType(data.frequencyType)}
-          helper={data.cadenceAnchorLabel || "No cadence anchor available"}
+          value={summaryCards.frequencyDisplay}
+          helper={summaryCards.frequencyDisplay || "No cadence available"}
         />
       </div>
     </section>

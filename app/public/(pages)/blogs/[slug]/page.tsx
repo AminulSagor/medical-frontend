@@ -9,7 +9,11 @@ import {
   getTrendingPublicBlogs,
 } from "@/service/public/blogs/blogs.service";
 import { mapApiBlogToTrendingItem } from "../_utils/blogs.mapper";
-import type { TrendingItem } from "@/types/public/blogs/blog-type";
+import type {
+  BlogAuthorApi,
+  BlogDetailsApi,
+  TrendingItem,
+} from "@/types/public/blogs/blog-type";
 
 type BlogDetailsPageProps = {
   params: Promise<{ slug: string }>;
@@ -17,6 +21,22 @@ type BlogDetailsPageProps = {
 
 function getSafeString(value: unknown, fallback = ""): string {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function getPrimaryAuthor(blog: BlogDetailsApi): BlogAuthorApi | undefined {
+  if (Array.isArray(blog.authors) && blog.authors[0]) {
+    return blog.authors[0];
+  }
+
+  const authorName = getSafeString(blog.authorName);
+  if (!authorName) {
+    return undefined;
+  }
+
+  return {
+    id: "author-name-fallback",
+    fullLegalName: authorName,
+  };
 }
 
 export async function generateMetadata({
@@ -28,10 +48,16 @@ export async function generateMetadata({
     const blog = await getBlogById(slug);
 
     return {
-      title: getSafeString(blog.seo?.metaTitle, getSafeString(blog.title, "Blog Details")),
+      title: getSafeString(
+        blog.seo?.metaTitle,
+        getSafeString(blog.title, "Blog Details"),
+      ),
       description: getSafeString(
         blog.seo?.metaDescription,
-        getSafeString(blog.description ?? blog.excerpt, "Read the latest article."),
+        getSafeString(
+          blog.description ?? blog.excerpt,
+          "Read the latest article.",
+        ),
       ),
     };
   } catch {
@@ -46,7 +72,7 @@ export default async function BlogDetailsPage({
 }: BlogDetailsPageProps) {
   const { slug } = await params;
 
-  let blog;
+  let blog: BlogDetailsApi;
   let trendingItems: TrendingItem[] = [];
 
   try {
@@ -75,13 +101,13 @@ export default async function BlogDetailsPage({
         </div>
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_320px]">
-          <div className="min-w-0">
+          <div className="min-w-0 ">
             <BlogDetailsContent blog={blog} />
           </div>
 
           <div className="lg:pt-4">
             <BlogDetailsSidebar
-              author={Array.isArray(blog.authors) ? blog.authors[0] : undefined}
+              author={getPrimaryAuthor(blog)}
               trendingItems={trendingItems}
             />
           </div>

@@ -209,10 +209,16 @@ export default function PastOrdersTable(props: {
             {items.map((o) => (
               <tr key={o.id} className="bg-white">
                 <td className="px-4 py-4">
-                  <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (o.viewHref) router.push(o.viewHref);
+                    }}
+                    className="group flex w-full items-center gap-3 rounded-xl text-left transition hover:bg-slate-50 p-1 -m-1"
+                  >
                     <div className="relative flex-shrink-0">
-                      {o.itemsBadge ? (
-                        <span className="absolute -top-3 left-1/2 z-10 inline-flex h-7 -translate-x-1/2 items-center rounded-lg bg-sky-500 px-3 text-[11px] font-semibold leading-none text-white shadow-[0_6px_14px_rgba(14,165,233,0.28)]">
+                      {o.itemsBadge && o.qtyLabel !== "1 item" ? (
+                        <span className="absolute -top-2.5 left-1/2 z-10 inline-flex h-5 -translate-x-1/2 whitespace-nowrap items-center rounded-md bg-sky-500 px-2 text-[10px] font-semibold text-white shadow-md">
                           {o.itemsBadge}
                         </span>
                       ) : null}
@@ -228,7 +234,7 @@ export default function PastOrdersTable(props: {
                     </div>
 
                     <div className="min-w-0">
-                      <div className="truncate text-[12px] font-semibold text-slate-900">
+                      <div className="truncate text-[12px] font-semibold text-slate-900 group-hover:text-sky-600 transition-colors">
                         {o.title}
                       </div>
                       <div className="text-[10px] text-slate-500">
@@ -236,7 +242,7 @@ export default function PastOrdersTable(props: {
                         <span className="font-medium">{o.orderNo}</span>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 </td>
 
                 <td className="px-4 py-4 text-[11px] text-slate-600">

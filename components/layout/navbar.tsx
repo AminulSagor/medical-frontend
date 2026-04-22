@@ -1,28 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { ShoppingCart, Menu, Search, X, Heart } from "lucide-react";
 import {
-  ShoppingCart,
-  Menu,
-  LogIn,
-  UserPlus,
-  Search,
-  X,
-  Heart,
-} from "lucide-react";
-import { getToken, removeToken } from "@/utils/token/cookie_utils";
-import { usePathname, useRouter } from "next/navigation";
+  AUTH_CHANGED_EVENT,
+  getToken,
+} from "@/utils/token/cookie_utils";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "motion/react";
 
 import NavbarLogo from "@/components/logo";
 import { NAV_LINKS } from "@/constant/navigation-links";
-import { IMAGE } from "@/constant/image-config";
 import CartSidebar from "@/components/cart-sidebar";
 import WishlistSidebar from "@/components/wishlist-sidebar";
 import PublicSidebar from "@/components/public-sidebar";
-import { LogOut, Settings } from "lucide-react";
 import NavbarSearch from "@/app/public/(pages)/home/_components/navbar-search";
 import { useCart } from "@/app/public/context/cart-context";
 import { useWishlist } from "@/app/public/context/wishlist-context";
@@ -32,9 +24,9 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { totalItems } = useCart();
   const { totalItems: wishlistCount } = useWishlist();
 
@@ -75,8 +67,36 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const handleWishlistClick = () => {
+    const token = getToken();
+
+    if (!token) {
+      if (typeof window !== "undefined") {
+        const currentUrl =
+          window.location.pathname +
+          window.location.search +
+          window.location.hash;
+
+        window.sessionStorage.setItem("postLoginRedirect", currentUrl);
+        window.sessionStorage.setItem("postLoginOpenWishlist", "true");
+      }
+
+      router.push("/public/auth/sign-in");
+      return;
+    }
+
+    setWishlistSidebar(true);
+  };
+
   return (
     <>
+      <Suspense fallback={null}>
+        <NavbarWishlistQueryHandler
+          pathname={pathname}
+          onOpenWishlist={() => setWishlistSidebar(true)}
+        />
+      </Suspense>
+
       <motion.header
         animate={{
           y: hideOnScrollDown ? -6 : 0,
@@ -116,11 +136,11 @@ export default function Navbar() {
               </button>
             )}
 
-            <div className={`hidden lg:block ${isAuthRoute ? "" : ""}`}>
+            <div className="hidden lg:block">
               <NavbarLogo />
             </div>
 
-            <div className="flex-1 flex justify-center lg:hidden">
+            <div className="flex flex-1 justify-center lg:hidden">
               {!isSearchOpen ? (
                 <div className="lg:hidden">
                   <NavbarLogo />
@@ -132,7 +152,7 @@ export default function Navbar() {
               )}
             </div>
 
-            <div className="hidden lg:flex flex-1">
+            <div className="hidden flex-1 lg:flex">
               <NavbarSearch value={q} onChange={setQ} />
             </div>
 
@@ -175,14 +195,14 @@ export default function Navbar() {
 
                     {link.showDot && (
                       <span
-                        className="absolute top-0 -right-3 h-2 w-2 rounded-full bg-primary"
+                        className="absolute -right-3 top-0 h-2 w-2 rounded-full bg-primary"
                         aria-hidden="true"
                       />
                     )}
 
                     <span
                       className={[
-                        "absolute left-0 -bottom-1 h-[2px] w-full origin-left rounded-full bg-primary transition-transform duration-300 ease-out",
+                        "absolute -bottom-1 left-0 h-[2px] w-full origin-left rounded-full bg-primary transition-transform duration-300 ease-out",
                         active
                           ? "scale-x-100"
                           : "scale-x-0 group-hover:scale-x-100",
@@ -196,7 +216,6 @@ export default function Navbar() {
 
             {!isAuthRoute && (
               <div className="flex items-center gap-2">
-                {/* Wishlist button */}
                 <button
                   type="button"
                   className={[
@@ -205,7 +224,7 @@ export default function Navbar() {
                     "hover:bg-light-slate/5 active:scale-95 transition",
                   ].join(" ")}
                   aria-label="Wishlist"
-                  onClick={() => setWishlistSidebar(true)}
+                  onClick={handleWishlistClick}
                 >
                   <Heart size={18} className="text-black" />
                   {wishlistCount > 0 && (
@@ -221,7 +240,6 @@ export default function Navbar() {
                   )}
                 </button>
 
-                {/* Cart button */}
                 <button
                   type="button"
                   className={[
@@ -247,7 +265,7 @@ export default function Navbar() {
             )}
 
             <div className="hidden md:block">
-              <AccountAccessDropdown />
+              <AccountAccessButton />
             </div>
 
             <CartSidebar
@@ -258,6 +276,7 @@ export default function Navbar() {
             <WishlistSidebar
               open={wishlistSidebar}
               onClose={() => setWishlistSidebar(false)}
+              onOpenCart={() => setCartSidebar(true)}
             />
           </motion.div>
         </div>
@@ -279,22 +298,53 @@ export default function Navbar() {
   );
 }
 
-function AccountAccessDropdown() {
-  const path = usePathname();
+function NavbarWishlistQueryHandler({
+  pathname,
+  onOpenWishlist,
+}: {
+  pathname: string;
+  onOpenWishlist: () => void;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const shouldOpenWishlist = searchParams.get("openWishlist") === "true";
+    const token = getToken();
+
+    if (!shouldOpenWishlist || !token) return;
+
+    onOpenWishlist();
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("openWishlist");
+
+    const nextQuery = nextParams.toString();
+    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+
+    router.replace(nextUrl, { scroll: false });
+  }, [onOpenWishlist, pathname, router, searchParams]);
+
+  return null;
+}
+
+function AccountAccessButton() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const token = getToken();
-    setIsAuthenticated(!!token);
-  }, []);
+    const syncAuthState = () => {
+      const token = getToken();
+      setIsAuthenticated(!!token);
+    };
 
-  const isDashboard =
-    path === "/dashboard/user" ||
-    path === "/dashboard/user/course" ||
-    path === "/dashboard/user/order-history" ||
-    path === "/dashboard/user/settings" ||
-    path.startsWith("/dashboard/user/");
+    syncAuthState();
+    window.addEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+
+    return () => {
+      window.removeEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+    };
+  }, []);
 
   if (!isAuthenticated) {
     return (
@@ -313,101 +363,24 @@ function AccountAccessDropdown() {
   }
 
   return (
-    <div className="relative hidden md:block">
-      <div className="group relative">
-        <button
-          type="button"
-          className={[
-            "relative h-10 w-10 overflow-hidden rounded-full",
-            "border border-light-slate/30 bg-light-slate/15",
-          ].join(" ")}
-          aria-label="Profile"
-        >
-          <Image
-            src={IMAGE.user}
-            alt="User"
-            fill
-            sizes="40px"
-            className="object-cover"
-            priority
-          />
+    <button
+      type="button"
+      onClick={() => router.push("/dashboard/user/dashboard")}
+      className={[
+        "relative h-10 w-10 rounded-full",
+        "border border-light-slate/30 bg-primary/10",
+        "transition hover:bg-primary/15 active:scale-95",
+      ].join(" ")}
+      aria-label="Go to dashboard"
+    >
+      <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-primary">
+        U
+      </span>
 
-          <span
-            className="absolute right-0.5 bottom-0.5 h-3 w-3 rounded-full bg-primary ring-2 ring-white"
-            aria-hidden="true"
-          />
-        </button>
-
-        <div
-          className={[
-            "pointer-events-none translate-y-2 opacity-0",
-            "group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100",
-            "absolute right-0 top-[calc(100%+12px)] z-50",
-            "w-[320px]",
-            "transition-all duration-150 ease-out",
-          ].join(" ")}
-        >
-          <div className="absolute -top-6 right-3 h-18 w-24" />
-
-          <div className="overflow-hidden rounded-3xl border border-light-slate/15 bg-white shadow-xl">
-            <div className="px-7 py-5">
-              <p className="text-xs font-semibold text-light-slate/50">
-                ACCOUNT ACCESS
-              </p>
-            </div>
-
-            <div className="h-px w-full bg-light-slate/15" />
-
-            <div className="p-4">
-              {isDashboard ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    removeToken();
-                    setIsAuthenticated(false);
-                    router.push("/public/home");
-                  }}
-                  className="flex w-full items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
-                >
-                  <LogOut size={20} className="text-light-slate" />
-                  <span className="text-base font-semibold text-black">
-                    Sign Out
-                  </span>
-                </button>
-              ) : (
-                <Link
-                  href="/public/auth/sign-in"
-                  className="flex items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
-                >
-                  <LogIn size={20} className="text-light-slate" />
-                  <span className="text-base font-semibold text-black">
-                    Sign In
-                  </span>
-                </Link>
-              )}
-
-              <Link
-                href={
-                  isDashboard
-                    ? "/dashboard/user/settings"
-                    : "/public/auth/sign-up"
-                }
-                className="flex items-center gap-4 rounded-2xl px-4 py-4 transition hover:bg-light-slate/5"
-              >
-                {isDashboard ? (
-                  <Settings size={20} className="text-primary" />
-                ) : (
-                  <UserPlus size={20} className="text-primary" />
-                )}
-
-                <span className="text-base font-semibold text-primary">
-                  {isDashboard ? "Settings" : "Create Account"}
-                </span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      <span
+        className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-primary ring-2 ring-white"
+        aria-hidden="true"
+      />
+    </button>
   );
 }

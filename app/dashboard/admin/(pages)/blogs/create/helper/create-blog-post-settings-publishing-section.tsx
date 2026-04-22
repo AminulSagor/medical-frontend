@@ -1,26 +1,13 @@
 "use client";
 
-import {
-  CalendarDays,
-  CheckCircle2,
-  ChevronDown,
-  CircleX,
-  Clock3,
-  Minus,
-} from "lucide-react";
+import { CalendarDays, Clock3, Clock3Icon, Minus, PenLine } from "lucide-react";
 import { useMemo, useRef } from "react";
-import type { BlogAuthorOption } from "@/types/admin/blogs/blog-create.types";
 import { cx } from "../_utils/create-blog-post.helpers";
 import CreateBlogPostSettingsSection from "./create-blog-post-settings-section";
 
 type CreateBlogPostSettingsPublishingSectionProps = {
-  authorOptions: BlogAuthorOption[];
-  selectedAuthorId: string;
-  authorSearch: string;
-  onAuthorSelect: (value: string) => void;
-  onAuthorSearchChange: (value: string) => void;
-  onApplyAuthorSearch: () => void;
-  onClearAuthorSelection: () => void;
+  authorName: string;
+  onAuthorNameChange: (value: string) => void;
   scheduleDate: string;
   scheduleTime: string;
   onScheduleDateChange: (value: string) => void;
@@ -92,13 +79,8 @@ function openNativePicker(input: HTMLInputElement | null) {
 }
 
 export default function CreateBlogPostSettingsPublishingSection({
-  authorOptions,
-  selectedAuthorId,
-  authorSearch,
-  onAuthorSelect,
-  onAuthorSearchChange,
-  onApplyAuthorSearch,
-  onClearAuthorSelection,
+  authorName,
+  onAuthorNameChange,
   scheduleDate,
   scheduleTime,
   onScheduleDateChange,
@@ -127,58 +109,24 @@ export default function CreateBlogPostSettingsPublishingSection({
     <CreateBlogPostSettingsSection title="Publishing Status">
       <div>
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-          Author
+          Author Name
         </p>
 
         <div className="relative">
-          <select
-            value={selectedAuthorId}
-            onChange={(e) => onAuthorSelect(e.target.value)}
+          <PenLine
+            size={16}
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+
+          <input
+            value={authorName}
+            onChange={(e) => onAuthorNameChange(e.target.value)}
+            placeholder="Enter author name..."
             className={cx(
-              "h-14 w-full appearance-none rounded-2xl border bg-[#f9fafb] pl-4 pr-11 text-xs font-medium text-slate-800 outline-none",
+              "h-14 w-full rounded-2xl border bg-[#f9fafb] pl-11 pr-4 text-xs font-medium text-slate-800 outline-none placeholder:text-slate-400",
               authorError ? "border-rose-300" : "border-slate-200",
             )}
-          >
-            <option value="">Select Author...</option>
-
-            {authorOptions.map((author) => (
-              <option key={author.id} value={author.id}>
-                {author.name}
-              </option>
-            ))}
-          </select>
-
-          <ChevronDown
-            size={16}
-            className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
           />
-        </div>
-
-        <div className="mt-4 flex items-center gap-3">
-          <input
-            value={authorSearch}
-            onChange={(e) => onAuthorSearchChange(e.target.value)}
-            placeholder="Enter Author name..."
-            className="flex-1 rounded-xl border border-cyan-400 bg-white px-4 py-3 text-xs text-slate-800 outline-none placeholder:text-slate-400"
-          />
-
-          <button
-            type="button"
-            onClick={onApplyAuthorSearch}
-            className="grid h-10 w-10 place-items-center rounded-full text-[#19d6d2] transition hover:bg-slate-50"
-            aria-label="Apply author"
-          >
-            <CheckCircle2 size={22} strokeWidth={1.9} />
-          </button>
-
-          <button
-            type="button"
-            onClick={onClearAuthorSelection}
-            className="grid h-10 w-10 place-items-center rounded-full text-slate-400 transition hover:bg-slate-50 hover:text-slate-600"
-            aria-label="Clear author"
-          >
-            <CircleX size={22} strokeWidth={1.9} />
-          </button>
         </div>
 
         {authorError ? (
@@ -231,9 +179,10 @@ export default function CreateBlogPostSettingsPublishingSection({
           <button
             type="button"
             onClick={() => openNativePicker(timeInputRef.current)}
-            className="ml-4 shrink-0 text-xs font-medium text-slate-400"
+            className="ml-4 inline-flex shrink-0 items-center gap-1 text-xs font-medium text-slate-400"
           >
-            {scheduleTimeLabel}
+            <Clock3Icon className="h-5 w-5" />
+            <span>{scheduleTimeLabel}</span>
           </button>
         </div>
 

@@ -13,9 +13,11 @@ import type { WishlistData } from "@/types/public/wishlist/wishlist.types";
 export default function WishlistSidebar({
   open,
   onClose,
+  onOpenCart,
 }: {
   open: boolean;
   onClose: () => void;
+  onOpenCart: () => void;
 }) {
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
@@ -70,15 +72,28 @@ export default function WishlistSidebar({
   const handleRemoveFromWishlist = async (productId: string) => {
     try {
       await removeFromWishlist(productId);
-      setWishlistItems((prev) => prev.filter((item) => item.productId !== productId));
+      setWishlistItems((prev) =>
+        prev.filter((item) => item.productId !== productId),
+      );
       await toggleWishlist(productId);
     } catch (err) {
       console.error("Failed to remove from wishlist", err);
     }
   };
 
-  const handleAddToCart = (productId: string) => {
-    addItem(productId, 1);
+  const handleAddToCart = async (productId: string) => {
+    try {
+      await addItem(productId, 1);
+      onClose();
+      onOpenCart();
+    } catch (err) {
+      console.error("Failed to add wishlist item to cart", err);
+    }
+  };
+
+  const handleOpenDetails = (productId: string) => {
+    onClose();
+    router.push(`/public/store/product-details/${productId}`);
   };
 
   return createPortal(
@@ -139,10 +154,10 @@ export default function WishlistSidebar({
 
         <div className="h-px w-full bg-light-slate/10" />
 
-        <div className="flex-1 overflow-auto px-6 py-5 relative">
+        <div className="relative flex-1 overflow-auto px-6 py-5">
           {loading && (
-            <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
-              <div className="w-8 h-8 rounded-full border-2 border-red-500/20 border-t-red-500 animate-spin" />
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-red-500/20 border-t-red-500" />
             </div>
           )}
 
@@ -158,27 +173,62 @@ export default function WishlistSidebar({
             </div>
           ) : (
             <div className="space-y-4">
-              {wishlistItems.map((product) => (
-                <div key={product.wishlistItemId} className="flex gap-4 pb-4 border-b border-light-slate/10">
-                  <div className="relative h-20 w-20 overflow-hidden rounded-lg bg-light-slate/10 flex-shrink-0">
-                    <Image
-                      src={product.imageUrl || "/photos/store_product.png"}
-                      alt={product.name}
-                      fill
-                      sizes="80px"
-                      className="object-cover"
-                    />
-                  </div>
+              {wishlistItems.map((product) => {
+                const isOutOfStock =
+                  product.inStock === false ||
+                  Number(product.stockQuantity || 0) <= 0;
 
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-black truncate">
-                      {product.name}
-                    </h3>
-                    <p className="text-xs text-light-slate mt-1 line-clamp-2">
-                      SKU: {product.sku}
-                    </p>
-                    <div className="flex items-center justify-between mt-3">
-                      <div className="flex items-center gap-2">
+                const isInactive =
+                  product.status !== undefined
+                    ? product.status !== "ACTIVE"
+                    : product.isActive !== undefined
+                      ? !product.isActive
+                      : false;
+
+                const isCartDisabled = isOutOfStock || isInactive;
+
+                const cartButtonText = isInactive
+                  ? "Product is not available right now"
+                  : isOutOfStock
+                    ? "Out of Stock"
+                    : "Cart";
+
+                return (
+                  <div
+                    key={product.wishlistItemId}
+                    className="flex gap-4 border-b border-light-slate/10 pb-4"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleOpenDetails(product.productId)}
+                      className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-light-slate/10"
+                      aria-label={`Open details for ${product.name}`}
+                    >
+                      <Image
+                        src={product.imageUrl || "/photos/store_product.png"}
+                        alt={product.name}
+                        fill
+                        sizes="80px"
+                        className="object-cover"
+                      />
+                    </button>
+
+                    <div className="min-w-0 flex-1">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDetails(product.productId)}
+                        className="block max-w-full text-left"
+                      >
+                        <h3 className="truncate text-sm font-bold text-black hover:text-primary transition-colors">
+                          {product.name}
+                        </h3>
+                      </button>
+
+                      <p className="mt-1 line-clamp-2 text-xs text-light-slate">
+                        SKU: {product.sku}
+                      </p>
+
+                      <div className="mt-2 flex items-center gap-2">
                         {product.offerPrice && (
                           <>
                             <span className="text-sm font-bold text-black">
@@ -193,37 +243,59 @@ export default function WishlistSidebar({
                           </>
                         )}
                       </div>
-                    </div>
-                    <div className="flex gap-2 mt-3">
-                      <button
-                        type="button"
-                        onClick={() => handleAddToCart(product.productId)}
-                        className={[
-                          "flex-1 flex items-center justify-center gap-1 h-8 rounded-lg",
-                          "bg-blue-50 text-primary text-xs font-bold",
-                          "hover:bg-blue-100 active:scale-95 transition",
-                        ].join(" ")}
-                        aria-label="Add to cart"
+
+                      <p
+                        className={`mt-1 text-xs font-medium ${isInactive
+                            ? "text-slate-500"
+                            : isOutOfStock
+                              ? "text-red-500"
+                              : "text-green-600"
+                          }`}
                       >
-                        <ShoppingCart size={14} />
-                        Cart
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFromWishlist(product.productId)}
-                        className={[
-                          "flex items-center justify-center h-8 w-8 rounded-lg",
-                          "bg-red-50 text-red-500",
-                          "hover:bg-red-100 active:scale-95 transition",
-                        ].join(" ")}
-                        aria-label="Remove from wishlist"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                        {isInactive
+                          ? "Product is not available right now"
+                          : isOutOfStock
+                            ? "Out of stock"
+                            : "In stock"}
+                      </p>
+
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleAddToCart(product.productId)}
+                          disabled={isCartDisabled}
+                          className={[
+                            "flex h-8 flex-1 items-center justify-center gap-1 rounded-lg px-2 text-xs font-bold transition",
+                            isCartDisabled
+                              ? "cursor-not-allowed bg-slate-100 text-slate-400"
+                              : "bg-blue-50 text-primary hover:bg-blue-100 active:scale-95",
+                          ].join(" ")}
+                          aria-label="Add to cart"
+                          title={cartButtonText}
+                        >
+                          <ShoppingCart size={14} />
+                          <span className="truncate">{cartButtonText}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleRemoveFromWishlist(product.productId)
+                          }
+                          className={[
+                            "flex h-8 w-8 items-center justify-center rounded-lg",
+                            "bg-red-50 text-red-500",
+                            "hover:bg-red-100 active:scale-95 transition",
+                          ].join(" ")}
+                          aria-label="Remove from wishlist"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -238,7 +310,7 @@ export default function WishlistSidebar({
               }}
               className={[
                 "w-full rounded-2xl bg-light-slate/10 px-6 py-3",
-                "text-light-slate text-sm font-extrabold",
+                "text-sm font-extrabold text-light-slate",
                 "hover:bg-light-slate/20 active:scale-[0.99] transition",
               ].join(" ")}
             >

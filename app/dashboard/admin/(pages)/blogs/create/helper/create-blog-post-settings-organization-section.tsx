@@ -10,12 +10,6 @@ import { cx } from "../_utils/create-blog-post.helpers";
 import CreateBlogPostSettingsSection from "./create-blog-post-settings-section";
 
 type CreateBlogPostSettingsOrganizationSectionProps = {
-  title: string;
-  content: string;
-  onTitleChange: (value: string) => void;
-  onContentChange: (value: string) => void;
-  titleError?: string;
-  contentError?: string;
   categoryOptions: BlogCategoryOption[];
   selectedCategoryIds: string[];
   onToggleCategory: (value: string) => void;
@@ -40,12 +34,6 @@ type CreateBlogPostSettingsOrganizationSectionProps = {
 };
 
 export default function CreateBlogPostSettingsOrganizationSection({
-  title,
-  content,
-  onTitleChange,
-  onContentChange,
-  titleError,
-  contentError,
   categoryOptions,
   selectedCategoryIds,
   onToggleCategory,
@@ -77,47 +65,6 @@ export default function CreateBlogPostSettingsOrganizationSection({
   return (
     <CreateBlogPostSettingsSection title="Organization">
       <div>
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-          Title
-        </p>
-
-        <input
-          value={title}
-          onChange={(e) => onTitleChange(e.target.value)}
-          placeholder="Enter post title..."
-          className={cx(
-            "h-11 w-full rounded-xl border bg-white px-3 text-sm text-slate-800 outline-none placeholder:text-slate-400",
-            titleError ? "border-rose-300" : "border-slate-200",
-          )}
-        />
-
-        {titleError ? (
-          <p className="mt-2 text-xs text-rose-500">{titleError}</p>
-        ) : null}
-      </div>
-
-      <div className="mt-5">
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-          Content
-        </p>
-
-        <textarea
-          value={content}
-          onChange={(e) => onContentChange(e.target.value)}
-          rows={8}
-          placeholder="Write your blog content here..."
-          className={cx(
-            "w-full resize-none rounded-xl border bg-white px-3 py-3 text-sm leading-6 text-slate-800 outline-none placeholder:text-slate-400",
-            contentError ? "border-rose-300" : "border-slate-200",
-          )}
-        />
-
-        {contentError ? (
-          <p className="mt-2 text-xs text-rose-500">{contentError}</p>
-        ) : null}
-      </div>
-
-      <div className="mt-5">
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
           Categories
         </p>

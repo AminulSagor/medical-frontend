@@ -4,25 +4,37 @@ import {
   Bold,
   Heading1,
   Heading2,
-  ImageIcon,
   Italic,
-  Link as LinkIcon,
   Quote,
   Underline,
 } from "lucide-react";
 import { ToolBtn } from "../shared/editor-form-controls";
 
-export default function CreateBlogPostToolbar() {
+type CreateBlogPostToolbarProps = {
+  onBold: () => void;
+  onItalic: () => void;
+  onUnderline: () => void;
+  onH1: () => void;
+  onH2: () => void;
+  onQuote: () => void;
+};
+
+export default function CreateBlogPostToolbar({
+  onBold,
+  onItalic,
+  onUnderline,
+  onH1,
+  onH2,
+  onQuote,
+}: CreateBlogPostToolbarProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 px-4 py-3">
-      <ToolBtn icon={<Bold size={16} />} />
-      <ToolBtn icon={<Italic size={16} />} />
-      <ToolBtn icon={<Underline size={16} />} />
-      <ToolBtn icon={<LinkIcon size={16} />} />
-      <ToolBtn icon={<ImageIcon size={16} />} />
-      <ToolBtn icon={<Heading1 size={16} />} />
-      <ToolBtn icon={<Heading2 size={16} />} />
-      <ToolBtn icon={<Quote size={16} />} />
+    <div className="flex flex-wrap items-center gap-2 border-b  px-4 py-2">
+      <ToolBtn icon={<Bold size={16} />} onClick={onBold} />
+      <ToolBtn icon={<Italic size={16} />} onClick={onItalic} />
+      <ToolBtn icon={<Underline size={16} />} onClick={onUnderline} />
+      <ToolBtn icon={<Heading1 size={16} />} onClick={onH1} />
+      <ToolBtn icon={<Heading2 size={16} />} onClick={onH2} />
+      <ToolBtn icon={<Quote size={16} />} onClick={onQuote} />
     </div>
   );
 }

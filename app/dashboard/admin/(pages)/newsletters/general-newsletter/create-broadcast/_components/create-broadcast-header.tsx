@@ -8,6 +8,8 @@ type Props = {
   onDiscard: () => void;
   onSubmit: () => void;
   isSubmitting?: boolean;
+  isCreateReady?: boolean;
+  isDraftReady?: boolean;
 };
 
 export default function CreateBroadcastHeader({
@@ -15,6 +17,8 @@ export default function CreateBroadcastHeader({
   onDiscard,
   onSubmit,
   isSubmitting = false,
+  isCreateReady = false,
+  isDraftReady = false,
 }: Props) {
   const router = useRouter();
 
@@ -33,12 +37,17 @@ export default function CreateBroadcastHeader({
       ? "Saving..."
       : "Updating..."
     : mode === "create"
-      ? "Create Broadcast"
-      : "Update Schedule";
+      ? isCreateReady
+        ? "Create Broadcast"
+        : "Save Draft"
+      : "Update Broadcast";
+
+  const isSubmitDisabled =
+    isSubmitting || (mode === "create" ? !isDraftReady : false);
 
   return (
-    <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+    <div className="">
+      <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <button
             onClick={() => router.back()}
@@ -69,7 +78,7 @@ export default function CreateBroadcastHeader({
           <button
             type="button"
             onClick={onSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitDisabled}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#18c3b2] px-4 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(24,195,178,0.25)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <SendHorizonal size={14} />

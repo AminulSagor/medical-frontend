@@ -1,3 +1,5 @@
+import { BroadcastArticleSourceType } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-create.types";
+
 export type BroadcastAudience = {
   mode: "ALL_SUBSCRIBERS" | "SEGMENTS";
   segments: string[];
@@ -11,7 +13,7 @@ export type BroadcastCustomContent = {
 };
 
 export type BroadcastArticleLink = {
-  sourceType: string;
+  sourceType: BroadcastArticleSourceType;
   sourceRefId: string;
   sourceTitleSnapshot: string;
   sourceExcerptSnapshot: string;

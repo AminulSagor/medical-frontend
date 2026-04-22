@@ -237,7 +237,7 @@ export default function BlogsManagementTable({
                       </div>
 
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-900">
+                        <p className="truncate text-sm font-semibold text-slate-900 max-w-84">
                           {r.title}
                         </p>
                         <p className="truncate text-xs text-slate-500">

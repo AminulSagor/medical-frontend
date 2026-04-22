@@ -54,9 +54,9 @@ function EngagementBar({ value }: { value: number }) {
 
   return (
     <div className="flex items-center gap-3">
-      <div className="h-[6px] w-[92px] rounded-full bg-slate-100">
+      <div className="h-[6px] w-[92px] overflow-hidden rounded-full bg-slate-100">
         <div
-          className="h-[6px] rounded-full bg-teal-500"
+          className="h-full rounded-full bg-teal-500 transition-[width]"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -85,118 +85,167 @@ export default function SubscribersTable({
   const allSelected = rows.length > 0 && rows.every((r) => selected[r.id]);
 
   return (
-    <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+      <div className="h-[2px] w-full bg-slate-200" />
+
       <div className="overflow-x-auto">
-        <div className="min-w-[1120px]">
-          <div className="grid grid-cols-[46px_320px_260px_160px_120px_120px_170px_140px_140px_110px] border-b bg-slate-50 px-4 py-3 text-[10px] font-bold tracking-[0.22em] text-slate-400">
-            <div className="flex items-center justify-center">
-              <input
-                type="checkbox"
-                checked={allSelected}
-                onChange={() => onToggleAllOnPage(ids, !allSelected)}
-                className="h-4 w-4 accent-teal-500"
-              />
-            </div>
-            <div>SUBSCRIBER IDENTITY</div>
-            <div>CLINICAL ROLE</div>
-            <div>SOURCE</div>
-            <div>RECEIVED</div>
-            <div>OPENED</div>
-            <div>ENGAGEMENT RATE</div>
-            <div>JOINED DATE</div>
-            <div>STATUS</div>
-            <div className="pr-2 text-right">ACTIONS</div>
-          </div>
+        <table className="min-w-[1120px] w-full border-collapse">
+          <thead className="bg-slate-50/80">
+            <tr className="border-b border-slate-200">
+              <th className="w-[46px] px-4 py-4 text-center align-middle">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={() => onToggleAllOnPage(ids, !allSelected)}
+                  className="h-4 w-4 rounded border-slate-300 accent-teal-500"
+                />
+              </th>
 
-          {rows.map((r, idx) => {
-            const checked = !!selected[r.id];
+              <th className="w-[320px] px-4 py-4 text-left text-[10px] font-bold tracking-[0.22em] text-slate-400 align-middle">
+                SUBSCRIBER IDENTITY
+              </th>
 
-            return (
-              <div
-                key={r.id}
-                className={cn(
-                  "grid grid-cols-[46px_320px_260px_160px_120px_120px_170px_140px_140px_110px] items-center px-4 py-4",
-                  idx !== rows.length - 1 && "border-b border-slate-100",
-                )}
-              >
-                <div className="flex items-center justify-center">
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => onToggleOne(r.id)}
-                    className="h-4 w-4 accent-teal-500"
-                  />
-                </div>
+              <th className="w-[260px] px-4 py-4 text-left text-[10px] font-bold tracking-[0.22em] text-slate-400 align-middle">
+                CLINICAL ROLE
+              </th>
 
-                <div className="flex items-center gap-3">
-                  <div className="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-slate-100 text-xs font-bold text-slate-600 ring-1 ring-slate-200/60">
-                    {r.avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={r.avatarUrl}
-                        alt={`${r.name} avatar`}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      (r.avatarInitials ?? r.name.slice(0, 2)).toUpperCase()
-                    )}
-                  </div>
+              <th className="w-[160px] px-4 py-4 text-left text-[10px] font-bold tracking-[0.22em] text-slate-400 align-middle">
+                SOURCE
+              </th>
 
-                  <div className="min-w-0">
-                    <p className="text-[12px] font-bold leading-[15px] text-slate-900">
-                      {r.name}
-                    </p>
-                    <p className="text-[10px] font-medium leading-[15px] text-slate-500">
-                      {r.email}
-                    </p>
-                  </div>
-                </div>
+              <th className="w-[120px] px-4 py-4 text-left text-[10px] font-bold tracking-[0.22em] text-slate-400 align-middle">
+                RECEIVED
+              </th>
 
-                <div className="text-sm text-slate-700">{r.clinicalRole ?? "—"}</div>
+              <th className="w-[120px] px-4 py-4 text-left text-[10px] font-bold tracking-[0.22em] text-slate-400 align-middle">
+                OPENED
+              </th>
 
-                <div>
-                  <SourceTag source={r.source} />
-                </div>
+              <th className="w-[170px] px-4 py-4 text-left text-[10px] font-bold tracking-[0.22em] text-slate-400 align-middle">
+                ENGAGEMENT RATE
+              </th>
 
-                <div className="text-sm font-semibold text-slate-900">{r.received}</div>
+              <th className="w-[140px] px-4 py-4 text-left text-[10px] font-bold tracking-[0.22em] text-slate-400 align-middle">
+                JOINED DATE
+              </th>
 
-                <div className="text-sm font-semibold text-slate-900">{r.opened}</div>
+              <th className="w-[140px] px-4 py-4 text-left text-[10px] font-bold tracking-[0.22em] text-slate-400 align-middle">
+                STATUS
+              </th>
 
-                <div>
-                  <EngagementBar value={r.engagementRate} />
-                </div>
+              <th className="w-[110px] px-4 py-4 text-right text-[10px] font-bold tracking-[0.22em] text-slate-400 align-middle">
+                ACTIONS
+              </th>
+            </tr>
+          </thead>
 
-                <div className="text-sm text-slate-600">{r.joinedDateLabel}</div>
+          <tbody>
+            {rows.map((r) => {
+              const checked = !!selected[r.id];
+              const isUnsubscribed = r.status === "UNSUBSCRIBED";
 
-                <div>
-                  <StatusPill status={r.status} />
-                </div>
+              return (
+                <tr
+                  key={r.id}
+                  className="border-b border-slate-100 transition-colors hover:bg-slate-50/60 last:border-b-0"
+                >
+                  <td className="px-4 py-4 text-center align-middle">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => onToggleOne(r.id)}
+                      className="h-4 w-4 rounded border-slate-300 accent-teal-500"
+                    />
+                  </td>
 
-                <div className="flex items-center justify-end gap-4 pr-2 text-slate-400">
-                  <button
-                    className="hover:text-slate-700"
-                    aria-label="View"
-                    onClick={() =>
-                      router.push(
-                        `/dashboard/admin/newsletters/general-newsletter/subscribers/subscriber-profile/${r.id}`,
-                      )
-                    }
-                  >
-                    <Eye size={16} />
-                  </button>
-                  <button
-                    className="hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label="Unsubscribe"
-                    disabled={isUpdating || r.status === "UNSUBSCRIBED"}
-                    onClick={() => onUpdateStatus(r.id)}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                  <td className="px-4 py-4 align-middle">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-slate-100 text-xs font-bold text-slate-600 ring-1 ring-slate-200/70">
+                        {r.avatarUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={r.avatarUrl}
+                            alt={`${r.name} avatar`}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          (r.avatarInitials ?? r.name.slice(0, 2)).toUpperCase()
+                        )}
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold leading-5 text-slate-900">
+                          {r.name}
+                        </p>
+                        <p className="truncate text-xs font-medium leading-5 text-slate-500">
+                          {r.email}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td className="px-4 py-4 align-middle text-sm font-medium text-slate-700">
+                    {r.clinicalRole ?? "—"}
+                  </td>
+
+                  <td className="px-4 py-4 align-middle">
+                    <SourceTag source={r.source} />
+                  </td>
+
+                  <td className="px-4 py-4 align-middle text-sm font-semibold text-slate-900">
+                    {r.received}
+                  </td>
+
+                  <td className="px-4 py-4 align-middle text-sm font-semibold text-slate-900">
+                    {r.opened}
+                  </td>
+
+                  <td className="px-4 py-4 align-middle">
+                    <EngagementBar value={r.engagementRate} />
+                  </td>
+
+                  <td className="px-4 py-4 align-middle text-sm text-slate-600">
+                    {r.joinedDateLabel}
+                  </td>
+
+                  <td className="px-4 py-4 align-middle">
+                    <StatusPill status={r.status} />
+                  </td>
+
+                  <td className="px-4 py-4 align-middle">
+                    <div className="flex items-center justify-end gap-3 text-slate-400">
+                      <button
+                        type="button"
+                        className="grid h-8 w-8 place-items-center rounded-full transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-400"
+                        aria-label="View"
+                        disabled={isUnsubscribed}
+                        onClick={() => {
+                          if (isUnsubscribed) return;
+
+                          router.push(
+                            `/dashboard/admin/newsletters/general-newsletter/subscribers/subscriber-profile/${r.id}`,
+                          );
+                        }}
+                      >
+                        <Eye size={16} />
+                      </button>
+
+                      <button
+                        type="button"
+                        className="grid h-8 w-8 place-items-center rounded-full transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label="Unsubscribe"
+                        disabled={isUpdating || isUnsubscribed}
+                        onClick={() => onUpdateStatus(r.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

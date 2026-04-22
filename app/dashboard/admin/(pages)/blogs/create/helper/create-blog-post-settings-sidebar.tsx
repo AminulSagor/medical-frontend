@@ -1,7 +1,6 @@
 "use client";
 
 import type {
-  BlogAuthorOption,
   BlogCategoryOption,
   BlogTagOption,
 } from "@/types/admin/blogs/blog-create.types";
@@ -11,19 +10,8 @@ import CreateBlogPostSettingsPublishingSection from "./create-blog-post-settings
 import CreateBlogPostSettingsSeoSection from "./create-blog-post-settings-seo-section";
 
 type CreateBlogPostSettingsSidebarProps = {
-  title: string;
-  content: string;
-  onTitleChange: (value: string) => void;
-  onContentChange: (value: string) => void;
-  titleError?: string;
-  contentError?: string;
-  authorOptions: BlogAuthorOption[];
-  selectedAuthorId: string;
-  authorSearch: string;
-  onAuthorSelect: (value: string) => void;
-  onAuthorSearchChange: (value: string) => void;
-  onApplyAuthorSearch: () => void;
-  onClearAuthorSelection: () => void;
+  authorName: string;
+  onAuthorNameChange: (value: string) => void;
   scheduleDate: string;
   scheduleTime: string;
   onScheduleDateChange: (value: string) => void;
@@ -64,19 +52,8 @@ type CreateBlogPostSettingsSidebarProps = {
 };
 
 export default function CreateBlogPostSettingsSidebar({
-  title,
-  content,
-  onTitleChange,
-  onContentChange,
-  titleError,
-  contentError,
-  authorOptions,
-  selectedAuthorId,
-  authorSearch,
-  onAuthorSelect,
-  onAuthorSearchChange,
-  onApplyAuthorSearch,
-  onClearAuthorSelection,
+  authorName,
+  onAuthorNameChange,
   scheduleDate,
   scheduleTime,
   onScheduleDateChange,
@@ -122,13 +99,8 @@ export default function CreateBlogPostSettingsSidebar({
       </div>
 
       <CreateBlogPostSettingsPublishingSection
-        authorOptions={authorOptions}
-        selectedAuthorId={selectedAuthorId}
-        authorSearch={authorSearch}
-        onAuthorSelect={onAuthorSelect}
-        onAuthorSearchChange={onAuthorSearchChange}
-        onApplyAuthorSearch={onApplyAuthorSearch}
-        onClearAuthorSelection={onClearAuthorSelection}
+        authorName={authorName}
+        onAuthorNameChange={onAuthorNameChange}
         scheduleDate={scheduleDate}
         scheduleTime={scheduleTime}
         onScheduleDateChange={onScheduleDateChange}
@@ -142,12 +114,6 @@ export default function CreateBlogPostSettingsSidebar({
       />
 
       <CreateBlogPostSettingsOrganizationSection
-        title={title}
-        content={content}
-        onTitleChange={onTitleChange}
-        onContentChange={onContentChange}
-        titleError={titleError}
-        contentError={contentError}
         categoryOptions={categoryOptions}
         selectedCategoryIds={selectedCategoryIds}
         onToggleCategory={onToggleCategory}

@@ -15,6 +15,7 @@ import Button from "@/components/buttons/button";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/app/public/context/cart-context";
 import { useWishlist } from "@/app/public/context/wishlist-context";
+import { toast } from "react-hot-toast";
 
 function money(n: number) {
   return `$${n.toFixed(2)}`;
@@ -34,7 +35,6 @@ export default function PurchasePanelClient({
 
   const wishlisted = isInWishlist(product.id);
 
-  // ── Out-of-stock / stock logic ───────────────────────────────────────────
   const stockQty: number = (product as any).stockQuantity ?? 0;
   const inStock: boolean =
     (product as any).inStock !== undefined
@@ -42,7 +42,6 @@ export default function PurchasePanelClient({
       : stockQty > 0;
   const maxQty = inStock ? Math.max(stockQty, 1) : 0;
 
-  // Clamp qty to available stock whenever stock changes
   const safeQty = inStock ? Math.min(qty, maxQty) : 1;
 
   const stars = useMemo(() => {
@@ -51,14 +50,45 @@ export default function PurchasePanelClient({
   }, [product.rating.value]);
 
   const handleBuyNow = async () => {
-    if (!inStock) return;
-    setIsProcessingPayment(true);
+    if (isProcessingPayment) return;
+
     try {
-      await addItem(product.id, safeQty);
-      router.push("/public/checkout");
+      setIsProcessingPayment(true);
+
+      const params = new URLSearchParams({
+        mode: "buy-now",
+        productId: product.id,
+        quantity: String(safeQty),
+      });
+
+      const checkoutUrl = `/public/checkout?${params.toString()}`;
+
+      const token =
+        typeof document !== "undefined"
+          ? document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/)?.[1]
+          : null;
+
+      if (!token) {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(
+            "publicCoursePostAuthRedirect",
+            JSON.stringify({
+              checkoutRoute: checkoutUrl,
+            }),
+          );
+        }
+
+        router.push("/public/auth/sign-in");
+        return;
+      }
+
+      router.push(checkoutUrl);
     } catch (error: any) {
       console.error("Buy now error:", error);
-      alert(error.message || "Failed to add item. Please try again.");
+      alert(
+        error.message || "Failed to continue to checkout. Please try again.",
+      );
+    } finally {
       setIsProcessingPayment(false);
     }
   };
@@ -116,11 +146,10 @@ export default function PurchasePanelClient({
           </div>
 
           <div
-            className={`mt-5 rounded-full px-5 py-3 text-center text-xs font-semibold ${
-              inStock
-                ? "bg-primary/10 text-green-600"
-                : "bg-red-50 text-red-600"
-            }`}
+            className={`mt-5 rounded-full px-5 py-3 text-center text-xs font-semibold ${inStock
+              ? "bg-primary/10 text-green-600"
+              : "bg-red-50 text-red-600"
+              }`}
           >
             {inStock
               ? stockQty <= 10 && stockQty > 0
@@ -139,7 +168,7 @@ export default function PurchasePanelClient({
                     type="button"
                     onClick={() => setQty((p) => Math.max(1, p - 1))}
                     disabled={!inStock || qty <= 1}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-light-slate/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-light-slate/10 disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="Decrease quantity"
                   >
                     <Minus className="h-4 w-4 text-light-slate" />
@@ -153,14 +182,13 @@ export default function PurchasePanelClient({
                     type="button"
                     onClick={() => setQty((p) => Math.min(maxQty, p + 1))}
                     disabled={!inStock || qty >= maxQty}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-light-slate/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-light-slate/10 disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="Increase quantity"
                   >
                     <Plus className="h-4 w-4 text-light-slate" />
                   </button>
                 </div>
 
-                {/* ✅ Wishlist moved here (below quantity) */}
                 <button
                   type="button"
                   onClick={() => toggleWishlist(product.id)}
@@ -175,47 +203,42 @@ export default function PurchasePanelClient({
               </div>
 
               <div className="col-span-7 space-y-3">
-                {/* Buy Now */}
                 <Button
-                  className={`h-14 w-full justify-center shadow-sm ${
-                    inStock
-                      ? "bg-primary text-white"
-                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                  }`}
+                  className={`h-14 w-full justify-center shadow-sm ${inStock
+                    ? "bg-primary text-white"
+                    : "cursor-not-allowed bg-slate-200 text-slate-400"
+                    }`}
                   shape="pill"
                   onClick={handleBuyNow}
                   disabled={!inStock || isProcessingPayment}
                 >
                   <CreditCard className="h-5 w-5" />
-                  {!inStock
-                    ? "Out of Stock"
-                    : isProcessingPayment
-                    ? "Processing..."
-                    : "Buy Now"}
+                  {isProcessingPayment ? "Processing..." : "Buy Now"}
                 </Button>
 
-                {/* Add to Cart */}
                 <Button
-                  className={`h-12 w-full justify-center bg-white shadow-sm ${
-                    inStock
-                      ? "border border-primary !text-primary"
-                      : "border border-slate-200 !text-slate-400 cursor-not-allowed"
-                  }`}
+                  className={`h-12 w-full justify-center bg-white shadow-sm ${inStock
+                    ? "border border-primary !text-primary"
+                    : "cursor-not-allowed border border-slate-200 !text-slate-400"
+                    }`}
                   shape="pill"
                   disabled={!inStock || isAddingToCart}
                   onClick={async () => {
                     if (!inStock || isAddingToCart) return;
+
                     try {
                       setIsAddingToCart(true);
                       await addItem(product.id, safeQty);
+                      toast.success("Added to cart");
                     } catch (error) {
                       console.error("Failed to add to cart", error);
+                      toast.error("Failed to add to cart");
                     } finally {
                       setIsAddingToCart(false);
                     }
                   }}
                 >
-                  <ShoppingBag className={`h-5 w-5 ${inStock ? "text-primary" : "text-slate-400"}`} />
+                  <ShoppingBag className="h-5 w-5" />
                   {isAddingToCart ? "Adding..." : "Add to Cart"}
                 </Button>
               </div>

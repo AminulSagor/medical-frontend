@@ -9,7 +9,23 @@ export const serviceClient = axios.create({
   },
 });
 
-//Request interceptor
+function buildSignInRedirectUrl() {
+  if (typeof window === "undefined") {
+    return "/public/auth/sign-in";
+  }
+
+  const currentPath = window.location.pathname;
+  const currentSearch = window.location.search;
+  const currentUrl = `${currentPath}${currentSearch}`;
+
+  if (currentPath.includes("/public/auth/sign-in")) {
+    return "/public/auth/sign-in";
+  }
+
+  return `/public/auth/sign-in?redirect=${encodeURIComponent(currentUrl)}`;
+}
+
+// Request interceptor
 serviceClient.interceptors.request.use(
   (config) => {
     const token = getToken();
@@ -27,12 +43,16 @@ serviceClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       removeToken();
+
       if (typeof window !== "undefined") {
+        const redirectUrl = buildSignInRedirectUrl();
+
         if (!window.location.pathname.includes("/public/auth/sign-in")) {
-          window.location.href = `/public/auth/sign-in`;
+          window.location.href = redirectUrl;
         }
       }
     }
+
     return Promise.reject(error);
   },
 );

@@ -7,6 +7,11 @@ import { useBlogPreviewStore } from "@/store/blog-preview.store";
 
 type PreviewViewport = "desktop" | "tablet" | "mobile";
 
+type PreviewImage = {
+  imageUrl: string;
+  imageType: "hero" | "thumbnail" | string;
+};
+
 function formatPublishedDate(date?: string | null) {
   if (!date) return "Draft Preview";
 
@@ -24,15 +29,11 @@ function formatPublishedDate(date?: string | null) {
 }
 
 function getAuthorName(blog: any) {
-  return (
-    blog?.authors?.[0]?.fullLegalName ||
-    blog?.authors?.[0]?.name ||
-    "Unknown Author"
-  );
+  return blog?.authorName || "Unknown Author";
 }
 
-function getAuthorRole(blog: any) {
-  return blog?.authors?.[0]?.professionalRole || "Medical Contributor";
+function getAuthorRole() {
+  return "Medical Contributor";
 }
 
 function getCategoryName(blog: any) {
@@ -62,7 +63,18 @@ function getPreviewTitle(blog: any) {
 }
 
 function getCoverImage(blog: any) {
-  return blog?.coverImageUrl || "";
+  return (
+    blog?.coverImages?.find((image: PreviewImage) => image.imageType === "hero")
+      ?.imageUrl || ""
+  );
+}
+
+function getBodyImage(blog: any) {
+  return (
+    blog?.coverImages?.find(
+      (image: PreviewImage) => image.imageType === "thumbnail",
+    )?.imageUrl || ""
+  );
 }
 
 function getSeoDescription(blog: any) {
@@ -164,8 +176,9 @@ function PreviewTopBar({
 function DesktopArticlePreview({ blog }: { blog: any }) {
   const title = getPreviewTitle(blog);
   const coverImage = getCoverImage(blog);
+  const bodyImage = getBodyImage(blog);
   const authorName = getAuthorName(blog);
-  const authorRole = getAuthorRole(blog);
+  const authorRole = getAuthorRole();
   const categoryName = getCategoryName(blog);
   const readTime = getReadTime(blog);
   const publishedDate = getPublishedDate(blog);
@@ -233,8 +246,18 @@ function DesktopArticlePreview({ blog }: { blog: any }) {
       <div className="bg-white px-12 py-14">
         <div className="grid grid-cols-[minmax(0,1fr)_260px] gap-14">
           <div className="min-w-0">
+            {bodyImage ? (
+              <div className="mb-8 overflow-hidden rounded-sm">
+                <img
+                  src={bodyImage}
+                  alt={`${title} article`}
+                  className="h-auto w-full object-cover"
+                />
+              </div>
+            ) : null}
+
             <div
-              className="text-slate-600 [&_blockquote]:my-6 [&_blockquote]:border-l-[3px] [&_blockquote]:border-[#16c6c1] [&_blockquote]:pl-4 [&_blockquote]:italic [&_h1]:mb-5 [&_h1]:mt-10 [&_h1]:font-semibold [&_h1]:text-slate-900 [&_h1]:text-base [&_h2]:mb-5 [&_h2]:mt-10 [&_h2]:font-semibold [&_h2]:text-slate-900 [&_h2]:text-base [&_h3]:mb-4 [&_h3]:mt-8 [&_h3]:font-semibold [&_h3]:text-slate-900 [&_h3]:text-base [&_ol]:my-5 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mb-5 [&_p]:leading-[2] [&_p]:text-slate-600 [&_p]:text-base [&_strong]:font-semibold [&_strong]:text-slate-900 [&_ul]:my-5 [&_ul]:list-disc [&_ul]:pl-6"
+              className="text-slate-600 [&_blockquote]:my-6 [&_blockquote]:border-l-[3px] [&_blockquote]:border-[#16c6c1] [&_blockquote]:pl-4 [&_blockquote]:italic [&_h1]:mb-5 [&_h1]:mt-10 [&_h1]:font-semibold [&_h1]:text-slate-900 [&_h1]:text-base [&_h2]:mb-5 [&_h2]:mt-10 [&_h2]:font-semibold [&_h2]:text-slate-900 [&_h2]:text-base [&_h3]:mb-4 [&_h3]:mt-8 [&_h3]:font-semibold [&_h3]:text-slate-900 [&_h3]:text-base [&_img]:my-6 [&_img]:h-auto [&_img]:w-full [&_ol]:my-5 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mb-5 [&_p]:leading-[2] [&_p]:text-slate-600 [&_p]:text-base [&_strong]:font-semibold [&_strong]:text-slate-900 [&_ul]:my-5 [&_ul]:list-disc [&_ul]:pl-6"
               style={{
                 fontFamily: 'Georgia, "Times New Roman", Times, serif',
               }}
@@ -282,6 +305,7 @@ function DesktopArticlePreview({ blog }: { blog: any }) {
 function TabletArticlePreview({ blog }: { blog: any }) {
   const title = getPreviewTitle(blog);
   const coverImage = getCoverImage(blog);
+  const bodyImage = getBodyImage(blog);
   const authorName = getAuthorName(blog);
   const categoryName = getCategoryName(blog);
   const readTime = getReadTime(blog);
@@ -361,8 +385,18 @@ function TabletArticlePreview({ blog }: { blog: any }) {
       </div>
 
       <div className="bg-white px-8 py-8">
+        {bodyImage ? (
+          <div className="mb-6 overflow-hidden rounded-sm">
+            <img
+              src={bodyImage}
+              alt={`${title} article`}
+              className="h-auto w-full object-cover"
+            />
+          </div>
+        ) : null}
+
         <div
-          className="text-slate-700 [&_blockquote]:my-5 [&_blockquote]:border-l-[3px] [&_blockquote]:border-[#16c6c1] [&_blockquote]:pl-4 [&_blockquote]:italic [&_h1]:mb-4 [&_h1]:mt-8 [&_h1]:font-semibold [&_h1]:text-slate-900 [&_h1]:text-base [&_h2]:mb-4 [&_h2]:mt-8 [&_h2]:font-semibold [&_h2]:text-slate-900 [&_h2]:text-base [&_h3]:mb-3 [&_h3]:mt-6 [&_h3]:font-semibold [&_h3]:text-slate-900 [&_h3]:text-base [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_p]:leading-8 [&_p]:text-base [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-5"
+          className="text-slate-700 [&_blockquote]:my-5 [&_blockquote]:border-l-[3px] [&_blockquote]:border-[#16c6c1] [&_blockquote]:pl-4 [&_blockquote]:italic [&_h1]:mb-4 [&_h1]:mt-8 [&_h1]:font-semibold [&_h1]:text-slate-900 [&_h1]:text-base [&_h2]:mb-4 [&_h2]:mt-8 [&_h2]:font-semibold [&_h2]:text-slate-900 [&_h2]:text-base [&_h3]:mb-3 [&_h3]:mt-6 [&_h3]:font-semibold [&_h3]:text-slate-900 [&_h3]:text-base [&_img]:my-5 [&_img]:h-auto [&_img]:w-full [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_p]:leading-8 [&_p]:text-base [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-5"
           style={{
             fontFamily: 'Georgia, "Times New Roman", Times, serif',
           }}
@@ -376,6 +410,7 @@ function TabletArticlePreview({ blog }: { blog: any }) {
 function MobileArticlePreview({ blog }: { blog: any }) {
   const title = getPreviewTitle(blog);
   const coverImage = getCoverImage(blog);
+  const bodyImage = getBodyImage(blog);
   const authorName = getAuthorName(blog);
   const categoryName = getCategoryName(blog);
   const readTime = getReadTime(blog);
@@ -453,8 +488,18 @@ function MobileArticlePreview({ blog }: { blog: any }) {
       </div>
 
       <div className="bg-white px-4 py-5">
+        {bodyImage ? (
+          <div className="mb-5 overflow-hidden rounded-sm">
+            <img
+              src={bodyImage}
+              alt={`${title} article`}
+              className="h-auto w-full object-cover"
+            />
+          </div>
+        ) : null}
+
         <div
-          className="text-slate-700 [&_blockquote]:my-4 [&_blockquote]:border-l-[3px] [&_blockquote]:border-[#16c6c1] [&_blockquote]:pl-3 [&_blockquote]:italic [&_h1]:mb-3 [&_h1]:mt-6 [&_h1]:font-semibold [&_h1]:text-slate-900 [&_h1]:text-base [&_h2]:mb-3 [&_h2]:mt-6 [&_h2]:font-semibold [&_h2]:text-slate-900 [&_h2]:text-base [&_h3]:mb-3 [&_h3]:mt-5 [&_h3]:font-semibold [&_h3]:text-slate-900 [&_h3]:text-base [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_p]:leading-7 [&_p]:text-sm [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-5"
+          className="text-slate-700 [&_blockquote]:my-4 [&_blockquote]:border-l-[3px] [&_blockquote]:border-[#16c6c1] [&_blockquote]:pl-3 [&_blockquote]:italic [&_h1]:mb-3 [&_h1]:mt-6 [&_h1]:font-semibold [&_h1]:text-slate-900 [&_h1]:text-base [&_h2]:mb-3 [&_h2]:mt-6 [&_h2]:font-semibold [&_h2]:text-slate-900 [&_h2]:text-base [&_h3]:mb-3 [&_h3]:mt-5 [&_h3]:font-semibold [&_h3]:text-slate-900 [&_h3]:text-base [&_img]:my-4 [&_img]:h-auto [&_img]:w-full [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_p]:leading-7 [&_p]:text-sm [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-5"
           style={{
             fontFamily: 'Georgia, "Times New Roman", Times, serif',
           }}
@@ -473,13 +518,17 @@ export default function BlogPreviewPage() {
 
   const hasPreview = useMemo(() => Boolean(previewBlog), [previewBlog]);
 
+  const handleClosePreview = () => {
+    router.push("/dashboard/admin/blogs/create?fromPreview=true");
+  };
+
   if (!hasPreview || !previewBlog) {
     return (
       <div className="min-h-screen bg-[#13233f]">
         <PreviewTopBar
           viewport={viewport}
           onViewportChange={setViewport}
-          onClose={() => router.back()}
+          onClose={handleClosePreview}
         />
 
         <div className="flex min-h-[calc(100vh-73px)] items-center justify-center px-4">
@@ -501,7 +550,7 @@ export default function BlogPreviewPage() {
       <PreviewTopBar
         viewport={viewport}
         onViewportChange={setViewport}
-        onClose={() => router.back()}
+        onClose={handleClosePreview}
       />
 
       <div className="px-4 py-6 md:px-6 md:py-8">

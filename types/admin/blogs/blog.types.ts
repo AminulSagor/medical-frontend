@@ -33,11 +33,20 @@ export interface BlogTag {
 
 export type BlogPublishingStatus = "published" | "draft" | "scheduled";
 
+export interface BlogCoverImage {
+  imageUrl: string;
+  imageType: "hero" | "thumbnail";
+}
+
 export interface BlogItem {
   id: string;
   title: string;
   content: string;
-  coverImageUrl: string | null;
+
+  authorName: string;
+
+  coverImages: BlogCoverImage[];
+
   publishingStatus: BlogPublishingStatus;
   scheduledPublishDate: string | null;
   isFeatured: boolean;

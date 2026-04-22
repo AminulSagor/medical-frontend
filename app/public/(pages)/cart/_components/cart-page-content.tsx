@@ -1,49 +1,46 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Heart,
-  Lock,
-  Minus,
-  Plus,
-  Trash2,
-  Truck,
-  ShoppingBag,
-  Loader2,
-} from "lucide-react";
-import Card from "@/components/cards/card";
+import { ArrowLeft, Loader2, ShoppingBag } from "lucide-react";
 import Button from "@/components/buttons/button";
-
+import {
+  CartCalculateRequest,
+  CartCalculateResponse,
+} from "@/types/public/cart/cart.types";
 import { useCart } from "@/app/public/context/cart-context";
 import { useWishlist } from "@/app/public/context/wishlist-context";
 import { calculateCart } from "@/service/public/cart.service";
 import { reorderBackendCart } from "@/service/public/cart-server.service";
-import type {
-  CartCalculateRequest,
-  CartCalculateResponse,
-} from "@/types/public/cart/cart.types";
+import { getProductDetails } from "@/service/public/product.service";
+import CartItemRow from "./cart-item-row";
+import CartOrderSummaryCard from "./cart-order-summary-card";
+import CartShippingInfoCard from "./cart-shipping-info-card";
 
-function money(n: number) {
+export function money(n: number) {
   return `$${n.toFixed(2)}`;
 }
 
-export default function CartPage() {
+export default function CartPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const reorderFrom = searchParams.get("reorderFrom");
 
-  const { items, updateQty, removeItem, totalItems, syncItems } = useCart();
+  const {
+    items,
+    updateQty,
+    removeItem,
+    totalItems,
+    syncItems,
+    pruneItems,
+  } = useCart();
   const { toggleWishlist } = useWishlist();
-  const [promo, setPromo] = useState("");
 
   const [calculatedData, setCalculatedData] =
     useState<CartCalculateResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const hasCalculatedOnceRef = useRef(false);
 
   useEffect(() => {
     if (!reorderFrom) return;
@@ -77,47 +74,121 @@ export default function CartPage() {
   useEffect(() => {
     if (items.length === 0) {
       setCalculatedData(null);
+      hasCalculatedOnceRef.current = false;
       return;
     }
 
-    const fetchCalculation = async () => {
-      setLoading(true);
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const validItems = items.filter((i) => uuidRegex.test(i.productId));
+
+    if (validItems.length === 0) {
+      setCalculatedData(null);
+      hasCalculatedOnceRef.current = false;
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      if (!hasCalculatedOnceRef.current) {
+        setLoading(true);
+      }
+
       try {
-        const uuidRegex =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        const validItems = items.filter((i) => uuidRegex.test(i.productId));
-
-        if (validItems.length === 0) {
-          setCalculatedData(null);
-          return;
-        }
-
         const payload: CartCalculateRequest = {
           items: validItems.map((i) => ({
             productId: i.productId,
             quantity: i.quantity,
           })),
         };
+
         const data = await calculateCart(payload);
-        setCalculatedData(data);
-        syncItems(
-          data.items.map((i) => ({
-            productId: i.productId,
-            quantity: i.quantity,
-          })),
+
+        const validatedItems = await Promise.all(
+          data.items.map(async (item) => {
+            try {
+              await getProductDetails(item.productId);
+              return item;
+            } catch {
+              return null;
+            }
+          }),
         );
+
+        const existingItems = validatedItems.filter(
+          (item): item is typeof data.items[number] => item !== null,
+        );
+
+        const availableItems = existingItems.filter((item) => {
+          const hasStock =
+            typeof item.availableQuantity === "number"
+              ? item.availableQuantity > 0
+              : true;
+
+          return item.inStock && hasStock;
+        });
+
+        const unavailableProductIds = existingItems
+          .filter(
+            (item) =>
+              !availableItems.some((a) => a.productId === item.productId),
+          )
+          .map((item) => item.productId);
+
+        const newData: CartCalculateResponse = {
+          ...data,
+          items: availableItems,
+        };
+
+        setCalculatedData(newData);
+        hasCalculatedOnceRef.current = true;
+
+        const normalizedItems = availableItems.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+        }));
+
+        const hasMismatch =
+          normalizedItems.length !== validItems.length ||
+          normalizedItems.some((item) => {
+            const current = validItems.find(
+              (v) => v.productId === item.productId,
+            );
+            return !current || current.quantity !== item.quantity;
+          });
+
+        if (hasMismatch) {
+          syncItems(normalizedItems);
+        }
+
+        if (unavailableProductIds.length > 0) {
+          await pruneItems(unavailableProductIds);
+        }
       } catch (err) {
         console.error("Failed to calculate cart", err);
       } finally {
         setLoading(false);
       }
-    };
+    }, 300);
 
-    fetchCalculation();
-  }, [items, syncItems]);
+    return () => clearTimeout(timeout);
+  }, [items, pruneItems, syncItems]);
+
+  const hasInvalidQuantity = useMemo(() => {
+    if (!calculatedData?.items?.length) return false;
+
+    return calculatedData.items.some((item) => {
+      const cartItem = items.find((i) => i.productId === item.productId);
+      if (!cartItem) return false;
+
+      return (
+        typeof item.availableQuantity === "number" &&
+        cartItem.quantity > item.availableQuantity
+      );
+    });
+  }, [calculatedData, items]);
 
   return (
-    <div className="min-h-screen mt-24">
+    <div className="mt-24 min-h-screen">
       <div className="mx-auto max-w-6xl px-4 py-8">
         <Link
           href="/public/store"
@@ -152,7 +223,7 @@ export default function CartPage() {
           </div>
         ) : (
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
-            <div className="lg:col-span-8 overflow-hidden rounded-3xl shadow-sm border border-light-slate/10 bg-white pt-2">
+            <div className="overflow-hidden rounded-3xl border border-light-slate/10 bg-white pt-2 shadow-sm lg:col-span-8">
               <div className="grid grid-cols-12 gap-4 border-b border-slate-100 px-6 py-4 text-[11px] font-bold tracking-widest text-light-slate">
                 <div className="col-span-7">PRODUCT DETAILS</div>
                 <div className="col-span-2 text-right">PRICE</div>
@@ -160,238 +231,54 @@ export default function CartPage() {
                 <div className="col-span-1 text-right">TOTAL</div>
               </div>
 
-              <div className="divide-y divide-slate-100 relative min-h-[200px]">
-                {loading && (
-                  <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              <div className="relative min-h-[200px] divide-y divide-slate-100">
+                {loading && !calculatedData && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 )}
-                {calculatedData?.items.map((it) => (
-                  <div
-                    key={it.productId}
-                    className="grid grid-cols-12 gap-3 px-6 py-6"
-                  >
-                    <div className="col-span-7 flex items-start gap-4">
-                      <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-light-slate/10 ring-1 ring-slate-200">
-                        <Image
-                          src={it.photo || "/photos/store_product.png"}
-                          alt={it.name}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
-                      </div>
 
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-bold text-black">
-                          {it.name}
-                        </div>
-
-                        <div className="mt-1 text-xs text-light-slate">
-                          SKU: {it.sku}
-                        </div>
-
-                        <div className="mt-2 inline-flex items-center gap-2 text-xs">
-                          <span
-                            className={
-                              it.inStock ? "text-green-500" : "text-orange-500"
-                            }
-                          >
-                            {it.inStock ? "In Stock" : "Out of Stock"}
-                          </span>
-                        </div>
-
-                        <div className="mt-3 flex flex-wrap items-center gap-6 text-xs">
-                          <button
-                            type="button"
-                            onClick={() => removeItem(it.productId)}
-                            className="inline-flex items-center gap-2 text-red-500 hover:opacity-80"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Remove
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              toggleWishlist(it.productId);
-                              removeItem(it.productId);
-                            }}
-                            className="inline-flex items-center gap-2 text-light-slate hover:text-red-400"
-                          >
-                            <Heart className="h-4 w-4" />
-                            Save for Later
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-span-2 flex items-center justify-end">
-                      <div className="text-sm text-black">
-                        {money(Number(it.price))}
-                      </div>
-                    </div>
-
-                    <div className="col-span-2 flex items-center justify-center">
-                      <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateQty(it.productId, it.quantity - 1)
-                          }
-                          disabled={it.quantity <= 1}
-                          className={[
-                            "inline-flex h-4 w-4 items-center justify-center rounded-full hover:bg-light-slate/10 transition-all",
-                            it.quantity <= 1
-                              ? "opacity-50 cursor-not-allowed pointer-events-none"
-                              : "active:scale-95",
-                          ].join(" ")}
-                          aria-label="Decrease quantity"
-                        >
-                          <Minus className="h-4 w-4 text-light-slate" />
-                        </button>
-
-                        <div className="w-6 text-center text-sm font-bold text-black">
-                          {it.quantity}
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateQty(it.productId, it.quantity + 1)
-                          }
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-light-slate/10 active:scale-95"
-                          aria-label="Increase quantity"
-                        >
-                          <Plus className="h-4 w-4 text-light-slate" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="col-span-1 flex items-center justify-end">
-                      <div className="text-sm font-bold text-black">
-                        {money(Number(it.itemTotal))}
-                      </div>
-                    </div>
+                {loading && calculatedData && (
+                  <div className="absolute left-1/2 top-6 z-10 -translate-x-1/2">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   </div>
-                ))}
+                )}
+
+                {items.map((cartItem) => {
+                  const it = calculatedData?.items.find(
+                    (i) => i.productId === cartItem.productId,
+                  );
+
+                  if (!it) return null;
+
+                  return (
+                    <CartItemRow
+                      key={cartItem.productId}
+                      item={it}
+                      quantity={cartItem.quantity}
+                      onRemove={() => removeItem(it.productId)}
+                      onSaveForLater={() => {
+                        toggleWishlist(it.productId);
+                        removeItem(it.productId);
+                      }}
+                      onDecrease={() =>
+                        updateQty(cartItem.productId, cartItem.quantity - 1)
+                      }
+                      onIncrease={() =>
+                        updateQty(cartItem.productId, cartItem.quantity + 1)
+                      }
+                    />
+                  );
+                })}
               </div>
             </div>
 
-            <div className="lg:col-span-4 space-y-6">
-              <Card>
-                <div className="text-lg font-bold text-black">
-                  Order Summary
-                </div>
-                <div className="mt-4 border-t border-slate-100" />
-
-                <div className="mt-4 space-y-3 text-sm">
-                  <div className="flex items-center justify-between text-light-slate">
-                    <span>Subtotal</span>
-                    <span className="font-bold text-black">
-                      {money(
-                        Number(calculatedData?.orderSummary?.subtotal || 0),
-                      )}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-light-slate">
-                    <span>Estimated Shipping</span>
-                    <span className="text-xs italic text-light-slate">
-                      Calculated in next step
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-light-slate">
-                    <span>Estimated Tax</span>
-                    <span className="font-bold text-black">
-                      {money(
-                        Number(calculatedData?.orderSummary?.estimatedTax || 0),
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <div className="text-[11px] font-bold tracking-widest text-light-slate">
-                    PROMO CODE
-                  </div>
-
-                  <div className="mt-3 flex items-center gap-3">
-                    <input
-                      value={promo}
-                      onChange={(e) => setPromo(e.target.value)}
-                      placeholder="Enter code"
-                      className="h-10 w-full rounded-full border border-slate-200 bg-white px-4 text-sm text-black outline-none placeholder:text-light-slate focus:border-primary"
-                    />
-                    <Button
-                      variant="secondary"
-                      shape="pill"
-                      className="h-10 px-5"
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="mt-6 border-t border-slate-100 pt-5">
-                  <div className="flex items-end justify-between">
-                    <div className="text-sm font-bold text-black">
-                      Order Total
-                    </div>
-                    <div className="text-2xl font-bold text-black">
-                      {money(
-                        Number(calculatedData?.orderSummary?.orderTotal || 0),
-                      )}
-                    </div>
-                  </div>
-
-                  <Link href={"/public/checkout"}>
-                    <Button className="mt-5 h-14 w-full bg-primary text-white shadow-sm">
-                      Proceed to Checkout
-                      <ArrowRight className="h-5 w-5" />
-                    </Button>
-                  </Link>
-
-                  <div className="mt-4 flex items-center justify-center gap-2 text-xs text-light-slate">
-                    <Lock className="h-4 w-4" />
-                    Secure Checkout
-                  </div>
-
-                  <div className="mt-3 flex items-center justify-center gap-2">
-                    <span className="rounded-md bg-light-slate/10 px-3 py-1 text-[10px] text-light-slate">
-                      VISA
-                    </span>
-                    <span className="rounded-md bg-light-slate/10 px-3 py-1 text-[10px] text-light-slate">
-                      MC
-                    </span>
-                    <span className="rounded-md bg-light-slate/10 px-3 py-1 text-[10px] text-light-slate">
-                      AMEX
-                    </span>
-                    <span className="rounded-md bg-light-slate/10 px-3 py-1 text-[10px] text-light-slate">
-                      PAYPAL
-                    </span>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="border-primary/20 bg-primary/5">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
-                    <Truck className="h-5 w-5 text-primary" />
-                  </div>
-
-                  <div className="min-w-0">
-                    <div className="text-sm font-bold text-black">
-                      Free Shipping on orders over $500
-                    </div>
-                    <div className="mt-1 text-xs text-light-slate">
-                      Add <span className="text-primary">$288.87</span> more to
-                      your cart to qualify.
-                    </div>
-                  </div>
-                </div>
-              </Card>
+            <div className="space-y-6 lg:col-span-4">
+              <CartOrderSummaryCard
+                calculatedData={calculatedData}
+                hasInvalidQuantity={hasInvalidQuantity}
+              />
+              <CartShippingInfoCard />
             </div>
           </div>
         )}

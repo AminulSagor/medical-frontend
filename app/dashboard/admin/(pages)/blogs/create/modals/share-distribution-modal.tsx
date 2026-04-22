@@ -12,7 +12,7 @@ type ShareDistributionModalProps = {
   options?: GetBlogDistributionOptionsResponse | null;
   isLoadingOptions?: boolean;
   onClose: () => void;
-  onProceed: (channel: DistributionChannel) => void;
+  onProceed: (channel: DistributionChannel) => void | Promise<void>;
 };
 
 type DistributionOptionCardProps = {

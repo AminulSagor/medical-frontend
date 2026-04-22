@@ -2,15 +2,10 @@ import React from "react";
 import { CalendarDays, Clock3 } from "lucide-react";
 
 import ScheduledBroadcastSectionShell from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_components/scheduled-broadcast-section-shell";
-import {
-  formatDateOnly,
-  formatFrequencyType,
-  formatTimeOnly,
-} from "@/app/dashboard/admin/(pages)/newsletters/general-newsletter/view-scheduled-broadcast/[broadcastId]/_utils/scheduled-broadcast-view.utils";
-import type { GetGeneralBroadcastResponse } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-get.types";
+import type { BroadcastUIDeliveryLogistics } from "@/types/admin/newsletter/general-newsletter/general-broadcast/general-broadcast-ui-view.types";
 
 type Props = {
-  data: GetGeneralBroadcastResponse;
+  data: BroadcastUIDeliveryLogistics;
 };
 
 function Label({ children }: { children: React.ReactNode }) {
@@ -60,10 +55,10 @@ export default function ScheduledBroadcastDeliveryLogisticsCard({
 
               <div>
                 <p className="text-[15px] font-semibold text-slate-800">
-                  {formatFrequencyType(data.frequencyType)}
+                  {data.selectedCadenceLabel}
                 </p>
                 <p className="text-sm text-slate-500">
-                  {data.cadenceAnchorLabel || "No cadence anchor available"}
+                  {data.selectedCadenceLabel || "No cadence anchor available"}
                 </p>
               </div>
             </div>
@@ -74,7 +69,7 @@ export default function ScheduledBroadcastDeliveryLogisticsCard({
           <Label>Available Cadence Date</Label>
           <ReadonlyField
             icon={<CalendarDays size={16} />}
-            value={formatDateOnly(data.scheduledAt)}
+            value={data.availableCadenceDateDisplay}
           />
         </div>
 
@@ -82,7 +77,7 @@ export default function ScheduledBroadcastDeliveryLogisticsCard({
           <Label>Scheduled Time</Label>
           <ReadonlyField
             icon={<Clock3 size={16} />}
-            value={formatTimeOnly(data.scheduledAt)}
+            value={data.scheduledTimeDisplay}
             muted
           />
           <p className="mt-2 text-[11px] text-slate-400">
