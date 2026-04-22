@@ -388,18 +388,17 @@ export default function EnrolleeListModal({
                                                                 <td className="px-4 py-4">
                                                                     <div className="flex items-center justify-end gap-2">
                                                                         {canProcessRefund ? (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() =>
-                                                                                    onProcessRefund(item.reservationId)
-                                                                                }
-                                                                                className="inline-flex h-11 w-11 items-center justify-center rounded-[18px] bg-[#f7edd2] text-[#d97706] transition hover:bg-[#f3e5bc] hover:text-[#c76a00]"
-                                                                                aria-label="Process refund request"
-                                                                                title="Process refund request"
-                                                                            >
-                                                                                <RefreshCcw size={20} strokeWidth={2.2} />
-                                                                            </button>
-                                                                        ) : null}
+    <button
+        type="button"
+        onClick={() => onProcessRefund(item.reservationId)}
+        className="inline-flex items-center justify-center rounded-md border border-[#f1e2a6] bg-[#f7edd2] p-2 text-[#d97706] transition hover:bg-[#f3e5bc] hover:text-[#c76a00]"
+        aria-label="Process refund request"
+        title="Process refund request"
+    >
+        <RefreshCcw size={14} strokeWidth={2.2} />
+    </button>
+) : null}
+
                                                                         {item.studentInfo.phoneNumber ? (
                                                                             <a
                                                                                 href={`tel:${item.studentInfo.phoneNumber}`}

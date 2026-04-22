@@ -219,9 +219,9 @@ function formatCreditsBadge(value?: number | null) {
   return `${value.toFixed(1)} CME CREDITS`;
 }
 
-function getCourseImage(courseType?: string | null, imageUrl?: string | null) {
-  if (imageUrl && imageUrl.trim()) return imageUrl;
-  return isOnlineCourse(courseType) ? "/photos/strethoscope.png" : "/photos/child.png";
+function getCourseImage(_courseType?: string | null, imageUrl?: string | null) {
+  if (imageUrl && imageUrl.trim()) return imageUrl.trim();
+  return null;
 }
 
 function getSeatsText(numberOfSeats?: number) {

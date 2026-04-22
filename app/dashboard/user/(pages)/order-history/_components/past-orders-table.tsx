@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useEffect, useState } from "react";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -20,7 +20,7 @@ import type {
 import { reorderBackendCart } from "@/service/public/cart-server.service";
 import { useCart } from "@/app/public/context/cart-context";
 
-type OrderStatus = "Ordered" | "Processing" | "Shipped" | "Delivered";
+type OrderStatus = "Ordered" | "Processing" | "Shipped" | "Delivered" | "Cancelled";
 
 type PastOrder = {
   id: string;
@@ -30,7 +30,7 @@ type PastOrder = {
   qtyLabel: string;
   status: OrderStatus;
   total: string;
-  imageUrl: string;
+  imageUrl: string | null;
   itemsBadge?: string;
   viewHref?: string;
   copyValue?: string;
@@ -49,6 +49,7 @@ const STATUS_LABELS: Record<OrderHistoryStatus, string> = {
   processing: "Processing",
   shipped: "Shipped",
   received: "Delivered",
+  cancelled: "Cancelled",
 };
 
 export default function PastOrdersTable(props: {
@@ -70,6 +71,7 @@ export default function PastOrdersTable(props: {
 
   const [showDurationMenu, setShowDurationMenu] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [pageInput, setPageInput] = useState("1");
 
   const items: PastOrder[] = props.items ?? [];
   const currentPage = props.page ?? 1;
@@ -81,6 +83,42 @@ export default function PastOrdersTable(props: {
 
   const showingFrom = items.length === 0 ? 0 : (currentPage - 1) * 10 + 1;
   const showingTo = items.length === 0 ? 0 : showingFrom + items.length - 1;
+  useEffect(() => {
+    setPageInput(String(currentPage));
+  }, [currentPage]);
+
+  useEffect(() => {
+    const trimmedValue = pageInput.trim();
+
+    if (!trimmedValue) return;
+
+    const nextPage = Number.parseInt(trimmedValue, 10);
+    if (Number.isNaN(nextPage)) return;
+
+    const clampedPage = Math.min(Math.max(nextPage, 1), totalPages);
+
+    const timer = window.setTimeout(() => {
+      if (clampedPage !== currentPage) {
+        props.onPageChange?.(clampedPage);
+      }
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [currentPage, pageInput, props, totalPages]);
+
+  const commitPageInput = () => {
+    const trimmedValue = pageInput.trim();
+    const parsedValue = Number.parseInt(trimmedValue || String(currentPage), 10);
+    const nextPage = Number.isNaN(parsedValue) ? currentPage : parsedValue;
+    const clampedPage = Math.min(Math.max(nextPage, 1), totalPages);
+
+    setPageInput(String(clampedPage));
+
+    if (clampedPage !== currentPage) {
+      props.onPageChange?.(clampedPage);
+    }
+  };
+
 
   return (
     <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.06)]">
@@ -224,11 +262,13 @@ export default function PastOrdersTable(props: {
                       ) : null}
 
                       <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200">
-                        <Image
+                        <NetworkImageFallback
                           src={o.imageUrl}
                           alt={o.title}
-                          fill
-                          className="object-cover"
+                          className="h-full w-full object-cover"
+                          fallbackVariant="cover"
+                          fallbackClassName="h-full w-full"
+                          iconClassName="h-6 w-6"
                         />
                       </div>
                     </div>
@@ -356,9 +396,29 @@ export default function PastOrdersTable(props: {
         <div className="flex items-center gap-2 text-[11px] text-slate-500">
           <span>Go to page</span>
           <input
-            value={currentPage}
-            readOnly
-            className="h-8 w-12 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-900 outline-none"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={pageInput}
+            onChange={(event) => {
+              const digitsOnly = event.target.value.replace(/\D/g, "");
+
+              if (!digitsOnly) {
+                setPageInput("");
+                return;
+              }
+
+              const parsedValue = Number.parseInt(digitsOnly, 10);
+              const clampedValue = Math.min(Math.max(parsedValue, 1), totalPages);
+              setPageInput(String(clampedValue));
+            }}
+            onBlur={commitPageInput}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                commitPageInput();
+              }
+            }}
+            className="h-8 w-16 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-900 outline-none focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
           />
         </div>
       </div>
@@ -400,7 +460,9 @@ function StatusPill({ status }: { status: OrderStatus }) {
         ? "bg-sky-50 text-sky-700 ring-sky-200"
         : status === "Shipped"
           ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-          : "bg-slate-50 text-slate-700 ring-slate-200";
+          : status === "Cancelled"
+            ? "bg-rose-50 text-rose-700 ring-rose-200"
+            : "bg-slate-50 text-slate-700 ring-slate-200";
 
   return (
     <span

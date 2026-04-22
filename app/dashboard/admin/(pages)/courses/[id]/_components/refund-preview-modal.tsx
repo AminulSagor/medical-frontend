@@ -26,23 +26,59 @@ type RefundSuccessData = {
     transactionId: string;
 };
 
+const TOTAL_PROCESSING_FEE_CENTS = 5000;
+
+function toCents(amount?: string | number | null) {
+    const parsed = Number(amount ?? 0);
+    if (!Number.isFinite(parsed)) return 0;
+
+    return Math.round(parsed * 100);
+}
+
+function centsToAmount(cents: number) {
+    return (Math.max(cents, 0) / 100).toFixed(2);
+}
+
 function formatCurrency(amount?: string | number | null) {
     return `$${Number(amount ?? 0).toFixed(2)}`;
+}
+
+function formatCurrencyFromCents(cents: number) {
+    return formatCurrency(centsToAmount(cents));
 }
 
 function normalizeStatus(status?: string) {
     return (status ?? "").toLowerCase().replace(/[_-]+/g, " ").trim();
 }
 
+function buildFeeShareByAttendee(members: RefundPreviewMember[]) {
+    const requestedMembers = members.filter((member) => member.isRequested);
+    const memberCount = requestedMembers.length;
+
+    if (memberCount === 0) {
+        return {} as Record<string, number>;
+    }
+
+    const baseShare = Math.floor(TOTAL_PROCESSING_FEE_CENTS / memberCount);
+    const remainder = TOTAL_PROCESSING_FEE_CENTS % memberCount;
+
+    return requestedMembers.reduce<Record<string, number>>((acc, member, index) => {
+        acc[member.attendeeId] = baseShare + (index < remainder ? 1 : 0);
+        return acc;
+    }, {});
+}
+
 function MemberRow({
     member,
     selected,
     disabled,
+    feeCents = 0,
     onClick,
 }: {
     member: RefundPreviewMember;
     selected: boolean;
     disabled?: boolean;
+    feeCents?: number;
     onClick?: () => void;
 }) {
     const normalizedStatus = normalizeStatus(member.status);
@@ -81,9 +117,14 @@ function MemberRow({
                 </div>
             </div>
 
-            <p className="pt-1 text-sm font-semibold text-slate-400">
-                {formatCurrency(member.refundAmount)}
-            </p>
+            <div className="pt-1 text-right">
+                <p className="text-sm font-semibold text-slate-400">
+                    {formatCurrency(member.refundAmount)}
+                </p>
+                <p className="mt-1 text-xs font-semibold text-rose-500">
+                    -{formatCurrencyFromCents(feeCents)} fee
+                </p>
+            </div>
         </button>
     );
 }
@@ -127,22 +168,11 @@ export default function RefundPreviewModal({
                 setAdjustmentNote("");
 
                 const requestedSelectableMembers = (res.data.requestedMembers ?? []).filter(
-                    (member) => member.isSelectable,
+                    (member) => member.isRequested && member.isSelectable,
                 );
-                const selectableMembers = (res.data.members ?? []).filter(
-                    (member) => member.isSelectable,
-                );
-
-                const initialSelectedSource =
-                    requestedSelectableMembers.length > 0
-                        ? requestedSelectableMembers
-                        : selectableMembers.slice(
-                              0,
-                              res.data.summary.selectedCount || selectableMembers.length,
-                          );
 
                 setSelectedAttendeeIds(
-                    initialSelectedSource.map((member) => member.attendeeId),
+                    requestedSelectableMembers.map((member) => member.attendeeId),
                 );
             })
             .catch((err) => {
@@ -155,20 +185,44 @@ export default function RefundPreviewModal({
             });
     }, [open, workshopId, reservationId]);
 
+    const requestedMembers = useMemo(() => {
+        return (response?.data.requestedMembers ?? []).filter(
+            (member) => member.isRequested,
+        );
+    }, [response]);
+
+    const selectableRequestedMembers = useMemo(() => {
+        return requestedMembers.filter((member) => member.isSelectable);
+    }, [requestedMembers]);
+
+    const feeShareByAttendee = useMemo(() => {
+        return buildFeeShareByAttendee(requestedMembers);
+    }, [requestedMembers]);
+
     const selectedMembers = useMemo(() => {
-        return (response?.data.members ?? []).filter((member) =>
+        return selectableRequestedMembers.filter((member) =>
             selectedAttendeeIds.includes(member.attendeeId),
         );
-    }, [response, selectedAttendeeIds]);
+    }, [selectableRequestedMembers, selectedAttendeeIds]);
 
-    const calculatedRefundAmount = useMemo(() => {
+    const selectedRefundCents = useMemo(() => {
         return selectedMembers.reduce((sum, member) => {
-            return sum + Number(member.refundAmount || 0);
+            return sum + toCents(member.refundAmount);
         }, 0);
     }, [selectedMembers]);
 
+    const selectedFeeCents = useMemo(() => {
+        return selectedMembers.reduce((sum, member) => {
+            return sum + (feeShareByAttendee[member.attendeeId] ?? 0);
+        }, 0);
+    }, [feeShareByAttendee, selectedMembers]);
+
+    const calculatedRefundCents = useMemo(() => {
+        return Math.max(selectedRefundCents - selectedFeeCents, 0);
+    }, [selectedFeeCents, selectedRefundCents]);
+
     function toggleMember(member: RefundPreviewMember) {
-        if (!member.isSelectable) return;
+        if (!member.isRequested || !member.isSelectable) return;
 
         setSelectedAttendeeIds((prev) =>
             prev.includes(member.attendeeId)
@@ -187,7 +241,7 @@ export default function RefundPreviewModal({
             const confirmResponse = await confirmWorkshopRefund(workshopId, {
                 reservationId,
                 attendeeIds: selectedAttendeeIds,
-                refundAmount: calculatedRefundAmount.toFixed(2),
+                refundAmount: centsToAmount(calculatedRefundCents),
                 adjustmentNote,
                 paymentGateway,
                 transactionId,
@@ -200,7 +254,7 @@ export default function RefundPreviewModal({
                     "—",
                 refundedAmount:
                     confirmResponse.data?.refundedAmount ||
-                    calculatedRefundAmount.toFixed(2),
+                    centsToAmount(calculatedRefundCents),
                 paymentGateway: confirmResponse.data?.paymentGateway ?? paymentGateway,
                 transactionId: confirmResponse.data?.transactionId ?? transactionId,
             });
@@ -290,7 +344,13 @@ export default function RefundPreviewModal({
 
                                         <div className="text-right">
                                             <p className="text-sm font-semibold text-slate-400">
-                                                {formatCurrency(calculatedRefundAmount)}
+                                                {formatCurrencyFromCents(selectedRefundCents)}{' '}
+                                                <span className="text-rose-500">
+                                                    (-{formatCurrencyFromCents(selectedFeeCents)} fee)
+                                                </span>
+                                            </p>
+                                            <p className="mt-1 text-3xl font-bold leading-none text-slate-900">
+                                                {formatCurrencyFromCents(calculatedRefundCents)}
                                             </p>
                                             <p className="mt-1 text-xs text-slate-500">
                                                 calculated refund
@@ -300,14 +360,14 @@ export default function RefundPreviewModal({
                                 </div>
                             </div>
 
-                            {response.data.requestedMembers.length > 0 ? (
+                            {requestedMembers.length > 0 ? (
                                 <div className="space-y-3">
                                     <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                                         Requested Members To Refund
                                     </p>
 
                                     <div className="overflow-hidden rounded-2xl border border-[#23c8c8] bg-white">
-                                        {response.data.requestedMembers.map((member) => (
+                                        {requestedMembers.map((member) => (
                                             <div
                                                 key={member.attendeeId}
                                                 className="flex items-start justify-between gap-3 border-t border-slate-100 px-4 py-4 first:border-t-0"
@@ -319,16 +379,19 @@ export default function RefundPreviewModal({
                                                     <p className="text-xs text-slate-500">{member.email}</p>
                                                 </div>
 
-                                                <p className="pt-1 text-sm font-semibold text-slate-400">
-                                                    {formatCurrency(member.refundAmount)}
-                                                </p>
+                                                <div className="pt-1 text-right">
+                                                    <p className="text-sm font-semibold text-slate-400">
+                                                        {formatCurrency(member.refundAmount)}
+                                                    </p>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
 
                                     <div className="rounded-xl border-l-2 border-slate-300 bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-500">
-                                        Select the individual members for whom the client has requested a
-                                        refund. These records will be updated upon confirmation.
+                                        Select only the members who requested a refund. A total $50 fee is
+                                        split evenly across all requested members and deducted from the
+                                        calculated refund amount.
                                     </div>
                                 </div>
                             ) : null}
@@ -339,20 +402,27 @@ export default function RefundPreviewModal({
                                 </p>
 
                                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                                    {response.data.members.map((member) => {
-                                        const checked = selectedAttendeeIds.includes(member.attendeeId);
-                                        const disabled = !member.isSelectable;
+                                    {selectableRequestedMembers.length > 0 ? (
+                                        selectableRequestedMembers.map((member) => {
+                                            const checked = selectedAttendeeIds.includes(member.attendeeId);
+                                            const disabled = !member.isSelectable;
 
-                                        return (
-                                            <MemberRow
-                                                key={member.attendeeId}
-                                                member={member}
-                                                selected={checked}
-                                                disabled={disabled}
-                                                onClick={() => toggleMember(member)}
-                                            />
-                                        );
-                                    })}
+                                            return (
+                                                <MemberRow
+                                                    key={member.attendeeId}
+                                                    member={member}
+                                                    selected={checked}
+                                                    disabled={disabled}
+                                                    feeCents={feeShareByAttendee[member.attendeeId] ?? 0}
+                                                    onClick={() => toggleMember(member)}
+                                                />
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="px-4 py-5 text-sm text-slate-500">
+                                            No requested members are available to refund.
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex items-start gap-2 rounded-xl bg-slate-50 px-4 py-3 text-xs text-slate-500">
@@ -383,13 +453,13 @@ export default function RefundPreviewModal({
                                     <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                                         Calculated Refund Amount
                                     </label>
-                                    <input
-                                        value={formatCurrency(calculatedRefundAmount)}
-                                        readOnly
-                                        className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-900 outline-none"
-                                    />
+                                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                                        <p className="mt-1 text-base font-bold text-slate-900">
+                                            {formatCurrencyFromCents(calculatedRefundCents)}
+                                        </p>
+                                    </div>
                                     <p className="mt-1 text-[10px] text-slate-400">
-                                        Matches the selected attendees above
+                                        Fee is distributed equally across all requested members
                                     </p>
                                 </div>
                             </div>

@@ -34,7 +34,7 @@ function getTrendDirection(trend: string): "up" | "down" | "flat" {
 
 function mapStatus(
   status: string,
-): "Ordered" | "Processing" | "Shipped" | "Delivered" {
+): "Ordered" | "Processing" | "Shipped" | "Delivered" | "Cancelled" {
   const normalized = status.toLowerCase();
 
   if (normalized === "unfulfilled" || normalized === "ordered") {
@@ -53,6 +53,10 @@ function mapStatus(
     return "Delivered";
   }
 
+  if (normalized === "cancelled" || normalized === "canceled") {
+    return "Cancelled";
+  }
+
   return "Processing";
 }
 
@@ -68,9 +72,15 @@ function buildOrderTitle(order: UserOrderHistoryItem) {
 }
 
 function buildItemsBadge(order: UserOrderHistoryItem) {
-  const badgeText = order.leadItem.badgeText?.trim();
-
-  if (badgeText) return badgeText;
+  const extraItemsText = order.leadItem.extraItemsText?.trim();
+  
+  if (extraItemsText) {
+    const match = extraItemsText.match(/\d+/);
+    if (match && match[0]) {
+      const count = parseInt(match[0], 10);
+      if (count > 0) return `+${count} item${count > 1 ? "s" : ""}`;
+    }
+  }
 
   const extraCount = Math.max(order.totalItemsCount - 1, 0);
 
@@ -198,7 +208,7 @@ export default function OrderHistoryPage() {
           }`,
         status: mapStatus(order.status),
         total: money(order.totalAmount),
-        imageUrl: order.leadItem.imageUrl || "/photos/Image.png",
+        imageUrl: order.leadItem.imageUrl ?? null,
         itemsBadge: buildItemsBadge(order),
         viewHref: `/dashboard/user/order-details?id=${order.id}`,
         copyValue: order.orderNumber,

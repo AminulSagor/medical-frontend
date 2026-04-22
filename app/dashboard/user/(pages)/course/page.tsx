@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { AlertCircle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import CourseStatsCards from "./_components/course-stats-cards";
 import CourseCardsSection from "./_components/course-cards-section";
@@ -154,10 +155,48 @@ function PaginationRow({
   totalPages: number;
   onPageChange: (page: number) => void;
 }) {
-  if (total <= 0) return null;
-
   const safePage = Math.max(page, 1);
   const safeTotalPages = Math.max(totalPages, 1);
+  const [pageInput, setPageInput] = useState(String(safePage));
+
+  useEffect(() => {
+    setPageInput(String(safePage));
+  }, [safePage]);
+
+  useEffect(() => {
+    const trimmedValue = pageInput.trim();
+
+    if (!trimmedValue || total <= 0) return;
+
+    const nextPage = Number.parseInt(trimmedValue, 10);
+    if (Number.isNaN(nextPage)) return;
+
+    const clampedPage = Math.min(Math.max(nextPage, 1), safeTotalPages);
+
+    const timer = window.setTimeout(() => {
+      if (clampedPage !== safePage) {
+        onPageChange(clampedPage);
+      }
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [onPageChange, pageInput, safePage, safeTotalPages, total]);
+
+  const commitPageInput = () => {
+    const trimmedValue = pageInput.trim();
+    const parsedValue = Number.parseInt(trimmedValue || String(safePage), 10);
+    const nextPage = Number.isNaN(parsedValue) ? safePage : parsedValue;
+    const clampedPage = Math.min(Math.max(nextPage, 1), safeTotalPages);
+
+    setPageInput(String(clampedPage));
+
+    if (clampedPage !== safePage) {
+      onPageChange(clampedPage);
+    }
+  };
+
+  if (total <= 0) return null;
+
   const showingFrom = total === 0 ? 0 : (safePage - 1) * limit + 1;
   const showingTo = Math.min(safePage * limit, total);
 
@@ -208,9 +247,29 @@ function PaginationRow({
       <div className="flex items-center gap-2 text-[11px] text-slate-500">
         <span>Go to page</span>
         <input
-          value={safePage}
-          readOnly
-          className="h-8 w-12 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-900 outline-none"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={pageInput}
+          onChange={(event) => {
+            const digitsOnly = event.target.value.replace(/\D/g, "");
+
+            if (!digitsOnly) {
+              setPageInput("");
+              return;
+            }
+
+            const parsedValue = Number.parseInt(digitsOnly, 10);
+            const clampedValue = Math.min(Math.max(parsedValue, 1), safeTotalPages);
+            setPageInput(String(clampedValue));
+          }}
+          onBlur={commitPageInput}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              commitPageInput();
+            }
+          }}
+          className="h-8 w-16 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-900 outline-none focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
         />
       </div>
     </div>
