@@ -28,13 +28,13 @@ export interface PublicWorkshopsQueryParams {
 type PublicWorkshopsApiResponse =
   | PublicWorkshopsResponse
   | {
-      workshops?: PublicWorkshop[];
-      total?: number;
-      page?: number;
-      limit?: number;
-      totalPages?: number;
-      message?: string;
-    };
+    workshops?: PublicWorkshop[];
+    total?: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+    message?: string;
+  };
 
 function normalizePublicWorkshopsResponse(
   response: PublicWorkshopsApiResponse,
@@ -55,7 +55,8 @@ function normalizePublicWorkshopsResponse(
   const page = normalized.page ?? 1;
   const limit = normalized.limit ?? normalized.workshops?.length ?? 0;
   const total = normalized.total ?? normalized.workshops?.length ?? 0;
-  const totalPages = normalized.totalPages ?? (limit > 0 ? Math.max(1, Math.ceil(total / limit)) : 1);
+  const totalPages =
+    normalized.totalPages ?? (limit > 0 ? Math.max(1, Math.ceil(total / limit)) : 1);
 
   return {
     message: normalized.message ?? "Public workshops fetched successfully",
@@ -72,11 +73,12 @@ function normalizePublicWorkshopsResponse(
 function buildPublicWorkshopParams(params?: PublicWorkshopsQueryParams) {
   if (!params) return undefined;
 
-  const { q, search, ...rest } = params;
+  const { q, search, topic, ...rest } = params;
+  const resolvedQuery = q ?? search ?? topic;
 
   return {
     ...rest,
-    search: search ?? q,
+    q: resolvedQuery,
   };
 }
 

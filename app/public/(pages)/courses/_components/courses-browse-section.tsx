@@ -54,11 +54,19 @@ function isRegistrationDeadlineExpired(deadline?: string | null) {
   return parsed.getTime() <= Date.now();
 }
 
-
 function getDeliveryModeFromFilters(delivery: CourseFiltersState["delivery"]) {
   if (delivery.in_person && !delivery.online) return "in_person" as const;
   if (delivery.online && !delivery.in_person) return "online" as const;
   return undefined;
+}
+
+function getResolvedQuery(searchParams: ReturnType<typeof useSearchParams>) {
+  return (
+    searchParams.get("q") ??
+    searchParams.get("search") ??
+    searchParams.get("topic") ??
+    ""
+  );
 }
 
 function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
@@ -123,7 +131,9 @@ function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
   };
 
   const currentPrice = Number(workshop.offerPrice ?? workshop.price) || 0;
-  const oldPrice = workshop.offerPrice ? Number(workshop.price) || undefined : undefined;
+  const oldPrice = workshop.offerPrice
+    ? Number(workshop.price) || undefined
+    : undefined;
 
   return {
     id: workshop.id,
@@ -166,7 +176,7 @@ export default function CoursesBrowseSection() {
     "recommended",
   );
 
-  const query = searchParams.get("q") ?? "";
+  const query = getResolvedQuery(searchParams);
   const deliveryMode = searchParams.get("deliveryMode");
   const dateFrom = searchParams.get("dateFrom") ?? "";
   const dateTo = searchParams.get("dateTo") ?? "";
@@ -187,19 +197,18 @@ export default function CoursesBrowseSection() {
         setLoading(true);
         setError(null);
 
-        // Build delivery mode filter
         const bothDelivery = filters.delivery.in_person && filters.delivery.online;
-        const deliveryMode = bothDelivery
+        const resolvedDeliveryMode = bothDelivery
           ? undefined
           : filters.delivery.in_person
-            ? "in_person" as const
+            ? "in_person"
             : filters.delivery.online
-              ? "online" as const
+              ? "online"
               : undefined;
 
-        // Map CreditsRange to min/max CME credits params
         let minCmeCredits: number | undefined;
         let maxCmeCredits: number | undefined;
+
         if (filters.credits === "1_4") {
           minCmeCredits = 1;
           maxCmeCredits = 4;
@@ -212,10 +221,7 @@ export default function CoursesBrowseSection() {
 
         const response = await getPublicWorkshops({
           q: query || undefined,
-          deliveryMode:
-            deliveryMode === "in_person" || deliveryMode === "online"
-              ? deliveryMode
-              : undefined,
+          deliveryMode: resolvedDeliveryMode,
           hasAvailableSeats: filters.availableOnly || undefined,
           minCmeCredits,
           maxCmeCredits,
@@ -225,7 +231,12 @@ export default function CoursesBrowseSection() {
           limit: 6,
           sortBy:
             sort === "price_low" || sort === "price_high" ? "price" : undefined,
-          sortOrder: sort === "price_high" ? "desc" : sort === "price_low" ? "asc" : undefined,
+          sortOrder:
+            sort === "price_high"
+              ? "desc"
+              : sort === "price_low"
+                ? "asc"
+                : undefined,
         });
 
         if (append) {
@@ -233,6 +244,7 @@ export default function CoursesBrowseSection() {
         } else {
           setWorkshops(response.data);
         }
+
         setHasMore(pageNum < response.meta.totalPages);
       } catch (err) {
         console.error("Failed to fetch workshops:", err);
@@ -241,7 +253,16 @@ export default function CoursesBrowseSection() {
         setLoading(false);
       }
     },
-    [dateFrom, dateTo, deliveryMode, filters.availableOnly, filters.credits, query, sort],
+    [
+      dateFrom,
+      dateTo,
+      filters.availableOnly,
+      filters.credits,
+      filters.delivery.in_person,
+      filters.delivery.online,
+      query,
+      sort,
+    ],
   );
 
   useEffect(() => {
@@ -290,7 +311,7 @@ export default function CoursesBrowseSection() {
     <section className="w-full">
       <div className="padding">
         <div className="w-full">
-          <div className="mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="mx-auto flex items-center justify-between px-6 py-4">
             <p className="text-sm font-extrabold text-light-slate">
               {filtered.length} courses found
             </p>
@@ -349,22 +370,22 @@ export default function CoursesBrowseSection() {
                 </div>
               ) : error ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <p className="text-red-500 font-semibold">{error}</p>
+                  <p className="font-semibold text-red-500">{error}</p>
                   <button
                     onClick={() => fetchWorkshops(1, false)}
-                    className="mt-4 px-6 py-2 bg-primary text-white rounded-full font-semibold hover:opacity-90 transition"
+                    className="mt-4 rounded-full bg-primary px-6 py-2 font-semibold text-white transition hover:opacity-90"
                   >
                     Try Again
                   </button>
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <p className="text-light-slate font-semibold">
+                  <p className="font-semibold text-light-slate">
                     No courses found matching your filters.
                   </p>
                   <button
                     onClick={reset}
-                    className="mt-4 px-6 py-2 bg-primary text-white rounded-full font-semibold hover:opacity-90 transition"
+                    className="mt-4 rounded-full bg-primary px-6 py-2 font-semibold text-white transition hover:opacity-90"
                   >
                     Clear Filters
                   </button>
@@ -383,7 +404,7 @@ export default function CoursesBrowseSection() {
                         type="button"
                         onClick={loadMore}
                         disabled={loading}
-                        className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-4 text-sm font-extrabold text-light-slate border border-light-slate/15 shadow-sm hover:bg-light-slate/10 active:scale-95 transition disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-full border border-light-slate/15 bg-white px-6 py-4 text-sm font-extrabold text-light-slate shadow-sm transition hover:bg-light-slate/10 active:scale-95 disabled:opacity-50"
                       >
                         {loading ? (
                           <>
