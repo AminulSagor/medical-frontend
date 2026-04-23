@@ -86,3 +86,28 @@ export const verifyWorkshopPayment = async (
 
   return response.data.data;
 };
+
+
+async function downloadBlob(blob: Blob, filename: string) {
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+export const downloadWorkshopInvoicePdf = async (
+  orderSummaryId: string,
+  filename = `invoice-${orderSummaryId}.pdf`,
+): Promise<void> => {
+  const response = await serviceClient.get<Blob>(
+    `/payments/invoices/workshop/${orderSummaryId}/download`,
+    { responseType: "blob" },
+  );
+
+  const blob = new Blob([response.data], { type: "application/pdf" });
+  await downloadBlob(blob, filename);
+};

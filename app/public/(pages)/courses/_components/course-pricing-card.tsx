@@ -16,7 +16,10 @@ export default function CoursePricingCard({ data }: { data: CourseDetails }) {
   const router = useRouter();
   const p = data.pricing;
 
+  const isEnrollmentDisabled = !!p.ctaDisabled;
+
   const handleEnrollment = () => {
+    if (isEnrollmentDisabled) return;
     const checkoutRoute = `/public/workshop-checkout?workshopId=${data.id}`;
 
     if (typeof window !== "undefined") {
@@ -109,7 +112,16 @@ export default function CoursePricingCard({ data }: { data: CourseDetails }) {
         </Card>
 
         <div className="mt-7">
-          <Button className="w-full h-12" onClick={handleEnrollment}>
+          <Button
+            className={[
+              "w-full h-12",
+              isEnrollmentDisabled
+                ? "!bg-light-slate !text-white hover:!opacity-100 disabled:!opacity-100"
+                : "",
+            ].join(" ")}
+            onClick={handleEnrollment}
+            disabled={isEnrollmentDisabled}
+          >
             {p.ctaLabel}
           </Button>
 

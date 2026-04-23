@@ -15,7 +15,10 @@ import {
 import Card from "@/components/cards/card";
 import Button from "@/components/buttons/button";
 import Link from "next/link";
-import { verifyWorkshopPayment } from "@/service/user/workshop-payment.service";
+import {
+  downloadWorkshopInvoicePdf,
+  verifyWorkshopPayment,
+} from "@/service/user/workshop-payment.service";
 import {
   createWorkshopReservation,
   type WorkshopReservationData,
@@ -259,10 +262,6 @@ function WorkshopCheckoutSuccessContent() {
   const latestReservationBatch = getLatestCreatedAttendeeBatch(
     reservationData?.attendees,
   );
-  const currentCheckoutAttendees =
-    latestReservationBatch.attendees.length > 0
-      ? latestReservationBatch.attendees
-      : reservationData?.attendees || [];
   const numberOfAttendees =
     latestReservationBatch.attendees.length ||
     checkoutContext?.numberOfAttendees ||
@@ -283,54 +282,19 @@ function WorkshopCheckoutSuccessContent() {
     checkoutContext?.totalPrice ||
     reservationData?.totalPrice ||
     "0.00";
-  const pricePerSeat =
-    reservationData?.pricePerSeat ||
-    (numberOfAttendees > 0
-      ? (Number.parseFloat(totalPrice || "0") / numberOfAttendees).toFixed(2)
-      : "");
 
-  const handleDownloadReceipt = () => {
-    const primaryAttendee = currentCheckoutAttendees[0];
+  const handleDownloadReceipt = async () => {
+    const orderSummaryId = checkoutContext?.orderSummaryId;
+    if (!orderSummaryId) return;
 
-    const params = new URLSearchParams({
-      workshopTitle,
-      attendees: String(numberOfAttendees),
-      totalPrice: String(totalPrice),
-      reservationId: reservationId || reservationData?.reservationId || "",
-      sessionId: sessionId || "",
-      pricePerSeat: pricePerSeat || "",
-      reservationCreatedAt:
-        latestReservationBatch.createdAt ||
-        reservationData?.updatedAt ||
-        reservationData?.createdAt ||
-        "",
-      workshopStartDate: checkoutContext?.workshopStartDate || "",
-      workshopEndDate: checkoutContext?.workshopEndDate || "",
-      workshopLocation: checkoutContext?.workshopLocation || "",
-      primaryName:
-        primaryAttendee?.fullName ||
-        checkoutContext?.primaryAttendee?.fullName ||
-        reservationData?.attendees?.[0]?.fullName ||
-        "",
-      primaryRole:
-        primaryAttendee?.professionalRole ||
-        checkoutContext?.primaryAttendee?.role ||
-        reservationData?.attendees?.[0]?.professionalRole ||
-        "",
-      primaryEmail:
-        primaryAttendee?.email ||
-        checkoutContext?.primaryAttendee?.email ||
-        reservationData?.attendees?.[0]?.email ||
-        "",
-      attendeesJson: encodeURIComponent(JSON.stringify(reservationData?.attendees || [])),
-    });
-
-    const anchor = document.createElement("a");
-    anchor.href = `/public/workshop-checkout-success/receipt?${params.toString()}`;
-    anchor.download = `invoice-${reservationId || reservationData?.reservationId || sessionId || "workshop"}.pdf`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
+    try {
+      await downloadWorkshopInvoicePdf(
+        orderSummaryId,
+        `invoice-${reservationId || reservationData?.reservationId || orderSummaryId}.pdf`,
+      );
+    } catch (error) {
+      console.error("Failed to download workshop invoice", error);
+    }
   };
 
   // ─── VERIFYING STATE ──────────────────────────────────────

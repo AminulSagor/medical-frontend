@@ -6,7 +6,10 @@ import OrderDetailsHeader from "./_components/order-details-header";
 import ShipmentItemsCard from "./_components/shipment-items-card";
 import OrderSummaryCard from "./_components/order-summary-card";
 import NeedHelpCard from "./_components/need-help-card";
-import { getUserOrderDetails } from "@/service/user/order-details.service";
+import {
+  downloadUserOrderInvoicePdf,
+  getUserOrderDetails,
+} from "@/service/user/order-details.service";
 import { reorderBackendCart } from "@/service/public/cart-server.service";
 import { useCart } from "@/app/public/context/cart-context";
 import type { UserOrderDetailsData } from "@/types/user/order/order-details.types";
@@ -105,16 +108,17 @@ function OrderDetailsPageContent() {
     }));
   }, [orderDetails]);
 
-  const handleDownloadInvoice = () => {
+  const handleDownloadInvoice = async () => {
     if (!orderDetails?.id) return;
 
-    const invoiceUrl = `/dashboard/user/order-invoice/${orderDetails.id}/invoice`;
-    const anchor = document.createElement("a");
-    anchor.href = invoiceUrl;
-    anchor.download = `invoice-${orderDetails.orderNumber || orderDetails.id}.pdf`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
+    try {
+      await downloadUserOrderInvoicePdf(
+        orderDetails.id,
+        `invoice-${orderDetails.orderNumber || orderDetails.id}.pdf`,
+      );
+    } catch (error) {
+      console.error("Failed to download order invoice", error);
+    }
   };
 
   const handleReorder = async () => {
