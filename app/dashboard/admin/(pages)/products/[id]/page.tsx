@@ -58,6 +58,18 @@ function mapBenefitTone(index: number): "teal" | "blue" | "purple" | "orange" {
     return tones[index % tones.length];
 }
 
+function formatDepartment(value: string | string[] | null | undefined) {
+    if (Array.isArray(value)) {
+        return value.join(", ") || "—";
+    }
+
+    if (typeof value === "string") {
+        return value || "—";
+    }
+
+    return "—";
+}
+
 function mapApiToViewModel(api: AdminProductViewResponse): ProductDetails {
     return {
         id: api.product.id,
@@ -87,7 +99,7 @@ function mapApiToViewModel(api: AdminProductViewResponse): ProductDetails {
             availabilityLabel: "AVAILABILITY",
             availabilityValue: mapAvailability(api.product.organization.availability),
             deptLabel: "DEPT.",
-            deptValue: api.product.organization.department.join(", ") || "—",
+            deptValue: formatDepartment(api.product.organization.department),
         },
 
         benefits: api.product.clinicalBenefits.map((benefit, index) => ({

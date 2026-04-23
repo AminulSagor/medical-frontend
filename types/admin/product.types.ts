@@ -159,6 +159,7 @@ export interface AdminProductListItem {
   createdAt: string;
   updatedAt?: string;
   images?: string[];
+  photo?: string | null;
 }
 
 export interface AdminProductsListMeta {
