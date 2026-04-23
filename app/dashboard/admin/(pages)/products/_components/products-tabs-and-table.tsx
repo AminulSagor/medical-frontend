@@ -53,8 +53,8 @@ function transformProductToRow(product: AdminProductListItem): ProductRow {
         updatedLabel: formatDateLabel(product.updatedAt || product.createdAt),
         status: product.isActive ? "active" : "draft",
         stockTone,
-        imageUrl: product.images?.[0],
-    };
+        imageUrl: product.photo ?? undefined,
+        };
 }
 
 export const PRODUCTS_SEED: ProductRow[] = [];

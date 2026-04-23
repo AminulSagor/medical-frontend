@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { Zap, Pencil, Trash2 } from "lucide-react";
 import QuickUpdatePopover from "./quick-update-popover";
 import { useRouter } from "next/navigation";
 import { updateProduct } from "@/service/admin/product.service";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 
 export type ProductStatus = "active" | "draft";
 export type StockTone = "good" | "warn" | "bad" | "draft";
@@ -113,12 +113,10 @@ export default function ProductsTable({
     const displayRows = useMemo(() => localRows, [localRows]);
 
     const showingLabel = useMemo(() => {
-        // ✅ No data case (correct UX)
         if (!displayRows.length) {
             return "No products found";
         }
 
-        // ✅ Normal case
         const start = (page - 1) * pageSize + 1;
         const end = start + displayRows.length - 1;
 
@@ -238,18 +236,15 @@ export default function ProductsTable({
                                         className="flex w-full items-start gap-3 rounded-lg p-1 text-left transition hover:bg-slate-50"
                                     >
                                         <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-slate-50 ring-1 ring-slate-100">
-                                            {r.imageUrl ? (
-                                                <Image
-                                                    src={r.imageUrl}
-                                                    alt={r.name}
-                                                    fill
-                                                    className="object-cover"
-                                                />
-                                            ) : (
-                                                <div className="grid h-full w-full place-items-center text-xs font-semibold text-slate-400">
-                                                    IMG
-                                                </div>
-                                            )}
+                                            <NetworkImageFallback
+                                                src={r.imageUrl}
+                                                alt={r.name}
+                                                className="h-full w-full object-cover"
+                                                fallbackClassName="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400"
+                                                iconClassName="h-4 w-4"
+                                                fallbackVariant="generic"
+                                                showFallbackIcon
+                                            />
                                         </div>
 
                                         <div className="min-w-0">
