@@ -42,6 +42,15 @@ function getQueryFromType(value: CourseTypeOption): string {
   return "";
 }
 
+function getResolvedTopic(searchParams: ReturnType<typeof useSearchParams>) {
+  return (
+    searchParams.get("q") ??
+    searchParams.get("search") ??
+    searchParams.get("topic") ??
+    ""
+  );
+}
+
 export default function CoursesHeroSearchSection({
   badge = "CLINICAL EDUCATION",
   title = "Master Critical Procedures",
@@ -54,7 +63,7 @@ export default function CoursesHeroSearchSection({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [topic, setTopic] = useState(searchParams.get("q") ?? "");
+  const [topic, setTopic] = useState(getResolvedTopic(searchParams));
   const [type, setType] = useState<CourseTypeOption>(
     getTypeFromQuery(searchParams.get("deliveryMode")),
   );
@@ -63,7 +72,7 @@ export default function CoursesHeroSearchSection({
   const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
 
   useEffect(() => {
-    setTopic(searchParams.get("q") ?? "");
+    setTopic(getResolvedTopic(searchParams));
     setType(getTypeFromQuery(searchParams.get("deliveryMode")));
     setDateFrom(searchParams.get("dateFrom") ?? "");
     setDateTo(searchParams.get("dateTo") ?? "");
@@ -86,6 +95,9 @@ export default function CoursesHeroSearchSection({
 
     if (topic.trim()) params.set("q", topic.trim());
     else params.delete("q");
+
+    params.delete("search");
+    params.delete("topic");
 
     const deliveryMode = getQueryFromType(type);
     if (deliveryMode) params.set("deliveryMode", deliveryMode);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Card from "@/components/cards/card";
 import {
   Plus,
@@ -121,6 +121,7 @@ function RangeTrack({
   onChange: (min: number, max: number) => void;
 }) {
   const [dragging, setDragging] = useState<"min" | "max" | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
 
   const safeMinValue = Math.max(min, Math.min(minValue, maxValue));
   const safeMaxValue = Math.min(max, Math.max(maxValue, safeMinValue));
@@ -131,7 +132,7 @@ function RangeTrack({
 
   const updateFromClientX = useCallback(
     (clientX: number, handle: "min" | "max") => {
-      const track = document.getElementById("price-range-track");
+      const track = trackRef.current;
       if (!track) return;
 
       const rect = track.getBoundingClientRect();
@@ -155,22 +156,33 @@ function RangeTrack({
       updateFromClientX(event.clientX, dragging);
     };
 
-    const handleMouseUp = () => {
+    const handleTouchMove = (event: TouchEvent) => {
+      if (!event.touches.length) return;
+      updateFromClientX(event.touches[0].clientX, dragging);
+    };
+
+    const stopDragging = () => {
       setDragging(null);
     };
 
     window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("mouseup", stopDragging);
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", stopDragging);
+    window.addEventListener("touchcancel", stopDragging);
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("mouseup", stopDragging);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", stopDragging);
+      window.removeEventListener("touchcancel", stopDragging);
     };
   }, [dragging, updateFromClientX]);
 
   return (
     <div className="mt-5">
-      <div id="price-range-track" className="relative h-6 w-full">
+      <div ref={trackRef} className="relative h-6 w-full touch-none">
         <div className="absolute top-1/2 h-2 w-full -translate-y-1/2 rounded-full bg-slate-100" />
 
         <div
@@ -187,7 +199,11 @@ function RangeTrack({
             e.preventDefault();
             setDragging("min");
           }}
-          className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white ring-2 ring-slate-200 cursor-pointer"
+          onTouchStart={(e) => {
+            e.preventDefault();
+            setDragging("min");
+          }}
+          className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white ring-2 ring-slate-200 cursor-pointer touch-none"
           style={{ left: `calc(${leftPercent}% - 8px)` }}
           aria-label="Minimum price"
         />
@@ -198,7 +214,11 @@ function RangeTrack({
             e.preventDefault();
             setDragging("max");
           }}
-          className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white ring-2 ring-slate-200 cursor-pointer"
+          onTouchStart={(e) => {
+            e.preventDefault();
+            setDragging("max");
+          }}
+          className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white ring-2 ring-slate-200 cursor-pointer touch-none"
           style={{ left: `calc(${rightPercent}% - 8px)` }}
           aria-label="Maximum price"
         />
@@ -236,37 +256,6 @@ function RangeTrack({
         />
       </div>
     </div>
-  );
-}
-
-function BrandRow({
-  checked,
-  label,
-  onClick,
-}: {
-  checked?: boolean;
-  label: string;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full flex items-center gap-2 md:gap-3 rounded-lg md:rounded-2xl border border-slate-200 bg-white px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
-    >
-      <span
-        className={[
-          "flex h-4 md:h-5 w-4 md:w-5 items-center justify-center rounded-full border flex-shrink-0",
-          checked ? "bg-primary border-primary" : "bg-white border-slate-300",
-        ].join(" ")}
-      >
-        {checked ? (
-          <span className="h-1.5 md:h-2 w-1.5 md:w-2 rounded-full bg-white" />
-        ) : null}
-      </span>
-
-      <span className="truncate">{label}</span>
-    </button>
   );
 }
 
@@ -309,20 +298,8 @@ export default function FiltersSidebar({
     });
   };
 
-  const handleBrandClick = (brand: string) => {
-    const newBrands = filters.brands.includes(brand)
-      ? filters.brands.filter((b) => b !== brand)
-      : [...filters.brands, brand];
-
-    onFiltersChange({ ...filters, brands: newBrands });
-  };
-
   const handleClearCategories = () => {
     onFiltersChange({ ...filters, categoryId: "All" });
-  };
-
-  const handleClearBrands = () => {
-    onFiltersChange({ ...filters, brands: [] });
   };
 
   if (loading) {
@@ -338,7 +315,6 @@ export default function FiltersSidebar({
   }
 
   const categories = filtersData?.categories || [];
-  const brands = filtersData?.brands || [];
   const priceRange = filtersData?.priceRange || { min: 0, max: 500 };
 
   return (
@@ -389,33 +365,6 @@ export default function FiltersSidebar({
             onFiltersChange({ ...filters, minPrice: min, maxPrice: max })
           }
         />
-      </Card>
-
-      <Card className="p-4 md:p-6 rounded-2xl md:rounded-3xl">
-        <SectionHeader
-          title="Brands"
-          right={
-            filters.brands.length > 0 ? (
-              <button
-                type="button"
-                onClick={handleClearBrands}
-                className="text-xs md:text-sm font-semibold text-slate-400 hover:opacity-80"
-              >
-                Clear
-              </button>
-            ) : null
-          }
-        />
-        <div className="mt-3 md:mt-4 space-y-1 max-h-48 md:max-h-none overflow-y-auto">
-          {brands.map((b) => (
-            <BrandRow
-              key={b}
-              checked={filters.brands.includes(b)}
-              label={b}
-              onClick={() => handleBrandClick(b)}
-            />
-          ))}
-        </div>
       </Card>
     </SidebarShell>
   );
