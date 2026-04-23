@@ -86,7 +86,7 @@ function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
     totalCapacity > 0
       ? ((totalCapacity - availableSeats) / totalCapacity) * 100
       : 0;
-  const isAvailable = !isSoldOut;
+  const isAvailable = !isSoldOut && !isRegistrationClosed;
 
   const action: CourseCardModel["action"] = isRegistrationClosed
     ? { kind: "disabled", label: "Expired" }

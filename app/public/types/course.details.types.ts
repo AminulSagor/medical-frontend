@@ -26,6 +26,8 @@ export type CoursePricing = {
   features: CoursePricingFeature[];
   groupSave: CourseGroupSave;
   ctaLabel: string;
+  ctaDisabled?: boolean;
+  ctaTone?: "primary" | "muted";
   warningLabel: string;
   warningTone?: "danger" | "default";
   footnote: string;

@@ -24,23 +24,22 @@ export default function CourseBrowseCard({
   const isOnDemand = !!course.imageSrc;
   const isRegistrationClosed = !!course.isRegistrationClosed;
   const isSoldOut = !!course.isSoldOut;
-  const isDisabled = isRegistrationClosed || isSoldOut;
+  const isCardMuted = isRegistrationClosed || isSoldOut;
   const router = useRouter();
 
   return (
     <div
       onClick={() => {
-        if (isDisabled) return;
         router.push(`/public/courses/details/${course.id}`);
       }}
-      aria-disabled={isDisabled}
+      aria-disabled={false}
       className={[
         "h-full min-h-[450px] rounded-3xl bg-white border border-light-slate/15 shadow-sm overflow-hidden",
         "flex flex-col transition",
-        isDisabled
-          ? "cursor-not-allowed bg-slate-50 grayscale-[0.55] opacity-70"
+        isCardMuted
+          ? "cursor-pointer bg-slate-50 grayscale-[0.55] opacity-70"
           : "cursor-pointer hover:shadow-md",
-        course.action.kind === "reserve" && !isDisabled
+        course.action.kind === "reserve" && !isCardMuted
           ? "ring-2 ring-primary/30"
           : "",
       ].join(" ")}
@@ -173,14 +172,15 @@ export default function CourseBrowseCard({
 
           <button
             type="button"
-            disabled={isDisabled}
             className={[
               "h-11 shrink-0 rounded-full px-5 text-sm font-extrabold transition active:scale-95 disabled:pointer-events-none disabled:opacity-70",
-              course.action.kind === "reserve"
-                ? "border border-primary/30 bg-white text-primary hover:bg-primary/10"
-                : course.action.kind === "start"
-                  ? "bg-primary text-white hover:opacity-90"
-                  : "border border-red/20 bg-red/5 text-red",
+              isCardMuted
+                ? "pointer-events-none border border-light-slate/20 bg-light-slate/10 text-light-slate"
+                : course.action.kind === "reserve"
+                  ? "border border-primary/30 bg-white text-primary hover:bg-primary/10"
+                  : course.action.kind === "start"
+                    ? "bg-primary text-white hover:opacity-90"
+                    : "border border-red/20 bg-red/5 text-red",
             ].join(" ")}
           >
             {course.action.label}

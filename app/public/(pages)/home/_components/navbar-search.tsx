@@ -14,7 +14,7 @@ import NetworkImageFallback from "@/utils/network-image-fallback";
 function getSearchItemHref(type: NavbarSearchIdentityType, id: string) {
   if (type === "BLOG") return `/public/blogs/${id}`;
   if (type === "PRODUCT") return `/public/store/product-details/${id}`;
-  return `/public/courses/${id}`;
+  return `/public/courses/details/${id}`;
 }
 
 function getSearchItemIcon(type: NavbarSearchIdentityType) {

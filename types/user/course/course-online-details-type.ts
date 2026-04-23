@@ -78,6 +78,7 @@ export type OnlineScheduleItem = {
 };
 
 export type OnlineScheduleProps = {
+  courseId: string;
   heading: string;
   days: Array<{
     key: OnlineScheduleDayKey;

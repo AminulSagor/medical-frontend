@@ -523,6 +523,7 @@ function mapOnline(
       };
     })(),
     schedule: {
+      courseId: data.courseId,
       heading: text(data.scheduleHeader.title),
       days: data.schedule.map((day, index) => ({
         key: `day${index + 1}` as const,

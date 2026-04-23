@@ -102,13 +102,26 @@ function extractLearningObjectiveLines(html?: string | null): string[] {
     .filter(Boolean);
 }
 
+
+function isRegistrationDeadlineExpired(deadline?: string | null): boolean {
+  if (!deadline) return false;
+
+  const parsed = new Date(deadline);
+  if (Number.isNaN(parsed.getTime())) return false;
+
+  return parsed.getTime() <= Date.now();
+}
+
 function buildCmeBadgeLabel(workshop: PublicWorkshopDetails) {
   const rawCount = workshop.cmeCreditsCount;
   if (rawCount === null || rawCount === undefined || `${rawCount}`.trim() === "") {
-    return "CME CREDITS";
+    return "CME CREDIT";
   }
 
-  return `${rawCount} CME CREDITS`;
+  const numericCount = Number(rawCount);
+  const useSingular = Number.isFinite(numericCount) && numericCount === 1;
+
+  return `${rawCount} CME ${useSingular ? "CREDIT" : "CREDITS"}`;
 }
 
 export function transformWorkshopToDetails(
@@ -121,6 +134,23 @@ export function transformWorkshopToDetails(
   const learningObjectiveLines = extractLearningObjectiveLines(
     workshop.learningObjectives,
   );
+
+  const isSoldOut = workshop.availableSeats <= 0;
+  const isRegistrationClosed = isRegistrationDeadlineExpired(
+    workshop.registrationDeadline,
+  );
+  const ctaLabel = isSoldOut
+    ? "Sold Out"
+    : isRegistrationClosed
+      ? "Registration Closed"
+      : "Enroll Now";
+  const warningLabel = isSoldOut
+    ? "Sold Out"
+    : isRegistrationClosed
+      ? "Registration Closed"
+      : workshop.availableSeats <= workshop.alertAt
+        ? `Only ${workshop.availableSeats} seats remaining`
+        : `${workshop.availableSeats} seats remaining`;
 
   return {
     id: workshop.id,
@@ -204,13 +234,14 @@ export function transformWorkshopToDetails(
               discountLabel: "N/A",
               note: "Group discounts not available",
             },
-      ctaLabel: "Enroll Now",
-      warningLabel:
-        workshop.availableSeats <= workshop.alertAt
-          ? `Only ${workshop.availableSeats} seats remaining`
-          : `${workshop.availableSeats} seats remaining`,
+      ctaLabel,
+      ctaDisabled: isSoldOut || isRegistrationClosed,
+      ctaTone: isSoldOut || isRegistrationClosed ? "muted" : "primary",
+      warningLabel,
       warningTone:
-        workshop.availableSeats <= workshop.alertAt ? "danger" : "default",
+        isSoldOut || isRegistrationClosed || workshop.availableSeats <= workshop.alertAt
+          ? "danger"
+          : "default",
       footnote: `LIMITED SLOTS: ONLY ${workshop.totalCapacity} AVAILABLE`,
     },
 
