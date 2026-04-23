@@ -1,11 +1,19 @@
 import {
   AdminOrderDetailsFulfillmentStatus,
+  AdminOrderDetailsPaymentStatus,
   AdminOrderDetailsResponse,
 } from "@/types/admin/orders/order-details.types";
 
 export type OrderStatus = "processing" | "shipped" | "received";
-export type PaymentStatus = "paid" | "unpaid";
-export type FulfillmentStatus = "fulfilled" | "unfulfilled";
+export type PaymentStatus = "paid" | "pending" | "refunded" | string;
+export type FulfillmentStatus =
+  | "fulfilled"
+  | "unfulfilled"
+  | "processing"
+  | "shipped"
+  | "received"
+  | "closed"
+  | string;
 
 export type OrderDetailsViewModel = {
   id: string;
@@ -144,15 +152,6 @@ function mapFulfillmentToStatus(
   return "processing";
 }
 
-function mapFulfillmentBadge(
-  value: AdminOrderDetailsFulfillmentStatus,
-): FulfillmentStatus {
-  const status = value.toLowerCase();
-  return status === "fulfilled" || status === "received" || status === "closed"
-    ? "fulfilled"
-    : "unfulfilled";
-}
-
 function buildCustomerSubtitle(): string {
   return "Medical Customer";
 }
@@ -186,8 +185,10 @@ export function mapOrderDetailsToViewModel(
     id: data.id,
     orderId: data.orderId,
     placedAt: `Placed on ${formatDateTime(data.placedAt)}`,
-    paymentStatus: data.paymentStatus.toLowerCase() === "paid" ? "paid" : "unpaid",
-    fulfillmentStatus: mapFulfillmentBadge(data.fulfillmentStatus),
+    paymentStatus:
+      data.paymentStatus.toLowerCase() as AdminOrderDetailsPaymentStatus,
+    fulfillmentStatus:
+      data.fulfillmentStatus.toLowerCase() as AdminOrderDetailsFulfillmentStatus,
 
     customer: {
       name: data.customer.name,

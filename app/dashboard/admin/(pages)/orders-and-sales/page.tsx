@@ -132,7 +132,10 @@ export default function OrdersAndSalesPage() {
           page,
           limit: PAGE_SIZE,
           search: search.trim() || undefined,
-          paymentStatus: status === "all" ? undefined : status,
+          paymentStatus:
+            status === "paid" || status === "pending" || status === "refunded"
+              ? status
+              : undefined,
         });
 
         setTransactions(response.items ?? []);

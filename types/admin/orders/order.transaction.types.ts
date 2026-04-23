@@ -40,9 +40,11 @@ export interface AdminOrderTransactionListResponse {
   meta: AdminOrderTransactionMeta;
 }
 
+export type AdminOrderPaymentStatusFilter = "paid" | "pending" | "refunded";
+
 export interface GetAdminOrderTransactionParams {
   page?: number;
   limit?: number;
   search?: string;
-  paymentStatus?: "paid" | "pending" | "refunded";
+  paymentStatus?: AdminOrderPaymentStatusFilter;
 }

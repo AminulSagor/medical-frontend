@@ -11,8 +11,21 @@ import {
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-export type FulfillmentStatus = "shipped" | "processing" | "received";
-export type PaymentStatusFilter = "all" | "paid" | "pending" | "refunded";
+export type FulfillmentStatus =
+  | "fulfilled"
+  | "unfulfilled"
+  | "processing"
+  | "shipped"
+  | "received"
+  | "closed"
+  | string;
+
+export type PaymentStatusFilter =
+  | "all"
+  | "paid"
+  | "pending"
+  | "refunded"
+  | string;
 
 export type OrderRow = {
   id: string;
@@ -22,13 +35,43 @@ export type OrderRow = {
   customerEmail?: string;
   customerAvatar?: string | null;
   type: "product" | "course";
-  paymentStatus: "paid" | "pending" | "refunded";
-  fulfillment: FulfillmentStatus;
+  paymentStatus: string;
+  fulfillment: string;
   fulfillmentLabel?: string;
   total: string;
 };
 
 const OPTIONS: PaymentStatusFilter[] = ["all", "paid", "pending", "refunded"];
+
+function formatStatusLabel(value?: string) {
+  if (!value) return "UNKNOWN";
+  return value.replace(/_/g, " ").toUpperCase();
+}
+
+function getPaymentTone(status?: string): "green" | "orange" | "red" | "slate" {
+  const normalized = status?.toLowerCase().trim();
+
+  if (normalized === "paid") return "green";
+  if (normalized === "pending") return "orange";
+  if (normalized === "refunded") return "red";
+
+  return "slate";
+}
+
+function getFulfillmentTone(status?: string): "green" | "orange" | "slate" {
+  const normalized = status?.toLowerCase().trim();
+
+  if (normalized === "fulfilled" || normalized === "received") return "green";
+  if (
+    normalized === "processing" ||
+    normalized === "unfulfilled" ||
+    normalized === "shipped"
+  ) {
+    return "orange";
+  }
+
+  return "slate";
+}
 
 function Pill({
   tone,
@@ -377,27 +420,21 @@ export default function OrdersTable({
                     <Pill tone="blue" label="COURSE" showDot={false} />
                   );
 
-                const payPill =
-                  r.paymentStatus === "paid" ? (
-                    <Pill tone="green" label="PAID" />
-                  ) : r.paymentStatus === "pending" ? (
-                    <Pill tone="orange" label="PENDING" />
-                  ) : (
-                    <Pill tone="red" label="REFUNDED" />
-                  );
+                const payPill = (
+                  <Pill
+                    tone={getPaymentTone(r.paymentStatus)}
+                    label={formatStatusLabel(r.paymentStatus)}
+                  />
+                );
 
-                const fulfillmentLabel = (
-                  r.fulfillmentLabel || r.fulfillment
-                ).toUpperCase();
-
-                const fulfill =
-                  r.fulfillment === "shipped" ? (
-                    <DotStatus tone="green" label={fulfillmentLabel} />
-                  ) : r.fulfillment === "processing" ? (
-                    <DotStatus tone="orange" label={fulfillmentLabel} />
-                  ) : (
-                    <DotStatus tone="slate" label={fulfillmentLabel} />
-                  );
+                const fulfill = (
+                  <DotStatus
+                    tone={getFulfillmentTone(r.fulfillment)}
+                    label={formatStatusLabel(
+                      r.fulfillmentLabel || r.fulfillment,
+                    )}
+                  />
+                );
 
                 return (
                   <tr
