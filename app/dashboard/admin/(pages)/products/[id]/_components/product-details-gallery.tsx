@@ -11,13 +11,13 @@ export default function ProductDetailsGallery({ data }: Props) {
     return (
         <Panel title="">
             <div className="space-y-4">
-                <div className="relative aspect-square overflow-hidden rounded-2xl bg-slate-50 ring-1 ring-slate-200">
+                <div className="relative aspect-square max-h-[420px] overflow-hidden rounded-2xl bg-slate-50 ring-1 ring-slate-200">
                     {data.images[0]?.url ? (
                         <Image
                             src={data.images[0].url}
                             alt={data.name}
                             fill
-                            className="object-cover"
+                            className="object-contain"
                         />
                     ) : (
                         <div className="absolute inset-0 grid place-items-center text-slate-300">
@@ -42,7 +42,7 @@ export default function ProductDetailsGallery({ data }: Props) {
                                     src={img.url}
                                     alt={`${data.name} ${idx + 1}`}
                                     fill
-                                    className="object-cover"
+                                    className="object-contain"
                                 />
                             ) : null}
 

@@ -1,170 +1,37 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import CourseBrowseCard from "./course-browse-card";
-import {
-  CourseCardModel,
-  CreditsRange,
-} from "@/app/public/types/course-browse.types";
-
-import { getPublicWorkshops } from "@/service/public/workshop.service";
-import type { PublicWorkshop } from "@/types/public/workshop/public-workshop.types";
+import CourseBrowseToolbar from "./course-browse-toolbar";
 import CourseFiltersSidebar, {
   CourseFiltersState,
 } from "@/app/public/(pages)/courses/_components/course-filters-sidebar";
+import CourseResults from "./course-results";
+import MobileCourseFiltersDrawer from "./mobile-course-filters-drawer";
+import {
+  getDeliveryModeFromFilters,
+  getResolvedQuery,
+  inCreditsRange,
+  transformWorkshopToCourse,
+} from "@/app/public/(pages)/courses/_utils/course-browse.helpers";
+import { getPublicWorkshops } from "@/service/public/workshop.service";
+import type { CourseCardModel } from "@/app/public/types/course-browse.types";
+import type { PublicWorkshop } from "@/types/public/workshop/public-workshop.types";
 
-function inCreditsRange(cme: number, range: CreditsRange) {
-  if (range === "1_4") return cme >= 1 && cme <= 4;
-  if (range === "5_8") return cme >= 5 && cme <= 8;
-  return cme >= 8;
-}
-
-function formatWebinarPlatform(value?: string | null) {
-  if (!value) return "";
-
-  return value
-    .replace(/[_-]+/g, " ")
-    .split(" ")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(" ");
-}
-
-function resolveLocation(workshop: PublicWorkshop) {
-  if (workshop.deliveryMode === "online") {
-    return formatWebinarPlatform(workshop.webinarPlatform) || "Online Course";
-  }
-
-  if (workshop.facilities?.length) {
-    return workshop.facilities[0].name;
-  }
-
-  return "";
-}
-
-function isRegistrationDeadlineExpired(deadline?: string | null) {
-  if (!deadline) return false;
-
-  const parsed = new Date(deadline);
-  if (Number.isNaN(parsed.getTime())) return false;
-
-  return parsed.getTime() <= Date.now();
-}
-
-function getDeliveryModeFromFilters(delivery: CourseFiltersState["delivery"]) {
-  if (delivery.in_person && !delivery.online) return "in_person" as const;
-  if (delivery.online && !delivery.in_person) return "online" as const;
-  return undefined;
-}
-
-function getResolvedQuery(searchParams: ReturnType<typeof useSearchParams>) {
-  return (
-    searchParams.get("q") ??
-    searchParams.get("search") ??
-    searchParams.get("topic") ??
-    ""
-  );
-}
-
-function transformWorkshopToCourse(workshop: PublicWorkshop): CourseCardModel {
-  const date = workshop.date ? new Date(workshop.date) : null;
-  const month = date
-    ? date.toLocaleString("en-US", { month: "short" }).toUpperCase()
-    : undefined;
-  const day = date ? String(date.getDate()) : undefined;
-
-  const availableSeats = workshop.availableSeats;
-  const totalCapacity = workshop.totalCapacity;
-  const isRegistrationClosed = isRegistrationDeadlineExpired(
-    workshop.registrationDeadline,
-  );
-  const isSoldOut = workshop.isFullyBooked || availableSeats <= 0;
-  const percentFilled =
-    totalCapacity > 0
-      ? ((totalCapacity - availableSeats) / totalCapacity) * 100
-      : 0;
-  const isAvailable = !isSoldOut && !isRegistrationClosed;
-
-  const action: CourseCardModel["action"] = isRegistrationClosed
-    ? { kind: "disabled", label: "Expired" }
-    : isSoldOut
-      ? { kind: "disabled", label: "Sold Out" }
-      : { kind: "reserve", label: "Reserve Seat" };
-
-  const metaTop: CourseCardModel["metaTop"] = [];
-  if (workshop.totalHours) {
-    metaTop.push({ icon: "clock", label: workshop.totalHours });
-  }
-  const resolvedLocation = resolveLocation(workshop);
-  if (resolvedLocation) {
-    metaTop.push({ icon: "pin", label: resolvedLocation });
-  } else if (workshop.totalModules > 0) {
-    metaTop.push({
-      icon: "modules",
-      label: `${workshop.totalModules} Modules`,
-    });
-  }
-
-  const metaBottom: CourseCardModel["metaBottom"] = [];
-  const cmeCreditsCount = Number(workshop.cmeCreditsCount ?? 0);
-  if (workshop.cmeCredits) {
-    metaBottom.push({
-      icon: "cme",
-      label: `${cmeCreditsCount} CME`,
-    });
-  }
-
-  const isLowAvailability = isAvailable && availableSeats <= 5;
-
-  const availability: CourseCardModel["availability"] = {
-    label: "AVAILABILITY",
-    note: isSoldOut
-      ? "Sold Out"
-      : isLowAvailability
-        ? `Only ${availableSeats} seats available`
-        : `${availableSeats} seats available`,
-    percent: percentFilled,
-    tone: isSoldOut || isLowAvailability ? "danger" : "primary",
-  };
-
-  const currentPrice = Number(workshop.offerPrice ?? workshop.price) || 0;
-  const oldPrice = workshop.offerPrice
-    ? Number(workshop.price) || undefined
-    : undefined;
-
-  return {
-    id: workshop.id,
-    title: workshop.title,
-    description: workshop.description,
-    delivery: workshop.deliveryMode,
-    date: month && day ? { month, day } : undefined,
-    imageSrc: workshop.workshopPhoto || undefined,
-    imageAlt: workshop.title,
-    metaTop,
-    metaBottom,
-    availability,
-    price: currentPrice,
-    oldPrice,
-    action,
-    cmeCredits: cmeCreditsCount,
-    isAvailable,
-    isRegistrationClosed,
-    isSoldOut,
-  };
-}
+type CourseBrowseSort = "recommended" | "price_low" | "price_high";
 
 export default function CoursesBrowseSection() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+
   const [workshops, setWorkshops] = useState<PublicWorkshop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   const [filters, setFilters] = useState<CourseFiltersState>({
     availableOnly: false,
@@ -172,9 +39,7 @@ export default function CoursesBrowseSection() {
     credits: null,
   });
 
-  const [sort, setSort] = useState<"recommended" | "price_low" | "price_high">(
-    "recommended",
-  );
+  const [sort, setSort] = useState<CourseBrowseSort>("recommended");
 
   const query = getResolvedQuery(searchParams);
   const deliveryMode = searchParams.get("deliveryMode");
@@ -191,13 +56,39 @@ export default function CoursesBrowseSection() {
     }));
   }, [deliveryMode]);
 
+  const updateFilters = useCallback(
+    (nextFilters: CourseFiltersState) => {
+      setFilters(nextFilters);
+
+      const nextDeliveryMode = getDeliveryModeFromFilters(nextFilters.delivery);
+      const currentDeliveryMode =
+        searchParams.get("deliveryMode") || undefined;
+
+      if (nextDeliveryMode !== currentDeliveryMode) {
+        const params = new URLSearchParams(searchParams.toString());
+
+        if (nextDeliveryMode) params.set("deliveryMode", nextDeliveryMode);
+        else params.delete("deliveryMode");
+
+        params.delete("page");
+
+        router.replace(
+          `${pathname}${params.toString() ? `?${params.toString()}` : ""}`,
+        );
+      }
+    },
+    [pathname, router, searchParams],
+  );
+
   const fetchWorkshops = useCallback(
     async (pageNum: number, append = false) => {
       try {
         setLoading(true);
         setError(null);
 
-        const bothDelivery = filters.delivery.in_person && filters.delivery.online;
+        const bothDelivery =
+          filters.delivery.in_person && filters.delivery.online;
+
         const resolvedDeliveryMode = bothDelivery
           ? undefined
           : filters.delivery.in_person
@@ -230,7 +121,9 @@ export default function CoursesBrowseSection() {
           page: pageNum,
           limit: 6,
           sortBy:
-            sort === "price_low" || sort === "price_high" ? "price" : undefined,
+            sort === "price_low" || sort === "price_high"
+              ? "price"
+              : undefined,
           sortOrder:
             sort === "price_high"
               ? "desc"
@@ -270,26 +163,39 @@ export default function CoursesBrowseSection() {
     fetchWorkshops(1, false);
   }, [fetchWorkshops]);
 
-  const loadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchWorkshops(nextPage, true);
-  };
-
-  const all = useMemo(
+  const courses = useMemo(
     () => workshops.map(transformWorkshopToCourse),
     [workshops],
   );
 
-  const filtered = useMemo(() => {
-    let list: CourseCardModel[] = [...all];
+  const filteredCourses = useMemo(() => {
+    let list: CourseCardModel[] = [...courses];
 
     if (filters.credits) {
-      list = list.filter((c) => inCreditsRange(c.cmeCredits, filters.credits!));
+      list = list.filter((course) =>
+        inCreditsRange(course.cmeCredits, filters.credits!),
+      );
     }
 
     return list;
-  }, [all, filters.credits]);
+  }, [courses, filters.credits]);
+
+  const handleSortChange = () => {
+    setSort((currentSort) =>
+      currentSort === "recommended"
+        ? "price_low"
+        : currentSort === "price_low"
+          ? "price_high"
+          : "recommended",
+    );
+  };
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+
+    setPage(nextPage);
+    fetchWorkshops(nextPage, true);
+  };
 
   function reset() {
     setFilters({
@@ -302,129 +208,59 @@ export default function CoursesBrowseSection() {
     });
 
     const params = new URLSearchParams(searchParams.toString());
+
     params.delete("deliveryMode");
     params.delete("page");
-    router.replace(`${pathname}${params.toString() ? `?${params.toString()}` : ""}`);
+
+    router.replace(
+      `${pathname}${params.toString() ? `?${params.toString()}` : ""}`,
+    );
   }
 
   return (
     <section className="w-full">
       <div className="padding">
         <div className="w-full">
-          <div className="mx-auto flex items-center justify-between px-6 py-4">
-            <p className="text-sm font-extrabold text-light-slate">
-              {filtered.length} courses found
-            </p>
-
-            <button
-              type="button"
-              onClick={() =>
-                setSort((s) =>
-                  s === "recommended"
-                    ? "price_low"
-                    : s === "price_low"
-                      ? "price_high"
-                      : "recommended",
-                )
-              }
-              className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-sm font-extrabold text-light-slate"
-            >
-              SORT:{" "}
-              <span className="font-semibold">
-                {sort === "recommended"
-                  ? "Recommended"
-                  : sort === "price_low"
-                    ? "Price: Low"
-                    : "Price: High"}
-              </span>
-              <ChevronDown size={16} />
-            </button>
-          </div>
+          <CourseBrowseToolbar
+            totalCourses={filteredCourses.length}
+            sort={sort}
+            onSortChange={handleSortChange}
+            onOpenFilters={() => setIsMobileFiltersOpen(true)}
+          />
         </div>
 
         <div>
           <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
-            <CourseFiltersSidebar
-              value={filters}
-              onChange={(nextFilters) => {
-                setFilters(nextFilters);
-
-                const nextDeliveryMode = getDeliveryModeFromFilters(nextFilters.delivery);
-                const currentDeliveryMode = searchParams.get("deliveryMode") || undefined;
-
-                if (nextDeliveryMode !== currentDeliveryMode) {
-                  const params = new URLSearchParams(searchParams.toString());
-                  if (nextDeliveryMode) params.set("deliveryMode", nextDeliveryMode);
-                  else params.delete("deliveryMode");
-                  params.delete("page");
-                  router.replace(`${pathname}${params.toString() ? `?${params.toString()}` : ""}`);
-                }
-              }}
-              onReset={reset}
-            />
+            <div className="hidden lg:block">
+              <CourseFiltersSidebar
+                value={filters}
+                onChange={updateFilters}
+                onReset={reset}
+              />
+            </div>
 
             <div>
-              {loading && workshops.length === 0 ? (
-                <div className="flex items-center justify-center py-20">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : error ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <p className="font-semibold text-red-500">{error}</p>
-                  <button
-                    onClick={() => fetchWorkshops(1, false)}
-                    className="mt-4 rounded-full bg-primary px-6 py-2 font-semibold text-white transition hover:opacity-90"
-                  >
-                    Try Again
-                  </button>
-                </div>
-              ) : filtered.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <p className="font-semibold text-light-slate">
-                    No courses found matching your filters.
-                  </p>
-                  <button
-                    onClick={reset}
-                    className="mt-4 rounded-full bg-primary px-6 py-2 font-semibold text-white transition hover:opacity-90"
-                  >
-                    Clear Filters
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="grid items-stretch gap-8 md:grid-cols-2 xl:grid-cols-3">
-                    {filtered.map((c) => (
-                      <CourseBrowseCard key={c.id} course={c} />
-                    ))}
-                  </div>
-
-                  {hasMore && (
-                    <div className="mt-10 flex justify-center">
-                      <button
-                        type="button"
-                        onClick={loadMore}
-                        disabled={loading}
-                        className="inline-flex items-center gap-2 rounded-full border border-light-slate/15 bg-white px-6 py-4 text-sm font-extrabold text-light-slate shadow-sm transition hover:bg-light-slate/10 active:scale-95 disabled:opacity-50"
-                      >
-                        {loading ? (
-                          <>
-                            <Loader2 size={16} className="animate-spin" />
-                            Loading...
-                          </>
-                        ) : (
-                          <>
-                            Load More Courses <ChevronDown size={16} />
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
+              <CourseResults
+                courses={filteredCourses}
+                loading={loading}
+                error={error}
+                hasMore={hasMore}
+                onRetry={() => fetchWorkshops(1, false)}
+                onReset={reset}
+                onLoadMore={loadMore}
+              />
             </div>
           </div>
         </div>
       </div>
+
+      <MobileCourseFiltersDrawer
+        isOpen={isMobileFiltersOpen}
+        filters={filters}
+        onClose={() => setIsMobileFiltersOpen(false)}
+        onChange={updateFilters}
+        onReset={reset}
+      />
     </section>
   );
 }
