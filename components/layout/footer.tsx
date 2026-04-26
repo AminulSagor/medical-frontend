@@ -45,6 +45,7 @@ type FooterWorkshopLike = {
 };
 
 export default function Footer() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -93,10 +94,16 @@ export default function Footer() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
+    const trimmedName = name.trim();
     const trimmedEmail = email.trim();
 
     setSuccessMessage("");
     setErrorMessage("");
+
+    if (!trimmedName) {
+      setErrorMessage("Please enter your name.");
+      return;
+    }
 
     if (!trimmedEmail) {
       setErrorMessage("Please enter your email address.");
@@ -114,6 +121,7 @@ export default function Footer() {
       setIsSubmitting(true);
 
       const response = await subscribeToNewsletter({
+        fullName: trimmedName,
         email: trimmedEmail,
         source: "FOOTER",
       });
@@ -121,6 +129,7 @@ export default function Footer() {
       setSuccessMessage(
         response.message || "Successfully subscribed to the newsletter.",
       );
+      setName("");
       setEmail("");
     } catch (error) {
       const axiosError = error as AxiosError<ApiErrorResponse>;
@@ -310,6 +319,30 @@ export default function Footer() {
             </p>
 
             <form onSubmit={onSubmit} className="space-y-3">
+              <motion.input
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: false, amount: 0.5 }}
+                transition={{ duration: 0.45, ease: "easeOut" }}
+                type="text"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (successMessage) setSuccessMessage("");
+                  if (errorMessage) setErrorMessage("");
+                }}
+                placeholder="Enter your name"
+                disabled={isSubmitting}
+                className={[
+                  "h-12 w-full rounded-full",
+                  "border bg-white px-5 text-sm text-black",
+                  "placeholder:text-light-slate outline-none transition",
+                  "focus:border-primary/40 focus:ring-2 focus:ring-primary/10",
+                  errorMessage ? "border-red-300" : "border-light-slate/25",
+                  isSubmitting ? "cursor-not-allowed opacity-70" : "",
+                ].join(" ")}
+              />
+
               <motion.input
                 initial={{ opacity: 0, y: 18 }}
                 whileInView={{ opacity: 1, y: 0 }}

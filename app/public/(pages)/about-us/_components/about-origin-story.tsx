@@ -1,8 +1,4 @@
-import {
-  GraduationCap,
-  Plane,
-  PlusSquare,
-} from "lucide-react";
+import { GraduationCap, Plane, PlusSquare } from "lucide-react";
 
 type OriginStoryItem = {
   id: string;
@@ -52,6 +48,7 @@ function NodeIcon({ kind }: { kind: OriginStoryItem["icon"] }) {
 
   if (kind === "cap") return <GraduationCap {...iconProps} />;
   if (kind === "plane") return <Plane {...iconProps} />;
+
   return <PlusSquare {...iconProps} />;
 }
 
@@ -59,7 +56,6 @@ export default function AboutOriginStory() {
   return (
     <section id="origin" className="py-24">
       <div className="padding">
-        {/* Head */}
         <div className="text-center">
           <div className="text-[11px] font-extrabold tracking-[0.22em] text-primary/60">
             THE ORIGIN STORY
@@ -76,79 +72,65 @@ export default function AboutOriginStory() {
           </p>
         </div>
 
-        {/* Timeline */}
         <div className="relative mx-auto mt-16 max-w-[980px]">
-          {/* center line */}
-          <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-light-slate/15" />
+          <div className="absolute left-6 top-0 h-full w-px bg-light-slate/15 md:left-1/2 md:-translate-x-1/2" />
 
-          <div className="space-y-14">
-            {ITEMS.map((it) => {
-              const isLeft = it.side === "left";
+          <div className="space-y-12 md:space-y-14">
+            {ITEMS.map((item) => {
+              const isLeft = item.side === "left";
 
               return (
                 <div
-                  key={it.id}
-                  className="relative grid items-center md:grid-cols-2"
+                  key={item.id}
+                  className="relative grid gap-4 pl-16 md:grid-cols-2 md:gap-0 md:pl-0"
                 >
-                  {/* LEFT CONTENT */}
-                  <div className={isLeft ? "pr-16 text-right" : "pr-16"} />
-
-                  {/* NODE */}
-                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                  <div className="absolute left-0 top-0 md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2">
                     <div className="grid h-12 w-12 place-items-center rounded-full bg-primary text-white shadow-[0_10px_25px_rgba(31,110,128,0.25)]">
-                      <NodeIcon kind={it.icon} />
+                      <NodeIcon kind={item.icon} />
                     </div>
                   </div>
 
-                  {/* RIGHT CONTENT */}
-                  <div className="pl-16">
-                    {/* This block alternates by rendering on left or right column */}
-                  </div>
-
-                  {/* ACTUAL CONTENT L/R */}
                   {isLeft ? (
                     <>
-                      {/* left side content */}
-                      <div className="pr-16 text-right">
+                      <div className="text-left md:pr-16 md:text-right">
                         <div className="text-[15px] font-bold text-black">
-                          {it.title}
-                        </div>
-                        <div className="mt-1 text-[13px] font-semibold text-primary">
-                          {it.location}
+                          {item.title}
                         </div>
 
-                        <p className="mx-0 ml-auto mt-3 max-w-[320px] text-[12px] leading-6 text-light-slate/65">
-                          {it.description}
+                        <div className="mt-1 text-[13px] font-semibold text-primary">
+                          {item.location}
+                        </div>
+
+                        <p className="mt-3 max-w-[320px] text-[12px] leading-6 text-light-slate/65 md:ml-auto">
+                          {item.description}
                         </p>
                       </div>
 
-                      {/* right side pill */}
-                      <div className="pl-16">
+                      <div className="md:pl-16">
                         <span className="inline-flex rounded-md bg-light-slate/5 px-3 py-1 text-xs font-semibold text-light-slate/60">
-                          {it.period}
+                          {item.period}
                         </span>
                       </div>
                     </>
                   ) : (
                     <>
-                      {/* left side pill */}
-                      <div className="pr-16 text-right">
+                      <div className="order-2 md:order-none md:pr-16 md:text-right">
                         <span className="inline-flex rounded-md bg-light-slate/5 px-3 py-1 text-xs font-semibold text-light-slate/60">
-                          {it.period}
+                          {item.period}
                         </span>
                       </div>
 
-                      {/* right side content */}
-                      <div className="pl-16">
+                      <div className="order-1 text-left md:order-none md:pl-16">
                         <div className="text-[15px] font-bold text-black">
-                          {it.title}
+                          {item.title}
                         </div>
+
                         <div className="mt-1 text-[13px] font-semibold text-primary">
-                          {it.location}
+                          {item.location}
                         </div>
 
                         <p className="mt-3 max-w-[320px] text-[12px] leading-6 text-light-slate/65">
-                          {it.description}
+                          {item.description}
                         </p>
                       </div>
                     </>

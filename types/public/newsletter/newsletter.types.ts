@@ -1,4 +1,5 @@
 export interface SubscribeNewsletterRequest {
+    fullName: string;
     email: string;
     source: "FOOTER";
 }

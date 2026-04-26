@@ -15,6 +15,7 @@ const TEXAS_MAP_OPEN_URL = "https://www.google.com/maps?q=32.793462,-97.046664";
 
 function ContactPageContent() {
   const searchParams = useSearchParams();
+  const supportPanelRef = React.useRef<HTMLDivElement | null>(null);
 
   const source = searchParams.get("source");
   const rawOrderNo = searchParams.get("orderNo")?.trim() ?? "";
@@ -52,6 +53,7 @@ function ContactPageContent() {
       <ContactHeroHeader />
 
       <ContactSupportPanel
+        ref={supportPanelRef}
         onSubmit={sendContactUsMessage}
         mapImageUrl={TEXAS_STATIC_MAP_IMAGE_URL}
         mapOpenHref={TEXAS_MAP_OPEN_URL}
@@ -60,7 +62,16 @@ function ContactPageContent() {
       />
 
       <ContactHelpCategories
-        onSelect={(type) => setSelectedInquiryType(type)}
+        onSelect={(type) => {
+          setSelectedInquiryType(type);
+
+          window.requestAnimationFrame(() => {
+            supportPanelRef.current?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          });
+        }}
       />
     </div>
   );
