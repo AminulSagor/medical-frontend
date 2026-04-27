@@ -135,7 +135,7 @@ export default function HeroSection() {
                   delay: 0.1,
                   ease: [0.77, 0, 0.18, 1],
                 }}
-                className="inline-block"
+                className="inline-block pr-4 md:pr-0"
               >
                 Redefining <br />
               </motion.span>
@@ -174,7 +174,7 @@ export default function HeroSection() {
                 }}
                 className="inline-block"
               >
-                <span className="bg-linear-to-r from-[#19C2B8] to-[#3B82F6] bg-clip-text text-transparent italic">
+                <span className="bg-linear-to-r from-[#19C2B8] to-[#3B82F6] bg-clip-text text-transparent italic pr-2 md:pr-0">
                   Compassion
                 </span>{" "}
                 <br />
@@ -332,7 +332,7 @@ export default function HeroSection() {
             </motion.div>
 
             <HeroPill
-              className="absolute right-2 top-20 sm:right-4 sm:top-28 md:right-6 md:top-36 lg:right-0 lg:top-80"
+              className="absolute right-2 top-48 sm:right-4  md:right-6 md:top-36 lg:right-0 lg:top-80"
               label="Advanced Airway"
               icon={RiLungsLine}
               iconWrapperClassName="bg-blue-100/80"
