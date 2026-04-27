@@ -109,7 +109,7 @@ export default function NavbarSearch({
   };
 
   return (
-    <div ref={wrapRef} className="relative w-full max-w-130">
+    <div ref={wrapRef} className="relative w-full">
       <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-light-slate">
         <Search size={18} />
       </span>

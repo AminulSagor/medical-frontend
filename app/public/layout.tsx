@@ -9,7 +9,7 @@ const PublicLayout = ({ children }: Props) => {
   return (
     <div className="min-h-screen text-black">
       <div className="pointer-events-none fixed left-0 top-0 z-50 w-full">
-        <div className="pointer-events-auto mx-auto pt-4">
+        <div className="pointer-events-auto mx-auto">
           <Navbar />
         </div>
       </div>

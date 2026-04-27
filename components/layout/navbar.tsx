@@ -102,26 +102,22 @@ export default function Navbar() {
       </Suspense>
 
       <motion.header
-        animate={{
-          y: hideOnScrollDown ? -6 : 0,
-          opacity: 1,
-        }}
+        // animate={{
+        //   y: hideOnScrollDown ? -6 : 0,
+        //   opacity: 1,
+        // }}
         transition={{ duration: 0.28, ease: "easeOut" }}
         className="sticky top-0 z-50 w-full"
       >
         <div className="mx-auto w-full">
           <motion.div
-            animate={{
-              scale: isScrolled ? 0.988 : 1,
-            }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
             className={[
-              "flex items-center gap-2 md:gap-6",
+              "flex items-center gap-2 md:gap-6 xl:gap-10",
               " bg-white",
-              "px-2 md:px-5",
+              "px-3 md:px-5 xl:px-8",
               isScrolled
-                ? "py-2 md:py-2.5 shadow-md backdrop-blur-md"
-                : "py-2 md:py-3 shadow-sm",
+                ? "py-2 md:py-2.5 xl:py-4 shadow-md backdrop-blur-md"
+                : "py-2 md:py-3 xl:py-4 shadow-sm",
             ].join(" ")}
           >
             {isPublicRoute && (
@@ -150,13 +146,13 @@ export default function Navbar() {
                   <NavbarLogo />
                 </div>
               ) : (
-                <div className="w-full max-w-md ">
+                <div className="w-full max-w-md">
                   <NavbarSearch value={q} onChange={setQ} />
                 </div>
               )}
             </div>
 
-            <div className="hidden flex-1 lg:flex">
+            <div className="hidden flex-1 lg:flex border-red-500">
               <NavbarSearch value={q} onChange={setQ} />
             </div>
 
