@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Loader2, FileText, Package, GraduationCap } from "lucide-react";
+import {
+  Search,
+  Loader2,
+  FileText,
+  Package,
+  GraduationCap,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { searchNavbarItems } from "@/service/public/navbar-search.service";
 import type {

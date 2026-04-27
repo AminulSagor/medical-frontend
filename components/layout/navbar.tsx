@@ -117,7 +117,7 @@ export default function Navbar() {
             transition={{ duration: 0.25, ease: "easeOut" }}
             className={[
               "flex items-center gap-2 md:gap-6",
-              "rounded-full bg-white",
+              " bg-white",
               "px-2 md:px-5",
               isScrolled
                 ? "py-2 md:py-2.5 shadow-md backdrop-blur-md"
@@ -150,7 +150,7 @@ export default function Navbar() {
                   <NavbarLogo />
                 </div>
               ) : (
-                <div className="w-full max-w-md">
+                <div className="w-full max-w-md ">
                   <NavbarSearch value={q} onChange={setQ} />
                 </div>
               )}
@@ -394,12 +394,21 @@ function AccountAccessButton() {
 
   if (!isAuthenticated) {
     return (
-      <Link
-        href="/public/auth/sign-in"
-        className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-primary text-primary text-sm font-semibold hover:bg-primary hover:text-white transition-colors"
-      >
-        Sign In
-      </Link>
+      <div className="flex gap-2">
+        <Link
+          href="/public/auth/sign-in"
+          className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-primary text-primary text-sm font-semibold hover:bg-primary hover:text-white transition-colors"
+        >
+          Sign In
+        </Link>
+
+        <Link
+          href="/public/auth/sign-up"
+          className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-primary text-white bg-primary text-sm font-semibold hover:bg-primary hover:text-white transition-colors"
+        >
+          Sign UP
+        </Link>
+      </div>
     );
   }
 
