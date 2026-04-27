@@ -43,6 +43,11 @@ export default function PurchasePanelClient({
   const maxQty = inStock ? Math.max(stockQty, 1) : 0;
 
   const safeQty = inStock ? Math.min(qty, maxQty) : 1;
+  const totalStrikePrice = product.price.strikePrice
+    ? product.price.strikePrice * safeQty
+    : null;
+
+  const totalOfferPrice = product.price.offerPrice * safeQty;
 
   const stars = useMemo(() => {
     const full = Math.round(product.rating.value);
@@ -129,19 +134,29 @@ export default function PurchasePanelClient({
         <div className="rounded-3xl p-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              {product.price.strikePrice ? (
+              {totalStrikePrice !== null ? (
                 <div className="text-xl font-semibold text-light-slate line-through">
-                  {money(product.price.strikePrice)}
+                  {money(totalStrikePrice)}
                 </div>
               ) : null}
+
               <div className="mt-1 text-5xl font-bold tracking-tight text-black">
-                {money(product.price.offerPrice)}
+                {money(totalOfferPrice)}
               </div>
             </div>
 
             <div className="flex flex-col items-end justify-center gap-2 text-sm text-light-slate">
-              <div>{product.price.actualLabel}</div>
-              <div>{product.price.offerLabel}</div>
+              <div>
+                {safeQty === 1
+                  ? product.price.actualLabel
+                  : `Actual price of ${safeQty} units`}
+              </div>
+
+              <div>
+                {safeQty === 1
+                  ? product.price.offerLabel
+                  : `Offer Price of ${safeQty} units`}
+              </div>
             </div>
           </div>
 
