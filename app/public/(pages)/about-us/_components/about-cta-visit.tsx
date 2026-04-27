@@ -33,10 +33,8 @@ export default function AboutCtaVisit() {
         >
           <motion.h3
             className="font-serif text-[44px] font-bold text-black"
-            initial={{ clipPath: "inset(0 50% 0 50%)" }}
-            whileInView={{ clipPath: "inset(0 0% 0 0%)" }}
-            viewport={{ once: false, amount: 0.3 }}
-            transition={{ duration: 0.8, ease: [0.77, 0, 0.18, 1] }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
           >
             Ready to master the airway?
           </motion.h3>
