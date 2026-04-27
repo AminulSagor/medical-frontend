@@ -18,6 +18,8 @@ type HeroPillProps = {
   iconWrapperClassName: string;
   className?: string;
   delay?: number;
+  floatDelay?: number;
+  floatDistance?: number;
 };
 
 function HeroPill({
@@ -27,25 +29,36 @@ function HeroPill({
   iconWrapperClassName,
   className = "",
   delay = 0,
+  floatDelay = 0,
+  floatDistance = 8,
 }: HeroPillProps) {
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y: 24, scale: 0.96 }}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      initial={{ opacity: 0, rotate: -15, scale: 0.7 }}
+      whileInView={{ opacity: 1, rotate: 0, scale: 1 }}
       viewport={{ once: false, amount: 0.6 }}
       transition={{
-        duration: 0.55,
+        duration: 0.6,
         delay,
-        ease: [0.22, 1, 0.36, 1],
+        type: "spring",
+        stiffness: 200,
+        damping: 15,
       }}
       whileHover={{
-        y: -8,
-        scale: 1.03,
-        transition: { duration: 0.22, ease: "easeOut" },
+        rotate: [0, -10, 10, -5, 5, 0],
+        scale: 1.08,
+        transition: { duration: 0.4 },
       }}
     >
-      <div
+      <motion.div
+        animate={{ y: [0, -floatDistance, 0] }}
+        transition={{
+          duration: 4.5,
+          delay: floatDelay,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
         className="flex items-center gap-2 rounded-full border border-white/30
         bg-white/50 px-4 py-2 shadow-[0_8px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl
         sm:gap-3 sm:px-5 sm:py-2.5 lg:px-6 lg:py-3"
@@ -59,64 +72,142 @@ function HeroPill({
         <span className="text-xs font-semibold text-black sm:text-sm">
           {label}
         </span>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
+
+const particlePositions = [
+  { top: "20%", left: "25%" },
+  { top: "35%", left: "70%" },
+  { top: "60%", left: "20%" },
+  { top: "75%", left: "65%" },
+  { top: "45%", left: "45%" },
+  { top: "85%", left: "35%" },
+];
 
 export default function HeroSection() {
   return (
     <section className="relative overflow-hidden padding pt-24">
       <div className="relative mx-auto lg:px-8">
         <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-6">
-          {/* left */}
           <div className="space-y-6 text-center sm:space-y-7 lg:mt-6 lg:space-y-8 lg:text-left">
             <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: false, amount: 0.6 }}
               transition={{
-                duration: 0.5,
+                duration: 0.6,
                 delay: 0.05,
-                ease: [0.22, 1, 0.36, 1],
+                type: "spring",
+                stiffness: 120,
+                damping: 12,
               }}
               className="inline-flex items-center gap-2 rounded-full border border-light-slate/10 bg-white px-4 py-2 text-xs font-semibold leading-relaxed tracking-wider text-light-slate/80 shadow-sm sm:px-5 sm:text-sm"
             >
-              <span className="h-2 w-2 rounded-full bg-green-400" />
-              NOW ENROLLING: FALL 2024
+              <motion.span
+                className="h-2 w-2 rounded-full bg-green-400"
+                animate={{ scale: [1, 1.5, 1] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+              NOW ENROLLING: FALL 2026
             </motion.div>
 
             <motion.h1
-              initial={{ opacity: 0, y: 28 }}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: false, amount: 0.6 }}
+              className="text-4xl leading-[1.02] text-black sm:text-5xl md:text-6xl lg:text-7xl lg:leading-[1.05]"
+            >
+              <motion.span
+                initial={{
+                  clipPath: "polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)",
+                }}
+                whileInView={{
+                  clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+                }}
+                transition={{
+                  duration: 0.8,
+                  delay: 0.1,
+                  ease: [0.77, 0, 0.18, 1],
+                }}
+                className="inline-block"
+              >
+                Redefining <br />
+              </motion.span>
+
+              <motion.span
+                initial={{
+                  clipPath: "polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)",
+                }}
+                whileInView={{
+                  clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+                }}
+                transition={{
+                  duration: 0.8,
+                  delay: 0.2,
+                  ease: [0.77, 0, 0.18, 1],
+                }}
+                className="inline-block"
+              >
+                <span className="bg-linear-to-r from-[#19C2B8] to-[#3B82F6] bg-clip-text text-transparent italic">
+                  Precision
+                </span>{" "}
+                & <br />
+              </motion.span>
+
+              <motion.span
+                initial={{
+                  clipPath: "polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)",
+                }}
+                whileInView={{
+                  clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+                }}
+                transition={{
+                  duration: 0.8,
+                  delay: 0.3,
+                  ease: [0.77, 0, 0.18, 1],
+                }}
+                className="inline-block"
+              >
+                <span className="bg-linear-to-r from-[#19C2B8] to-[#3B82F6] bg-clip-text text-transparent italic">
+                  Compassion
+                </span>{" "}
+                <br />
+              </motion.span>
+
+              <motion.span
+                initial={{
+                  clipPath: "polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)",
+                }}
+                whileInView={{
+                  clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+                }}
+                transition={{
+                  duration: 0.8,
+                  delay: 0.4,
+                  ease: [0.77, 0, 0.18, 1],
+                }}
+                className="inline-block"
+              >
+                in Airway Care
+              </motion.span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: false, amount: 0.6 }}
               transition={{
                 duration: 0.7,
-                delay: 0.12,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              className="text-4xl leading-[1.02] text-black sm:text-5xl md:text-6xl lg:text-7xl lg:leading-[1.05]"
-            >
-              Redefining <br />
-              <span className="bg-linear-to-r from-[#19C2B8] to-[#3B82F6] bg-clip-text text-transparent italic">
-                Precision
-              </span>{" "}
-              & <br />
-              <span className="bg-linear-to-r from-[#19C2B8] to-[#3B82F6] bg-clip-text text-transparent italic">
-                Compassion
-              </span>{" "}
-              <br />
-              in Airway Care
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 22 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.6 }}
-              transition={{
-                duration: 0.6,
-                delay: 0.22,
-                ease: [0.22, 1, 0.36, 1],
+                delay: 0.45,
+                type: "spring",
+                stiffness: 100,
+                damping: 12,
               }}
               className="mx-auto max-w-xl text-base leading-relaxed text-light-slate sm:text-lg lg:mx-0"
             >
@@ -126,34 +217,43 @@ export default function HeroSection() {
             </motion.p>
 
             <motion.div
-              initial={{ opacity: 0, y: 24, scale: 0.96 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              initial={{ opacity: 0, scale: 0.5 }}
+              whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: false, amount: 0.6 }}
               transition={{
-                duration: 0.6,
-                delay: 0.32,
-                ease: [0.22, 1, 0.36, 1],
+                duration: 0.5,
+                delay: 0.55,
+                type: "spring",
+                stiffness: 260,
+                damping: 20,
               }}
-              whileHover={{
-                y: -3,
-                scale: 1.02,
-                transition: { duration: 0.2, ease: "easeOut" },
-              }}
-              whileTap={{
-                scale: 0.98,
-                transition: { duration: 0.12 },
-              }}
+              whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
+              whileTap={{ scale: 0.95 }}
               className="inline-block"
             >
               <Link href="/public/courses">
-                <Button size="md" className="px-10 sm:px-12 lg:px-15">
-                  Get Training <ArrowRight size={18} />
+                <Button
+                  size="md"
+                  className="px-10 sm:px-12 lg:px-15 relative overflow-hidden group"
+                >
+                  <motion.span
+                    className="flex items-center gap-2 relative z-10"
+                    whileHover={{ x: 5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    Get Training <ArrowRight size={18} />
+                  </motion.span>
+                  <motion.span
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                    initial={{ x: "-100%" }}
+                    whileHover={{ x: "100%" }}
+                    transition={{ duration: 0.6 }}
+                  />
                 </Button>
               </Link>
             </motion.div>
           </div>
 
-          {/* right */}
           <div className="relative mx-auto flex w-full max-w-[420px] justify-center sm:max-w-[520px] md:max-w-[620px] lg:max-w-none lg:justify-end">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -181,23 +281,54 @@ export default function HeroSection() {
             />
 
             <motion.div
-              initial={{ opacity: 0, x: 40, scale: 0.96 }}
-              whileInView={{ opacity: 1, x: 0, scale: 1 }}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
               viewport={{ once: false, amount: 0.4 }}
-              transition={{
-                duration: 0.8,
-                delay: 0.12,
-                ease: [0.22, 1, 0.36, 1],
-              }}
               className="relative h-[420px] w-[300px] sm:h-[520px] sm:w-[380px] md:h-[620px] md:w-[460px] lg:h-190 lg:w-190"
             >
-              <Image
-                src={IMAGE.doctor}
-                alt="Doctor"
-                fill
-                priority
-                className="object-cover"
-              />
+              <motion.div
+                className="relative h-full w-full overflow-hidden"
+                initial={{ rotateY: -90, opacity: 0 }}
+                whileInView={{ rotateY: 0, opacity: 1 }}
+                viewport={{ once: false, amount: 0.4 }}
+                transition={{
+                  duration: 1,
+                  delay: 0.2,
+                  type: "spring",
+                  stiffness: 80,
+                  damping: 15,
+                }}
+                style={{ transformStyle: "preserve-3d" }}
+              >
+                <Image
+                  src={IMAGE.doctor}
+                  alt="Doctor"
+                  fill
+                  priority
+                  className="object-cover"
+                />
+
+                {/* <motion.div
+                  className="absolute top-0 left-0 h-full w-20 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
+                  animate={{ left: ["-20%", "120%"] }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                /> */}
+              </motion.div>
+
+              {particlePositions.map((pos, i) => (
+                <div
+                  key={i}
+                  className="absolute w-1.5 h-1.5 rounded-full bg-gradient-to-r from-[#19C2B8] to-[#3B82F6] opacity-40"
+                  style={{
+                    top: pos.top,
+                    left: pos.left,
+                  }}
+                />
+              ))}
             </motion.div>
 
             <HeroPill
@@ -207,6 +338,8 @@ export default function HeroSection() {
               iconWrapperClassName="bg-blue-100/80"
               iconClassName="text-blue-600"
               delay={0.2}
+              floatDelay={0}
+              floatDistance={8}
             />
 
             <HeroPill
@@ -216,6 +349,8 @@ export default function HeroSection() {
               iconWrapperClassName="bg-red-100/80"
               iconClassName="text-red-600"
               delay={0.3}
+              floatDelay={0.5}
+              floatDistance={-10}
             />
 
             <HeroPill
@@ -225,6 +360,8 @@ export default function HeroSection() {
               iconWrapperClassName="bg-green-100/80"
               iconClassName="text-green-600"
               delay={0.4}
+              floatDelay={0.2}
+              floatDistance={9}
             />
 
             <HeroPill
@@ -234,6 +371,8 @@ export default function HeroSection() {
               iconWrapperClassName="bg-violet-100/80"
               iconClassName="text-violet-600"
               delay={0.5}
+              floatDelay={0.8}
+              floatDistance={-8}
             />
           </div>
         </div>
