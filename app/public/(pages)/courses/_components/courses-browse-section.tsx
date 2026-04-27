@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 import CourseBrowseToolbar from "./course-browse-toolbar";
 import CourseFiltersSidebar, {
@@ -61,8 +62,7 @@ export default function CoursesBrowseSection() {
       setFilters(nextFilters);
 
       const nextDeliveryMode = getDeliveryModeFromFilters(nextFilters.delivery);
-      const currentDeliveryMode =
-        searchParams.get("deliveryMode") || undefined;
+      const currentDeliveryMode = searchParams.get("deliveryMode") || undefined;
 
       if (nextDeliveryMode !== currentDeliveryMode) {
         const params = new URLSearchParams(searchParams.toString());
@@ -121,9 +121,7 @@ export default function CoursesBrowseSection() {
           page: pageNum,
           limit: 6,
           sortBy:
-            sort === "price_low" || sort === "price_high"
-              ? "price"
-              : undefined,
+            sort === "price_low" || sort === "price_high" ? "price" : undefined,
           sortOrder:
             sort === "price_high"
               ? "desc"
@@ -218,28 +216,47 @@ export default function CoursesBrowseSection() {
   }
 
   return (
-    <section className="w-full">
+    <motion.section
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="w-full"
+    >
       <div className="padding">
-        <div className="w-full">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="w-full"
+        >
           <CourseBrowseToolbar
             totalCourses={filteredCourses.length}
             sort={sort}
             onSortChange={handleSortChange}
             onOpenFilters={() => setIsMobileFiltersOpen(true)}
           />
-        </div>
+        </motion.div>
 
         <div>
           <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
-            <div className="hidden lg:block">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="hidden lg:block"
+            >
               <CourseFiltersSidebar
                 value={filters}
                 onChange={updateFilters}
                 onReset={reset}
               />
-            </div>
+            </motion.div>
 
-            <div>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+            >
               <CourseResults
                 courses={filteredCourses}
                 loading={loading}
@@ -249,18 +266,29 @@ export default function CoursesBrowseSection() {
                 onReset={reset}
                 onLoadMore={loadMore}
               />
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>
 
-      <MobileCourseFiltersDrawer
-        isOpen={isMobileFiltersOpen}
-        filters={filters}
-        onClose={() => setIsMobileFiltersOpen(false)}
-        onChange={updateFilters}
-        onReset={reset}
-      />
-    </section>
+      <AnimatePresence>
+        {isMobileFiltersOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <MobileCourseFiltersDrawer
+              isOpen={isMobileFiltersOpen}
+              filters={filters}
+              onClose={() => setIsMobileFiltersOpen(false)}
+              onChange={updateFilters}
+              onReset={reset}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.section>
   );
 }
