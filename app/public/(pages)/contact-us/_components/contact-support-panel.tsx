@@ -5,6 +5,7 @@ import Card from "@/components/cards/card";
 import Button from "@/components/buttons/button";
 import { Mail, MapPin, Phone, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
 import MessageSentDialog from "@/app/public/(pages)/contact-us/_components/message-sent-dialog";
 import ContactStaticMap from "@/app/public/(pages)/contact-us/_components/contact-static-map";
 import type {
@@ -125,126 +126,213 @@ const ContactSupportPanel = React.forwardRef<HTMLDivElement, Props>(
     }
 
     return (
-      <div ref={ref} className="mx-auto mt-8 w-full max-w-[1060px] px-4">
-        <Card shape="soft" className="border border-light-slate/20 p-0 shadow-sm">
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="mx-auto mt-8 w-full max-w-[1060px] px-4"
+      >
+        <Card
+          shape="soft"
+          className="border border-light-slate/20 p-0 shadow-sm"
+        >
           <div className="grid grid-cols-1 md:grid-cols-2">
-            <div className="p-5">
-              <h2 className="text-2xl font-semibold text-slate-900">
+            {/* Form Section */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="p-5"
+            >
+              <motion.h2
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.15 }}
+                className="text-2xl font-semibold text-slate-900"
+              >
                 Send us a message
-              </h2>
+              </motion.h2>
 
               <form onSubmit={handleSubmit} className="mt-7 space-y-6">
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  <Field label="Full Name">
-                    <input
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Dr. Jane Doe"
-                      required
-                      className="h-11 w-full rounded-2xl border border-light-slate/25 bg-slate-50 px-4 text-sm text-slate-900 outline-none focus:border-primary"
-                    />
-                  </Field>
+                  <motion.div
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                  >
+                    <Field label="Full Name">
+                      <input
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Dr. Jane Doe"
+                        required
+                        className="h-11 w-full rounded-2xl border border-light-slate/25 bg-slate-50 px-4 text-sm text-slate-900 outline-none transition-all duration-200 focus:border-primary focus:ring-1 focus:ring-primary/20"
+                      />
+                    </Field>
+                  </motion.div>
 
-                  <Field label="Email Address">
-                    <input
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="jane@hospital.com"
-                      type="email"
-                      required
-                      className="h-11 w-full rounded-2xl border border-light-slate/25 bg-slate-50 px-4 text-sm text-slate-900 outline-none focus:border-primary"
-                    />
-                  </Field>
+                  <motion.div
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.25 }}
+                  >
+                    <Field label="Email Address">
+                      <input
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="jane@hospital.com"
+                        type="email"
+                        required
+                        className="h-11 w-full rounded-2xl border border-light-slate/25 bg-slate-50 px-4 text-sm text-slate-900 outline-none transition-all duration-200 focus:border-primary focus:ring-1 focus:ring-primary/20"
+                      />
+                    </Field>
+                  </motion.div>
                 </div>
 
-                <Field label="Inquiry Type">
-                  <div className="relative">
-                    <select
-                      value={inquiryType}
-                      onChange={(e) =>
-                        setInquiryType(e.target.value as ContactUsInquiryType)
-                      }
-                      className="h-11 w-full appearance-none rounded-2xl border border-light-slate/25 bg-slate-50 px-4 pr-10 text-sm text-slate-900 outline-none focus:border-primary"
-                    >
-                      {inquiryOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.3 }}
+                >
+                  <Field label="Inquiry Type">
+                    <div className="relative">
+                      <select
+                        value={inquiryType}
+                        onChange={(e) =>
+                          setInquiryType(e.target.value as ContactUsInquiryType)
+                        }
+                        className="h-11 w-full appearance-none rounded-2xl border border-light-slate/25 bg-slate-50 px-4 pr-10 text-sm text-slate-900 outline-none transition-all duration-200 focus:border-primary focus:ring-1 focus:ring-primary/20"
+                      >
+                        {inquiryOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
 
-                    <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  </div>
-                </Field>
+                      <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </Field>
+                </motion.div>
 
-                <Field label="How can we assist?">
-                  <textarea
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Please describe your needs or questions..."
-                    rows={4}
-                    required
-                    className="w-full resize-none rounded-2xl border border-light-slate/25 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-primary"
-                  />
-                </Field>
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.35 }}
+                >
+                  <Field label="How can we assist?">
+                    <textarea
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Please describe your needs or questions..."
+                      rows={4}
+                      required
+                      className="w-full resize-none rounded-2xl border border-light-slate/25 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition-all duration-200 focus:border-primary focus:ring-1 focus:ring-primary/20"
+                    />
+                  </Field>
+                </motion.div>
 
                 {submitError ? (
-                  <p className="text-sm font-medium text-red-500">
+                  <motion.p
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-sm font-medium text-red-500"
+                  >
                     {submitError}
-                  </p>
+                  </motion.p>
                 ) : null}
 
-                <div className="pt-2">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, delay: 0.4 }}
+                  className="pt-2"
+                >
                   <Button type="submit" className="rounded-2xl px-8 py-3">
                     {isSubmitting ? "Sending..." : "Send Message"}
                     <span className="text-white/90">➔</span>
                   </Button>
-                </div>
+                </motion.div>
               </form>
-            </div>
+            </motion.div>
 
-            <div className="border-t border-light-slate/20 md:border-l md:border-t-0">
+            {/* Contact Info Section */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="border-t border-light-slate/20 md:border-l md:border-t-0"
+            >
               <div className="p-5">
-                <p className="text-xs font-semibold tracking-widest text-primary">
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.4, delay: 0.2 }}
+                  className="text-xs font-semibold tracking-widest text-primary"
+                >
                   CONTACT INFORMATION
-                </p>
+                </motion.p>
 
                 <div className="mt-6 space-y-6">
-                  <InfoRow
-                    icon={<MapPin className="h-4 w-4 text-primary" />}
-                    title={contactInfo.campusTitle}
-                    lines={[
-                      contactInfo.campusAddressLine1,
-                      contactInfo.campusAddressLine2 ?? "",
-                    ].filter(Boolean)}
-                  />
+                  <motion.div
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.25 }}
+                  >
+                    <InfoRow
+                      icon={<MapPin className="h-4 w-4 text-primary" />}
+                      title={contactInfo.campusTitle}
+                      lines={[
+                        contactInfo.campusAddressLine1,
+                        contactInfo.campusAddressLine2 ?? "",
+                      ].filter(Boolean)}
+                    />
+                  </motion.div>
 
-                  <InfoRow
-                    icon={<Phone className="h-4 w-4 text-primary" />}
-                    title={contactInfo.phoneTitle}
-                    lines={[
-                      contactInfo.phoneNumber,
-                      contactInfo.phoneMeta ?? "",
-                    ].filter(Boolean)}
-                  />
+                  <motion.div
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.3 }}
+                  >
+                    <InfoRow
+                      icon={<Phone className="h-4 w-4 text-primary" />}
+                      title={contactInfo.phoneTitle}
+                      lines={[
+                        contactInfo.phoneNumber,
+                        contactInfo.phoneMeta ?? "",
+                      ].filter(Boolean)}
+                    />
+                  </motion.div>
 
-                  <InfoRow
-                    icon={<Mail className="h-4 w-4 text-primary" />}
-                    title={contactInfo.emailTitle}
-                    lines={[contactInfo.emailAddress]}
-                  />
+                  <motion.div
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.35 }}
+                  >
+                    <InfoRow
+                      icon={<Mail className="h-4 w-4 text-primary" />}
+                      title={contactInfo.emailTitle}
+                      lines={[contactInfo.emailAddress]}
+                    />
+                  </motion.div>
                 </div>
               </div>
 
-              <div className="h-[260px] w-full overflow-hidden rounded-b-3xl border-t border-light-slate/20 md:h-[300px] md:rounded-b-none md:rounded-br-3xl">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="h-[260px] w-full overflow-hidden rounded-b-3xl border-t border-light-slate/20 md:h-[300px] md:rounded-b-none md:rounded-br-3xl"
+              >
                 <ContactStaticMap
                   imageUrl={mapImageUrl}
                   openHref={mapOpenHref}
                   title="Texas, USA"
                   subtitle="31.9686, -99.9018"
                 />
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
         </Card>
 
@@ -253,7 +341,7 @@ const ContactSupportPanel = React.forwardRef<HTMLDivElement, Props>(
           onClose={() => setSentOpen(false)}
           onBackHome={() => router.push("/public/home")}
         />
-      </div>
+      </motion.div>
     );
   },
 );
@@ -290,7 +378,7 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-start gap-4">
-      <div className="flex h-11 w-11 items-center justify-center rounded-full border border-light-slate/20 bg-white">
+      <div className="flex h-11 w-11 items-center justify-center rounded-full border border-light-slate/20 bg-white transition-all duration-200 group-hover:border-primary/30 group-hover:shadow-sm">
         {icon}
       </div>
 
@@ -334,7 +422,9 @@ function getSubmitErrorMessage(error: unknown): string {
         if (
           normalizedMessages.some(
             (item) =>
-              item.includes("inquirytype must be one of the following values") ||
+              item.includes(
+                "inquirytype must be one of the following values",
+              ) ||
               item.includes("inquiry type must be one of the following values"),
           )
         ) {
