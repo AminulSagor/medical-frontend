@@ -34,7 +34,7 @@ export default function CoursesBrowseSection() {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   const [filters, setFilters] = useState<CourseFiltersState>({
-    availableOnly: false,
+    availableOnly: true,
     delivery: { in_person: true, online: true },
     credits: null,
   });
@@ -199,7 +199,7 @@ export default function CoursesBrowseSection() {
 
   function reset() {
     setFilters({
-      availableOnly: false,
+      availableOnly: true,
       delivery: {
         in_person: true,
         online: true,

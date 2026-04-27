@@ -62,45 +62,16 @@ export default function ProductCard({ product }: Props) {
     stockQuantity <= 10;
 
   const stockLabel = (() => {
-    if (isInactive) {
-      return "Currently unavailable";
-    }
-
-    if (isOut) {
-      return "Out of stock";
-    }
-
-    if (isBackorderAvailable) {
-      return "Available on backorder";
-    }
-
-    if (isLowStock) {
-      return `Only ${stockQuantity} left`;
-    }
-
+    if (isInactive) return "Currently unavailable";
+    if (isOut) return "Out of stock";
+    if (isBackorderAvailable) return "Available on backorder";
+    if (isLowStock) return `Only ${stockQuantity} left`;
     return "In stock";
   })();
 
-  if (!product.name && process.env.NODE_ENV === "development") {
-    console.warn("ProductCard: Missing product name", {
-      productId: product.id,
-      product,
-    });
-  }
-
-  if (
-    !product.actualPrice &&
-    !product.offerPrice &&
-    process.env.NODE_ENV === "development"
-  ) {
-    console.warn("ProductCard: Missing price data", {
-      productId: product.id,
-      product,
-    });
-  }
-
   const handleAddToCart = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    e.stopPropagation();
 
     if (isAddingToCart || isOut || isInactive) return;
 
@@ -116,7 +87,7 @@ export default function ProductCard({ product }: Props) {
     }
   };
 
-  const handleToggleWishlist = async (e: React.MouseEvent) => {
+  const handleToggleWishlist = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
     await toggleWishlist(product.id);
@@ -131,11 +102,11 @@ export default function ProductCard({ product }: Props) {
   }, [imageSrc, product.id]);
 
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-xl border border-light-slate/10 bg-white shadow-sm transition-shadow hover:shadow-md md:rounded-2xl">
-      <Link
-        href={`/public/store/product-details/${product.id}`}
-        className="relative block w-full overflow-hidden"
-      >
+    <Link
+      href={`/public/store/product-details/${product.id}`}
+      className="group flex h-full flex-col overflow-hidden rounded-xl border border-light-slate/10 bg-white shadow-sm transition-shadow hover:shadow-md md:rounded-2xl"
+    >
+      <div className="relative block w-full overflow-hidden">
         <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-light-slate/5 to-light-slate/10 md:aspect-video">
           {imageSrc && !imageFailed ? (
             <img
@@ -190,7 +161,7 @@ export default function ProductCard({ product }: Props) {
             </span>
           </div>
         ) : null}
-      </Link>
+      </div>
 
       <div className="flex flex-grow flex-col p-4 md:p-6">
         <div className="mb-2 text-[9px] font-extrabold uppercase tracking-wider text-primary/70 md:text-[10px]">
@@ -219,8 +190,7 @@ export default function ProductCard({ product }: Props) {
               {money(product.offerPrice || product.actualPrice)}
             </div>
 
-            {product.offerPrice &&
-              product.actualPrice !== product.offerPrice ? (
+            {product.offerPrice && product.actualPrice !== product.offerPrice ? (
               <div className="text-xs text-light-slate line-through md:text-sm">
                 {money(product.actualPrice)}
               </div>
@@ -254,6 +224,7 @@ export default function ProductCard({ product }: Props) {
             </Button>
           ) : (
             <button
+              type="button"
               onClick={handleAddToCart}
               disabled={isAddingToCart}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70 md:py-3 md:text-sm"
@@ -264,6 +235,6 @@ export default function ProductCard({ product }: Props) {
           )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
