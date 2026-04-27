@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
@@ -22,15 +22,18 @@ export default function ShopTheLabSection() {
         setLoading(true);
         const response = await getPublicProducts({ limit: 4 });
 
-        // Map backend products to the expectations of EquipmentCard
-        const mappedProducts: Product[] = response.items.map((item) => ({
+        const mappedProducts: Product[] = response.items.map((item: any) => ({
           id: item.id,
-          category:
-            (item.tags?.[0]?.toUpperCase() as any) ||
-            "EQUIPMENT",
+          category: (item.tags?.[0]?.toUpperCase() as any) || "EQUIPMENT",
           title: item.name,
           price: Number(item.offerPrice) || Number(item.actualPrice) || 0,
-          imageSrc: undefined,
+          imageSrc:
+            item.productImage ||
+            item.thumbnail ||
+            item.image ||
+            item.images?.[0]?.url ||
+            item.images?.[0] ||
+            undefined,
           imageAlt: item.name,
           detailsHref: `/public/store/product-details/${item.id}`,
         }));
@@ -62,10 +65,7 @@ export default function ShopTheLabSection() {
             initial={{ opacity: 0, x: -40 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, amount: 0.6 }}
-            transition={{
-              duration: 0.65,
-              ease: [0.22, 1, 0.36, 1],
-            }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
           >
             <p className="text-sm font-bold text-primary">SHOP THE LAB</p>
 
@@ -122,7 +122,7 @@ export default function ShopTheLabSection() {
                   <EquipmentCard
                     product={p}
                     wished={isInWishlist(p.id)}
-                    onToggleWish={(id) => toggleWishlist(id)}
+                    onToggleWish={toggleWishlist}
                     onAddToCart={handleAddToCart}
                   />
                 </motion.div>

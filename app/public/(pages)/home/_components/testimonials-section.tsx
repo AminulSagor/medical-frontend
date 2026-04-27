@@ -1,30 +1,60 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import TestimonialCard from "./testimonial-card";
 import { getExpertReviews } from "@/service/public/expert-review.service";
 import { ExpertReview } from "@/types/public/review/expert-review.types";
 
+const INITIAL_VISIBLE_COUNT = 6;
+const LOAD_MORE_COUNT = 3;
+
 export default function TestimonialsSection() {
   const [items, setItems] = useState<ExpertReview[]>([]);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchReviews = async () => {
       try {
+        setLoading(true);
+
         const response = await getExpertReviews(1, 10);
-        if (response.data) setItems(response.data);
+        const reviews = Array.isArray(response?.data) ? response.data : [];
+
+        if (isMounted) {
+          setItems(reviews);
+        }
       } catch (error) {
         console.error("Failed to load expert reviews", error);
+
+        if (isMounted) {
+          setItems([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
+
     fetchReviews();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // if (!items || items.length === 0) return null;
+  const visibleItems = useMemo(() => {
+    return items.slice(0, visibleCount);
+  }, [items, visibleCount]);
+
+  const hasMore = visibleCount < items.length;
 
   return (
-    <section className="w-full padding overflow-hidden">
+    <section className="w-full overflow-hidden padding">
       <div className="py-12">
         <motion.div
           initial="hidden"
@@ -87,66 +117,100 @@ export default function TestimonialsSection() {
           </motion.p>
         </motion.div>
 
-        <motion.div
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.2 }}
-          variants={{
-            hidden: {},
-            show: {
-              transition: {
-                staggerChildren: 0.14,
-              },
-            },
-          }}
-          className="mt-12 grid items-stretch gap-8 lg:grid-cols-3"
-        >
-          {items.length === 0 ? (
-            <div className="col-span-full py-12 text-center text-light-slate">
+        <div className="mt-12 min-h-[320px]">
+          {loading ? (
+            <div className="grid gap-8 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-[260px] animate-pulse rounded-3xl border border-light-slate/10 bg-light-slate/5"
+                />
+              ))}
+            </div>
+          ) : visibleItems.length === 0 ? (
+            <div className="py-12 text-center text-light-slate">
               No expert reviews found yet. Be the first to leave one!
             </div>
           ) : (
-            items.map((t, index) => (
+            <>
               <motion.div
-                key={t.id}
+                initial="hidden"
+                animate="show"
                 variants={{
-                  hidden: {
-                    opacity: 0,
-                    y: 50,
-                    scale: 0.96,
-                    filter: "blur(10px)",
-                  },
+                  hidden: {},
                   show: {
-                    opacity: 1,
-                    y: 0,
-                    scale: 1,
-                    filter: "blur(0px)",
                     transition: {
-                      duration: 0.8,
-                      ease: [0.22, 1, 0.36, 1],
-                      delay: index * 0.03,
+                      staggerChildren: 0.12,
                     },
                   },
                 }}
-                className="h-full"
+                className="grid items-stretch gap-8 lg:grid-cols-3"
               >
-                <TestimonialCard 
-                  item={{
-                    id: t.id,
-                    rating: t.rating as 1 | 2 | 3 | 4 | 5,
-                    quote: t.reviewMessage,
-                    author: {
-                      name: t.reviewByInfo.name,
-                      role: t.reviewByInfo.designation,
-                      avatarSrc: t.reviewByInfo.profileImg
-                    }
-                  }} 
-                  index={index} 
-                />
+                {visibleItems.map((t, index) => {
+                  const reviewer = t.reviewByInfo;
+
+                  return (
+                    <motion.div
+                      key={t.id}
+                      variants={{
+                        hidden: {
+                          opacity: 0,
+                          y: 50,
+                          scale: 0.96,
+                          filter: "blur(10px)",
+                        },
+                        show: {
+                          opacity: 1,
+                          y: 0,
+                          scale: 1,
+                          filter: "blur(0px)",
+                          transition: {
+                            duration: 0.8,
+                            ease: [0.22, 1, 0.36, 1],
+                            delay: index * 0.03,
+                          },
+                        },
+                      }}
+                      className="h-full"
+                    >
+                      <TestimonialCard
+                        item={{
+                          id: t.id,
+                          rating: t.rating as 1 | 2 | 3 | 4 | 5,
+                          quote: t.reviewMessage || "",
+                          author: {
+                            name: reviewer?.name || "Anonymous",
+                            role: reviewer?.designation || "Medical Expert",
+                            avatarSrc: reviewer?.profileImg || "",
+                          },
+                        }}
+                        index={index}
+                      />
+                    </motion.div>
+                  );
+                })}
               </motion.div>
-            ))
+
+              {hasMore && (
+                <div className="mt-10 flex justify-center hidden">
+                  <motion.button
+                    type="button"
+                    onClick={() =>
+                      setVisibleCount((prev) =>
+                        Math.min(prev + LOAD_MORE_COUNT, items.length),
+                      )
+                    }
+                    whileHover={{ y: -2, scale: 1.03 }}
+                    whileTap={{ scale: 0.96 }}
+                    className="rounded-full bg-primary px-7 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+                  >
+                    Load More
+                  </motion.button>
+                </div>
+              )}
+            </>
           )}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

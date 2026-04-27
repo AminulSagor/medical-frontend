@@ -16,9 +16,8 @@ function formatCount(value: number, withPlus = false) {
 
 export default function FounderSpotlightSection() {
   const p = FOUNDER_PROFILE;
-  const [overviewStats, setOverviewStats] = useState<HomepageOverviewStats | null>(
-    null,
-  );
+  const [overviewStats, setOverviewStats] =
+    useState<HomepageOverviewStats | null>(null);
 
   useEffect(() => {
     const fetchOverviewStats = async () => {
@@ -81,27 +80,45 @@ export default function FounderSpotlightSection() {
             hidden: {},
             show: {
               transition: {
-                staggerChildren: 0.12,
+                staggerChildren: 0.08,
               },
             },
           }}
           className="grid gap-7 sm:grid-cols-2 xl:grid-cols-4"
         >
-          {founderStats.map((s) => (
+          {founderStats.map((s, index) => (
             <motion.div
               key={s.id}
               variants={{
-                hidden: { opacity: 0, y: 28 },
+                hidden: {
+                  opacity: 0,
+                  scale: 0.7,
+                  rotateY: 180,
+                  filter: "blur(12px)",
+                },
                 show: {
                   opacity: 1,
-                  y: 0,
+                  scale: 1,
+                  rotateY: 0,
+                  filter: "blur(0px)",
                   transition: {
-                    duration: 0.55,
-                    ease: [0.22, 1, 0.36, 1],
+                    duration: 0.6,
+                    delay: index * 0.1,
+                    ease: [0.34, 1.2, 0.64, 1],
                   },
                 },
               }}
-              className="h-full"
+              whileHover={{
+                scale: 1.05,
+                rotateY: 5,
+                rotateX: 5,
+                transition: {
+                  duration: 0.3,
+                  ease: "easeOut",
+                },
+              }}
+              style={{ transformStyle: "preserve-3d" }}
+              className="h-full [perspective:1000px]"
             >
               <FounderStatCard stat={s} />
             </motion.div>
