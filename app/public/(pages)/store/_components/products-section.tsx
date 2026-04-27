@@ -39,7 +39,7 @@ export default function ProductSection({
 
   const fetchProducts = useCallback(async () => {
     try {
-      setLoading(true);
+      setLoading((prev) => (products.length === 0 ? true : prev));
 
       const params: Record<string, string | number | string[]> = {
         page,
@@ -107,7 +107,7 @@ export default function ProductSection({
     } finally {
       setLoading(false);
     }
-  }, [filters, page, searchQuery, sortBy]);
+  }, [filters, page, products.length, searchQuery, sortBy]);
 
   useEffect(() => {
     fetchProducts();
