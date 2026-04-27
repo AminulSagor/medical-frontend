@@ -64,7 +64,7 @@ export default function TestimonialsSection() {
             hidden: {},
             show: {
               transition: {
-                staggerChildren: 0.12,
+                staggerChildren: 0.15,
               },
             },
           }}
@@ -72,12 +72,24 @@ export default function TestimonialsSection() {
         >
           <motion.p
             variants={{
-              hidden: { opacity: 0, y: 24, filter: "blur(8px)" },
+              hidden: {
+                opacity: 0,
+                x: -120,
+                rotateY: 30,
+                filter: "blur(12px)",
+              },
               show: {
                 opacity: 1,
-                y: 0,
+                x: 0,
+                rotateY: 0,
                 filter: "blur(0px)",
-                transition: { duration: 0.7, ease: "easeOut" },
+                transition: {
+                  duration: 0.8,
+                  ease: [0.25, 0.46, 0.45, 0.94],
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 12,
+                },
               },
             }}
             className="text-sm font-semibold text-primary"
@@ -87,12 +99,25 @@ export default function TestimonialsSection() {
 
           <motion.h2
             variants={{
-              hidden: { opacity: 0, y: 28, filter: "blur(10px)" },
+              hidden: {
+                opacity: 0,
+                x: 120,
+                rotateY: -30,
+                filter: "blur(12px)",
+              },
               show: {
                 opacity: 1,
-                y: 0,
+                x: 0,
+                rotateY: 0,
                 filter: "blur(0px)",
-                transition: { duration: 0.8, ease: "easeOut" },
+                transition: {
+                  duration: 0.8,
+                  ease: [0.25, 0.46, 0.45, 0.94],
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 12,
+                  delay: 0.1,
+                },
               },
             }}
             className="mt-3 text-4xl font-semibold text-black md:text-5xl"
@@ -102,12 +127,25 @@ export default function TestimonialsSection() {
 
           <motion.p
             variants={{
-              hidden: { opacity: 0, y: 24, filter: "blur(8px)" },
+              hidden: {
+                opacity: 0,
+                x: -120,
+                rotateY: 30,
+                filter: "blur(12px)",
+              },
               show: {
                 opacity: 1,
-                y: 0,
+                x: 0,
+                rotateY: 0,
                 filter: "blur(0px)",
-                transition: { duration: 0.75, ease: "easeOut" },
+                transition: {
+                  duration: 0.8,
+                  ease: [0.25, 0.46, 0.45, 0.94],
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 12,
+                  delay: 0.2,
+                },
               },
             }}
             className="mt-4 text-base leading-relaxed text-light-slate"
@@ -121,16 +159,28 @@ export default function TestimonialsSection() {
           {loading ? (
             <div className="grid gap-8 lg:grid-cols-3">
               {Array.from({ length: 6 }).map((_, index) => (
-                <div
+                <motion.div
                   key={index}
+                  initial={{
+                    opacity: 0,
+                    scale: 0.95,
+                    x: index % 2 === 0 ? -20 : 20,
+                  }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
                   className="h-[260px] animate-pulse rounded-3xl border border-light-slate/10 bg-light-slate/5"
                 />
               ))}
             </div>
           ) : visibleItems.length === 0 ? (
-            <div className="py-12 text-center text-light-slate">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="py-12 text-center text-light-slate"
+            >
               No expert reviews found yet. Be the first to leave one!
-            </div>
+            </motion.div>
           ) : (
             <>
               <motion.div
@@ -140,7 +190,7 @@ export default function TestimonialsSection() {
                   hidden: {},
                   show: {
                     transition: {
-                      staggerChildren: 0.12,
+                      staggerChildren: 0.1,
                     },
                   },
                 }}
@@ -155,23 +205,31 @@ export default function TestimonialsSection() {
                       variants={{
                         hidden: {
                           opacity: 0,
-                          y: 50,
-                          scale: 0.96,
+                          x: index % 2 === 0 ? -80 : 80,
+                          rotateY: index % 2 === 0 ? -45 : 45,
+                          scale: 0.7,
                           filter: "blur(10px)",
                         },
                         show: {
                           opacity: 1,
-                          y: 0,
+                          x: 0,
+                          rotateY: 0,
                           scale: 1,
                           filter: "blur(0px)",
                           transition: {
-                            duration: 0.8,
-                            ease: [0.22, 1, 0.36, 1],
-                            delay: index * 0.03,
+                            duration: 0.7,
+                            ease: [0.34, 1.2, 0.64, 1],
+                            delay: index * 0.06,
                           },
                         },
                       }}
                       className="h-full"
+                      whileHover={{
+                        y: -8,
+                        scale: 1.02,
+                        rotateX: 5,
+                        transition: { duration: 0.2 },
+                      }}
                     >
                       <TestimonialCard
                         item={{
@@ -200,11 +258,30 @@ export default function TestimonialsSection() {
                         Math.min(prev + LOAD_MORE_COUNT, items.length),
                       )
                     }
-                    whileHover={{ y: -2, scale: 1.03 }}
-                    whileTap={{ scale: 0.96 }}
+                    initial={{ opacity: 0, x: -50, scale: 0.8 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    whileHover={{
+                      x: 5,
+                      scale: 1.05,
+                      boxShadow: "0 10px 25px -5px rgba(0,0,0,0.15)",
+                    }}
+                    whileTap={{ scale: 0.97, x: -2 }}
+                    transition={{
+                      duration: 0.3,
+                      type: "spring",
+                      stiffness: 200,
+                    }}
                     className="rounded-full bg-primary px-7 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
                   >
-                    Load More
+                    <motion.span
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 10 }}
+                      key={visibleCount}
+                      transition={{ duration: 0.2 }}
+                    >
+                      ✨ Load More ({items.length - visibleCount} remaining)
+                    </motion.span>
                   </motion.button>
                 </div>
               )}
