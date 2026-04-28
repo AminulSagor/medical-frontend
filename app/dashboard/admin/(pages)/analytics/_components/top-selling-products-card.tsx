@@ -46,7 +46,7 @@ export default function TopSellingProductsCard({
             <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
                 <table className="w-full text-left text-xs">
                     <thead className="border-b border-slate-200 bg-slate-50 text-slate-500">
-                        <tr>
+                        <tr className="h-[49px]">
                             <th className="px-4 py-3 font-semibold">PRODUCT</th>
                             <th className="px-4 py-3 font-semibold">SALES</th>
                             <th className="px-4 py-3 font-semibold">REVENUE</th>
@@ -56,7 +56,10 @@ export default function TopSellingProductsCard({
 
                     <tbody className="divide-y divide-slate-200">
                         {rows.map((r) => (
-                            <tr key={`${r.productDetails.id}-${r.rank}`} className="text-slate-700">
+                            <tr
+                                key={`${r.productDetails.id}-${r.rank}`}
+                                className="h-[69px] text-slate-700"
+                            >
                                 <td className="px-4 py-4">
                                     <div className="flex items-center gap-3">
                                         <div className="h-9 w-9 overflow-hidden rounded-md bg-slate-50 ring-1 ring-slate-200">

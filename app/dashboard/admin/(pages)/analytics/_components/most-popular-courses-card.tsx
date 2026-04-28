@@ -53,14 +53,14 @@ export default function MostPopularCoursesCard({
         </Link>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-lg border border-slate-200">
-        <table className="w-full text-left text-xs">
+      <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
+        <table className="min-w-[620px] w-full text-left text-xs">
           <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
-            <tr>
-              <th className="px-3 py-2 font-semibold">COURSE NAME</th>
-              <th className="px-3 py-2 font-semibold">ENROLLED</th>
-              <th className="px-3 py-2 font-semibold">COMPLETION</th>
-              <th className="px-3 py-2 font-semibold">STATUS</th>
+            <tr className="h-[49px]">
+              <th className="whitespace-nowrap px-4 py-3 font-semibold">COURSE NAME</th>
+              <th className="px-4 py-3 font-semibold">ENROLLED</th>
+              <th className="px-4 py-3 font-semibold">COMPLETION</th>
+              <th className="px-4 py-3 font-semibold">STATUS</th>
             </tr>
           </thead>
 
@@ -68,13 +68,13 @@ export default function MostPopularCoursesCard({
             {rows.map((r) => (
               <tr
                 key={`${r.courseName}-${r.instructorDetails.id ?? "na"}`}
-                className="text-slate-700"
+                className="h-[69px] text-slate-700"
               >
-                <td className="px-3 py-3 font-medium text-slate-900">
+                <td className="px-4 py-4 font-medium text-slate-900">
                   {r.courseName}
                 </td>
-                <td className="px-3 py-3">{r.enrolled.toLocaleString()}</td>
-                <td className="px-3 py-3">
+                <td className="px-4 py-4">{r.enrolled.toLocaleString()}</td>
+                <td className="px-4 py-4">
                   <div className="flex items-center gap-3">
                     <div className="h-2 w-[120px] rounded-full bg-slate-100">
                       <div
@@ -89,7 +89,7 @@ export default function MostPopularCoursesCard({
                     </span>
                   </div>
                 </td>
-                <td className="px-3 py-3">
+                <td className="px-4 py-4">
                   <StatusPill label={r.status} />
                 </td>
               </tr>
@@ -98,7 +98,7 @@ export default function MostPopularCoursesCard({
               <tr>
                 <td
                   colSpan={4}
-                  className="px-3 py-6 text-center text-xs text-slate-500"
+                  className="px-4 py-6 text-center text-xs text-slate-500"
                 >
                   No course analytics available for the selected period.
                 </td>

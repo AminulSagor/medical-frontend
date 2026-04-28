@@ -89,7 +89,7 @@ export interface AnalyticsDateRangeDateQuery {
 }
 
 export interface RevenueOverviewGraphQuery extends AnalyticsDateRangeDateQuery {
-  groupBy?: "day" | "week" | "month";
+  groupBy?: "week" | "month" | "year" | "life-time";
 }
 
 export interface MostPopularCoursesTableQuery extends AnalyticsDateRangeDateQuery {

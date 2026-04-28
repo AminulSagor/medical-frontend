@@ -213,7 +213,7 @@ export default function MostPopularCoursesViewAllClient({
                   <td className="px-6 py-5 text-slate-600">{r.category}</td>
                   <td className="px-6 py-5 text-slate-600">{r.nextSession}</td>
                   <td className="px-6 py-5 text-slate-700">
-                    {r.instructorDetails.name}
+                    {r.instructorDetails?.name ?? "No instructor"}
                   </td>
                   <td className="px-6 py-5 text-right font-semibold text-slate-900">
                     {r.enrolled.toLocaleString()}

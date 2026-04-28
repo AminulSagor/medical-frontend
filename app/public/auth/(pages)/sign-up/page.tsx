@@ -1,24 +1,26 @@
 "use client";
 
 import Link from "next/link";
-
 import { Eye, EyeOff } from "lucide-react";
 import { useSignUpController } from "./sign-up-controller";
 
 function StrengthRow({ ok, label }: { ok: boolean; label: string }) {
   return (
-    <div className="flex mt-15 items-center gap-2 text-[11px] leading-4">
+    <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500">
       <span
         className={[
-          "grid h-4 w-4 place-items-center rounded-full border",
+          "grid h-4 w-4 shrink-0 place-items-center rounded-full border text-[9px]",
           ok
-            ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-            : "border-slate-200 bg-white text-slate-400",
+            ? "border-emerald-400 bg-emerald-500 text-white"
+            : "border-slate-300 bg-white text-slate-400",
         ].join(" ")}
       >
         {ok ? "✓" : "•"}
       </span>
-      <span className={ok ? "text-slate-700" : "text-slate-500"}>{label}</span>
+
+      <span className={ok ? "text-emerald-700" : "text-slate-500"}>
+        {label}
+      </span>
     </div>
   );
 }
@@ -29,25 +31,20 @@ export default function SignUpPage() {
   return (
     <div className="flex min-h-[calc(100dvh+4rem)] w-full items-center justify-center bg-slate-50 px-4 py-10">
       <div className="mx-auto w-full max-w-[420px]">
-        {/* compact "FB-like" header */}
-        <div className="mb-4 flex flex-col items-center">
-          <div className="flex flex-col items-center text-center">
+        <div className="rounded-[32px] border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+          <div className="px-5 pt-7 text-center">
             <h1 className="text-[22px] font-extrabold leading-7 tracking-tight text-slate-900">
               Create Professional Account
             </h1>
 
-            <p className="mt-1 max-w-[360px] text-[13px] leading-5 text-slate-400">
+            <p className="mt-1 text-[13px] leading-5 text-slate-400">
               Establish your professional credentials to access
               <br />
               clinical simulations and training.
             </p>
           </div>
-        </div>
 
-        {/* smaller card */}
-        <div className="rounded-xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
-          <form onSubmit={c.onSubmit} className="space-y-3 px-5 py-4">
-            {/* Full Name */}
+          <form onSubmit={c.onSubmit} className="space-y-3 px-5 pb-4 pt-5">
             <div>
               <label className="text-[11px] font-semibold text-slate-700">
                 Full Legal Name
@@ -71,7 +68,6 @@ export default function SignUpPage() {
               )}
             </div>
 
-            {/* Email */}
             <div>
               <label className="text-[11px] font-semibold text-slate-700">
                 Medical Email Address
@@ -96,7 +92,6 @@ export default function SignUpPage() {
               )}
             </div>
 
-            {/* Role */}
             <div>
               <label className="text-[11px] font-semibold text-slate-700">
                 Professional Role
@@ -120,7 +115,6 @@ export default function SignUpPage() {
               )}
             </div>
 
-            {/* Password */}
             <div>
               <label className="text-[11px] font-semibold text-slate-700">
                 New Password
@@ -138,12 +132,11 @@ export default function SignUpPage() {
                     c.errors.password ? "border-rose-300" : "border-slate-200",
                   ].join(" ")}
                 />
+
                 <button
                   type="button"
                   onClick={c.toggleShowPassword}
-                  aria-label={
-                    c.showPassword ? "Hide password" : "Show password"
-                  }
+                  aria-label={c.showPassword ? "Hide password" : "Show password"}
                   className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md p-2 text-slate-500 hover:bg-slate-100 focus:outline-none"
                 >
                   {c.showPassword ? (
@@ -154,7 +147,7 @@ export default function SignUpPage() {
                 </button>
               </div>
 
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <StrengthRow ok={c.strength.len} label="12+ characters" />
                 <StrengthRow
                   ok={c.strength.upper && c.strength.lower}
@@ -171,14 +164,11 @@ export default function SignUpPage() {
               )}
             </div>
 
-            {/* Terms */}
             <div className="pt-1">
               <label className="flex cursor-pointer items-start gap-2">
                 <input
                   checked={c.form.acceptedTerms}
-                  onChange={(e) =>
-                    c.setField("acceptedTerms", e.target.checked)
-                  }
+                  onChange={(e) => c.setField("acceptedTerms", e.target.checked)}
                   type="checkbox"
                   className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-200"
                 />
@@ -194,6 +184,7 @@ export default function SignUpPage() {
                   .
                 </span>
               </label>
+
               {c.errors.acceptedTerms && (
                 <p className="mt-1 text-[11px] text-rose-600">
                   {c.errors.acceptedTerms}
@@ -201,19 +192,16 @@ export default function SignUpPage() {
               )}
             </div>
 
-            {/* API Error */}
             {c.apiError && (
-              <p className="text-[12px] text-rose-600 text-center">
+              <p className="text-center text-[12px] text-rose-600">
                 {c.apiError}
               </p>
             )}
 
-            {/* CTA */}
             <button
               type="submit"
               disabled={c.submitting}
-              className="mt-1 h-10 w-full rounded-lg bg-[#32C4F3]
- text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+              className="mt-1 h-10 w-full rounded-lg bg-[#32C4F3] text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {c.submitting ? "Creating..." : "Sign up"}
             </button>

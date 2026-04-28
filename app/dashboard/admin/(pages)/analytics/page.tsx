@@ -62,6 +62,25 @@ function getDateRange(range: AnalyticsRangeKey) {
   return { start, end };
 }
 
+function getCurrentYearRange() {
+  const now = new Date();
+
+  return {
+    start: new Date(Date.UTC(now.getUTCFullYear(), 0, 1)),
+    end: new Date(Date.UTC(now.getUTCFullYear(), 11, 31)),
+  };
+}
+
+function getRecentYearsRange(yearCount = 5) {
+  const now = new Date();
+  const currentYear = now.getUTCFullYear();
+
+  return {
+    start: new Date(Date.UTC(currentYear - (yearCount - 1), 0, 1)),
+    end: new Date(Date.UTC(currentYear, 11, 31)),
+  };
+}
+
 export default async function AnalyticsPage({
   searchParams,
 }: {
@@ -69,13 +88,21 @@ export default async function AnalyticsPage({
 }) {
   const resolvedSearch = searchParams ? await searchParams : {};
   const rawRange = resolvedSearch.range;
-  const range = (typeof rawRange === "string" ? rawRange : "last_30") as AnalyticsRangeKey;
+  const range = (
+    typeof rawRange === "string" ? rawRange : "last_30"
+  ) as AnalyticsRangeKey;
+
   const safeRange: AnalyticsRangeKey =
-    range === "last_7" || range === "this_year" || range === "last_30" ? range : "last_30";
+    range === "last_7" || range === "this_year" || range === "last_30"
+      ? range
+      : "last_30";
 
   const { start, end } = getDateRange(safeRange);
   const startDate = formatDateOnly(start);
   const endDate = formatDateOnly(end);
+
+  const monthlyChartRange = getCurrentYearRange();
+  const yearlyChartRange = getRecentYearsRange(5);
 
   const [
     summaryResult,
@@ -91,26 +118,49 @@ export default async function AnalyticsPage({
     }),
     getTopSellingProductsTable({ startDate, endDate, page: 1, limit: 3 }),
     getMostPopularCoursesTable({ startDate, endDate, page: 1, limit: 3 }),
-    getRevenueOverviewGraph({ startDate, endDate, groupBy: "day" }),
     getRevenueOverviewGraph({ startDate, endDate, groupBy: "week" }),
-    getRevenueOverviewGraph({ startDate, endDate, groupBy: "month" }),
+    getRevenueOverviewGraph({
+      startDate: formatDateOnly(monthlyChartRange.start),
+      endDate: formatDateOnly(monthlyChartRange.end),
+      groupBy: "month",
+    }),
+    getRevenueOverviewGraph({
+      startDate: formatDateOnly(yearlyChartRange.start),
+      endDate: formatDateOnly(yearlyChartRange.end),
+      groupBy: "year",
+    }),
   ]);
 
-  const summary = summaryResult.status === "fulfilled" ? summaryResult.value : summaryFallback;
+  const summary =
+    summaryResult.status === "fulfilled" ? summaryResult.value : summaryFallback;
+
   const topProducts =
-    topProductsTableResult.status === "fulfilled" ? topProductsTableResult.value : topProductsFallback;
+    topProductsTableResult.status === "fulfilled"
+      ? topProductsTableResult.value
+      : topProductsFallback;
+
   const popularCourses =
-    popularCoursesTableResult.status === "fulfilled" ? popularCoursesTableResult.value : popularCoursesFallback;
+    popularCoursesTableResult.status === "fulfilled"
+      ? popularCoursesTableResult.value
+      : popularCoursesFallback;
+
   const revenueWeekly =
-    revenueWeeklyResult.status === "fulfilled" ? revenueWeeklyResult.value : revenueFallback;
+    revenueWeeklyResult.status === "fulfilled"
+      ? revenueWeeklyResult.value
+      : revenueFallback;
+
   const revenueMonthly =
-    revenueMonthlyResult.status === "fulfilled" ? revenueMonthlyResult.value : revenueFallback;
+    revenueMonthlyResult.status === "fulfilled"
+      ? revenueMonthlyResult.value
+      : revenueFallback;
+
   const revenueYearly =
-    revenueYearlyResult.status === "fulfilled" ? revenueYearlyResult.value : revenueFallback;
+    revenueYearlyResult.status === "fulfilled"
+      ? revenueYearlyResult.value
+      : revenueFallback;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <PageTitle
           title="Executive Analytics"
@@ -119,7 +169,6 @@ export default async function AnalyticsPage({
         <AnalyticsToolbar />
       </div>
 
-      {/* Stat cards */}
       <StatCards summary={summary} />
 
       <RevenueStreamsCard
@@ -128,10 +177,17 @@ export default async function AnalyticsPage({
         yearlySeries={revenueYearly.series}
       />
 
-      {/* Bottom grid */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <TopSellingProductsCard rows={topProducts.items} startDate={startDate} endDate={endDate} />
-        <MostPopularCoursesCard rows={popularCourses.items} startDate={startDate} endDate={endDate} />
+        <TopSellingProductsCard
+          rows={topProducts.items}
+          startDate={startDate}
+          endDate={endDate}
+        />
+        <MostPopularCoursesCard
+          rows={popularCourses.items}
+          startDate={startDate}
+          endDate={endDate}
+        />
       </div>
     </div>
   );
