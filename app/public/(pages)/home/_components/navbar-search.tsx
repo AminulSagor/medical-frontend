@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Loader2, FileText, Package, GraduationCap } from "lucide-react";
+import {
+  Search,
+  Loader2,
+  FileText,
+  Package,
+  GraduationCap,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { searchNavbarItems } from "@/service/public/navbar-search.service";
 import type {
@@ -103,7 +109,7 @@ export default function NavbarSearch({
   };
 
   return (
-    <div ref={wrapRef} className="relative w-full max-w-130">
+    <div ref={wrapRef} className="relative w-full max-w-[780px]">
       <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-light-slate">
         <Search size={18} />
       </span>

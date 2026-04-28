@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import React from "react";
 import { Star } from "lucide-react";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import Card from "@/components/cards/card";
@@ -9,8 +9,10 @@ import { Testimonial } from "@/app/public/types/testimonial.types";
 function initialFromName(name: string) {
   const trimmed = name.trim();
   if (!trimmed) return "U";
+
   const parts = trimmed.split(" ").filter(Boolean);
   const last = parts[parts.length - 1] || trimmed;
+
   return last[0]?.toUpperCase() || "U";
 }
 
@@ -66,11 +68,8 @@ export default function TestimonialCard({
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
 
-    const rotateYValue = ((x - centerX) / centerX) * 7;
-    const rotateXValue = -((y - centerY) / centerY) * 7;
-
-    rotateXRaw.set(rotateXValue);
-    rotateYRaw.set(rotateYValue);
+    rotateYRaw.set(((x - centerX) / centerX) * 7);
+    rotateXRaw.set(-((y - centerY) / centerY) * 7);
   };
 
   const handleMouseLeave = () => {
@@ -85,9 +84,7 @@ export default function TestimonialCard({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       initial={{ y: 0 }}
-      animate={{
-        y: [0, -6, 0],
-      }}
+      animate={{ y: [0, -6, 0] }}
       transition={{
         duration: 5.5 + index * 0.4,
         repeat: Infinity,
@@ -165,7 +162,7 @@ export default function TestimonialCard({
           </motion.div>
 
           <div
-            className="relative z-10 mt-5 font-mono overflow-hidden"
+            className="relative z-10 mt-5 overflow-hidden font-mono text-sm leading-7 text-light-slate"
             style={{ transform: "translateZ(38px)" }}
           >
             “{item.quote}”
@@ -183,27 +180,29 @@ export default function TestimonialCard({
               <motion.div
                 whileHover={{ scale: 1.06 }}
                 transition={{ duration: 0.22 }}
-                className="relative h-11 w-11 overflow-hidden rounded-full bg-light-slate/15 ring-1 ring-light-slate/10"
+                className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-light-slate/15 ring-1 ring-light-slate/10"
               >
                 <img
                   src={author.avatarSrc}
                   alt={author.name}
-                  className="object-cover"
+                  className="h-full w-full object-cover"
                 />
               </motion.div>
             ) : (
               <motion.div
                 whileHover={{ scale: 1.06 }}
                 transition={{ duration: 0.22 }}
-                className="grid h-11 w-11 place-items-center rounded-full bg-light-slate/20 text-sm font-extrabold text-light-slate ring-1 ring-light-slate/10"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-light-slate/20 text-sm font-extrabold text-light-slate ring-1 ring-light-slate/10"
               >
                 {initialFromName(author.name)}
               </motion.div>
             )}
 
-            <div className="leading-tight">
-              <p className="text-sm font-bold text-black">{author.name}</p>
-              <p className="text-sm font-semibold text-light-slate">
+            <div className="min-w-0 leading-tight">
+              <p className="truncate text-sm font-bold text-black">
+                {author.name}
+              </p>
+              <p className="truncate text-sm font-semibold text-light-slate">
                 {author.role}
               </p>
             </div>

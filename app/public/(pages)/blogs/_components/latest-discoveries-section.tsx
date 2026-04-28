@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import LatestDiscoveriesGrid from "./latest-discoveries-grid";
 import LatestDiscoveriesList from "./latest-discoveries-list";
 import BlogsRightSideCard from "./right-side-cards/blogs-card";
@@ -52,22 +53,35 @@ export default function LatestDiscoveriesSection({
     fetchBlogs();
   }, [page]);
 
+  // Animated button icons with spring effect
+  const buttonVariants = {
+    tap: { scale: 0.92 },
+    hover: { scale: 1.05, transition: { duration: 0.2 } },
+  };
+
   return (
     <section className="w-full pt-10">
       <div className="padding">
         <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <h2 className="font-serif text-[28px] leading-[32px] font-bold text-black md:text-[32px] md:leading-[36px]">
+              <motion.h2
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="font-serif text-[28px] leading-[32px] font-bold text-black md:text-[32px] md:leading-[36px]"
+              >
                 Latest Discoveries
-              </h2>
+              </motion.h2>
 
               <div className="flex items-center gap-2 rounded-full border border-light-slate/10 bg-white p-1 shadow-sm">
-                <button
+                <motion.button
                   type="button"
                   onClick={() => setView("grid")}
+                  variants={buttonVariants}
+                  whileTap="tap"
+                  whileHover="hover"
                   className={[
-                    "grid h-9 w-9 place-items-center rounded-full transition",
+                    "grid h-9 w-9 place-items-center rounded-full transition-all duration-200",
                     view === "grid"
                       ? "bg-light-slate/5 text-black"
                       : "text-light-slate/60 hover:bg-light-slate/5",
@@ -81,13 +95,16 @@ export default function LatestDiscoveriesSection({
                       fill="currentColor"
                     />
                   </svg>
-                </button>
+                </motion.button>
 
-                <button
+                <motion.button
                   type="button"
                   onClick={() => setView("list")}
+                  variants={buttonVariants}
+                  whileTap="tap"
+                  whileHover="hover"
                   className={[
-                    "grid h-9 w-9 place-items-center rounded-full transition",
+                    "grid h-9 w-9 place-items-center rounded-full transition-all duration-200",
                     view === "list"
                       ? "bg-light-slate/5 text-black"
                       : "text-light-slate/60 hover:bg-light-slate/5",
@@ -101,7 +118,7 @@ export default function LatestDiscoveriesSection({
                       fill="currentColor"
                     />
                   </svg>
-                </button>
+                </motion.button>
               </div>
             </div>
 
@@ -110,23 +127,69 @@ export default function LatestDiscoveriesSection({
                 <div className="py-12 text-center text-slate-500">
                   Loading articles...
                 </div>
-              ) : view === "grid" ? (
-                <LatestDiscoveriesGrid posts={posts} />
               ) : (
-                <LatestDiscoveriesList posts={posts} />
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={view}
+                    initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                    transition={{
+                      duration: 0.35,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                  >
+                    {view === "grid" ? (
+                      <LatestDiscoveriesGrid posts={posts} />
+                    ) : (
+                      <LatestDiscoveriesList posts={posts} />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
               )}
             </div>
 
             <div className="mt-10 flex justify-center">
               {hasMore ? (
-                <button
+                <motion.button
                   type="button"
                   onClick={() => setPage((prev) => prev + 1)}
                   disabled={loading}
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
                   className="rounded-full border border-light-slate/15 bg-white px-6 py-2.5 text-sm font-semibold text-light-slate transition hover:bg-light-slate/5 active:scale-95 disabled:opacity-50"
                 >
-                  {loading ? "Loading..." : "Load More Articles"}
-                </button>
+                  {loading ? (
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center gap-2"
+                    >
+                      <svg
+                        className="h-4 w-4 animate-spin"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Loading...
+                    </motion.span>
+                  ) : (
+                    "Load More Articles"
+                  )}
+                </motion.button>
               ) : null}
             </div>
           </div>

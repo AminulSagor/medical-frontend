@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Heart, ShoppingCart, Package } from "lucide-react";
 import { motion } from "motion/react";
 import Card from "@/components/cards/card";
 import { Product } from "@/app/public/types/equipment.types";
+import { IMAGE } from "@/constant/image-config";
 
 function money(n: number) {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -31,11 +31,13 @@ export default function EquipmentCard({
       whileHover="hover"
       initial="rest"
       animate="rest"
-      className="h-full group"
+      className="group h-full"
     >
-      <Card
-        shape="soft"
-        className="relative h-full overflow-hidden border border-light-slate/15 p-0"
+      <div
+        className="bg-[#F8FAFC]
+        p-2
+        shadow-sm
+        border border-slate-100 rounded-2xl"
       >
         <motion.div
           variants={{
@@ -45,7 +47,7 @@ export default function EquipmentCard({
           transition={{ duration: 0.28, ease: "easeOut" }}
           className="h-full"
         >
-          <div className="relative h-full p-6">
+          <div className="relative h-full p-4">
             <motion.button
               type="button"
               onClick={(e) => {
@@ -56,7 +58,7 @@ export default function EquipmentCard({
               whileHover={{ scale: 1.08, y: -1 }}
               whileTap={{ scale: 0.92 }}
               transition={{ duration: 0.18 }}
-              className="absolute right-4 top-4 z-20 grid h-9 w-9 place-items-center rounded-full border border-light-slate/20 bg-white hover:bg-light-slate/10 active:scale-95 transition"
+              className="absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-full border border-light-slate/20 bg-white transition hover:bg-light-slate/10 active:scale-95"
               aria-label="Add to wishlist"
             >
               <motion.span
@@ -76,24 +78,21 @@ export default function EquipmentCard({
               </motion.span>
             </motion.button>
 
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center pt-2">
               <motion.div
                 variants={{
                   rest: { scale: 1 },
-                  hover: { scale: 1.08 },
+                  hover: { scale: 1.06 },
                 }}
                 transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                className="grid h-24 w-24 place-items-center rounded-full bg-light-slate/15"
+                className="grid h-24 w-24 place-items-center overflow-hidden rounded-full bg-light-slate/10"
               >
                 {product.imageSrc ? (
-                  <div className="relative h-16 w-16 overflow-hidden rounded-full">
-                    <Image
-                      src={product.imageSrc}
-                      alt={product.imageAlt || product.title}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
+                  <img
+                    src={product.imageSrc || IMAGE.fallbackImage}
+                    alt={product.imageAlt || product.title}
+                    className="h-full w-full rounded-full object-cover"
+                  />
                 ) : (
                   <Package className="text-light-slate" size={22} />
                 )}
@@ -107,7 +106,7 @@ export default function EquipmentCard({
               }}
               transition={{ duration: 0.22 }}
               className={[
-                "mt-6 text-[11px] font-extrabold tracking-[0.18em]",
+                "mt-4 text-[11px] font-extrabold tracking-[0.18em]",
                 categoryToneClass(product.category),
               ].join(" ")}
             >
@@ -127,7 +126,7 @@ export default function EquipmentCard({
               </span>
             </motion.h3>
 
-            <div className="mt-5 flex items-center justify-between">
+            <div className="mt-4 flex items-center justify-between">
               <motion.div
                 variants={{
                   rest: { y: 0 },
@@ -153,7 +152,7 @@ export default function EquipmentCard({
                   }}
                   transition={{ duration: 0.21, ease: "easeOut" }}
                   whileTap={{ scale: 0.94 }}
-                  className="relative z-20 grid h-10 w-10 place-items-center rounded-full bg-primary text-white hover:opacity-90 active:scale-95 transition"
+                  className="relative z-20 grid h-10 w-10 place-items-center rounded-full bg-primary text-white transition hover:opacity-90 active:scale-95"
                   aria-label="Add to cart"
                 >
                   <ShoppingCart size={18} />
@@ -163,12 +162,12 @@ export default function EquipmentCard({
 
             <Link
               href={product.detailsHref}
-              className="absolute inset-0 z-10"
+              className="absolute inset-0 z-10 cursor-pointer"
               aria-label={`View ${product.title}`}
             />
           </div>
         </motion.div>
-      </Card>
+      </div>
     </motion.div>
   );
 }

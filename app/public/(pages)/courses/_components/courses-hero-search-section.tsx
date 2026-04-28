@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Search, CalendarDays, GraduationCap } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 const COURSE_TYPE_OPTIONS = ["All Types", "In Person", "Online"] as const;
 type CourseTypeOption = (typeof COURSE_TYPE_OPTIONS)[number];
@@ -86,7 +87,9 @@ export default function CoursesHeroSearchSection({
   function cycleType() {
     setType((current) => {
       const currentIndex = COURSE_TYPE_OPTIONS.indexOf(current);
-      return COURSE_TYPE_OPTIONS[(currentIndex + 1) % COURSE_TYPE_OPTIONS.length];
+      return COURSE_TYPE_OPTIONS[
+        (currentIndex + 1) % COURSE_TYPE_OPTIONS.length
+      ];
     });
   }
 
@@ -110,7 +113,9 @@ export default function CoursesHeroSearchSection({
     else params.delete("dateTo");
 
     params.delete("page");
-    router.push(`/public/courses${params.toString() ? `?${params.toString()}` : ""}`);
+    router.push(
+      `/public/courses${params.toString() ? `?${params.toString()}` : ""}`,
+    );
     setIsDateRangeOpen(false);
   }
 
@@ -125,21 +130,41 @@ export default function CoursesHeroSearchSection({
             isDateRangeOpen ? "pb-40 md:pb-16" : "pb-16",
           ].join(" ")}
         >
-          <div className="flex justify-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex justify-center"
+          >
             <span className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold tracking-[0.18em] text-white backdrop-blur">
               {badge}
             </span>
-          </div>
+          </motion.div>
 
-          <h1 className="mt-6 text-center text-4xl font-bold leading-tight text-white md:text-6xl">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="mt-6 text-center text-4xl font-bold leading-tight text-white md:text-6xl"
+          >
             {title}
-          </h1>
+          </motion.h1>
 
-          <p className="mx-auto mt-5 max-w-3xl text-center text-sm leading-relaxed text-white/85 md:text-base">
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mx-auto mt-5 max-w-3xl text-center text-sm leading-relaxed text-white/85 md:text-base"
+          >
             {subtitle}
-          </p>
+          </motion.p>
 
-          <div className="mx-auto mt-10 max-w-5xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="mx-auto mt-10 max-w-5xl"
+          >
             <div
               className={[
                 "relative overflow-visible rounded-[48px] border border-white/20",
@@ -182,63 +207,71 @@ export default function CoursesHeroSearchSection({
                   </div>
                 </button>
 
-                {isDateRangeOpen ? (
-                  <div className="absolute left-0 right-4 top-full z-30 mt-3 rounded-3xl border border-white/20 bg-primary/95 p-4 shadow-2xl backdrop-blur md:left-5 md:right-5">
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <label className="block">
-                        <span className="mb-1 block text-xs font-bold tracking-[0.16em] text-white/70">
-                          FROM
-                        </span>
-                        <input
-                          type="date"
-                          value={dateFrom}
-                          onChange={(e) => {
-                            const nextFrom = e.target.value;
-                            setDateFrom(nextFrom);
-                            if (dateTo && nextFrom && dateTo < nextFrom) {
-                              setDateTo(nextFrom);
-                            }
+                <AnimatePresence>
+                  {isDateRangeOpen ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute left-0 right-4 top-full z-30 mt-3 rounded-3xl border border-white/20 bg-primary/95 p-4 shadow-2xl backdrop-blur md:left-5 md:right-5"
+                    >
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <label className="block">
+                          <span className="mb-1 block text-xs font-bold tracking-[0.16em] text-white/70">
+                            FROM
+                          </span>
+                          <input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => {
+                              const nextFrom = e.target.value;
+                              setDateFrom(nextFrom);
+                              if (dateTo && nextFrom && dateTo < nextFrom) {
+                                setDateTo(nextFrom);
+                              }
+                            }}
+                            className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white outline-none"
+                          />
+                        </label>
+
+                        <label className="block">
+                          <span className="mb-1 block text-xs font-bold tracking-[0.16em] text-white/70">
+                            TO
+                          </span>
+                          <input
+                            type="date"
+                            value={dateTo}
+                            min={dateFrom || undefined}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white outline-none"
+                          />
+                        </label>
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDateFrom("");
+                            setDateTo("");
                           }}
-                          className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white outline-none"
-                        />
-                      </label>
+                          className="text-xs font-extrabold tracking-[0.16em] text-white/70"
+                        >
+                          CLEAR
+                        </button>
 
-                      <label className="block">
-                        <span className="mb-1 block text-xs font-bold tracking-[0.16em] text-white/70">
-                          TO
-                        </span>
-                        <input
-                          type="date"
-                          value={dateTo}
-                          min={dateFrom || undefined}
-                          onChange={(e) => setDateTo(e.target.value)}
-                          className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white outline-none"
-                        />
-                      </label>
-                    </div>
-
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDateFrom("");
-                          setDateTo("");
-                        }}
-                        className="text-xs font-extrabold tracking-[0.16em] text-white/70"
-                      >
-                        CLEAR
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setIsDateRangeOpen(false)}
-                        className="rounded-full bg-white px-4 py-2 text-xs font-extrabold tracking-[0.16em] text-primary"
-                      >
-                        DONE
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
+                        <button
+                          type="button"
+                          onClick={() => setIsDateRangeOpen(false)}
+                          className="rounded-full bg-white px-4 py-2 text-xs font-extrabold tracking-[0.16em] text-primary"
+                        >
+                          DONE
+                        </button>
+                      </div>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
               </div>
 
               <div className="hidden h-10 w-px bg-white/20 md:block" />
@@ -254,23 +287,27 @@ export default function CoursesHeroSearchSection({
                     <p className="text-[11px] font-extrabold tracking-[0.18em] text-white/70">
                       TYPE
                     </p>
-                    <p className="truncate text-sm font-semibold text-white/90">{type}</p>
+                    <p className="truncate text-sm font-semibold text-white/90">
+                      {type}
+                    </p>
                   </div>
                 </button>
               </div>
 
               <div className="md:pl-3 md:pr-2">
-                <button
+                <motion.button
                   type="button"
                   onClick={submit}
-                  className="grid h-12 w-12 place-items-center rounded-full bg-white text-primary transition hover:opacity-90 active:scale-95"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="grid h-12 w-12 place-items-center rounded-full bg-white text-primary transition hover:opacity-90"
                   aria-label="Search"
                 >
                   <Search size={18} />
-                </button>
+                </motion.button>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
