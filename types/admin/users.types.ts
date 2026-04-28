@@ -10,14 +10,21 @@ export type GetMasterUsersDirectoryParams = {
 
 export type MasterUsersDirectoryStatistics = {
     totalCommunity: number;
-    activeStudents: number;
-    growthPulse: string;
+    growthPulse: number | string;
     engagementRate: string;
+    activeStudents: number;
+    studentGrowthPulse: number;
+    studentEngagementRate: string;
+    activeEnrollments: number;
+    activeInstructors: number;
+    instructorGrowthPulse: number;
+    instructorTotalWorkshopTaught: number;
+    instructorEngagementRate: string;
     roleDistribution: {
-        student: number;
-        user: number;
-        admin: number;
-        instructor?: number;
+        students: number;
+        instructors: number;
+        admins: number;
+        others: number;
     };
 };
 
@@ -34,6 +41,8 @@ export type MasterUsersDirectoryUserItem = {
     courses: number;
     joinedDate: string;
     lastActive: string | null;
+    products?: string;
+    spent?: string;
 };
 
 export type MasterUsersDirectoryResponse = {

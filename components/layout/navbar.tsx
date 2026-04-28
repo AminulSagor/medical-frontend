@@ -193,13 +193,6 @@ export default function Navbar() {
                   >
                     <span>{link.label}</span>
 
-                    {link.showDot && (
-                      <span
-                        className="absolute -right-3 top-0 h-2 w-2 rounded-full bg-primary"
-                        aria-hidden="true"
-                      />
-                    )}
-
                     <span
                       className={[
                         "absolute -bottom-1 left-0 h-[2px] w-full origin-left rounded-full bg-primary transition-transform duration-300 ease-out",

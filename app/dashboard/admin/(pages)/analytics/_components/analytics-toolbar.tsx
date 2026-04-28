@@ -7,8 +7,8 @@ import { Download } from "lucide-react";
 export type AnalyticsRangeKey = "last_7" | "last_30" | "this_year";
 
 const ranges: Array<{ key: AnalyticsRangeKey; label: string }> = [
-  { key: "last_7", label: "Last 7 Days" },
-  { key: "last_30", label: "Last 30 Days" },
+  { key: "last_7", label: "This Week" },
+  { key: "last_30", label: "This Month" },
   { key: "this_year", label: "This Year" },
 ];
 
@@ -26,16 +26,16 @@ export default function AnalyticsToolbar() {
   }
 
   const activeLabel = useMemo(
-    () => ranges.find((r) => r.key === active)?.label ?? "Last 30 Days",
+    () => ranges.find((r) => r.key === active)?.label ?? "This Month",
     [active],
   );
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      {/* Range pills */}
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white p-1">
         {ranges.map((r) => {
           const isActive = r.key === active;
+
           return (
             <button
               key={r.key}
@@ -55,15 +55,14 @@ export default function AnalyticsToolbar() {
         })}
       </div>
 
-      {/* Download */}
       {/* <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-4 py-2 text-xs font-semibold text-white hover:bg-[var(--primary-hover)] transition"
-                title={`Download report (${activeLabel})`}
-            >
-                <Download size={16} />
-                Download Report PDF
-            </button> */}
+        type="button"
+        className="inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[var(--primary-hover)]"
+        title={`Download report (${activeLabel})`}
+      >
+        <Download size={16} />
+        Download Report PDF
+      </button> */}
     </div>
   );
 }

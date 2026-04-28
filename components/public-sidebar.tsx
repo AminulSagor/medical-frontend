@@ -169,13 +169,6 @@ export default function PublicSidebar({
                   >
                     {l.label}
                   </span>
-
-                  {l.showDot && (
-                    <span
-                      className="h-2 w-2 rounded-full bg-primary"
-                      aria-hidden="true"
-                    />
-                  )}
                 </div>
 
                 <ChevronRight size={18} className="text-light-slate" />
