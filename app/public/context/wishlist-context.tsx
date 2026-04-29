@@ -79,6 +79,11 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
       if (!token) {
         if (typeof window !== "undefined") {
+          const currentPath = window.location.pathname + window.location.search;
+
+          window.sessionStorage.setItem("postLoginRedirect", currentPath);
+          window.sessionStorage.setItem("postLoginOpenWishlist", "true");
+
           window.location.href = "/public/auth/sign-in";
         }
         return;

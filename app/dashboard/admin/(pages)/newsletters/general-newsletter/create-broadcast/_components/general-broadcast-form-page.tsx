@@ -249,8 +249,6 @@ export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
       (item) => item.fileKey === fileKey,
     );
 
-    console.log("targetAttachment:", targetAttachment);
-
     if (!targetAttachment) return;
 
     try {

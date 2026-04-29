@@ -178,6 +178,20 @@ export default function CoursesBrowseSection() {
     return list;
   }, [courses, filters.credits]);
 
+  const sortedCourses = useMemo(() => {
+    const list = [...filteredCourses];
+
+    if (sort === "price_low") {
+      return list.sort((a, b) => a.price - b.price);
+    }
+
+    if (sort === "price_high") {
+      return list.sort((a, b) => b.price - a.price);
+    }
+
+    return list;
+  }, [filteredCourses, sort]);
+
   const handleSortChange = () => {
     setSort((currentSort) =>
       currentSort === "recommended"
@@ -230,7 +244,7 @@ export default function CoursesBrowseSection() {
           className="w-full"
         >
           <CourseBrowseToolbar
-            totalCourses={filteredCourses.length}
+            totalCourses={sortedCourses.length}
             sort={sort}
             onSortChange={handleSortChange}
             onOpenFilters={() => setIsMobileFiltersOpen(true)}
@@ -258,7 +272,7 @@ export default function CoursesBrowseSection() {
               transition={{ duration: 0.4, delay: 0.1 }}
             >
               <CourseResults
-                courses={filteredCourses}
+                courses={sortedCourses}
                 loading={loading}
                 error={error}
                 hasMore={hasMore}

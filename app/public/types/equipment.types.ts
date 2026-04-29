@@ -12,4 +12,5 @@ export type Product = {
   imageSrc?: string;
   imageAlt?: string;
   detailsHref: string;
+  stock: number;
 };

@@ -40,7 +40,7 @@ export default function ProductSection({
 
   const fetchProducts = useCallback(async () => {
     try {
-      setLoading((prev) => (products.length === 0 ? true : prev));
+      setLoading(true);
 
       const params: Record<string, string | number | string[]> = {
         page,
@@ -94,13 +94,6 @@ export default function ProductSection({
         totalPages,
       });
 
-      if (process.env.NODE_ENV === "development") {
-        console.log("Products fetched:", {
-          selectedCategory: filters.categoryId,
-          totalFiltered: total,
-          response,
-        });
-      }
     } catch (error) {
       console.error("Failed to fetch products:", error);
       setProducts([]);

@@ -34,7 +34,7 @@ export default function NewsletterProfileModal({
                         </h2>
 
                         <p className="mt-1 text-sm text-light-slate">
-                            Complete your profile now, or skip this step.
+                            Complete your profile to finish subscribing.
                         </p>
                     </div>
 
@@ -88,15 +88,6 @@ export default function NewsletterProfileModal({
                         className="h-11 w-full rounded-full bg-primary text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
                     >
                         {isSubmitting ? "Saving..." : "Save Profile"}
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        disabled={isSubmitting}
-                        className="h-10 w-full rounded-full text-sm font-semibold text-light-slate transition hover:bg-light-slate/5"
-                    >
-                        Skip for now
                     </button>
                 </form>
             </div>

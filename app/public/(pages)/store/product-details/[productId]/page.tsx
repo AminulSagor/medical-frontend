@@ -3,7 +3,6 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-
 import ProductGalleryClient from "../_components/product-gallery.client";
 import PurchasePanelClient from "../_components/purchase-panel.client";
 import OverviewSection from "../_components/overview-section";
@@ -11,7 +10,6 @@ import SpecsTable from "../_components/specs-table";
 import ReviewSection from "../_components/review-section";
 import Breadcrumb from "@/app/public/(pages)/store/product-details/_components/breadcrumb";
 import FrequentlyBoughtTogether from "@/app/public/(pages)/store/product-details/_components/frequently-bought-together";
-
 import { ProductDetails } from "@/app/public/types/product.details";
 import { getProductDetails } from "@/service/public/product.service";
 import type { ProductDetailResponse } from "@/types/public/product/public-product.types";
@@ -126,6 +124,11 @@ export default function ProductDetailsPage({
 }) {
   const { productId } = use(params);
   const router = useRouter();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [productId]);
+
   const [product, setProduct] = useState<ProductDetails | null>(null);
   const [productCategoryId, setProductCategoryId] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);

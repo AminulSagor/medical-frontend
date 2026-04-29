@@ -67,7 +67,7 @@ export default function FooterBrandColumn() {
             </p>
 
             <div className="flex items-center gap-5">
-                <FooterSocialLink href="/public/home" label="Website">
+                <FooterSocialLink href="/public/home#top" label="Website">
                     <Globe size={21} strokeWidth={2} />
                 </FooterSocialLink>
 

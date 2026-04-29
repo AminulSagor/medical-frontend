@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export default function NavbarLogo({
   href = "/public/home",
@@ -10,8 +13,17 @@ export default function NavbarLogo({
   title?: string;
   subtitle?: string;
 }) {
+  const pathname = usePathname();
+
+  function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (pathname === href) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
   return (
-    <Link href={href} className="flex items-center gap-3">
+    <Link href={href} onClick={handleClick} className="flex items-center gap-3">
       <span
         className="grid h-10 w-10 place-items-center rounded-full bg-primary shadow-xs shadow-primary"
         aria-hidden="true"
