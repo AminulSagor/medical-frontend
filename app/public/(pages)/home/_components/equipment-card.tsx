@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Heart, ShoppingCart, Package } from "lucide-react";
 import { motion } from "motion/react";
-import Card from "@/components/cards/card";
 import { Product } from "@/app/public/types/equipment.types";
 import { IMAGE } from "@/constant/image-config";
 
@@ -138,26 +137,44 @@ export default function EquipmentCard({
                 {money(product.price)}
               </motion.div>
 
-              <div className="relative h-10 w-10 overflow-hidden">
-                <motion.button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onAddToCart?.(product.id);
-                  }}
-                  variants={{
-                    rest: { opacity: 0, y: 18, pointerEvents: "none" as const },
-                    hover: { opacity: 1, y: 0, pointerEvents: "auto" as const },
-                  }}
-                  transition={{ duration: 0.21, ease: "easeOut" }}
-                  whileTap={{ scale: 0.94 }}
-                  className="relative z-20 grid h-10 w-10 place-items-center rounded-full bg-primary text-white transition hover:opacity-90 active:scale-95"
-                  aria-label="Add to cart"
-                >
-                  <ShoppingCart size={18} />
-                </motion.button>
-              </div>
+              {product.stock > 0 ? (
+                <div className="relative h-10 w-10">
+                  <motion.button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onAddToCart?.(product.id);
+                    }}
+                    variants={{
+                      rest: { opacity: 1, y: 0, pointerEvents: "auto" as const },
+                      hover: { opacity: 1, y: 0, pointerEvents: "auto" as const },
+                    }}
+                    transition={{ duration: 0.21, ease: "easeOut" }}
+                    whileTap={{ scale: 0.94 }}
+                    className="relative z-20 grid h-10 w-10 place-items-center rounded-full bg-primary text-white opacity-100 transition hover:opacity-90 active:scale-95 lg:translate-y-[18px] lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100"
+                    aria-label="Add to cart"
+                  >
+                    <ShoppingCart size={18} />
+                  </motion.button>
+                </div>
+              ) : (
+                <div className="relative h-10 w-10">
+                  <motion.button
+                    type="button"
+                    disabled
+                    variants={{
+                      rest: { opacity: 1, y: 0, pointerEvents: "auto" as const },
+                      hover: { opacity: 1, y: 0, pointerEvents: "none" as const },
+                    }}
+                    transition={{ duration: 0.21, ease: "easeOut" }}
+                    className="relative z-20 grid h-10 w-10 cursor-not-allowed place-items-center rounded-full bg-slate-200 text-slate-400 opacity-100 transition lg:translate-y-[18px] lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100"
+                    aria-label="Out of stock"
+                  >
+                    <ShoppingCart size={18} />
+                  </motion.button>
+                </div>
+              )}
             </div>
 
             <Link

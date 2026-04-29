@@ -9,6 +9,7 @@ import { Product } from "@/app/public/types/equipment.types";
 import EquipmentCard from "./equipment-card";
 import { useCart } from "@/app/public/context/cart-context";
 import { useWishlist } from "@/app/public/context/wishlist-context";
+import toast from "react-hot-toast";
 
 export default function ShopTheLabSection() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -36,6 +37,7 @@ export default function ShopTheLabSection() {
             undefined,
           imageAlt: item.name,
           detailsHref: `/public/store/product-details/${item.id}`,
+          stock: item.inStock ? 1 : 0,
         }));
 
         setProducts(mappedProducts);
@@ -52,8 +54,24 @@ export default function ShopTheLabSection() {
   async function handleAddToCart(id: string) {
     try {
       await addItem(id, 1);
+      toast.success("Product added to cart");
     } catch (error) {
       console.error("Failed to add to cart:", error);
+      toast.error("Failed to add product to cart");
+    }
+  }
+
+  async function handleToggleWishlist(id: string) {
+    const wasInWishlist = isInWishlist(id);
+
+    try {
+      await toggleWishlist(id);
+      toast.success(
+        wasInWishlist ? "Product removed from wishlist" : "Product added to wishlist",
+      );
+    } catch (error) {
+      console.error("Failed to update wishlist:", error);
+      toast.error("Failed to update wishlist");
     }
   }
 
@@ -122,7 +140,7 @@ export default function ShopTheLabSection() {
                   <EquipmentCard
                     product={p}
                     wished={isInWishlist(p.id)}
-                    onToggleWish={toggleWishlist}
+                    onToggleWish={handleToggleWishlist}
                     onAddToCart={handleAddToCart}
                   />
                 </motion.div>

@@ -44,6 +44,14 @@ export default function StoreToolbar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      onSearchChange(localSearch.trim());
+    }, 400);
+
+    return () => window.clearTimeout(timer);
+  }, [localSearch, onSearchChange]);
+
   const handleSearch = () => {
     onSearchChange(localSearch);
   };
@@ -68,7 +76,7 @@ export default function StoreToolbar({
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Search by name or SKU..."
+              placeholder="Search by name ..."
               className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
             />
             {localSearch && (
@@ -99,9 +107,8 @@ export default function StoreToolbar({
                 {currentSortLabel}
                 <ChevronDown
                   size={16}
-                  className={`text-slate-400 transition-transform ${
-                    sortDropdownOpen ? "rotate-180" : ""
-                  }`}
+                  className={`text-slate-400 transition-transform ${sortDropdownOpen ? "rotate-180" : ""
+                    }`}
                 />
               </button>
 
@@ -115,11 +122,10 @@ export default function StoreToolbar({
                         onSortChange(opt.value);
                         setSortDropdownOpen(false);
                       }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-50 ${
-                        sortBy === opt.value
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-50 ${sortBy === opt.value
                           ? "font-semibold text-primary"
                           : "text-slate-700"
-                      }`}
+                        }`}
                     >
                       {opt.label}
                     </button>

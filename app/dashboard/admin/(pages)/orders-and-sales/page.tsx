@@ -162,10 +162,6 @@ export default function OrdersAndSalesPage() {
         <OrdersHeader />
 
         <div className="shrink-0">
-          {/* <OrdersToolbar
-            onDownload={() => console.log("download csv")}
-            onNewOrder={() => console.log("new order")}
-          /> */}
         </div>
       </div>
 

@@ -93,6 +93,14 @@ export default function CoursesHeroSearchSection({
     });
   }
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      submit();
+    }, 400);
+
+    return () => window.clearTimeout(timer);
+  }, [topic, type, dateFrom, dateTo]);
+
   function submit() {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -115,6 +123,7 @@ export default function CoursesHeroSearchSection({
     params.delete("page");
     router.push(
       `/public/courses${params.toString() ? `?${params.toString()}` : ""}`,
+      { scroll: false },
     );
     setIsDateRangeOpen(false);
   }
@@ -167,8 +176,8 @@ export default function CoursesHeroSearchSection({
           >
             <div
               className={[
-                "relative overflow-visible rounded-[48px] border border-white/20",
-                "bg-white/10 backdrop-blur",
+                "relative overflow-visible rounded-[48px] border border-white/35",
+                "bg-white/18 backdrop-blur-xl shadow-[0_20px_60px_rgba(15,23,42,0.12)]",
                 "pb-5 pl-8 pr-4 pt-7 md:px-4 md:py-3",
                 "flex flex-col gap-3 md:flex-row md:items-center md:gap-0",
               ].join(" ")}
@@ -294,13 +303,13 @@ export default function CoursesHeroSearchSection({
                 </button>
               </div>
 
-              <div className="md:pl-3 md:pr-2">
+              <div className="hidden md:block md:pl-3 md:pr-2">
                 <motion.button
                   type="button"
                   onClick={submit}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="grid h-12 w-12 place-items-center rounded-full bg-white text-primary transition hover:opacity-90"
+                  className="grid h-11 w-11 place-items-center rounded-full bg-white text-primary shadow-lg shadow-black/10 transition hover:opacity-90 md:h-12 md:w-12"
                   aria-label="Search"
                 >
                   <Search size={18} />

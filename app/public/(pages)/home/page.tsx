@@ -7,7 +7,7 @@ import UpcomingCoursesSection from "@/app/public/(pages)/home/_components/upcomi
 
 const Home = () => {
   return (
-    <div>
+    <div id="top">
       <HeroSection />
       <PartnersSection />
       <UpcomingCoursesSection />

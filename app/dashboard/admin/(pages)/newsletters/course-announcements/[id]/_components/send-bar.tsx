@@ -50,8 +50,6 @@ export default function SendBar({ broadcastId, onSend }: Props) {
       setSubmitError(null);
       setSubmitSuccess(null);
 
-      // console.log("SEND_BROADCAST_CLICKED_VALUES:", values);
-
       const updatePayload = {
         priority: mapFormPriorityToApiPriority(values.priority),
         subjectLine: values.subject.trim(),
@@ -60,18 +58,12 @@ export default function SendBar({ broadcastId, onSend }: Props) {
         pushToStudentPanel: values.pushToStudentPanel,
       };
 
-      // console.log("UPDATE_BROADCAST_REQUEST_PAYLOAD:", updatePayload);
-
       const updateBroadcastResponse = await updateCourseAnnouncementBroadcast(
         broadcastId,
         updatePayload,
       );
 
-      // console.log("UPDATE_BROADCAST_API_RESPONSE:", updateBroadcastResponse);
-
       const sendResponse = await onSend(values);
-
-      // console.log("SEND_BROADCAST_API_RESPONSE:", sendResponse);
 
       setSubmitSuccess("Broadcast sent successfully.");
     } catch (error) {
