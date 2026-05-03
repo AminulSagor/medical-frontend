@@ -114,8 +114,8 @@ export default function ProductCard({ product }: Props) {
   const offerPrice = product.offerPrice ?? "0";
   const actualPrice = product.actualPrice;
 
-  // convert only for check
-  const displayPrice = Number(offerPrice) > 0 ? offerPrice : actualPrice;
+  const offerPriceNumber = Number(offerPrice);
+  const displayPrice = offerPriceNumber > 0 ? offerPrice : actualPrice;
 
   return (
     <motion.div
@@ -224,7 +224,7 @@ export default function ProductCard({ product }: Props) {
                   {money(displayPrice)}
                 </div>
 
-                {offerPrice > 0 && actualPrice !== offerPrice ? (
+                {offerPriceNumber > 0 && actualPrice !== offerPrice ? (
                   <div className="text-xs text-light-slate line-through md:text-sm">
                     {money(actualPrice)}
                   </div>
