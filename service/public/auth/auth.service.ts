@@ -15,12 +15,12 @@ import type {
 export const registerUser = async (
   data: RegisterRequest,
 ): Promise<RegisterResponse> => {
-   console.log("📤 REGISTER REQUEST:", data);
+  console.log("📤 REGISTER REQUEST:", data);
   const response = await serviceClient.post<RegisterResponse>(
     `/auth/register`,
     data,
   );
-     console.log("📥 REGISTER RESPONSE:", response.data);
+  console.log("📥 REGISTER RESPONSE:", response.data);
   return response.data;
 };
 
@@ -42,13 +42,11 @@ export const verifyOtp = async (
     `/auth/verify-otp`,
     data,
   );
-  console.log("📥 VERIFY OTP RESPONSE:", response.data);
   return response.data;
 };
 
 export const loginUser = async (data: LoginRequest): Promise<LoginResponse> => {
   const response = await serviceClient.post<LoginResponse>(`/auth/login`, data);
-  console.log("📥 LOGIN RESPONSE:", response.data);
   return response.data;
 };
 
