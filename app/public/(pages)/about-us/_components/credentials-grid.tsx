@@ -6,20 +6,19 @@ import { BadgeCheck, GraduationCap, Trophy } from "lucide-react";
 import { motion, Variants } from "framer-motion";
 
 export default function CredentialsGrid() {
-  // Staggered container animation
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.08,
-        delayChildren: 0.2,
+        staggerChildren: 0.04,
+        delayChildren: 0.05,
       },
     },
   };
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 50, scale: 0.95 },
+    hidden: { opacity: 0, y: 30, scale: 0.97 },
     visible: {
       opacity: 1,
       y: 0,
@@ -32,9 +31,8 @@ export default function CredentialsGrid() {
     },
   };
 
-  // Different animation for stats cards
   const statVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.8, rotate: -5 },
+    hidden: { opacity: 0, scale: 0.9, rotate: -3 },
     visible: {
       opacity: 1,
       scale: 1,
@@ -47,14 +45,13 @@ export default function CredentialsGrid() {
     },
   };
 
-  // Banner specific animation
   const bannerVariants: Variants = {
-    hidden: { opacity: 0, x: 100 },
+    hidden: { opacity: 0, x: 40 },
     visible: {
       opacity: 1,
       x: 0,
       transition: {
-        duration: 0.7,
+        duration: 0.35,
         ease: [0.34, 1.2, 0.64, 1],
       },
     },
@@ -65,13 +62,12 @@ export default function CredentialsGrid() {
       variants={containerVariants}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: false, amount: 0.2 }}
+      viewport={{ once: true, amount: 0.15 }}
       className="mt-10 grid gap-6 md:grid-cols-12"
     >
       {/* Board Certified Card - Big left */}
       <motion.div variants={itemVariants} className="md:col-span-6">
-        <Card className="relative rounded-[22px] border border-light-slate/10 shadow-sm bg-[rgba(247,252,255,0.85)] h-[360px] overflow-hidden group">
-          {/* Animated background gradient on hover */}
+        <Card className="group relative h-[360px] overflow-hidden rounded-[22px] border border-light-slate/10 bg-[rgba(247,252,255,0.85)] shadow-sm">
           <motion.div
             className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent"
             initial={{ opacity: 0 }}
@@ -82,8 +78,12 @@ export default function CredentialsGrid() {
           <motion.div
             initial={{ scale: 0, rotate: -45 }}
             whileInView={{ scale: 1, rotate: 0 }}
-            viewport={{ once: false }}
-            transition={{ delay: 0.3, type: "spring" as const, stiffness: 200 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{
+              delay: 0.08,
+              type: "spring" as const,
+              stiffness: 200,
+            }}
             className="grid h-11 w-11 place-items-center rounded-full bg-primary/10 text-primary"
           >
             <BadgeCheck size={18} strokeWidth={2.2} />
@@ -92,8 +92,8 @@ export default function CredentialsGrid() {
           <motion.h4
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: false }}
-            transition={{ delay: 0.4 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
             className="mt-5 font-serif text-[18px] font-semibold text-black"
           >
             Board Certified
@@ -102,16 +102,15 @@ export default function CredentialsGrid() {
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            viewport={{ once: false }}
-            transition={{ delay: 0.5 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.3, delay: 0.12 }}
             className="mt-2 max-w-[46ch] text-[12px] leading-6 text-light-slate/70"
           >
             Anesthesiologist specializing in difficult airway management.
           </motion.p>
 
-          {/* faint MD watermark with float animation */}
           <motion.div
-            className="pointer-events-none absolute bottom-8 right-8 font-serif text-[76px] text-light-slate/10"
+            className="pointer-events-none absolute right-8 bottom-8 font-serif text-[76px] text-light-slate/10"
             animate={{
               y: [0, -5, 0],
               opacity: [0.1, 0.15, 0.1],
@@ -129,7 +128,7 @@ export default function CredentialsGrid() {
 
       {/* Center Card - Texas Airway Institute */}
       <motion.div variants={itemVariants} className="md:col-span-3">
-        <Card className="rounded-[22px] border border-light-slate/10 shadow-sm text-center h-[360px] flex flex-col items-center justify-center relative overflow-hidden group">
+        <Card className="group relative flex h-[360px] flex-col items-center justify-center overflow-hidden rounded-[22px] border border-light-slate/10 text-center shadow-sm">
           <motion.div
             className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent"
             initial={{ y: "100%" }}
@@ -148,8 +147,8 @@ export default function CredentialsGrid() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: false }}
-            transition={{ delay: 0.35 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.3, delay: 0.08 }}
             className="mt-6 font-serif text-[15px] leading-6 font-semibold text-black"
           >
             Texas Airway <br />
@@ -159,8 +158,8 @@ export default function CredentialsGrid() {
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            viewport={{ once: false }}
-            transition={{ delay: 0.45 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
             className="mt-3 text-[11px] leading-5 text-light-slate/60"
           >
             Founder &amp; Lead Educator
@@ -170,10 +169,10 @@ export default function CredentialsGrid() {
             href="#"
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: false }}
-            transition={{ delay: 0.55 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.3, delay: 0.12 }}
             whileHover={{ scale: 1.05, x: 3 }}
-            className="mt-6 text-[11px] font-semibold text-primary hover:opacity-80 inline-block"
+            className="mt-6 inline-block text-[11px] font-semibold text-primary hover:opacity-80"
           >
             View Curriculum →
           </motion.a>
@@ -181,9 +180,9 @@ export default function CredentialsGrid() {
       </motion.div>
 
       {/* Stats Stack - Right column */}
-      <div className="md:col-span-3 h-[360px] flex flex-col gap-6">
+      <div className="flex h-[360px] flex-col gap-6 md:col-span-3">
         <motion.div variants={statVariants} className="flex-1">
-          <Card className="rounded-[22px] border border-light-slate/10 shadow-sm flex-1 flex flex-col justify-center h-full relative overflow-hidden group">
+          <Card className="group relative flex h-full flex-1 flex-col justify-center overflow-hidden rounded-[22px] border border-light-slate/10 shadow-sm">
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent"
               initial={{ x: "-100%" }}
@@ -193,9 +192,9 @@ export default function CredentialsGrid() {
             <motion.div
               initial={{ opacity: 0, scale: 0.5 }}
               whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: false }}
+              viewport={{ once: true, amount: 0.15 }}
               transition={{
-                delay: 0.3,
+                delay: 0.08,
                 type: "spring" as const,
                 stiffness: 150,
               }}
@@ -206,8 +205,8 @@ export default function CredentialsGrid() {
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
-              viewport={{ once: false }}
-              transition={{ delay: 0.4 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
               className="mt-3 text-[11px] font-semibold tracking-[0.18em] text-light-slate/55"
             >
               PROCEDURES
@@ -216,7 +215,7 @@ export default function CredentialsGrid() {
         </motion.div>
 
         <motion.div variants={statVariants} className="flex-1">
-          <Card className="rounded-[22px] border border-light-slate/10 shadow-sm flex-1 flex flex-col justify-center h-full relative overflow-hidden group">
+          <Card className="group relative flex h-full flex-1 flex-col justify-center overflow-hidden rounded-[22px] border border-light-slate/10 shadow-sm">
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent"
               initial={{ x: "-100%" }}
@@ -226,9 +225,9 @@ export default function CredentialsGrid() {
             <motion.div
               initial={{ opacity: 0, scale: 0.5 }}
               whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: false }}
+              viewport={{ once: true, amount: 0.15 }}
               transition={{
-                delay: 0.5,
+                delay: 0.08,
                 type: "spring" as const,
                 stiffness: 150,
               }}
@@ -239,8 +238,8 @@ export default function CredentialsGrid() {
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
-              viewport={{ once: false }}
-              transition={{ delay: 0.6 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
               className="mt-3 text-[11px] font-semibold tracking-[0.18em] text-light-slate/55"
             >
               WORKSHOPS
@@ -251,7 +250,7 @@ export default function CredentialsGrid() {
 
       {/* Bottom - Teaching Excellence Card */}
       <motion.div variants={itemVariants} className="md:col-span-6">
-        <Card className="rounded-[22px] border border-light-slate/10 shadow-sm h-[130px] flex items-center gap-5 px-6 relative overflow-hidden group">
+        <Card className="group relative flex h-[130px] items-center gap-5 overflow-hidden rounded-[22px] border border-light-slate/10 px-6 shadow-sm">
           <motion.div
             className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-transparent"
             initial={{ x: "-100%" }}
@@ -271,8 +270,8 @@ export default function CredentialsGrid() {
             <motion.h4
               initial={{ opacity: 0, x: -10 }}
               whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: false }}
-              transition={{ delay: 0.35 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.3, delay: 0.08 }}
               className="font-serif text-[16px] font-semibold text-black"
             >
               Excellence in Teaching
@@ -280,8 +279,8 @@ export default function CredentialsGrid() {
             <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
-              viewport={{ once: false }}
-              transition={{ delay: 0.45 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
               className="mt-2 text-[12px] leading-6 text-light-slate/70"
             >
               Recognized for innovative simulation-based training methods.
@@ -292,33 +291,32 @@ export default function CredentialsGrid() {
 
       {/* Banner Card - Right bottom */}
       <motion.div variants={bannerVariants} className="md:col-span-6">
-        <div className="relative overflow-hidden rounded-[22px] border border-light-slate/10 shadow-sm h-[130px] group">
+        <div className="group relative h-[130px] overflow-hidden rounded-[22px] border border-light-slate/10 shadow-sm">
           <motion.div
             className="absolute inset-0 bg-linear-to-r from-primary/35 via-primary/15 to-black/10"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            viewport={{ once: false }}
-            transition={{ delay: 0.3 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.3, delay: 0.08 }}
           />
 
-          {/* Animated shine effect */}
           <motion.div
             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
             initial={{ x: "-100%" }}
             whileInView={{ x: "100%" }}
-            viewport={{ once: false }}
-            transition={{ duration: 1.2, delay: 0.8 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.6, delay: 0.12 }}
           />
 
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_55%_50%,rgba(255,255,255,0.35),transparent_55%)]" />
 
-          <div className="relative h-full p-7 flex items-end">
+          <div className="relative flex h-full items-end p-7">
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false }}
-              transition={{ delay: 0.5 }}
-              className="font-serif italic text-[13px] "
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className="font-serif text-[13px] italic"
             >
               “Innovation in every intubation.”
             </motion.p>

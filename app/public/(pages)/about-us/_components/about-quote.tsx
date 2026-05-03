@@ -13,14 +13,14 @@ const Q: AboutQuote = {
 
 export default function AboutQuoteSection() {
   return (
-    <section className="relative py-28 overflow-hidden">
+    <section className="relative overflow-hidden py-28">
       {/* subtle soft background */}
       <div className="pointer-events-none absolute inset-0">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           whileInView={{ scale: 1, opacity: 1 }}
-          viewport={{ once: false, amount: 0.3 }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
+          viewport={{ once: true, amount: 0.15 }}
+          transition={{ duration: 0.45, ease: "easeOut" }}
           className="absolute left-1/2 top-1/2 h-[380px] w-[820px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/8 blur-3xl"
         />
       </div>
@@ -32,12 +32,12 @@ export default function AboutQuoteSection() {
             className="flex justify-center"
             initial={{ scale: 0, opacity: 0 }}
             whileInView={{ scale: 1, opacity: 1 }}
-            viewport={{ once: false, amount: 0.3 }}
+            viewport={{ once: true, amount: 0.15 }}
             transition={{
               type: "spring",
               stiffness: 260,
               damping: 20,
-              delay: 0.1,
+              delay: 0.05,
             }}
           >
             <motion.div
@@ -65,18 +65,22 @@ export default function AboutQuoteSection() {
             className="mt-8 font-serif text-[56px] leading-[1.1] font-semibold text-black"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: false, amount: 0.3 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{
+              duration: 0.35,
+              delay: 0.08,
+              ease: [0.22, 1, 0.36, 1],
+            }}
           >
             {Q.title.split("").map((char, index) => (
               <motion.span
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: false, amount: 0.3 }}
+                viewport={{ once: true, amount: 0.15 }}
                 transition={{
-                  duration: 0.4,
-                  delay: 0.5 + index * 0.03,
+                  duration: 0.25,
+                  delay: 0.1 + index * 0.01,
                   ease: "easeOut",
                 }}
                 className="inline-block"
@@ -89,10 +93,10 @@ export default function AboutQuoteSection() {
           {/* Description Animation - Gentle fade with blur */}
           <motion.p
             className="mx-auto mt-6 max-w-[70ch] text-[15px] leading-7 font-normal text-light-slate/70"
-            initial={{ opacity: 0, filter: "blur(8px)", y: 20 }}
+            initial={{ opacity: 0, filter: "blur(4px)", y: 10 }}
             whileInView={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-            viewport={{ once: false, amount: 0.3 }}
-            transition={{ duration: 0.9, delay: 0.8, ease: "easeOut" }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.35, delay: 0.15, ease: "easeOut" }}
           >
             {Q.description}
           </motion.p>
@@ -101,8 +105,8 @@ export default function AboutQuoteSection() {
           <motion.div
             className="mx-auto mt-12 h-[1px] w-0 bg-gradient-to-r from-transparent via-primary/30 to-transparent"
             whileInView={{ width: "120px" }}
-            viewport={{ once: false, amount: 0.3 }}
-            transition={{ duration: 0.8, delay: 1 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.35, delay: 0.18 }}
           />
         </div>
       </div>

@@ -20,8 +20,8 @@ export default function AboutFounderMessage() {
           className="mx-auto max-w-[900px]"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false, amount: 0.3 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          viewport={{ once: true, amount: 0.15 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className="relative">
             {/* Quote badge with premium animation */}
@@ -29,18 +29,19 @@ export default function AboutFounderMessage() {
               className="absolute -top-6 left-6 z-10 grid h-12 w-12 place-items-center rounded-[10px] bg-primary text-white shadow-md"
               initial={{ scale: 0, rotate: -90 }}
               whileInView={{ scale: 1, rotate: 0 }}
-              viewport={{ once: false, amount: 0.3 }}
+              viewport={{ once: true, amount: 0.15 }}
               transition={{
                 type: "spring",
                 stiffness: 200,
                 damping: 15,
-                delay: 0.2,
+                delay: 0.08,
               }}
             >
               <motion.div
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.25, delay: 0.12 }}
               >
                 <Quote size={20} strokeWidth={2.5} />
               </motion.div>
@@ -49,18 +50,18 @@ export default function AboutFounderMessage() {
             <motion.div
               initial={{ opacity: 0, scale: 0.98 }}
               whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: false, amount: 0.3 }}
-              transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.35, delay: 0.05, ease: "easeOut" }}
             >
               <Card className="relative rounded-[22px] border border-light-slate/10 bg-white px-12 py-12 shadow-sm overflow-hidden">
                 {/* Left Accent Line - Fixed alignment */}
                 <motion.div
                   initial={{ height: 0 }}
                   whileInView={{ height: "100%" }}
-                  viewport={{ once: false, amount: 0.3 }}
+                  viewport={{ once: true, amount: 0.15 }}
                   transition={{
-                    duration: 0.8,
-                    delay: 0.3,
+                    duration: 0.4,
+                    delay: 0.1,
                     ease: [0.22, 1, 0.36, 1],
                   }}
                   className="absolute left-0 top-0 w-[3px] bg-gradient-to-b from-primary via-primary to-primary/30"
@@ -77,8 +78,8 @@ export default function AboutFounderMessage() {
                   className="text-[18px] font-semibold text-black"
                   initial={{ opacity: 0, x: -10 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: false, amount: 0.3 }}
-                  transition={{ duration: 0.5, delay: 0.25 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
                 >
                   {MSG.title}
                 </motion.h3>
@@ -87,8 +88,8 @@ export default function AboutFounderMessage() {
                   className="mt-6 font-serif italic text-[16px] leading-8 text-black/80"
                   initial={{ opacity: 0, y: 15 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: false, amount: 0.3 }}
-                  transition={{ duration: 0.6, delay: 0.35 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ duration: 0.35, delay: 0.12 }}
                 >
                   {MSG.quote}
                 </motion.p>
@@ -97,8 +98,8 @@ export default function AboutFounderMessage() {
                   className="mt-6 text-[14px] leading-7 text-light-slate/70"
                   initial={{ opacity: 0, y: 15 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: false, amount: 0.3 }}
-                  transition={{ duration: 0.6, delay: 0.45 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ duration: 0.35, delay: 0.14 }}
                 >
                   {MSG.body}
                 </motion.p>
@@ -107,16 +108,16 @@ export default function AboutFounderMessage() {
                   className="mt-8 h-px w-full bg-light-slate/10"
                   initial={{ scaleX: 0 }}
                   whileInView={{ scaleX: 1 }}
-                  viewport={{ once: false, amount: 0.3 }}
-                  transition={{ duration: 0.5, delay: 0.55 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ duration: 0.3, delay: 0.16 }}
                 />
 
                 <motion.div
                   className="mt-5 text-right text-[14px] font-semibold text-black"
                   initial={{ opacity: 0, x: 10 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: false, amount: 0.3 }}
-                  transition={{ duration: 0.5, delay: 0.65 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ duration: 0.3, delay: 0.18 }}
                 >
                   {MSG.signature}
                 </motion.div>

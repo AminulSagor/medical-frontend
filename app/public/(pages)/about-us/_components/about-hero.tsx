@@ -31,16 +31,16 @@ export default function AboutHero() {
             clipPath: "inset(0% 0% 0% 0% round 32px)",
             opacity: 1,
           }}
-          viewport={{ once: false, amount: 0.35 }}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          viewport={{ once: true, amount: 0.15 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
           className="relative overflow-hidden rounded-[32px] bg-linear-to-r from-primary/5 via-white to-white"
         >
           {/* Animated gradient sweep overlay */}
           <motion.div
             initial={{ x: "-100%" }}
             whileInView={{ x: "100%" }}
-            viewport={{ once: false, amount: 0.35 }}
-            transition={{ duration: 1.2, ease: "easeInOut", delay: 0.3 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.6, ease: "easeInOut", delay: 0.1 }}
             className="absolute inset-0 z-10 bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none"
           />
 
@@ -49,35 +49,35 @@ export default function AboutHero() {
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
-              viewport={{ once: false, amount: 0.35 }}
-              transition={{ duration: 0.5 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.3 }}
               className="relative z-20"
             >
               {/* Eyebrow - Staggered reveal */}
               <motion.div
                 initial={{ y: -30, opacity: 0 }}
                 whileInView={{ y: 0, opacity: 1 }}
-                viewport={{ once: false, amount: 0.35 }}
+                viewport={{ once: true, amount: 0.15 }}
                 transition={{
                   type: "spring",
                   stiffness: 100,
                   damping: 15,
-                  delay: 0.1,
+                  delay: 0.05,
                 }}
                 className="flex items-center gap-3 text-[11px] font-extrabold tracking-[0.22em] text-primary/70"
               >
                 <motion.span
                   initial={{ scaleX: 0 }}
                   whileInView={{ scaleX: 1 }}
-                  viewport={{ once: false, amount: 0.35 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ duration: 0.3, delay: 0.08 }}
                   className="h-[2px] w-10 origin-left bg-primary/40"
                   style={{ transformOrigin: "left" }}
                 />
                 <motion.span
                   initial={{ opacity: 0, x: -10 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.25 }}
+                  transition={{ delay: 0.1 }}
                 >
                   {HERO.eyebrow}
                 </motion.span>
@@ -88,8 +88,8 @@ export default function AboutHero() {
                 <motion.span
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: false, amount: 0.35 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ duration: 0.35, delay: 0.1 }}
                   className="inline-block"
                 >
                   {HERO.titleTop}{" "}
@@ -97,12 +97,12 @@ export default function AboutHero() {
                 <motion.span
                   initial={{ opacity: 0, scale: 0.5 }}
                   whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: false, amount: 0.35 }}
+                  viewport={{ once: true, amount: 0.15 }}
                   transition={{
                     type: "spring",
                     stiffness: 200,
                     damping: 12,
-                    delay: 0.45,
+                    delay: 0.15,
                   }}
                   className="inline-block italic font-medium text-primary"
                 >
@@ -112,10 +112,10 @@ export default function AboutHero() {
 
               {/* Subtitle - Blur reveal */}
               <motion.p
-                initial={{ opacity: 0, filter: "blur(8px)", y: 15 }}
+                initial={{ opacity: 0, filter: "blur(4px)", y: 8 }}
                 whileInView={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-                viewport={{ once: false, amount: 0.35 }}
-                transition={{ duration: 0.6, delay: 0.55 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.35, delay: 0.15 }}
                 className="mt-6 max-w-[52ch] text-[14px] leading-7 text-light-slate/70"
               >
                 {HERO.subtitle}
@@ -125,8 +125,8 @@ export default function AboutHero() {
               <motion.div
                 initial={{ opacity: 0, x: -15 }}
                 whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: false, amount: 0.35 }}
-                transition={{ duration: 0.5, delay: 0.65 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.35, delay: 0.18 }}
               >
                 <Link
                   href={HERO.ctaHref}
@@ -162,11 +162,11 @@ export default function AboutHero() {
             <motion.div
               initial={{ opacity: 0, scale: 0.92, rotate: -2 }}
               whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
-              viewport={{ once: false, amount: 0.35 }}
+              viewport={{ once: true, amount: 0.15 }}
               transition={{
-                duration: 0.7,
+                duration: 0.45,
                 ease: [0.34, 1.2, 0.64, 1],
-                delay: 0.2,
+                delay: 0.1,
               }}
               className="relative z-20"
             >
@@ -185,12 +185,12 @@ export default function AboutHero() {
               <motion.div
                 initial={{ opacity: 0, rotateX: -90, y: 20 }}
                 whileInView={{ opacity: 1, rotateX: 0, y: 0 }}
-                viewport={{ once: false, amount: 0.35 }}
+                viewport={{ once: true, amount: 0.15 }}
                 transition={{
                   type: "spring",
                   stiffness: 120,
                   damping: 14,
-                  delay: 0.75,
+                  delay: 0.2,
                 }}
                 style={{ transformStyle: "preserve-3d" }}
                 className="absolute bottom-10 left-4 rounded-[18px] bg-white/90 px-5 py-4 shadow-lg backdrop-blur-sm md:left-8"
@@ -198,7 +198,7 @@ export default function AboutHero() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
-                  transition={{ delay: 0.9 }}
+                  transition={{ delay: 0.22 }}
                   className="text-[20px] font-extrabold text-primary"
                 >
                   {HERO.badgeValue}
@@ -227,13 +227,13 @@ export default function AboutHero() {
           <motion.div
             initial={{ opacity: 0, scale: 0 }}
             whileInView={{ opacity: 0.4, scale: 1 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
+            transition={{ delay: 0.2, duration: 0.35 }}
             className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/5 blur-3xl"
           />
           <motion.div
             initial={{ opacity: 0, scale: 0 }}
             whileInView={{ opacity: 0.3, scale: 1 }}
-            transition={{ delay: 0.95, duration: 0.6 }}
+            transition={{ delay: 0.25, duration: 0.35 }}
             className="absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
           />
         </motion.div>

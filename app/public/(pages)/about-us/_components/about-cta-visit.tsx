@@ -28,13 +28,15 @@ export default function AboutCtaVisit() {
           className="text-center"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false, amount: 0.3 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          viewport={{ once: true, amount: 0.15 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
         >
           <motion.h3
             className="font-serif text-[44px] font-bold text-black"
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.35 }}
           >
             Ready to master the airway?
           </motion.h3>
@@ -42,8 +44,8 @@ export default function AboutCtaVisit() {
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: false, amount: 0.3 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ delay: 0.08, duration: 0.3 }}
             className="mt-3 text-sm text-light-slate/65"
           >
             Join Dr. Enoh at the Texas Airway Institute and elevate your
@@ -53,8 +55,8 @@ export default function AboutCtaVisit() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: false, amount: 0.3 }}
-            transition={{ delay: 0.35, duration: 0.5 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ delay: 0.12, duration: 0.3 }}
             className="mt-8 flex flex-wrap items-center justify-center gap-4"
           >
             <Button
@@ -84,14 +86,15 @@ export default function AboutCtaVisit() {
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: false, amount: 0.3 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.35, delay: 0.08 }}
           >
             <motion.h4
               className="text-lg font-bold text-black"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
-              transition={{ delay: 0.35 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
             >
               Visit Our Center
             </motion.h4>
@@ -99,7 +102,8 @@ export default function AboutCtaVisit() {
             <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
-              transition={{ delay: 0.45 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.3, delay: 0.12 }}
               className="mt-3 max-w-[58ch] text-sm leading-6 text-light-slate/70"
             >
               Located in the heart of the medical district, our 15,000 sq. ft.
@@ -112,7 +116,8 @@ export default function AboutCtaVisit() {
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.55, duration: 0.5 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ delay: 0.14, duration: 0.3 }}
                 className="flex gap-4 group cursor-pointer"
                 whileHover={{ x: 5 }}
               >
@@ -135,7 +140,8 @@ export default function AboutCtaVisit() {
                     className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-primary/70 hover:text-primary transition-colors"
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
-                    transition={{ delay: 0.7 }}
+                    viewport={{ once: true, amount: 0.15 }}
+                    transition={{ duration: 0.25, delay: 0.16 }}
                   >
                     <Navigation size={10} />
                     Get Directions
@@ -147,7 +153,8 @@ export default function AboutCtaVisit() {
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.65, duration: 0.5 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ delay: 0.16, duration: 0.3 }}
                 className="flex gap-4"
               >
                 <div className="mt-1 text-primary">
@@ -169,7 +176,8 @@ export default function AboutCtaVisit() {
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.75, duration: 0.5 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ delay: 0.18, duration: 0.3 }}
                 className="flex gap-4"
               >
                 <div className="mt-1 text-primary">
@@ -193,10 +201,10 @@ export default function AboutCtaVisit() {
           <motion.div
             initial={{ opacity: 0, x: 40 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: false, amount: 0.3 }}
+            viewport={{ once: true, amount: 0.15 }}
             transition={{
-              duration: 0.8,
-              delay: 0.3,
+              duration: 0.35,
+              delay: 0.1,
               ease: [0.34, 1.2, 0.64, 1],
             }}
             className="relative"
@@ -227,9 +235,9 @@ export default function AboutCtaVisit() {
               <motion.div
                 initial={{ scale: 0, rotate: -45 }}
                 whileInView={{ scale: 1, rotate: 0 }}
-                viewport={{ once: false, amount: 0.3 }}
+                viewport={{ once: true, amount: 0.15 }}
                 transition={{
-                  delay: 0.6,
+                  delay: 0.15,
                   type: "spring",
                   stiffness: 200,
                   damping: 15,
@@ -265,7 +273,8 @@ export default function AboutCtaVisit() {
             <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.3, delay: 0.18 }}
               className="mt-3 text-center text-[10px] text-light-slate/50"
             >
               Texas Medical Center, Houston — Click the pin for directions
