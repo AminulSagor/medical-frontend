@@ -111,6 +111,12 @@ export default function ProductCard({ product }: Props) {
   // Show out of stock button on hover when product is inactive OR out of stock
   const showOutOfStockButton = isHovered && (isInactive || isOut);
 
+  const offerPrice = product.offerPrice ?? "0";
+  const actualPrice = product.actualPrice;
+
+  // convert only for check
+  const displayPrice = Number(offerPrice) > 0 ? offerPrice : actualPrice;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -215,13 +221,12 @@ export default function ProductCard({ product }: Props) {
             <div className="mb-4 h-16 border-t border-light-slate/10 pt-2">
               <div className="flex items-center gap-2">
                 <div className="text-lg font-extrabold text-slate-900 md:text-xl">
-                  {money(product.offerPrice || product.actualPrice)}
+                  {money(displayPrice)}
                 </div>
 
-                {product.offerPrice &&
-                product.actualPrice !== product.offerPrice ? (
+                {offerPrice > 0 && actualPrice !== offerPrice ? (
                   <div className="text-xs text-light-slate line-through md:text-sm">
-                    {money(product.actualPrice)}
+                    {money(actualPrice)}
                   </div>
                 ) : null}
               </div>
