@@ -45,12 +45,13 @@ export const getAdminCategories = async (): Promise<ProductCategory[]> => {
 export const getAdminProductFilterCategories = async (
   query?: string,
 ): Promise<AdminProductFilterCategory[]> => {
-  const response = await serviceClient.get<AdminProductFilterCategoriesResponse>(
-    "/public/products/categories",
-    {
-      params: query ? { q: query } : {},
-    },
-  );
+  const response =
+    await serviceClient.get<AdminProductFilterCategoriesResponse>(
+      "/public/products/categories",
+      {
+        params: query ? { q: query } : {},
+      },
+    );
 
   return response.data.categories ?? [];
 };
@@ -81,7 +82,8 @@ export const createAdminCategory = async (
   data: CreateCategoryRequest,
 ): Promise<ProductCategory> => {
   const response = await serviceClient.post<
-    ProductCategory | { message: string; statusCode: number; data: ProductCategory }
+    | ProductCategory
+    | { message: string; statusCode: number; data: ProductCategory }
   >("/admin/categories", data);
 
   if ("data" in response.data) {
@@ -145,14 +147,19 @@ export const searchProducts = async (
 };
 
 export const getProductById = async (id: string): Promise<AdminProduct> => {
-  const response = await serviceClient.get<AdminProduct>(`/admin/products/${id}`);
+  const response = await serviceClient.get<AdminProduct>(
+    `/admin/products/${id}`,
+  );
   return response.data;
 };
 
 export const createProduct = async (
   data: CreateProductRequest,
 ): Promise<AdminProduct> => {
-  const response = await serviceClient.post<AdminProduct>("/admin/products", data);
+  const response = await serviceClient.post<AdminProduct>(
+    "/admin/products",
+    data,
+  );
   return response.data;
 };
 
@@ -160,6 +167,7 @@ export const updateProduct = async (
   id: string,
   data: UpdateProductRequest,
 ): Promise<AdminProduct | null> => {
+  console.log("updating", data);
   const response = await serviceClient.patch<
     AdminProduct | { message: string; statusCode: number }
   >(`/admin/products/${id}`, data);

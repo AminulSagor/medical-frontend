@@ -77,7 +77,7 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
 
   const [selectedCategories, setSelectedCategories] = useState<
     ProductCategory[]
-  >(initialData?.categories ?? []);
+  >(initialData?.categoryDetails ?? []);
   const [categoryQuery, setCategoryQuery] = useState("");
   const [categoryResults, setCategoryResults] = useState<ProductCategory[]>([]);
   const [categoryLoading, setCategoryLoading] = useState(false);
@@ -433,7 +433,10 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
         clinicalDescription: clinicalDescription.trim(),
         sku: sku.trim(),
         barcode: barcode.trim() || undefined,
-        categoryId: selectedCategories.map((item) => item.id),
+        categoryId: selectedCategories.map((item) => {
+          console.log("cat", item);
+          return item.id;
+        }),
         tags: selectedTags.map((item) => item.name),
         actualPrice: actualPrice.trim(),
         offerPrice: offerPrice.trim() || undefined,
@@ -448,6 +451,8 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
         technicalSpecifications: specs.map(({ id, ...rest }) => rest),
         frequentlyBoughtTogether: fbItems,
       };
+
+      console.log("updating", productData);
 
       let savedProduct: AdminProduct | null;
 

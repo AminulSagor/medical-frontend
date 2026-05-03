@@ -58,11 +58,13 @@ export interface AdminProduct {
   id: string;
   name: string;
   clinicalDescription: string;
-  brand?: string;
+  brand?: string | null;
   sku: string;
-  barcode?: string;
-  categoryId: string[];
-  categories?: ProductCategory[];
+  barcode?: string | null;
+  categoryId?: string[];
+  categoryIds?: string[];
+  categories?: string[];
+  categoryDetails?: ProductCategory[];
   tags: string[];
   actualPrice: string;
   offerPrice?: string;
