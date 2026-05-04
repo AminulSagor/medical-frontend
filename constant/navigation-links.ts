@@ -37,6 +37,7 @@ export const NAV_LINKS: NavLink[] = [
   { label: "Blogs", href: "/public/blogs" },
   { label: "About Us", href: "/public/about-us" },
   { label: "Contacts", href: "/public/contact-us" },
+  { label: "Services", href: "/public/our-services" },
 ];
 
 //admin routes
