@@ -1,9 +1,11 @@
 "use client";
 
-import { Clock, MapPin, Layers, BadgeCheck } from "lucide-react";
-import NetworkImageFallback from "@/utils/network-image-fallback";
-import { CourseCardModel } from "@/app/public/types/course-browse.types";
+import { useCallback, useRef, useState } from "react";
+import { BadgeCheck, Check, Clock, Layers, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+import type { CourseCardModel } from "@/app/public/types/course-browse.types";
+import NetworkImageFallback from "@/utils/network-image-fallback";
 
 function money(n: number) {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -16,6 +18,11 @@ function metaIcon(name: string) {
   return BadgeCheck;
 }
 
+const HOVER_CARD_WIDTH = 360;
+const HOVER_CARD_GAP = 16;
+const DESKTOP_QUERY =
+  "(min-width: 1024px) and (hover: hover) and (pointer: fine)";
+
 export default function CourseBrowseCard({
   course,
 }: {
@@ -27,106 +34,286 @@ export default function CourseBrowseCard({
   const isCardMuted = isRegistrationClosed || isSoldOut;
   const router = useRouter();
 
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const openTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewPosition, setPreviewPosition] = useState<"left" | "right">(
+    "right",
+  );
+
+  const clearHoverTimers = useCallback(() => {
+    if (openTimerRef.current) clearTimeout(openTimerRef.current);
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+  }, []);
+
+  const canShowHoverPreview = useCallback(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia(DESKTOP_QUERY).matches;
+  }, []);
+
+  const calculatePreviewPosition = useCallback(() => {
+    if (!wrapperRef.current) return;
+
+    const rect = wrapperRef.current.getBoundingClientRect();
+    const requiredRightSpace = HOVER_CARD_WIDTH + HOVER_CARD_GAP;
+    const availableRightSpace = window.innerWidth - rect.right;
+
+    setPreviewPosition(
+      availableRightSpace >= requiredRightSpace ? "right" : "left",
+    );
+  }, []);
+
+  const handleMouseEnter = useCallback(() => {
+    if (!canShowHoverPreview()) return;
+
+    clearHoverTimers();
+    calculatePreviewPosition();
+
+    openTimerRef.current = setTimeout(() => {
+      setIsPreviewOpen(true);
+    }, 180);
+  }, [calculatePreviewPosition, canShowHoverPreview, clearHoverTimers]);
+
+  const handleMouseLeave = useCallback(() => {
+    clearHoverTimers();
+
+    closeTimerRef.current = setTimeout(() => {
+      setIsPreviewOpen(false);
+    }, 120);
+  }, [clearHoverTimers]);
+
+  const handleNavigate = () => {
+    router.push(`/public/courses/details/${course.id}`);
+  };
+
   return (
     <div
-      onClick={() => {
-        router.push(`/public/courses/details/${course.id}`);
-      }}
-      aria-disabled={false}
-      className={[
-        "h-full min-h-[450px] rounded-3xl bg-white border border-light-slate/15 shadow-sm overflow-hidden",
-        "flex flex-col transition",
-        isCardMuted
-          ? "cursor-pointer bg-slate-50 grayscale-[0.55] opacity-70"
-          : "cursor-pointer hover:shadow-md",
-        course.action.kind === "reserve" && !isCardMuted
-          ? "ring-2 ring-primary/30"
-          : "",
-      ].join(" ")}
+      ref={wrapperRef}
+      className="relative h-full"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      {/* Top */}
-      {isOnDemand ? (
-        <div className="relative h-32 w-full overflow-hidden">
-          <NetworkImageFallback
-            src={course.imageSrc!}
-            alt={course.imageAlt || course.title}
-            className="h-full w-full object-cover"
-            fallbackClassName="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400"
-            iconClassName="h-8 w-8"
-          />
-          {course.badge ? (
-            <span
-              className={[
-                "absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-extrabold tracking-[0.12em]",
-                course.badge.tone === "dark"
-                  ? "bg-black/70 text-white"
-                  : "bg-white/80 text-black",
-              ].join(" ")}
-            >
-              {course.badge.label}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
+      <div
+        onClick={handleNavigate}
+        aria-disabled={false}
+        className={[
+          "h-full min-h-[450px] rounded-3xl bg-white border border-light-slate/15 shadow-sm overflow-hidden",
+          "flex flex-col transition",
+          isCardMuted
+            ? "cursor-pointer bg-slate-50 grayscale-[0.55] opacity-70"
+            : "cursor-pointer hover:shadow-md",
+          course.action.kind === "reserve" && !isCardMuted
+            ? "ring-2 ring-primary/30"
+            : "",
+        ].join(" ")}
+      >
+        {isOnDemand ? (
+          <div className="relative h-44 w-full overflow-hidden">
+            <NetworkImageFallback
+              src={course.imageSrc!}
+              alt={course.imageAlt || course.title}
+              className="h-full w-full object-cover"
+              fallbackClassName="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400"
+              iconClassName="h-8 w-8"
+            />
 
-      <div className="p-5 flex-1 flex flex-col">
-        {/* Top row: date pill (scheduled cards) */}
-        {!isOnDemand && course.date ? (
-          <div className="flex items-start justify-between gap-4">
-            <div className="grid h-16 w-16 place-items-center rounded-full border border-light-slate/20 bg-light-slate/5 text-center p-2">
-              <p className="text-[11px] font-extrabold tracking-[0.18em] text-light-slate">
-                {course.date.month}
-              </p>
-              <p className="text-xl font-semibold text-primary">
-                {course.date.day}
-              </p>
-            </div>
-
-            <h3 className="flex-1 min-h-[3.5rem] line-clamp-2 text-lg font-semibold leading-snug text-black">
-              {course.title}
-            </h3>
+            {course.badge ? (
+              <span
+                className={[
+                  "absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-extrabold tracking-[0.12em]",
+                  course.badge.tone === "dark"
+                    ? "bg-black/70 text-white"
+                    : "bg-white/80 text-black",
+                ].join(" ")}
+              >
+                {course.badge.label}
+              </span>
+            ) : null}
           </div>
-        ) : (
-          <h3 className="min-h-[3.5rem] line-clamp-2 text-lg font-semibold leading-snug text-black">
-            {course.title}
-          </h3>
-        )}
-
-        {course.description ? (
-          <p className="mt-3 min-h-[3rem] line-clamp-2 text-sm leading-relaxed text-light-slate">
-            {course.description}
-          </p>
         ) : null}
 
-        {/* meta rows */}
-        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm font-semibold text-light-slate">
-          {(course.metaTop || []).map((m) => {
-            const Icon = metaIcon(m.icon);
-            const isPin = m.icon === "pin";
-            return (
-              <div key={m.label} className="flex min-w-0 items-center gap-2">
-                <Icon size={16} className="shrink-0 text-primary" />
-                <span className={isPin ? "truncate" : ""}>{m.label}</span>
+        <div className="p-5 flex-1 flex flex-col">
+          {!isOnDemand && course.date ? (
+            <div className="flex items-start justify-between gap-4">
+              <div className="grid h-16 w-16 place-items-center rounded-full border border-light-slate/20 bg-light-slate/5 text-center p-2">
+                <p className="text-[11px] font-extrabold tracking-[0.18em] text-light-slate">
+                  {course.date.month}
+                </p>
+                <p className="text-xl font-semibold text-primary">
+                  {course.date.day}
+                </p>
               </div>
-            );
-          })}
-        </div>
 
-        <div className="mt-4 flex flex-wrap gap-2.5">
-          {(course.metaBottom || []).map((m) => (
-            <span
-              key={m.label}
-              className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-extrabold text-primary"
-            >
-              {m.label}
-            </span>
-          ))}
-        </div>
+              <h3 className="flex-1 min-h-[3.5rem] line-clamp-2 text-lg font-semibold leading-snug text-black">
+                {course.title}
+              </h3>
+            </div>
+          ) : (
+            <h3 className="min-h-[3.5rem] line-clamp-2 text-lg font-semibold leading-snug text-black">
+              {course.title}
+            </h3>
+          )}
 
-        <div className="mt-auto pt-8">
-          {/* availability bar */}
+          {course.description ? (
+            <p className="mt-3 min-h-[3rem] line-clamp-2 text-sm leading-relaxed text-light-slate">
+              {course.description}
+            </p>
+          ) : null}
+
+          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm font-semibold text-light-slate">
+            {(course.metaTop || []).map((m) => {
+              const Icon = metaIcon(m.icon);
+              const isPin = m.icon === "pin";
+
+              return (
+                <div key={m.label} className="flex min-w-0 items-center gap-2">
+                  <Icon size={16} className="shrink-0 text-primary" />
+                  <span className={isPin ? "truncate" : ""}>{m.label}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2.5">
+            {(course.metaBottom || []).map((m) => (
+              <span
+                key={m.label}
+                className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-extrabold text-primary"
+              >
+                {m.label}
+              </span>
+            ))}
+          </div>
+
+          <div className="mt-auto pt-8">
+            {course.availability ? (
+              <div>
+                <div className="flex items-center justify-between gap-3 text-[11px] font-bold tracking-[0.18em]">
+                  <span className="uppercase text-light-slate">
+                    {course.availability.label}
+                  </span>
+                  <span
+                    className={[
+                      "text-right text-sm font-extrabold tracking-normal",
+                      course.availability.tone === "danger"
+                        ? "text-red"
+                        : "text-primary",
+                    ].join(" ")}
+                  >
+                    {course.availability.note}
+                  </span>
+                </div>
+
+                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-light-slate/15">
+                  <div
+                    className={[
+                      "h-full rounded-full",
+                      course.availability.tone === "danger"
+                        ? "bg-red"
+                        : "bg-primary",
+                    ].join(" ")}
+                    style={{
+                      width: `${Math.max(
+                        0,
+                        Math.min(100, course.availability.percent),
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex items-center justify-between gap-3 border-t border-light-slate/10 pt-6">
+              <div className="flex min-w-0 flex-col gap-1 lg:flex-row lg:items-end lg:gap-3">
+                {course.oldPrice ? (
+                  <p className="text-xs font-semibold text-light-slate line-through lg:pb-1">
+                    {money(course.oldPrice)}
+                  </p>
+                ) : null}
+
+                <p className="text-xl font-bold text-black">
+                  {money(course.price)}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className={[
+                  "h-11 shrink-0 rounded-full px-5 text-sm font-extrabold transition active:scale-95 disabled:pointer-events-none disabled:opacity-70 lg:hidden",
+                  isCardMuted
+                    ? "pointer-events-none border border-light-slate/20 bg-light-slate/10 text-light-slate"
+                    : course.action.kind === "reserve"
+                      ? "border border-primary/30 bg-white text-primary hover:bg-primary/10"
+                      : course.action.kind === "start"
+                        ? "bg-primary text-white hover:opacity-90"
+                        : "border border-red/20 bg-red/5 text-red",
+                ].join(" ")}
+              >
+                {course.action.label}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {isPreviewOpen ? (
+        <div
+          className={[
+            "absolute top-0 z-50 hidden w-[360px] rounded-2xl border border-light-slate/15 bg-white p-6 shadow-2xl lg:block",
+            previewPosition === "right" ? "left-full ml-4" : "right-full mr-4",
+          ].join(" ")}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          <span
+            className={[
+              "absolute top-1/2 h-4 w-4 -translate-y-1/2 rotate-45 border bg-white",
+              previewPosition === "right"
+                ? "-left-2 border-r-0 border-t-0 border-light-slate/15"
+                : "-right-2 border-b-0 border-l-0 border-light-slate/15",
+            ].join(" ")}
+          />
+
+          <h3 className="line-clamp-3 text-lg font-bold leading-snug text-black">
+            {course.title}
+          </h3>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {course.badge ? (
+              <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-extrabold text-primary">
+                {course.badge.label}
+              </span>
+            ) : null}
+
+            {course.date ? (
+              <span className="text-xs font-bold text-primary">
+                {course.date.month} {course.date.day}
+              </span>
+            ) : null}
+          </div>
+
+          {course.description ? (
+            <p className="mt-4 line-clamp-4 text-sm leading-6 text-light-slate">
+              {course.description}
+            </p>
+          ) : null}
+
+          <div className="mt-5 space-y-3">
+            {(course.metaTop || []).slice(0, 4).map((m) => (
+              <div
+                key={m.label}
+                className="flex items-start gap-3 text-sm leading-6 text-light-slate"
+              >
+                <Check size={16} className="mt-1 shrink-0 text-primary" />
+                <span>{m.label}</span>
+              </div>
+            ))}
+          </div>
+
           {course.availability ? (
-            <div>
+            <div className="mt-6">
               <div className="flex items-center justify-between gap-3 text-[11px] font-bold tracking-[0.18em]">
                 <span className="uppercase text-light-slate">
                   {course.availability.label}
@@ -151,43 +338,26 @@ export default function CourseBrowseCard({
                       ? "bg-red"
                       : "bg-primary",
                   ].join(" ")}
-                  style={{ width: `${Math.max(0, Math.min(100, course.availability.percent))}%` }}
+                  style={{
+                    width: `${Math.max(
+                      0,
+                      Math.min(100, course.availability.percent),
+                    )}%`,
+                  }}
                 />
               </div>
             </div>
           ) : null}
 
-          {/* bottom row always aligned */}
-          <div className="mt-6 flex items-center justify-between gap-3 border-t border-light-slate/10 pt-6">
-          <div>
-            {course.oldPrice ? (
-              <p className="text-xs font-semibold text-light-slate line-through">
-                {money(course.oldPrice)}
-              </p>
-            ) : null}
-            <p className="text-xl font-bold text-black">
-              {money(course.price)}
-            </p>
-          </div>
-
           <button
             type="button"
-            className={[
-              "h-11 shrink-0 rounded-full px-5 text-sm font-extrabold transition active:scale-95 disabled:pointer-events-none disabled:opacity-70",
-              isCardMuted
-                ? "pointer-events-none border border-light-slate/20 bg-light-slate/10 text-light-slate"
-                : course.action.kind === "reserve"
-                  ? "border border-primary/30 bg-white text-primary hover:bg-primary/10"
-                  : course.action.kind === "start"
-                    ? "bg-primary text-white hover:opacity-90"
-                    : "border border-red/20 bg-red/5 text-red",
-            ].join(" ")}
+            onClick={handleNavigate}
+            className="mt-6 h-12 w-full rounded-full bg-primary text-sm font-extrabold text-white transition hover:opacity-90 active:scale-95"
           >
             {course.action.label}
           </button>
-          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

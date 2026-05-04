@@ -12,4 +12,6 @@ export const IMAGE = {
   hand_gloves: "/photos/store_product.png",
   child: "/photos/child.png",
   fallbackImage: "/fallback-image/images.png",
+  service: "/service-images/service.avif",
+  service1 : '/service-images/service1.jpg'
 } as const;

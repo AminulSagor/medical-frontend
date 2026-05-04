@@ -6,6 +6,8 @@ import QuickUpdatePopover from "./quick-update-popover";
 import { useRouter } from "next/navigation";
 import { updateProduct } from "@/service/admin/product.service";
 import NetworkImageFallback from "@/utils/network-image-fallback";
+import { deleteSingleProduct } from "@/service/admin/product.delete.service";
+import toast from "react-hot-toast";
 
 export type ProductStatus = "active" | "draft";
 export type StockTone = "good" | "warn" | "bad" | "draft";
@@ -194,6 +196,18 @@ export default function ProductsTable({
     }
   };
 
+  //product delete
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      await deleteSingleProduct(productId);
+      setLocalRows((prev) => prev.filter((row) => row.id !== productId));
+      toast.success("Product deleted successfully.");
+    } catch (error) {
+      console.error("Failed to delete product:", error);
+      toast.error("Failed to delete product. Please try again.");
+    }
+  };
+
   return (
     <div className="w-full">
       <div className="w-full overflow-x-auto">
@@ -354,6 +368,7 @@ export default function ProductsTable({
                       type="button"
                       className="grid h-8 w-8 place-items-center rounded-md text-slate-500 hover:bg-red-50 hover:text-red-600"
                       aria-label="Delete"
+                      onClick={() => handleDeleteProduct(r.id)}
                     >
                       <Trash2 size={16} />
                     </button>

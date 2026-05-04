@@ -434,7 +434,6 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
         sku: sku.trim(),
         barcode: barcode.trim() || undefined,
         categoryId: selectedCategories.map((item) => {
-          console.log("cat", item);
           return item.id;
         }),
         tags: selectedTags.map((item) => item.name),
@@ -451,8 +450,6 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
         technicalSpecifications: specs.map(({ id, ...rest }) => rest),
         frequentlyBoughtTogether: fbItems,
       };
-
-      console.log("updating", productData);
 
       let savedProduct: AdminProduct | null;
 
