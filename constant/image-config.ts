@@ -13,5 +13,7 @@ export const IMAGE = {
   child: "/photos/child.png",
   fallbackImage: "/fallback-image/images.png",
   service: "/service-images/service.avif",
-  service1 : '/service-images/service1.jpg'
+  service1: "/service-images/service1.jpg",
+  google: "/logo/google.jpg",
+  facebook: "/logo/facebook.png",
 } as const;

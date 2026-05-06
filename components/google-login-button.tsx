@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { FcGoogle } from "react-icons/fc";
 
 type GoogleCredentialResponse = {
   credential?: string;
@@ -45,38 +46,21 @@ export default function GoogleLoginButton({
   useEffect(() => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-    console.log("Google client id from env:", clientId);
-    console.log("Current origin:", window.location.origin);
-
     if (!clientId) {
-      console.error("NEXT_PUBLIC_GOOGLE_CLIENT_ID is missing");
       return;
     }
 
     if (renderedRef.current) return;
 
     const renderGoogleButton = () => {
-      console.log("Trying to render Google button");
-
-      if (!buttonRef.current) {
-        console.error("Google button ref missing");
+      if (!buttonRef.current || !window.google || renderedRef.current) {
         return;
       }
-
-      if (!window.google) {
-        console.error("Google script not loaded yet");
-        return;
-      }
-
-      if (renderedRef.current) return;
 
       window.google.accounts.id.initialize({
         client_id: clientId,
         callback: async (response) => {
-          console.log("Google credential response:", response);
-
           if (!response.credential) {
-            console.error("Google credential missing");
             return;
           }
 
@@ -92,13 +76,11 @@ export default function GoogleLoginButton({
       });
 
       renderedRef.current = true;
-      console.log("Google button rendered successfully");
     };
 
     const existingScript = document.getElementById(GOOGLE_SCRIPT_ID);
 
     if (existingScript) {
-      console.log("Google script already exists");
       renderGoogleButton();
       return;
     }
@@ -109,14 +91,17 @@ export default function GoogleLoginButton({
     script.async = true;
     script.defer = true;
     script.onload = renderGoogleButton;
-    script.onerror = () => console.error("Failed to load Google script");
 
     document.body.appendChild(script);
   }, [onSuccess]);
 
   return (
     <div className="flex justify-center">
-      <div ref={buttonRef} />
+      <div className="relative flex h-11 w-11 items-center justify-center rounded-md border border-gray-300 bg-white">
+        <FcGoogle className="h-5 w-5" />
+
+        <div ref={buttonRef} className="absolute inset-0 z-10 opacity-0" />
+      </div>
     </div>
   );
 }

@@ -42,9 +42,6 @@ export default function FacebookLoginButton({
   useEffect(() => {
     const appId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
 
-    console.log("Facebook app id from env:", appId);
-    console.log("Current origin:", window.location.origin);
-
     if (!appId) {
       console.error("NEXT_PUBLIC_FACEBOOK_APP_ID is missing");
       return;
@@ -57,8 +54,6 @@ export default function FacebookLoginButton({
         xfbml: false,
         version: "v20.0",
       });
-
-      console.log("Facebook SDK initialized");
     };
 
     if (document.getElementById(FACEBOOK_SCRIPT_ID)) return;
@@ -84,8 +79,6 @@ export default function FacebookLoginButton({
 
     window.FB.login(
       (response) => {
-        console.log("Facebook login response:", response);
-
         const accessToken = response.authResponse?.accessToken;
 
         if (!accessToken) {

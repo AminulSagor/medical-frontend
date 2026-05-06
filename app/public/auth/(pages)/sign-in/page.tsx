@@ -331,7 +331,7 @@ export default function SignInPage() {
               <div className="h-px flex-1 bg-slate-200" />
             </div>
 
-            <div className="mt-4 flex justify-center gap-3">
+            <div className="mt-4 flex gap-4 items-center justify-center">
               <GoogleLoginButton onSuccess={handleGoogleLogin} />
               <FacebookLoginButton onSuccess={handleFacebookLogin} />
             </div>
