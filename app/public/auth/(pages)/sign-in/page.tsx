@@ -6,11 +6,17 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail, LogIn } from "lucide-react";
 import { loginSchema } from "@/schema/auth/login.schema";
 import { zodErrorToFieldErrors } from "@/schema/zodErrorToFieldErrors";
-import { loginUser } from "@/service/public/auth/auth.service";
+import {
+  loginUser,
+  loginWithFacebook,
+  loginWithGoogle,
+} from "@/service/public/auth/auth.service";
 import { setToken } from "@/utils/token/cookie_utils";
 import type { LoginRequest } from "@/types/public/auth/auth.types";
 import { getRoleFromToken } from "@/utils/decode-token.utils";
 import { AUTH_CHANGED_EVENT } from "@/utils/token/cookie_utils";
+import GoogleLoginButton from "@/components/google-login-button";
+import FacebookLoginButton from "@/components/facebook-login-button";
 
 type FieldErrors = Partial<Record<keyof LoginRequest, string>>;
 
@@ -110,6 +116,72 @@ export default function SignInPage() {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       setApiError(
         axiosErr?.response?.data?.message || "Login failed. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleGoogleLogin(idToken: string) {
+    console.log("Sending Google idToken to backend:", idToken);
+    setApiError(null);
+    setSubmitting(true);
+
+    try {
+      const response = await loginWithGoogle({ idToken });
+
+      setToken(response.accessToken);
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+      }
+
+      const role = getRoleFromToken(response.accessToken);
+
+      if (role === "admin") {
+        router.push("/dashboard/admin/admin-dashboard");
+        return;
+      }
+
+      router.push("/dashboard/user/dashboard");
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setApiError(
+        axiosErr?.response?.data?.message ||
+          "Google login failed. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleFacebookLogin(accessToken: string) {
+    console.log("Sending Facebook accessToken to backend:", accessToken);
+    setApiError(null);
+    setSubmitting(true);
+
+    try {
+      const response = await loginWithFacebook({ accessToken });
+
+      setToken(response.accessToken);
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+      }
+
+      const role = getRoleFromToken(response.accessToken);
+
+      if (role === "admin") {
+        router.push("/dashboard/admin/admin-dashboard");
+        return;
+      }
+
+      router.push("/dashboard/user/dashboard");
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setApiError(
+        axiosErr?.response?.data?.message ||
+          "Facebook login failed. Please try again.",
       );
     } finally {
       setSubmitting(false);
@@ -251,6 +323,19 @@ export default function SignInPage() {
             {submitting ? "Signing in..." : "Sign In"}{" "}
             <LogIn className="h-5 w-5" />
           </button>
+
+          <div className="pt-4">
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-slate-200" />
+              <p className="text-xs text-slate-500">Other sign in options</p>
+              <div className="h-px flex-1 bg-slate-200" />
+            </div>
+
+            <div className="mt-4 flex justify-center gap-3">
+              <GoogleLoginButton onSuccess={handleGoogleLogin} />
+              <FacebookLoginButton onSuccess={handleFacebookLogin} />
+            </div>
+          </div>
 
           <div className="text-center text-sm text-slate-500">
             <Link

@@ -59,3 +59,25 @@ export const resetPassword = async (
   );
   return response.data;
 };
+
+export const loginWithGoogle = async (data: {
+  idToken: string;
+}): Promise<LoginResponse> => {
+  const response = await serviceClient.post<LoginResponse>(
+    `/auth/social/google`,
+    data,
+  );
+
+  return response.data;
+};
+
+export const loginWithFacebook = async (data: {
+  accessToken: string;
+}): Promise<LoginResponse> => {
+  const response = await serviceClient.post<LoginResponse>(
+    `/auth/social/facebook`,
+    data,
+  );
+
+  return response.data;
+};
