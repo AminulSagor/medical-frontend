@@ -83,7 +83,7 @@ export default function FacebookLoginButton({
     setLoading(true);
 
     window.FB.login(
-      async (response) => {
+      (response) => {
         console.log("Facebook login response:", response);
 
         const accessToken = response.authResponse?.accessToken;
@@ -94,11 +94,13 @@ export default function FacebookLoginButton({
           return;
         }
 
-        try {
-          await onSuccess(accessToken);
-        } finally {
-          setLoading(false);
-        }
+        void (async () => {
+          try {
+            await onSuccess(accessToken);
+          } finally {
+            setLoading(false);
+          }
+        })();
       },
       { scope: "email,public_profile" },
     );
