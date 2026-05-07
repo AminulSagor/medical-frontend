@@ -5,8 +5,15 @@ import { useRouter } from "next/navigation";
 import type { AuthErrors, AuthSignupPayload } from "../../types/auth.types";
 import { signupSchema } from "@/schema/auth/signup.schema";
 import { zodErrorToFieldErrors } from "@/schema/zodErrorToFieldErrors";
-import { registerUser, sendOtp } from "@/service/public/auth/auth.service";
+import {
+  loginWithFacebook,
+  loginWithGoogle,
+  registerUser,
+  sendOtp,
+} from "@/service/public/auth/auth.service";
 import type { RegisterRequest } from "@/types/public/auth/auth.types";
+import { setToken, AUTH_CHANGED_EVENT } from "@/utils/token/cookie_utils";
+import { getRoleFromToken } from "@/utils/decode-token.utils";
 
 export function useSignUpController() {
   const router = useRouter();
@@ -23,6 +30,7 @@ export function useSignUpController() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [socialSubmitting, setSocialSubmitting] = useState(false);
 
   const strength = useMemo(() => {
     const p = form.password;
@@ -34,6 +42,17 @@ export function useSignUpController() {
       symbol: /[^A-Za-z0-9]/.test(p),
     };
   }, [form.password]);
+
+  const redirectAfterSocialAuth = (accessToken: string) => {
+    const role = getRoleFromToken(accessToken);
+
+    if (role === "admin") {
+      router.push("/dashboard/admin/admin-dashboard");
+      return;
+    }
+
+    router.push("/dashboard/user/dashboard");
+  };
 
   const setField = <K extends keyof AuthSignupPayload>(
     key: K,
@@ -74,10 +93,8 @@ export function useSignUpController() {
 
       await registerUser(payload);
 
-      // Send OTP to the registered email
       await sendOtp({ email: result.data.medicalEmail });
 
-      // Redirect to OTP verification with email as query param
       router.push(
         `/public/auth/otp-verification?email=${encodeURIComponent(result.data.medicalEmail)}`,
       );
@@ -92,6 +109,56 @@ export function useSignUpController() {
     }
   };
 
+  const handleGoogleSignUp = async (idToken: string) => {
+    setApiError(null);
+    setSocialSubmitting(true);
+
+    try {
+      const response = await loginWithGoogle({ idToken });
+
+      setToken(response.accessToken);
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+      }
+
+      redirectAfterSocialAuth(response.accessToken);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setApiError(
+        axiosErr?.response?.data?.message ||
+          "Google sign up failed. Please try again.",
+      );
+    } finally {
+      setSocialSubmitting(false);
+    }
+  };
+
+  const handleFacebookSignUp = async (accessToken: string) => {
+    setApiError(null);
+    setSocialSubmitting(true);
+
+    try {
+      const response = await loginWithFacebook({ accessToken });
+
+      setToken(response.accessToken);
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+      }
+
+      redirectAfterSocialAuth(response.accessToken);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setApiError(
+        axiosErr?.response?.data?.message ||
+          "Facebook sign up failed. Please try again.",
+      );
+    } finally {
+      setSocialSubmitting(false);
+    }
+  };
+
   return {
     form,
     errors,
@@ -99,8 +166,11 @@ export function useSignUpController() {
     strength,
     showPassword,
     submitting,
+    socialSubmitting,
     setField,
     toggleShowPassword,
     onSubmit,
+    handleGoogleSignUp,
+    handleFacebookSignUp,
   };
 }

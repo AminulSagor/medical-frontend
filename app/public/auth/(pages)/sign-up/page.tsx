@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { useSignUpController } from "./sign-up-controller";
+import GoogleLoginButton from "@/components/google-login-button";
+import FacebookLoginButton from "@/components/facebook-login-button";
 
 function StrengthRow({ ok, label }: { ok: boolean; label: string }) {
   return (
@@ -136,7 +138,9 @@ export default function SignUpPage() {
                 <button
                   type="button"
                   onClick={c.toggleShowPassword}
-                  aria-label={c.showPassword ? "Hide password" : "Show password"}
+                  aria-label={
+                    c.showPassword ? "Hide password" : "Show password"
+                  }
                   className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md p-2 text-slate-500 hover:bg-slate-100 focus:outline-none"
                 >
                   {c.showPassword ? (
@@ -168,7 +172,9 @@ export default function SignUpPage() {
               <label className="flex cursor-pointer items-start gap-2">
                 <input
                   checked={c.form.acceptedTerms}
-                  onChange={(e) => c.setField("acceptedTerms", e.target.checked)}
+                  onChange={(e) =>
+                    c.setField("acceptedTerms", e.target.checked)
+                  }
                   type="checkbox"
                   className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-200"
                 />
@@ -205,6 +211,25 @@ export default function SignUpPage() {
             >
               {c.submitting ? "Creating..." : "Sign up"}
             </button>
+
+            <div className="pt-3">
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-slate-200" />
+                <p className="text-xs text-slate-500">Other sign up options</p>
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+
+              <div className="mt-4 flex items-center justify-center gap-4">
+                <GoogleLoginButton onSuccess={c.handleGoogleSignUp} />
+                <FacebookLoginButton onSuccess={c.handleFacebookSignUp} />
+              </div>
+
+              {c.socialSubmitting && (
+                <p className="mt-2 text-center text-[12px] text-slate-500">
+                  Signing up...
+                </p>
+              )}
+            </div>
 
             <div className="pt-1 text-center text-xs text-slate-600">
               Already have an account?{" "}
