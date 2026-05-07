@@ -200,7 +200,7 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
               ? result.success
                 ? {
                     ...item,
-                    readUrl: result.readUrl,
+                    readUrl: result.publicUrl,
                     uploading: false,
                   }
                 : {

@@ -76,7 +76,7 @@ export const uploadFile = async (
     return {
       success: true,
       fileKey,
-      readUrl,
+      publicUrl,
     };
   } catch (error) {
     const errorMessage =
@@ -84,7 +84,7 @@ export const uploadFile = async (
     return {
       success: false,
       fileKey: "",
-      readUrl: "",
+      publicUrl: "",
       error: errorMessage,
     };
   }
@@ -118,7 +118,7 @@ export const refreshFileUrl = async (
 ): Promise<string | null> => {
   try {
     const response = await refreshReadUrl({ fileKey });
-    return response.readUrl;
+    return response.publicUrl;
   } catch {
     return null;
   }

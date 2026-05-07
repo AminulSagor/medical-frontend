@@ -142,7 +142,7 @@ export default function RegisterFacultyClient() {
                     throw new Error(uploadResult.error || "Failed to upload photo");
                 }
 
-                imageUrl = uploadResult.readUrl;
+                imageUrl = uploadResult.publicUrl;
             }
 
             const payload: RegisterFacultyRequest = {
