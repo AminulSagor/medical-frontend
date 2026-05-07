@@ -460,7 +460,7 @@ export function useCreateBlogPost() {
 
       await uploadFileToSignedUrl(uploadMeta.signedUrl, file);
 
-      setCoverImageUrl(uploadMeta.readUrl);
+      setCoverImageUrl(uploadMeta.publicUrl);
       clearCoverImageError();
       toast.success("Cover image uploaded.");
     } catch (error) {
@@ -504,7 +504,7 @@ export function useCreateBlogPost() {
           next.push("");
         }
 
-        next[index] = uploadMeta.readUrl;
+        next[index] = uploadMeta.publicUrl;
 
         return next;
       });

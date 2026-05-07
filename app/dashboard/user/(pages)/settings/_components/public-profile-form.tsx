@@ -104,7 +104,7 @@ export default function PublicProfileFormClient({
 
     await uploadFileToSignedUrl(uploadUrlResponse.signedUrl, pendingAvatarFile);
 
-    return uploadUrlResponse.readUrl;
+    return uploadUrlResponse.publicUrl;
   }
 
   async function onRemovePhoto() {

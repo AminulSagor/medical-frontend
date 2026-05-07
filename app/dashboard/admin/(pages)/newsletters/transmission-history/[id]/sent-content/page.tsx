@@ -36,6 +36,8 @@ export default function TransmissionSentContentPage() {
     loadSentContent();
   }, [loadSentContent]);
 
+  console.log(data);
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#0a403f_0%,#082c2d_32%,#071d1f_60%,#051417_100%)] px-4 py-6 md:px-6">
       <div className="mx-auto max-w-6xl space-y-5">

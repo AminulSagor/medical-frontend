@@ -289,15 +289,18 @@ export default function SentContentPreview({ data, isLoading }: Props) {
                   isDark ? "text-white" : "text-slate-900",
                 )}
               >
-                Attachments
+                Attachment
               </h3>
 
               <div className="mt-4 space-y-3">
                 {data.attachments.map((attachment) => (
-                  <div
+                  <a
                     key={attachment.id}
+                    href={attachment.publicUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className={cx(
-                      "flex items-center gap-3 rounded-2xl border px-4 py-3",
+                      "flex items-center gap-3 rounded-2xl border px-4 py-3 transition hover:opacity-80",
                       isDark
                         ? "border-white/10 bg-white/5"
                         : "border-slate-200 bg-white",
@@ -324,7 +327,7 @@ export default function SentContentPreview({ data, isLoading }: Props) {
                         {attachment.filename}
                       </p>
                     </div>
-                  </div>
+                  </a>
                 ))}
               </div>
             </div>

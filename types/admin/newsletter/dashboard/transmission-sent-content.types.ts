@@ -1,6 +1,8 @@
 export interface TransmissionSentContentAttachment {
   id: string;
   filename: string;
+  fileKey: string;
+  publicUrl: string;
 }
 
 export interface TransmissionSentContentArticle {

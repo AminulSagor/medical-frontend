@@ -8,7 +8,10 @@ import ThemeDropdown, {
 } from "@/app/dashboard/admin/(pages)/users/faculty/register-faculty/_components/theme-dropdown";
 import { searchFaculty } from "@/service/admin/faculty.service";
 import { listFacilities } from "@/service/admin/facility.service";
-import { createWorkshop, getWorkshopById } from "@/service/admin/workshop.service";
+import {
+  createWorkshop,
+  getWorkshopById,
+} from "@/service/admin/workshop.service";
 import {
   getUploadUrl,
   uploadFileToSignedUrl,
@@ -112,17 +115,16 @@ export default function WorkshopCreateClient() {
   const [draftStatus, setDraftStatus] = useState<"Draft" | "Ready">("Draft");
   const [workshopId, setWorkshopId] = useState<string | null>(null);
 
-  const facilityOptions: Array<ThemeDropdownOption<FacilityLocation>> =
-    useMemo(
-      () =>
-        facilities.map((item) => ({
-          value: item.id,
-          label: item.roomNumber
-            ? `${item.name} (${item.roomNumber})`
-            : item.name,
-        })),
-      [facilities],
-    );
+  const facilityOptions: Array<ThemeDropdownOption<FacilityLocation>> = useMemo(
+    () =>
+      facilities.map((item) => ({
+        value: item.id,
+        label: item.roomNumber
+          ? `${item.name} (${item.roomNumber})`
+          : item.name,
+      })),
+    [facilities],
+  );
 
   const derivedTotalDays = useMemo(() => days.length, [days.length]);
   const isSaving = saveMode !== null;
@@ -136,7 +138,7 @@ export default function WorkshopCreateClient() {
     setMode(workshop.deliveryMode);
     setWebinarPlatform(
       (workshop.webinarPlatform as WebinarPlatform | null) ??
-      (workshop.deliveryMode === "online" ? "zoom" : null),
+        (workshop.deliveryMode === "online" ? "zoom" : null),
     );
     setMeetingPassword(workshop.meetingPassword ?? "");
     setMeetingLink(workshop.meetingLink ?? "");
@@ -172,8 +174,7 @@ export default function WorkshopCreateClient() {
           .sort((a, b) => a.segmentNumber - b.segmentNumber)
           .map((segment, segmentIndex) => ({
             id:
-              segment.id ||
-              `${day.id || dayIndex}-segment-${segmentIndex + 1}`,
+              segment.id || `${day.id || dayIndex}-segment-${segmentIndex + 1}`,
             topic: segment.courseTopic ?? "",
             details: segment.topicDetails ?? "",
             date: day.date ?? "",
@@ -187,12 +188,9 @@ export default function WorkshopCreateClient() {
       (workshop.faculty ?? []).map((faculty) => ({
         id: faculty.id,
         name:
-          faculty.fullName ||
-          `${faculty.firstName} ${faculty.lastName}`.trim(),
+          faculty.fullName || `${faculty.firstName} ${faculty.lastName}`.trim(),
         role:
-          faculty.medicalDesignation ||
-          faculty.primaryClinicalRole ||
-          "N/A",
+          faculty.medicalDesignation || faculty.primaryClinicalRole || "N/A",
       })),
     );
 
@@ -241,7 +239,9 @@ export default function WorkshopCreateClient() {
           hydrateWorkshopForm(workshop, availableFacilities);
         } else {
           setWorkshopId(null);
-          setFacility((current) => current ?? availableFacilities[0]?.id ?? null);
+          setFacility(
+            (current) => current ?? availableFacilities[0]?.id ?? null,
+          );
         }
       } catch (error) {
         console.error("Failed to load workshop create dependencies:", error);
@@ -463,19 +463,19 @@ export default function WorkshopCreateClient() {
         day.id !== dayId
           ? day
           : {
-            ...day,
-            segments: [
-              ...day.segments,
-              {
-                id: `seg_${Date.now()}`,
-                topic: "",
-                details: "",
-                date: "",
-                startTime: "",
-                endTime: "",
-              },
-            ],
-          },
+              ...day,
+              segments: [
+                ...day.segments,
+                {
+                  id: `seg_${Date.now()}`,
+                  topic: "",
+                  details: "",
+                  date: "",
+                  startTime: "",
+                  endTime: "",
+                },
+              ],
+            },
       ),
     );
   }
@@ -486,11 +486,11 @@ export default function WorkshopCreateClient() {
         day.id !== dayId
           ? day
           : {
-            ...day,
-            segments: day.segments.filter(
-              (segment) => segment.id !== segmentId,
-            ),
-          },
+              ...day,
+              segments: day.segments.filter(
+                (segment) => segment.id !== segmentId,
+              ),
+            },
       ),
     );
   }
@@ -505,11 +505,11 @@ export default function WorkshopCreateClient() {
         day.id !== dayId
           ? day
           : {
-            ...day,
-            segments: day.segments.map((segment) =>
-              segment.id === segmentId ? { ...segment, ...patch } : segment,
-            ),
-          },
+              ...day,
+              segments: day.segments.map((segment) =>
+                segment.id === segmentId ? { ...segment, ...patch } : segment,
+              ),
+            },
       ),
     );
   }
@@ -571,12 +571,12 @@ export default function WorkshopCreateClient() {
       coverPreviewUrlRef.current = null;
     }
 
-    setCoverImageUrl(uploadMeta.readUrl);
-    setCoverPreviewUrl(uploadMeta.readUrl);
+    setCoverImageUrl(uploadMeta.publicUrl);
+    setCoverPreviewUrl(uploadMeta.publicUrl);
     setCoverFileName(pendingCoverFile.name);
     setPendingCoverFile(null);
 
-    return uploadMeta.readUrl;
+    return uploadMeta.publicUrl;
   }
 
   async function saveWorkshop(
@@ -595,7 +595,7 @@ export default function WorkshopCreateClient() {
       if (modeToUse !== "autosave") {
         window.alert(
           error?.response?.data?.message ||
-          "Failed to upload cover image. Please try again.",
+            "Failed to upload cover image. Please try again.",
         );
       }
 
@@ -644,7 +644,7 @@ export default function WorkshopCreateClient() {
       if (modeToUse !== "autosave") {
         window.alert(
           error?.response?.data?.message ||
-          `Failed to ${workshopId ? "save" : "create"} workshop. Please try again.`,
+            `Failed to ${workshopId ? "save" : "create"} workshop. Please try again.`,
         );
       }
 

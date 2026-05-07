@@ -8,11 +8,12 @@ export interface GetUploadUrlResponse {
   message: string;
   signedUrl: string;
   fileKey: string;
-  readUrl: string;
+  publicUrl: string;
   instructions: {
     step1: string;
     step2: string;
     step3: string;
+    note?: string;
   };
 }
 
@@ -22,12 +23,12 @@ export interface RefreshReadUrlRequest {
 
 export interface RefreshReadUrlResponse {
   message: string;
-  readUrl: string;
+  publicUrl: string;
 }
 
 export interface UploadResult {
   success: boolean;
   fileKey: string;
-  readUrl: string;
+  publicUrl: string;
   error?: string;
 }

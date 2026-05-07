@@ -227,7 +227,7 @@ export default function GeneralBroadcastFormPage({ mode, broadcastId }: Props) {
           fileName: file.name,
           mimeType: file.type || "application/octet-stream",
           fileSizeBytes: file.size,
-          readUrl: uploadMeta.readUrl,
+          readUrl: uploadMeta.publicUrl,
           isExisting: false,
         });
       }
