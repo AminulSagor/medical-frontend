@@ -319,7 +319,7 @@ export default function FiltersSidebar({
 
   return (
     <SidebarShell>
-      <Card className="p-4 md:p-6">
+      <div className="p-4 md:p-6 max-h-150 overflow-y-auto shadow-sm border rounded-xl bg-white border-slate-100">
         <SectionHeader
           title="Categories"
           right={
@@ -337,15 +337,15 @@ export default function FiltersSidebar({
           {categories.map((c) => (
             <CategoryRow
               key={c.id || c.name}
-              active={filters.categoryId === (c.id || c.name)}
+              active={filters.categoryId === c.name}
               icon={getCategoryIcon(c.name)}
               label={c.name}
               count={c.productCount}
-              onClick={() => handleCategoryClick(c.id || c.name)}
+              onClick={() => handleCategoryClick(c.name)}
             />
           ))}
         </div>
-      </Card>
+      </div>
 
       <Card className="p-4 md:p-6 rounded-2xl md:rounded-3xl">
         <SectionHeader

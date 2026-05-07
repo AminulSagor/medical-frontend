@@ -6,20 +6,49 @@ import {
   ProductDetailResponse,
 } from "@/types/public/product/public-product.types";
 
-/**
- * Fetches products from the public products API.
- * @param params Filtering, sorting, and pagination parameters.
- * @returns A promise that resolves to the public products response.
- */
+const normalizeCategoryIds = (item: any): string[] => {
+  const ids: string[] = [];
+
+  if (Array.isArray(item.categoryId)) {
+    ids.push(...item.categoryId.map(String));
+  } else if (item.categoryId) {
+    ids.push(String(item.categoryId));
+  }
+
+  if (item.category) {
+    if (typeof item.category === "string") {
+      ids.push(item.category);
+    } else {
+      if (item.category.id) ids.push(String(item.category.id));
+      if (item.category.name) ids.push(String(item.category.name));
+    }
+  }
+
+  if (Array.isArray(item.categories)) {
+    item.categories.forEach((category: any) => {
+      if (typeof category === "string") {
+        ids.push(category);
+      } else {
+        if (category.id) ids.push(String(category.id));
+        if (category.name) ids.push(String(category.name));
+      }
+    });
+  }
+
+  return [...new Set(ids)];
+};
+
 export const getPublicProducts = async (
-  params?: ListProductsPublicParams | Record<string, string | number>,
+  params?:
+    | ListProductsPublicParams
+    | Record<string, string | number | string[]>,
 ): Promise<PublicProductsResponse> => {
   const response = await serviceClient.get<
     | {
-      message?: string;
-      statusCode?: number;
-      data?: PublicProductsResponse;
-    }
+        message?: string;
+        statusCode?: number;
+        data?: PublicProductsResponse;
+      }
     | PublicProductsResponse
   >("/public/products", { params });
 
@@ -30,7 +59,7 @@ export const getPublicProducts = async (
     const items = (responseData.items as any[]).map((item: any) => ({
       id: item.id,
       brand: item.brand || null,
-      categoryId: item.categoryId || (item.category ? [item.category] : []),
+      categoryId: normalizeCategoryIds(item),
       tags: item.badge ? [item.badge] : item.tags || [],
       sku: item.sku || "",
       stockQuantity:
@@ -66,10 +95,6 @@ export const getPublicProducts = async (
 
 export const getProducts = getPublicProducts;
 
-/**
- * Fetches filters (categories, brands, price range) from the public products API.
- * Supports optional search query via q parameter.
- */
 export const getPublicProductFilters = async (
   query?: string,
 ): Promise<ProductFiltersResponse> => {
@@ -79,21 +104,19 @@ export const getPublicProductFilters = async (
       params: query ? { q: query } : {},
     },
   );
+
   return response.data;
 };
 
 export const getProductFilters = getPublicProductFilters;
 
-/**
- * Fetches full product details from the public products API by ID.
- * @param id The product ID.
- */
 export const getPublicProductDetails = async (
   id: string,
 ): Promise<ProductDetailResponse> => {
   const response = await serviceClient.get<ProductDetailResponse>(
     `/public/products/${id}`,
   );
+
   return response.data;
 };
 

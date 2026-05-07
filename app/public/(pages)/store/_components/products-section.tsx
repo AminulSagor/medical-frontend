@@ -43,23 +43,23 @@ export default function ProductSection({
       setLoading(true);
 
       const params: Record<string, string | number | string[]> = {
-        page,
-        limit: PAGE_SIZE,
+        page: 1,
+        limit: 1000,
       };
 
       if (searchQuery.trim()) {
         params.search = searchQuery.trim();
       }
 
-      if (filters.brands && filters.brands.length > 0) {
+      if (filters.brands.length > 0) {
         params.brands = filters.brands;
       }
 
-      if (filters.minPrice && filters.minPrice > 0) {
+      if (filters.minPrice > 0) {
         params.minPrice = String(filters.minPrice);
       }
 
-      if (filters.maxPrice && filters.maxPrice > 0) {
+      if (filters.maxPrice > 0) {
         params.maxPrice = String(filters.maxPrice);
       }
 
@@ -71,11 +71,13 @@ export default function ProductSection({
 
       let filteredItems = response.items;
 
-      if (filters.categoryId && filters.categoryId !== "All") {
+      if (filters.categoryId !== "All") {
+        const selectedCategory = filters.categoryId.toLowerCase().trim();
+
         filteredItems = response.items.filter((item) =>
-          Array.isArray(item.categoryId)
-            ? item.categoryId.includes(filters.categoryId)
-            : false,
+          item.categoryId.some(
+            (category) => category.toLowerCase().trim() === selectedCategory,
+          ),
         );
       }
 
@@ -83,8 +85,10 @@ export default function ProductSection({
       const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
       const safePage = Math.min(page, totalPages);
       const startIndex = (safePage - 1) * PAGE_SIZE;
-      const endIndex = startIndex + PAGE_SIZE;
-      const paginatedItems = filteredItems.slice(startIndex, endIndex);
+      const paginatedItems = filteredItems.slice(
+        startIndex,
+        startIndex + PAGE_SIZE,
+      );
 
       setProducts(paginatedItems);
       setMeta({
@@ -93,7 +97,6 @@ export default function ProductSection({
         total,
         totalPages,
       });
-
     } catch (error) {
       console.error("Failed to fetch products:", error);
       setProducts([]);
@@ -101,7 +104,7 @@ export default function ProductSection({
     } finally {
       setLoading(false);
     }
-  }, [filters, page, products.length, searchQuery, sortBy]);
+  }, [filters, page, searchQuery, sortBy]);
 
   useEffect(() => {
     fetchProducts();
@@ -150,7 +153,9 @@ export default function ProductSection({
                   {totalResults}
                 </span>
               </div>
+
               <button
+                type="button"
                 onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
                 className="inline-flex items-center gap-2 rounded-lg bg-sky-50 hover:bg-sky-100 px-3 py-2 text-sm font-semibold text-sky-700 transition border border-sky-200"
               >
@@ -194,7 +199,7 @@ export default function ProductSection({
                 </motion.div>
               ) : (
                 <motion.div
-                  key={`${page}-${searchQuery}-${sortBy}-${filters.categoryId}`}
+                  key={`${page}-${searchQuery}-${sortBy}-${filters.categoryId}-${filters.minPrice}-${filters.maxPrice}`}
                   initial="hidden"
                   animate="show"
                   exit={{ opacity: 0, y: -10 }}
@@ -210,9 +215,9 @@ export default function ProductSection({
                   }}
                   className="mt-4 grid grid-cols-1 items-start gap-4 sm:grid-cols-2 md:mt-5 md:gap-6 lg:grid-cols-3"
                 >
-                  {products.map((p) => (
+                  {products.map((product) => (
                     <motion.div
-                      key={p.id}
+                      key={product.id}
                       variants={{
                         hidden: {
                           opacity: 0,
@@ -237,25 +242,27 @@ export default function ProductSection({
                       }}
                       className="self-start"
                     >
-                      <ProductCard product={p} />
+                      <ProductCard product={product} />
                     </motion.div>
                   ))}
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: "easeOut", delay: 0.12 }}
-              className="mt-8 md:mt-10"
-            >
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                onChange={setPage}
-              />
-            </motion.div>
+            {totalPages > 1 && (
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: "easeOut", delay: 0.12 }}
+                className="mt-8 md:mt-10"
+              >
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  onChange={setPage}
+                />
+              </motion.div>
+            )}
           </motion.section>
         </div>
       </div>
@@ -287,7 +294,9 @@ export default function ProductSection({
             >
               <div className="sticky top-0 flex items-center justify-between border-b bg-white p-4">
                 <h2 className="text-lg font-bold text-slate-900">Filters</h2>
+
                 <button
+                  type="button"
                   onClick={() => setMobileFiltersOpen(false)}
                   className="rounded-lg p-1 hover:bg-gray-100 transition"
                 >
@@ -298,14 +307,13 @@ export default function ProductSection({
               <div className="p-4">
                 <FiltersSidebar
                   filters={filters}
-                  onFiltersChange={(newFilters) => {
-                    handleFiltersChange(newFilters);
-                  }}
+                  onFiltersChange={handleFiltersChange}
                 />
               </div>
 
               <div className="sticky bottom-0 border-t bg-white p-4">
                 <button
+                  type="button"
                   onClick={() => setMobileFiltersOpen(false)}
                   className="w-full rounded-lg bg-primary hover:bg-primary/90 px-4 py-3 text-sm font-semibold text-white transition"
                 >
