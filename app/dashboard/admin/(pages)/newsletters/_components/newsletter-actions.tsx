@@ -75,7 +75,11 @@ function BigActionCard({
   );
 }
 
-export default function NewsletterActions() {
+export default function NewsletterActions({
+  refreshKey,
+}: {
+  refreshKey: number;
+}) {
   const [totalSubscribers, setTotalSubscribers] = React.useState<string>("--");
   const [totalCohorts, setTotalCohorts] = React.useState<string>("--");
 
@@ -111,7 +115,7 @@ export default function NewsletterActions() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
