@@ -14,6 +14,7 @@ import TopPerformingCourses from "./_components/top-performing-courses";
 import PageTitle from "@/app/dashboard/admin/_components/page-title";
 import { getAdminDashboardOverview } from "@/service/admin/dashboard.service";
 import type { DashboardOverviewResponse } from "@/types/admin/dashboard.types";
+import AdminDashboardSkeleton from "@/app/dashboard/admin/(pages)/admin-dashboard/_components/admin-dashboard-skeleton";
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState<DashboardOverviewResponse | null>(null);
@@ -37,17 +38,7 @@ export default function AdminDashboardPage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <PageTitle
-          title="Overview Analytics"
-          subtitle="Track your institute's performance at a glance."
-        />
-        <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
-          Loading dashboard...
-        </div>
-      </div>
-    );
+    return <AdminDashboardSkeleton />;
   }
 
   if (!data) {

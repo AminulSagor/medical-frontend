@@ -87,7 +87,7 @@ const ServiceOverview = () => {
   const data = serviceOverviewData;
 
   return (
-    <section className="bg-gradient-to-b from-[#8ED8F2] to-[#AEE6F7] py-16">
+    <section className="bg-primary/70 py-16">
       <div className="mx-auto max-w-7xl space-y-10 px-4">
         <h1 className="text-center text-2xl font-semibold text-black lg:text-4xl">
           Our Services
