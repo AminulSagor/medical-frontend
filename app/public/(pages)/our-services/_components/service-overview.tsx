@@ -76,7 +76,7 @@ const Card = ({
         scale: 1.01,
         transition: { duration: 0.25 },
       }}
-      className="rounded-2xl bg-[#EDEDED] p-6 shadow-md"
+      className="rounded-2xl bg-[#F1F4F8] p-6 shadow-md"
     >
       {children}
     </motion.div>
@@ -87,7 +87,7 @@ const ServiceOverview = () => {
   const data = serviceOverviewData;
 
   return (
-    <section className="bg-primary/70 py-16">
+    <section className="py-16">
       <div className="mx-auto max-w-7xl space-y-10 px-4">
         <h1 className="text-center text-2xl font-semibold text-black lg:text-4xl">
           Our Services
