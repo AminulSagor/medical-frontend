@@ -7,6 +7,14 @@ const ADMIN_ONLY_ROUTES = ["/dashboard/admin"];
 const USER_ONLY_ROUTES = ["/dashboard/user"];
 const PUBLIC_USER_ROUTES = ["/dashboard/user/ticket"];
 
+const PUBLIC_ROUTE_REDIRECTS: Record<string, string> = {
+  "/about-us": "/public/about-us",
+  "/contact-us": "/public/contact-us",
+  "/our-services": "/public/our-services",
+  "/who-we-are": "/public/about-us",
+  "/mastering-the-basics": "/public/courses",
+};
+
 function isPublicRoute(pathname: string) {
   return (
     PUBLIC_ROUTES.some(
@@ -32,6 +40,12 @@ function isUserRoute(pathname: string) {
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  const redirectTo = PUBLIC_ROUTE_REDIRECTS[pathname];
+
+  if (redirectTo) {
+    return NextResponse.redirect(new URL(redirectTo, request.url));
+  }
 
   if (pathname === "/") {
     return NextResponse.redirect(new URL("/public/home", request.url));
