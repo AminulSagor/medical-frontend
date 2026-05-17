@@ -10,9 +10,15 @@ const PUBLIC_USER_ROUTES = ["/dashboard/user/ticket"];
 const PUBLIC_ROUTE_REDIRECTS: Record<string, string> = {
   "/about-us": "/public/about-us",
   "/contact-us": "/public/contact-us",
+
+  "/services": "/public/our-services",
+  "/our-service": "/public/our-services",
   "/our-services": "/public/our-services",
+
   "/who-we-are": "/public/about-us",
+
   "/mastering-the-basics": "/public/courses",
+  "/mastering-basics": "/public/courses",
 };
 
 function isPublicRoute(pathname: string) {
