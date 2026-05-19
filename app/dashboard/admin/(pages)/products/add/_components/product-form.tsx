@@ -34,7 +34,6 @@ import type {
 import ProductFormHeader from "./product-form/product-form-header";
 import ProductMediaSection from "./product-form/product-media-section";
 import ProductOrganizationSection from "./product-form/product-organization-section";
-import ProductRelationshipsSection from "./product-form/product-relationships-section";
 import ProductGeneralInformationSection from "./product-form/product-general-information-section";
 import ProductBenefitsSection from "./product-form/product-benefits-section";
 import ProductSpecificationsSection from "./product-form/product-specifications-section";
@@ -101,8 +100,8 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
   const [fbSearch, setFbSearch] = useState("");
   const [fbItems, setFbItems] = useState<string[]>(
     getDetails(initialData)?.frequentlyBoughtTogether ??
-      initialData?.frequentlyBoughtTogether ??
-      [],
+    initialData?.frequentlyBoughtTogether ??
+    [],
   );
 
   const [benefits, setBenefits] = useState<Benefit[]>([
@@ -126,10 +125,10 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
   const [bulkTiers, setBulkTiers] = useState<BulkTier[]>(
     initialData?.bulkPriceTiers?.length
       ? initialData.bulkPriceTiers.map((tier) => ({
-          id: uid("tier"),
-          qty: tier.minQty,
-          price: Number(tier.price),
-        }))
+        id: uid("tier"),
+        qty: tier.minQty,
+        price: Number(tier.price),
+      }))
       : [{ id: uid("tier"), qty: "", price: "" }],
   );
 
@@ -157,11 +156,11 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
     setBenefits(
       mappedBenefits.length > 0
         ? mappedBenefits.map((item) => ({
-            id: uid("benefit"),
-            icon: "shield",
-            title: item.title,
-            description: item.description,
-          }))
+          id: uid("benefit"),
+          icon: "shield",
+          title: item.title,
+          description: item.description,
+        }))
         : [{ id: uid("benefit"), icon: "shield", title: "", description: "" }],
     );
   }, [initialData]);
@@ -199,15 +198,15 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
             item.id === tempId
               ? result.success
                 ? {
-                    ...item,
-                    readUrl: result.publicUrl,
-                    uploading: false,
-                  }
+                  ...item,
+                  readUrl: result.publicUrl,
+                  uploading: false,
+                }
                 : {
-                    ...item,
-                    uploading: false,
-                    error: result.error,
-                  }
+                  ...item,
+                  uploading: false,
+                  error: result.error,
+                }
               : item,
           ),
         );
@@ -394,6 +393,22 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
       alert("SKU is required");
       return;
     }
+    if (selectedCategories.length === 0) {
+      alert("Category is required");
+      return;
+    }
+
+    const trimmedActualPrice = actualPrice.trim();
+
+    if (!trimmedActualPrice) {
+      alert("Actual price is required");
+      return;
+    }
+
+    if (!/^\d+(\.\d+)?$/.test(trimmedActualPrice)) {
+      alert("Actual price must be a valid number");
+      return;
+    }
 
     const validBenefits = benefits.filter(
       (item) => item.title.trim() && item.description.trim(),
@@ -406,6 +421,20 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
 
     if (specs.length === 0) {
       alert("At least one technical specification is required");
+      return;
+    }
+
+    if (mediaItems.some((item) => item.uploading)) {
+      alert("Please wait until product photo upload is complete");
+      return;
+    }
+
+    const validImages = mediaItems.filter(
+      (item) => !item.uploading && !item.error && item.readUrl,
+    );
+
+    if (validImages.length === 0) {
+      alert("Product photo is required");
       return;
     }
 
@@ -472,8 +501,8 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
       console.error("Failed to save product:", error);
       alert(
         error?.response?.data?.message ||
-          error?.message ||
-          "Failed to save product. Please try again.",
+        error?.message ||
+        "Failed to save product. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -564,14 +593,7 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
             tagRef={tagRef}
           />
 
-          <ProductRelationshipsSection
-            fbSearch={fbSearch}
-            onFbSearchChange={setFbSearch}
-            fbItems={fbItems}
-            onRemoveFbItem={(index) =>
-              setFbItems((prev) => prev.filter((_, idx) => idx !== index))
-            }
-          />
+
         </div>
 
         <div className="space-y-6">

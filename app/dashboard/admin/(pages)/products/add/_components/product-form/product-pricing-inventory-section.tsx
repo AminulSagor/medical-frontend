@@ -194,24 +194,21 @@ export default function ProductPricingInventorySection({
             <Label>Low Stock Alert</Label>
             <Input
               value={lowStockAlert}
-              onChange={onLowStockAlertChange}
+              onChange={(value) => {
+                if (value === "") {
+                  onLowStockAlertChange("");
+                  return;
+                }
+
+                onLowStockAlertChange(String(Math.max(0, Number(value))));
+              }}
               placeholder="0"
               type="number"
             />
           </div>
         </div>
 
-        <label className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            checked={backorder}
-            onChange={(e) => onBackorderChange(e.target.checked)}
-            className="h-4 w-4 accent-[var(--primary)]"
-          />
-          <span className="text-sm text-slate-700">
-            Allow orders when stock is depleted (Backorder)
-          </span>
-        </label>
+
       </div>
     </RightPanel>
   );

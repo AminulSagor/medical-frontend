@@ -160,6 +160,7 @@ export const createProduct = async (
     "/admin/products",
     data,
   );
+  console.log("created product", response.data);
   return response.data;
 };
 

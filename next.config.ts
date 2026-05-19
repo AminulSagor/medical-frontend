@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "texas-airway-institute-media.s3.us-east-1.amazonaws.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "ibass-collection.s3.ap-south-1.amazonaws.com",
         pathname: "/**",
       },
